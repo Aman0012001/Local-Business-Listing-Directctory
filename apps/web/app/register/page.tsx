@@ -18,7 +18,16 @@ export default function RegisterPage() {
     const { register } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
-    const role = searchParams.get('role') || 'user';
+    const [selectedRole, setSelectedRole] = useState<'user' | 'vendor'>('user');
+
+    useEffect(() => {
+        const queryRole = searchParams.get('role');
+        if (queryRole === 'vendor') {
+            setSelectedRole('vendor');
+        } else {
+            setSelectedRole('user');
+        }
+    }, [searchParams]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -29,7 +38,7 @@ export default function RegisterPage() {
                 fullName,
                 email,
                 password,
-                role
+                role: selectedRole
             });
         } catch (err: any) {
             setError(err.message || 'Registration failed. Please try again.');
@@ -50,16 +59,32 @@ export default function RegisterPage() {
                 <div className="max-w-md w-full relative z-10">
                     <div className="text-center mb-10">
                         <h1 className="text-4xl font-black text-slate-900 mb-3 tracking-tight">
-                            {role === 'vendor' ? 'Grow Your Business' : 'Join LocalFind'}
+                            {selectedRole === 'vendor' ? 'Grow Your Business' : 'Join LocalFind'}
                         </h1>
                         <p className="text-slate-500">
-                            {role === 'vendor'
+                            {selectedRole === 'vendor'
                                 ? 'Register as a vendor to start listing your services'
                                 : 'Start exploring and connecting with your community'}
                         </p>
                     </div>
 
                     <div className="bg-white rounded-[40px] border border-slate-100 p-8 md:p-10 shadow-xl shadow-blue-500/5">
+                        <div className="flex bg-slate-100 p-1 rounded-2xl mb-8">
+                            <button
+                                type="button"
+                                onClick={() => setSelectedRole('user')}
+                                className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${selectedRole === 'user' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                            >
+                                User Account
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setSelectedRole('vendor')}
+                                className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${selectedRole === 'vendor' ? 'bg-white text-[#FF7A30] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                            >
+                                Business Account
+                            </button>
+                        </div>
                         {error && (
                             <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-bold border border-red-100 italic">
                                 {error}
@@ -127,7 +152,7 @@ export default function RegisterPage() {
                             >
                                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                                     <>
-                                        {role === 'vendor' ? 'Register Business' : 'Create Account'}
+                                        {selectedRole === 'vendor' ? 'Register Business' : 'Create Account'}
                                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                     </>
                                 )}
