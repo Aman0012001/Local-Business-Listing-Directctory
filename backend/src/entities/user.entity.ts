@@ -17,10 +17,7 @@ export enum UserRole {
     USER = 'user',
     VENDOR = 'vendor',
     ADMIN = 'admin',
-<<<<<<< HEAD
     SUPERADMIN = 'superadmin',
-=======
->>>>>>> 56a7fdc8c2ec25ddd88e6b87bd06bfa1d2117cca
 }
 
 @Entity('users')
