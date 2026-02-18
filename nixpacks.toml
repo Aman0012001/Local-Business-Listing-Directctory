@@ -1,3 +1,6 @@
+[variables]
+NIXPACKS_INSTALL_CMD = "npm install"
+
 [phases.setup]
 cmds = ["npm install"]
 
