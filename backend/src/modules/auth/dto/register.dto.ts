@@ -26,4 +26,9 @@ export class RegisterDto {
     @IsString()
     @Matches(/^\+?[1-9]\d{1,14}$/, { message: 'Invalid phone number format' })
     phone?: string;
+
+    @ApiPropertyOptional({ example: 'user', enum: ['user', 'vendor'] })
+    @IsOptional()
+    @IsString()
+    role?: string = 'user';
 }
