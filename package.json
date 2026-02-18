@@ -13,6 +13,10 @@
     "lint": "npm run lint --workspaces --if-present",
     "start": "node backend/dist/main"
   },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=9.0.0"
+  },
   "devDependencies": {
     "turbo": "latest"
   }
