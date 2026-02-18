@@ -24,7 +24,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
         // Configuration
         ConfigModule.forRoot({
             isGlobal: true,
-            envFilePath: '.env',
+            envFilePath: ['.env.local', '.env'],
         }),
 
         // Database
