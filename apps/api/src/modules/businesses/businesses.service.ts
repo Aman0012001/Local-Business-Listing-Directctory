@@ -10,7 +10,6 @@ export class BusinessesService {
         private businessesRepository: Repository<Business>,
     ) { }
 
-<<<<<<< HEAD
     async findAll(options: any = {}): Promise<{ data: Business[], total: number, page: number, limit: number }> {
         const { limit = 10, page = 1, sort = 'createdAt' } = options;
         const [data, total] = await this.businessesRepository.findAndCount({
@@ -27,16 +26,6 @@ export class BusinessesService {
             page: Number(page),
             limit: Number(limit)
         };
-=======
-    async findAll(options: any = {}): Promise<Business[]> {
-        const { limit = 10, sort = 'createdAt' } = options;
-        return this.businessesRepository.find({
-            where: { status: BusinessStatus.APPROVED },
-            take: limit,
-            order: { [sort]: 'DESC' },
-            relations: ['category']
-        });
->>>>>>> 56a7fdc8c2ec25ddd88e6b87bd06bfa1d2117cca
     }
 
     async findOne(id: string): Promise<Business | null> {
@@ -46,7 +35,6 @@ export class BusinessesService {
         });
     }
 
-<<<<<<< HEAD
     async findBySlug(slug: string): Promise<Business | null> {
         return this.businessesRepository.findOne({
             where: { slug },
@@ -89,13 +77,4 @@ export class BusinessesService {
             limit: Number(limit)
         };
     }
-=======
-    async search(params: any): Promise<Business[]> {
-        // Simple search implementation
-        return this.businessesRepository.find({
-            where: { status: BusinessStatus.APPROVED },
-            relations: ['category']
-        });
-    }
->>>>>>> 56a7fdc8c2ec25ddd88e6b87bd06bfa1d2117cca
 }

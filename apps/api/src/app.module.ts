@@ -7,10 +7,7 @@ import { UsersModule } from './users/users.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { BusinessesModule } from './modules/businesses/businesses.module';
 import { AuthModule } from './modules/auth/auth.module';
-<<<<<<< HEAD
 import { CitiesModule } from './modules/cities/cities.module';
-=======
->>>>>>> 56a7fdc8c2ec25ddd88e6b87bd06bfa1d2117cca
 import { NotificationsGateway } from './gateways/notifications.gateway';
 
 @Module({
@@ -21,31 +18,45 @@ import { NotificationsGateway } from './gateways/notifications.gateway';
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('DB_HOST', 'localhost'),
-        port: configService.get<number>('DB_PORT', 5432),
-        username: configService.get<string>('DB_USERNAME', 'postgres'),
-<<<<<<< HEAD
-        password: configService.get<string>('DB_PASSWORD', ''),
-=======
-        password: configService.get<string>('DB_PASSWORD', '5432'),
->>>>>>> 56a7fdc8c2ec25ddd88e6b87bd06bfa1d2117cca
-        database: configService.get<string>('DB_DATABASE', 'business_saas_db'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: false, // Changed to false - using manual migrations
-        logging: configService.get<string>('NODE_ENV') === 'development',
-      }),
+      useFactory: (configService: ConfigService) => {
+        const url = configService.get<string>('DATABASE_URL');
+        if (url) {
+          return {
+            type: 'postgres',
+            url,
+            entities: [__dirname + '/**/*.entity{.ts,.js}'],
+            synchronize: false,
+            logging: configService.get<string>('NODE_ENV') === 'development',
+            ssl: { rejectUnauthorized: false },
+            extra: {
+              max: 20,
+              connectionTimeoutMillis: 30000,
+              keepalives: true,
+              keepalives_idle: 60,
+            },
+          };
+        }
+
+        return {
+          type: 'postgres',
+          host: configService.get<string>('DB_HOST', 'localhost'),
+          port: configService.get<number>('DB_PORT', 5432),
+          username: configService.get<string>('DB_USERNAME', 'postgres'),
+          password: configService.get<string>('DB_PASSWORD', '5432'),
+          database: configService.get<string>('DB_DATABASE', 'business_saas_db'),
+          entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          synchronize: false,
+          logging: configService.get<string>('NODE_ENV') === 'development',
+          ssl: configService.get<string>('DB_SSL') === 'true' ? { rejectUnauthorized: false } : false,
+        };
+      },
       inject: [ConfigService],
     }),
     UsersModule,
     CategoriesModule,
     BusinessesModule,
     AuthModule,
-<<<<<<< HEAD
     CitiesModule,
-=======
->>>>>>> 56a7fdc8c2ec25ddd88e6b87bd06bfa1d2117cca
   ],
   controllers: [AppController],
   providers: [AppService, NotificationsGateway],

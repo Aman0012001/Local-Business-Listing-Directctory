@@ -41,7 +41,6 @@ export class CategoriesService implements OnModuleInit {
         });
     }
 
-<<<<<<< HEAD
     async getPopular(limit: number): Promise<Category[]> {
         // In a real app, this would be based on businessCount or views
         // For now, we return categories with business counts
@@ -61,9 +60,6 @@ export class CategoriesService implements OnModuleInit {
     async findBySlug(slug: string): Promise<Category | null> {
         return this.categoriesRepository.findOne({ where: { slug, isActive: true } });
     }
-
-=======
->>>>>>> 56a7fdc8c2ec25ddd88e6b87bd06bfa1d2117cca
     async findOne(id: string): Promise<Category | null> {
         return this.categoriesRepository.findOne({ where: { id } });
     }

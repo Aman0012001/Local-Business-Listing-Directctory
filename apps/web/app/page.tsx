@@ -326,22 +326,20 @@ export default function HomePage() {
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
-                        {[
-                            { name: 'Karachi', img: 'https://images.unsplash.com/photo-1563280044-dc6e5d62f86a?auto=format&fit=crop&q=80&w=400' },
-                            { name: 'Lahore', img: 'https://images.unsplash.com/photo-1595180632314-1b4731336a5c?auto=format&fit=crop&q=80&w=400' },
-                            { name: 'Islamabad', img: 'https://images.unsplash.com/photo-1595180632314-1b4731336a5c?auto=format&fit=crop&q=80&w=400' },
-                            { name: 'Faisalabad', img: 'https://images.unsplash.com/photo-1616854125134-9721752b0200?auto=format&fit=crop&q=80&w=400' },
-                            { name: 'Rawalpindi', img: 'https://images.unsplash.com/photo-1627993416954-5a396264906a?auto=format&fit=crop&q=80&w=400' }
-                        ].map((city, idx) => (
+                        {popularCities.slice(0, 5).map((city, idx) => (
                             <motion.div
-                                key={city.name}
+                                key={city.id}
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 whileInView={{ opacity: 1, scale: 1 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: idx * 0.1 }}
                             >
                                 <Link href={`/search?city=${city.name}`} className="relative h-48 rounded-2xl overflow-hidden block group shadow-lg">
-                                    <img src={city.img} alt={city.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 brightness-75 group-hover:brightness-90" />
+                                    <img
+                                        src={city.imageUrl || 'https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&q=80&w=400'}
+                                        alt={city.name}
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 brightness-75 group-hover:brightness-90"
+                                    />
                                     <div className="absolute inset-x-0 bottom-6 text-center">
                                         <span className="text-white text-xl font-black drop-shadow-lg tracking-tight">{city.name}</span>
                                     </div>
