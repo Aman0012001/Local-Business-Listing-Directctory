@@ -34,8 +34,8 @@ export default function Footer() {
                     <div>
                         <h4 className="font-bold text-[#112D4E] mb-5 uppercase tracking-wider text-xs">For Vendors</h4>
                         <ul className="space-y-3 text-sm text-slate-600 font-bold">
-                            <li><Link href="/vendor/register" className="hover:text-[#FF7A30] transition-colors">Add Business</Link></li>
-                            <li><Link href="/vendor/login" className="hover:text-[#FF7A30] transition-colors">Vendor Login</Link></li>
+                            <li><Link href="/register?role=vendor" className="hover:text-[#FF7A30] transition-colors">Add Business</Link></li>
+                            <li><Link href="/login" className="hover:text-[#FF7A30] transition-colors">Vendor Login</Link></li>
                             <li><Link href="/pricing" className="hover:text-[#FF7A30] transition-colors">Pricing Plans</Link></li>
                         </ul>
                     </div>

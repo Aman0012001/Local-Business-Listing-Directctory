@@ -99,11 +99,11 @@ export class CreateBusinessDto {
     @MaxLength(100)
     state: string;
 
-    @ApiPropertyOptional({ example: 'USA', default: 'India' })
+    @ApiPropertyOptional({ example: 'Pakistan', default: 'Pakistan' })
     @IsOptional()
     @IsString()
     @MaxLength(100)
-    country?: string = 'India';
+    country?: string = 'Pakistan';
 
     @ApiProperty({ example: '10001' })
     @IsString()

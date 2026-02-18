@@ -75,7 +75,7 @@ export class Business {
     @Column({ length: 100, nullable: true })
     state: string;
 
-    @Column({ length: 100, default: 'India', nullable: true })
+    @Column({ length: 100, default: 'Pakistan', nullable: true })
     country: string;
 
     @Column({ length: 10, nullable: true })

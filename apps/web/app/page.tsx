@@ -60,7 +60,7 @@ export default function HomePage() {
             <div className="min-h-screen flex items-center justify-center bg-white">
                 <div className="flex flex-col items-center gap-4">
                     <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#FF7A30]" />
-                    <p className="text-slate-500 font-bold animate-pulse">Loading Trusted Local Businesses...</p>
+                    <p className="text-slate-500 font-bold animate-pulse">Loading Trusted </p>
                 </div>
             </div>
         );
@@ -327,11 +327,11 @@ export default function HomePage() {
 
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
                         {[
-                            { name: 'Delhi', img: 'https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&q=80&w=400' },
-                            { name: 'Mumbai', img: 'https://images.unsplash.com/photo-1566552881560-0be862a7c445?auto=format&fit=crop&q=80&w=400' },
-                            { name: 'Chandigarh', img: 'https://images.unsplash.com/photo-1622322306353-066318995a94?auto=format&fit=crop&q=80&w=400' },
-                            { name: 'Kangra', img: 'https://images.unsplash.com/photo-1598324789736-4861f89564a0?auto=format&fit=crop&q=80&w=400' },
-                            { name: 'Dharamshala', img: 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&q=80&w=400' }
+                            { name: 'Karachi', img: 'https://images.unsplash.com/photo-1563280044-dc6e5d62f86a?auto=format&fit=crop&q=80&w=400' },
+                            { name: 'Lahore', img: 'https://images.unsplash.com/photo-1595180632314-1b4731336a5c?auto=format&fit=crop&q=80&w=400' },
+                            { name: 'Islamabad', img: 'https://images.unsplash.com/photo-1595180632314-1b4731336a5c?auto=format&fit=crop&q=80&w=400' },
+                            { name: 'Faisalabad', img: 'https://images.unsplash.com/photo-1616854125134-9721752b0200?auto=format&fit=crop&q=80&w=400' },
+                            { name: 'Rawalpindi', img: 'https://images.unsplash.com/photo-1627993416954-5a396264906a?auto=format&fit=crop&q=80&w=400' }
                         ].map((city, idx) => (
                             <motion.div
                                 key={city.name}
@@ -368,9 +368,9 @@ export default function HomePage() {
 
                     <div className="grid md:grid-cols-3 gap-10">
                         {[
-                            { name: 'Amit S.', location: 'Mumbai', text: '“Found a great plumber in minutes. Highly recommend!”', img: 'https://i.pravatar.cc/150?u=amit' },
-                            { name: 'Neha R.', location: 'Delhi', text: '“Excellent service. Easy to find and contact businesses.”', img: 'https://i.pravatar.cc/150?u=neha' },
-                            { name: 'Rahul K.', location: 'Chandigarh', text: '“Trusted and reliable listings. Very satisfied.”', img: 'https://i.pravatar.cc/150?u=rahul' }
+                            { name: 'Ahmed S.', location: 'Karachi', text: '“Found a great plumber in Karachi in minutes. Highly recommend!”', img: 'https://i.pravatar.cc/150?u=ahmed' },
+                            { name: 'Zainab R.', location: 'Lahore', text: '“Excellent service. Easy to find and contact businesses in Lahore.”', img: 'https://i.pravatar.cc/150?u=zainab' },
+                            { name: 'Bilal K.', location: 'Islamabad', text: '“Trusted and reliable listings. Best platform for Pakistan.”', img: 'https://i.pravatar.cc/150?u=bilal' }
                         ].map((rev, i) => (
                             <motion.div
                                 key={i}
@@ -408,7 +408,7 @@ export default function HomePage() {
                         </div>
 
                         <div className="relative z-10 shrink-0">
-                            <Link href="/vendor/register" className="bg-gradient-to-r from-[#FF7A30] to-[#FF9050] hover:from-[#E86920] hover:to-[#FF7A30] text-white px-10 py-4 rounded-xl font-bold text-lg md:text-xl transition-all shadow-[0_10px_20px_-5px_rgba(255,122,48,0.4)] active:scale-95 whitespace-nowrap flex items-center justify-center border border-white/10">
+                            <Link href="/register?role=vendor" className="bg-gradient-to-r from-[#FF7A30] to-[#FF9050] hover:from-[#E86920] hover:to-[#FF7A30] text-white px-10 py-4 rounded-xl font-bold text-lg md:text-xl transition-all shadow-[0_10px_20px_-5px_rgba(255,122,48,0.4)] active:scale-95 whitespace-nowrap flex items-center justify-center border border-white/10">
                                 Add Your Business
                             </Link>
                         </div>

@@ -116,7 +116,7 @@ CREATE TABLE businesses (
     address TEXT NOT NULL,
     city VARCHAR(100) NOT NULL,
     state VARCHAR(100) NOT NULL,
-    country VARCHAR(100) DEFAULT 'India',
+    country VARCHAR(100) DEFAULT 'Pakistan',
     pincode VARCHAR(10) NOT NULL,
     latitude DECIMAL(10, 8) NOT NULL,
     longitude DECIMAL(11, 8) NOT NULL,
