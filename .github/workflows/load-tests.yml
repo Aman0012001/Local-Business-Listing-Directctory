@@ -1,0 +1,57 @@
+name: Nightly Load Tests
+
+on:
+    schedule:
+        - cron: "0 2 * * *" # Run at 02:00 AM UTC every night
+    workflow_dispatch: # Allow manual trigger
+        inputs:
+            environment:
+                description: "Environment to test"
+                required: true
+                default: "staging"
+                type: choice
+                options:
+                    - staging
+                    - production
+
+jobs:
+    load-test:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v4
+
+            - name: Install k6
+              run: |
+                  sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+                  echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+                  sudo apt-get update
+                  sudo apt-get install k6
+
+            - name: Run k6 Staging Load Test
+              if: github.event.inputs.environment == 'staging' || github.event_name == 'schedule'
+              run: k6 run -e API_URL=${{ secrets.STAGING_API_URL }} tests/load/ci-suite.js
+              continue-on-error: false
+
+            - name: Run k6 Production Load Test (Limited)
+              if: github.event.inputs.environment == 'production'
+              run: |
+                  # Use reduced user count for prod safety
+                  k6 run -e API_URL=${{ secrets.PROD_API_URL }} --vus 5 --duration 1m tests/load/ci-suite.js
+              continue-on-error: false
+
+            - name: Upload Load Test Report
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: k6-load-test-report
+                  path: summary.html
+
+            - name: Slack Notification on Failure
+              if: failure()
+              uses: rtCamp/action-slack-notify@v2
+              env:
+                  SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+                  SLACK_COLOR: "#FF0000"
+                  SLACK_TITLE: "Nightly Load Test Failed"
+                  SLACK_MESSAGE: "Thresholds breached for Aura Platform. Check GitHub Artifacts for details."

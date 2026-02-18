@@ -1,0 +1,128 @@
+# Quick Start: PostgreSQL Database Setup
+
+## 🚀 Fastest Way to Get Started
+
+### 1. **Update Your Password**
+Edit `.env` file and replace `your_password_here` with your actual PostgreSQL password:
+```env
+DB_PASSWORD=your_actual_password
+```
+
+### 2. **Create the Database**
+
+**Option A - Automated (Recommended):**
+```powershell
+.\setup-database.ps1
+```
+
+**Option B - Manual:**
+```bash
+psql -U postgres
+CREATE DATABASE business_saas_db;
+\q
+```
+
+### 3. **Start the Application**
+```bash
+npm run start:dev
+```
+
+### 4. **Test the Connection**
+Open your browser or use curl:
+```bash
+curl http://localhost:3000/users
+```
+
+## 📁 What Was Created
+
+```
+apps/api/
+├── .env                          # Environment variables (UPDATE PASSWORD!)
+├── .gitignore                    # Prevents .env from being committed
+├── src/
+│   ├── config/
+│   │   └── typeorm.config.ts    # Database configuration
+│   ├── entities/
+│   │   └── user.entity.ts       # User database model
+│   ├── users/
+│   │   ├── users.module.ts      # Users feature module
+│   │   ├── users.controller.ts  # REST API endpoints
+│   │   └── users.service.ts     # Business logic
+│   └── app.module.ts            # Updated with database connection
+├── DATABASE_SETUP.md            # Detailed setup guide
+├── create-database.sql          # SQL script for manual setup
+└── setup-database.ps1           # PowerShell automation script
+```
+
+## 🔧 Configuration
+
+### Environment Variables (.env)
+```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=YOUR_PASSWORD_HERE    # ⚠️ CHANGE THIS!
+DB_DATABASE=business_saas_db
+PORT=3000
+NODE_ENV=development
+```
+
+## 🎯 API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/users` | Get all users |
+| GET | `/users/:id` | Get user by ID |
+| POST | `/users` | Create new user |
+| PUT | `/users/:id` | Update user |
+| DELETE | `/users/:id` | Delete user |
+
+### Example: Create a User
+```bash
+curl -X POST http://localhost:3000/users \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john@example.com",
+    "name": "John Doe",
+    "phone": "1234567890"
+  }'
+```
+
+## ✅ Verification Checklist
+
+- [ ] PostgreSQL is installed and running
+- [ ] Database `business_saas_db` is created
+- [ ] `.env` file has correct password
+- [ ] Application starts without errors
+- [ ] Can access http://localhost:3000/users
+- [ ] Can create a user via POST request
+
+## 🐛 Common Issues
+
+### "password authentication failed"
+→ Check your password in `.env` file
+
+### "database does not exist"
+→ Run `.\setup-database.ps1` or create manually
+
+### "connection refused"
+→ Ensure PostgreSQL service is running
+
+## 📚 Next Steps
+
+1. **Read DATABASE_SETUP.md** for detailed documentation
+2. **Add more entities** in `src/entities/`
+3. **Create more modules** following the users module pattern
+4. **Add authentication** (JWT, sessions, etc.)
+5. **Add validation** using class-validator
+
+## 🔐 Security Notes
+
+- ⚠️ Never commit `.env` file to git
+- ⚠️ Use strong passwords for production
+- ⚠️ Disable `synchronize` in production
+- ⚠️ Use migrations for schema changes in production
+
+---
+
+**Need help?** Check `DATABASE_SETUP.md` for comprehensive documentation.

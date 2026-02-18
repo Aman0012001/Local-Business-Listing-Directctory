@@ -1,0 +1,61 @@
+---
+- name: Post-Provision Configuration
+  hosts: aura_servers
+  become: yes
+  vars:
+    app_dir: /opt/aura-platform
+
+  tasks:
+    - name: Ensure Docker is running
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Copy Docker Compose file
+      copy:
+        src: ../../docker-compose.yml
+        dest: "{{ app_dir }}/docker-compose.yml"
+        owner: ubuntu
+        group: ubuntu
+        mode: "0644"
+
+    - name: Ensure Nginx directory exists
+      file:
+        path: "{{ app_dir }}/nginx/ssl"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: "0755"
+        recurse: yes
+
+    - name: Pull Docker images
+      community.docker.docker_compose:
+        project_src: "{{ app_dir }}"
+        state: present
+        pull: yes
+
+    - name: Set up more aggressive firewall rules (optional)
+      ufw:
+        rule: limit
+        port: ssh
+        proto: tcp
+
+    - name: Log rotation for Docker
+      copy:
+        dest: /etc/docker/daemon.json
+        content: |
+          {
+            "log-driver": "json-file",
+            "log-opts": {
+              "max-size": "10m",
+              "max-file": "3"
+            }
+          }
+      notify: restart docker
+
+  handlers:
+    - name: restart docker
+      systemd:
+        name: docker
+        state: restarted
