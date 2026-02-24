@@ -226,7 +226,7 @@ export default function HomePage() {
                                     viewport={{ once: true }}
                                     transition={{ delay: idx * 0.05 }}
                                 >
-                                    <Link href={`/search?category=${cat.slug}`} className="group block">
+                                    <Link href={`/categories/${cat.slug}`} className="group block">
                                         <div className="bg-slate-50 p-8 rounded-2xl border border-slate-100 flex items-center gap-6 hover:bg-white hover:shadow-2xl hover:shadow-blue-500/5 hover:-translate-y-1 transition-all duration-500">
                                             <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center group-hover:border-blue-200 group-hover:bg-blue-50/30 transition-all">
                                                 {iconMap[cat.slug] || <TrendingUp className="w-8 h-8 text-blue-600" />}
@@ -414,12 +414,6 @@ export default function HomePage() {
                 </div>
             </section>
 
-            <div className="max-w-7xl mx-auto px-4 py-12 text-center text-slate-400 text-sm font-bold uppercase tracking-widest flex items-center justify-center flex-wrap gap-12">
-                <Link href="/about" className="hover:text-blue-600 transition-colors">About Us</Link>
-                <Link href="/categories" className="hover:text-blue-600 transition-colors">Categories</Link>
-                <Link href="/contact" className="hover:text-blue-600 transition-colors">Contact</Link>
-                <Link href="/privacy" className="hover:text-blue-600 transition-colors">Privacy Policy</Link>
-            </div>
 
             <Footer />
         </div>

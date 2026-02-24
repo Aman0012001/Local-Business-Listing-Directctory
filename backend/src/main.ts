@@ -10,7 +10,14 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule, { rawBody: true });
 
     // Security and Performance
-    app.use(helmet());
+    app.use(helmet({
+        contentSecurityPolicy: {
+            directives: {
+                ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+                'upgrade-insecure-requests': null,
+            },
+        },
+    }));
     app.use(compression());
 
     // Enable shutdown hooks

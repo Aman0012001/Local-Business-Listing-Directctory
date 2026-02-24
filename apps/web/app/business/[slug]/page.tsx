@@ -10,19 +10,38 @@ import Navbar from '../../../components/Navbar';
 import Footer from '../../../components/Footer';
 import Link from 'next/link';
 import { api } from '../../../lib/api';
-import { Business } from '../../../types/api';
+import { Business, Review } from '../../../types/api';
+import { useAuth } from '../../../context/AuthContext';
 
 export default function BusinessDetailsPage() {
     const { slug } = useParams();
+    const { user } = useAuth();
     const [business, setBusiness] = useState<Business | null>(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('Overview');
+    const [reviews, setReviews] = useState<Review[]>([]);
+    const [isFavorite, setIsFavorite] = useState(false);
+    const [showReviewModal, setShowReviewModal] = useState(false);
+    const [reviewRating, setReviewRating] = useState(5);
+    const [reviewComment, setReviewComment] = useState('');
+    const [submittingReview, setSubmittingReview] = useState(false);
+    const [copySuccess, setCopySuccess] = useState(false);
 
     useEffect(() => {
         const loadBusiness = async () => {
             try {
                 const data = await api.businesses.getBySlug(slug as string);
                 setBusiness(data);
+
+                // Load reviews
+                const reviewsData = await api.reviews.getByBusiness(slug as string);
+                setReviews(reviewsData);
+
+                // Check if favorite
+                if (user) {
+                    const favs = await api.users.getFavorites();
+                    setIsFavorite(favs.data.some(fav => fav.id === data.id));
+                }
             } catch (err) {
                 console.error('Failed to load business details:', err);
             } finally {
@@ -30,7 +49,79 @@ export default function BusinessDetailsPage() {
             }
         };
         if (slug) loadBusiness();
-    }, [slug]);
+    }, [slug, user]);
+
+    const handleLike = async () => {
+        if (!user) {
+            alert('Please login to add to favorites');
+            return;
+        }
+        if (!business) return;
+
+        try {
+            if (isFavorite) {
+                await api.users.removeFavorite(business.id);
+                setIsFavorite(false);
+            } else {
+                await api.users.addFavorite(business.id);
+                setIsFavorite(true);
+            }
+        } catch (err) {
+            console.error('Failed to toggle favorite:', err);
+        }
+    };
+
+    const handleShare = async () => {
+        const shareData = {
+            title: business?.name,
+            text: business?.shortDescription || business?.description,
+            url: window.location.href,
+        };
+
+        if (navigator.share) {
+            try {
+                await navigator.share(shareData);
+            } catch (err) {
+                console.error('Share failed:', err);
+            }
+        } else {
+            try {
+                await navigator.clipboard.writeText(window.location.href);
+                setCopySuccess(true);
+                setTimeout(() => setCopySuccess(false), 2000);
+            } catch (err) {
+                console.error('Clipboard copy failed:', err);
+            }
+        }
+    };
+
+    const handleReviewSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!user) {
+            alert('Please login to write a review');
+            return;
+        }
+        if (!business) return;
+
+        setSubmittingReview(true);
+        try {
+            await api.reviews.create({
+                businessId: business.id,
+                rating: reviewRating,
+                comment: reviewComment
+            });
+            // Refresh reviews
+            const reviewsData = await api.reviews.getByBusiness(slug as string);
+            setReviews(reviewsData);
+            setShowReviewModal(false);
+            setReviewComment('');
+            setReviewRating(5);
+        } catch (err: any) {
+            alert(err.message || 'Failed to submit review');
+        } finally {
+            setSubmittingReview(false);
+        }
+    };
 
     if (loading) return <div className="min-h-screen bg-white"><Navbar /><div className="max-w-7xl mx-auto px-4 py-20 text-center text-slate-400">Loading business details...</div></div>;
     if (!business) return <div className="min-h-screen bg-white"><Navbar /><div className="max-w-7xl mx-auto px-4 py-20 text-center text-slate-400">Business not found.</div></div>;
@@ -79,8 +170,23 @@ export default function BusinessDetailsPage() {
                             </div>
 
                             <div className="flex items-center gap-3">
-                                <button className="p-3 border border-slate-200 rounded-2xl hover:bg-slate-50 transition-colors"><Heart className="w-5 h-5" /></button>
-                                <button className="p-3 border border-slate-200 rounded-2xl hover:bg-slate-50 transition-colors"><Share2 className="w-5 h-5" /></button>
+                                <button
+                                    onClick={handleLike}
+                                    className={`p-3 border rounded-2xl transition-all ${isFavorite ? 'bg-rose-50 border-rose-100 text-rose-500' : 'border-slate-200 text-slate-400 hover:bg-slate-50'}`}
+                                >
+                                    <Heart className={`w-5 h-5 ${isFavorite ? 'fill-rose-500' : ''}`} />
+                                </button>
+                                <button
+                                    onClick={handleShare}
+                                    className="p-3 border border-slate-200 rounded-2xl hover:bg-slate-50 transition-colors relative"
+                                >
+                                    <Share2 className="w-5 h-5 text-slate-400" />
+                                    {copySuccess && (
+                                        <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1 bg-slate-900 text-white text-[10px] rounded-lg whitespace-nowrap animate-in fade-in slide-in-from-bottom-2">
+                                            Link Copied!
+                                        </div>
+                                    )}
+                                </button>
                             </div>
                         </div>
 
@@ -148,15 +254,60 @@ export default function BusinessDetailsPage() {
                                 <div className="space-y-8 animate-in fade-in duration-500">
                                     <div className="flex items-center justify-between">
                                         <h3 className="text-2xl font-bold text-slate-900">Customer Reviews</h3>
-                                        <button className="px-6 py-2 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-all">Write a Review</button>
+                                        <button
+                                            onClick={() => setShowReviewModal(true)}
+                                            className="px-6 py-2 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-all"
+                                        >
+                                            Write a Review
+                                        </button>
                                     </div>
-                                    <div className="p-12 bg-slate-50 rounded-[40px] text-center border border-dashed border-slate-200">
-                                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
-                                            <MessageSquare className="w-8 h-8 text-slate-300" />
+
+                                    {reviews.length > 0 ? (
+                                        <div className="space-y-6">
+                                            {reviews.map((review) => (
+                                                <div key={review.id} className="p-8 bg-white rounded-[32px] border border-slate-100 shadow-sm transition-all hover:shadow-md">
+                                                    <div className="flex items-center justify-between mb-4">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 font-bold">
+                                                                {review.user?.firstName?.[0]}{review.user?.lastName?.[0]}
+                                                            </div>
+                                                            <div>
+                                                                <h4 className="font-bold text-slate-900">{review.user?.firstName} {review.user?.lastName}</h4>
+                                                                <div className="flex items-center gap-1 mt-0.5">
+                                                                    {[...Array(5)].map((_, i) => (
+                                                                        <Star
+                                                                            key={i}
+                                                                            className={`w-3.5 h-3.5 ${i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`}
+                                                                        />
+                                                                    ))}
+                                                                    <span className="text-[10px] text-slate-400 ml-2">{new Date(review.createdAt).toLocaleDateString()}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-slate-600 leading-relaxed italic">"{review.comment}"</p>
+
+                                                    {review.vendorResponse && (
+                                                        <div className="mt-6 p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                                                <span className="text-xs font-bold text-emerald-700">Response from Business</span>
+                                                            </div>
+                                                            <p className="text-sm text-emerald-600 italic">{review.vendorResponse}</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
                                         </div>
-                                        <h4 className="font-bold text-slate-900 mb-2">No reviews yet</h4>
-                                        <p className="text-sm text-slate-500">Be the first to share your experience with {business.name}.</p>
-                                    </div>
+                                    ) : (
+                                        <div className="p-12 bg-slate-50 rounded-[40px] text-center border border-dashed border-slate-200">
+                                            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                                                <MessageSquare className="w-8 h-8 text-slate-300" />
+                                            </div>
+                                            <h4 className="font-bold text-slate-900 mb-2">No reviews yet</h4>
+                                            <p className="text-sm text-slate-500">Be the first to share your experience with {business.name}.</p>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -248,6 +399,66 @@ export default function BusinessDetailsPage() {
             </main>
 
             <Footer />
+
+            {/* Review Modal */}
+            {showReviewModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white w-full max-w-lg rounded-[48px] p-8 shadow-2xl relative animate-in zoom-in-95 duration-300">
+                        <button
+                            onClick={() => setShowReviewModal(false)}
+                            className="absolute top-8 right-8 text-slate-400 hover:text-slate-900 transition-colors"
+                        >
+                            <span className="sr-only">Close</span>
+                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+
+                        <div className="text-center mb-8">
+                            <h3 className="text-3xl font-black text-slate-900 mb-2">Write a Review</h3>
+                            <p className="text-slate-500">Share your experience with {business.name}</p>
+                        </div>
+
+                        <form onSubmit={handleReviewSubmit} className="space-y-6">
+                            <div className="flex flex-col items-center">
+                                <label className="block text-sm font-bold text-slate-700 mb-4">How was your experience?</label>
+                                <div className="flex gap-2">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <button
+                                            key={star}
+                                            type="button"
+                                            onClick={() => setReviewRating(star)}
+                                            className="p-1 transition-transform hover:scale-110 active:scale-90"
+                                        >
+                                            <Star
+                                                className={`w-10 h-10 ${star <= reviewRating ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`}
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">Your review</label>
+                                <textarea
+                                    required
+                                    value={reviewComment}
+                                    onChange={(e) => setReviewComment(e.target.value)}
+                                    rows={4}
+                                    placeholder="Tell others what you liked or disliked..."
+                                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-3xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-slate-300 text-slate-600"
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={submittingReview}
+                                className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+                            >
+                                {submittingReview ? 'Submitting...' : 'Submit Review'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Lock, User, ArrowRight, ShieldCheck, Loader2 } from 'lucide-react';
@@ -8,7 +8,7 @@ import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { useAuth } from '../../context/AuthContext';
 
-export default function RegisterPage() {
+function RegisterForm() {
     const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -174,5 +174,17 @@ export default function RegisterPage() {
 
             <Footer />
         </div>
+    );
+}
+
+export default function RegisterPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-white flex flex-col items-center justify-center">
+                <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
+            </div>
+        }>
+            <RegisterForm />
+        </Suspense>
     );
 }

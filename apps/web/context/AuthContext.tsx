@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const login = async (credentials: any) => {
         const response = await api.auth.login(credentials);
-        localStorage.setItem('token', response.token);
+        localStorage.setItem('token', response.tokens.accessToken);
         localStorage.setItem('user', JSON.stringify(response.user));
         setUser(response.user);
         router.push('/');
@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const register = async (userData: any) => {
         const response = await api.auth.register(userData);
-        localStorage.setItem('token', response.token);
+        localStorage.setItem('token', response.tokens.accessToken);
         localStorage.setItem('user', JSON.stringify(response.user));
         setUser(response.user);
         router.push('/');

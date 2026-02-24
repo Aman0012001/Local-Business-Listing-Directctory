@@ -5,7 +5,7 @@ import {
     BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull } from 'typeorm';
+import { Repository, IsNull, ILike } from 'typeorm';
 import { Category } from '../../entities/category.entity';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -157,7 +157,7 @@ export class CategoriesService {
      */
     async findBySlug(slug: string): Promise<Category> {
         const category = await this.categoryRepository.findOne({
-            where: { slug },
+            where: { slug: ILike(slug.trim()) },
             relations: ['parent', 'subcategories', 'businesses'],
         });
 
@@ -302,18 +302,32 @@ export class CategoriesService {
      * Get popular categories (by business count)
      */
     async getPopularCategories(limit = 10): Promise<any[]> {
-        const categories = await this.categoryRepository
+        const query = this.categoryRepository
             .createQueryBuilder('category')
-            .leftJoin('category.businesses', 'business')
+            .leftJoin('category.businesses', 'business', 'business.status = :status', { status: 'approved' })
             .where('category.isActive = :isActive', { isActive: true })
-            .andWhere('business.status = :status', { status: 'approved' })
-            .select('category.*')
+            .select([
+                'category.id',
+                'category.name',
+                'category.slug',
+                'category.iconUrl',
+                'category.description'
+            ])
             .addSelect('COUNT(business.id)', 'businessCount')
             .groupBy('category.id')
-            .orderBy('businessCount', 'DESC')
-            .limit(limit)
-            .getRawMany();
+            .orderBy('COUNT(business.id)', 'DESC')
+            .addOrderBy('category.name', 'ASC')
+            .limit(limit);
 
-        return categories;
+        const results = await query.getRawMany();
+
+        return results.map(res => ({
+            id: res.category_id,
+            name: res.category_name,
+            slug: res.category_slug,
+            iconUrl: res.category_icon_url,
+            description: res.category_description,
+            businessCount: parseInt(res.businessCount || '0'),
+        }));
     }
 }

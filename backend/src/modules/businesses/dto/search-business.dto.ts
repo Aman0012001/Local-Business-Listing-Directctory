@@ -59,6 +59,11 @@ export class SearchBusinessDto extends PaginationDto {
     @IsString()
     city?: string;
 
+    @ApiPropertyOptional({ example: 'restaurants' })
+    @IsOptional()
+    @IsString()
+    categorySlug?: string;
+
     @ApiPropertyOptional({ example: 4, minimum: 1, maximum: 5 })
     @IsOptional()
     @Type(() => Number)

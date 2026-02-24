@@ -129,8 +129,14 @@ export class BusinessesService {
 
         // Category filter
         if (searchDto.categoryId) {
-            queryBuilder.andWhere('business.categoryId = :categoryId', {
+            queryBuilder.andWhere('category.id = :categoryId', {
                 categoryId: searchDto.categoryId,
+            });
+        }
+
+        if (searchDto.categorySlug) {
+            queryBuilder.andWhere('category.slug = :categorySlug', {
+                categorySlug: searchDto.categorySlug,
             });
         }
 
@@ -163,6 +169,26 @@ export class BusinessesService {
         // Verified only
         if (searchDto.verifiedOnly) {
             queryBuilder.andWhere('business.isVerified = :verified', { verified: true });
+        }
+
+        // Open Now filter
+        if (searchDto.openNow) {
+            const now = new Date();
+            const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            const currentDay = days[now.getDay()];
+            const currentTime = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+
+            queryBuilder.andWhere((qb) => {
+                const subQuery = qb
+                    .subQuery()
+                    .select('bh.businessId')
+                    .from(BusinessHours, 'bh')
+                    .where('bh.dayOfWeek = :currentDay', { currentDay })
+                    .andWhere('bh.isOpen = :isOpen', { isOpen: true })
+                    .andWhere(':currentTime BETWEEN bh.openTime AND bh.closeTime', { currentTime })
+                    .getQuery();
+                return 'business.id IN ' + subQuery;
+            });
         }
 
         /*

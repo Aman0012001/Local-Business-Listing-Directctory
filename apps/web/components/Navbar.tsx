@@ -66,23 +66,25 @@ export default function Navbar() {
                                 </button>
 
                                 {activeDropdown === 'categories' && (
-                                    <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                                        <div className="grid grid-cols-1 gap-1">
-                                            {categories.map((cat) => (
-                                                <Link
-                                                    key={cat.id}
-                                                    href={`/categories/${cat.slug}`}
-                                                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all group/item"
-                                                >
-                                                    <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover/item:bg-blue-50 group-hover/item:text-blue-500">
-                                                        <Search className="w-4 h-4" />
-                                                    </div>
-                                                    <span className="text-sm font-bold text-slate-600 group-hover/item:text-slate-900">{cat.name}</span>
+                                    <div className="absolute top-full left-0 pt-2 w-64 animate-in fade-in slide-in-from-top-2 duration-200">
+                                        <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-2">
+                                            <div className="grid grid-cols-1 gap-1">
+                                                {categories.map((cat) => (
+                                                    <Link
+                                                        key={cat.id}
+                                                        href={`/categories/${cat.slug}`}
+                                                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all group/item"
+                                                    >
+                                                        <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover/item:bg-blue-50 group-hover/item:text-blue-500">
+                                                            <Search className="w-4 h-4" />
+                                                        </div>
+                                                        <span className="text-sm font-bold text-slate-600 group-hover/item:text-slate-900">{cat.name}</span>
+                                                    </Link>
+                                                ))}
+                                                <Link href="/categories" className="mt-2 text-center py-2 text-xs font-black uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920] border-t border-slate-50 pt-3">
+                                                    View All Categories
                                                 </Link>
-                                            ))}
-                                            <Link href="/categories" className="mt-2 text-center py-2 text-xs font-black uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920] border-t border-slate-50 pt-3">
-                                                View All Categories
-                                            </Link>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
@@ -99,29 +101,31 @@ export default function Navbar() {
                                 </button>
 
                                 {activeDropdown === 'businesses' && (
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                                        <div className="grid grid-cols-1 gap-1">
-                                            <Link href="/search?filter=featured" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
-                                                <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-[#FF7A30]">
-                                                    <Building2 className="w-4 h-4" />
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-bold text-slate-900">Featured</span>
-                                                    <span className="text-[10px] text-slate-400 font-medium italic">Hand-picked best locals</span>
-                                                </div>
-                                            </Link>
-                                            <Link href="/search?filter=new" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
-                                                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
-                                                    <Search className="w-4 h-4" />
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-bold text-slate-900">Newly Added</span>
-                                                    <span className="text-[10px] text-slate-400 font-medium italic">Fresh arrivals this week</span>
-                                                </div>
-                                            </Link>
-                                            <Link href="/search" className="mt-2 text-center py-2 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 border-t border-slate-50 pt-3">
-                                                Advanced Search
-                                            </Link>
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-64 animate-in fade-in slide-in-from-top-2 duration-200">
+                                        <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-2">
+                                            <div className="grid grid-cols-1 gap-1">
+                                                <Link href="/search?filter=featured" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
+                                                    <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-[#FF7A30]">
+                                                        <Building2 className="w-4 h-4" />
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-bold text-slate-900">Featured</span>
+                                                        <span className="text-[10px] text-slate-400 font-medium italic">Hand-picked best locals</span>
+                                                    </div>
+                                                </Link>
+                                                <Link href="/search?filter=new" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
+                                                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
+                                                        <Search className="w-4 h-4" />
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-bold text-slate-900">Newly Added</span>
+                                                        <span className="text-[10px] text-slate-400 font-medium italic">Fresh arrivals this week</span>
+                                                    </div>
+                                                </Link>
+                                                <Link href="/search" className="mt-2 text-center py-2 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 border-t border-slate-50 pt-3">
+                                                    Advanced Search
+                                                </Link>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
@@ -138,23 +142,25 @@ export default function Navbar() {
                                 </button>
 
                                 {activeDropdown === 'cities' && (
-                                    <div className="absolute top-full right-0 mt-1 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                                        <div className="grid grid-cols-1 gap-1">
-                                            {cities.map((city) => (
-                                                <Link
-                                                    key={city.id}
-                                                    href={`/search?city=${city.name}`}
-                                                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item"
-                                                >
-                                                    <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover/item:text-emerald-500 group-hover/item:bg-emerald-50">
-                                                        <Globe className="w-4 h-4" />
-                                                    </div>
-                                                    <span className="text-sm font-bold text-slate-600 group-hover/item:text-slate-900">{city.name}</span>
+                                    <div className="absolute top-full right-0 pt-2 w-64 animate-in fade-in slide-in-from-top-2 duration-200">
+                                        <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-2">
+                                            <div className="grid grid-cols-1 gap-1">
+                                                {cities.map((city) => (
+                                                    <Link
+                                                        key={city.id}
+                                                        href={`/search?city=${city.name}`}
+                                                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item"
+                                                    >
+                                                        <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover/item:text-emerald-500 group-hover/item:bg-emerald-50">
+                                                            <Globe className="w-4 h-4" />
+                                                        </div>
+                                                        <span className="text-sm font-bold text-slate-600 group-hover/item:text-slate-900">{city.name}</span>
+                                                    </Link>
+                                                ))}
+                                                <Link href="/cities" className="mt-2 text-center py-2 text-xs font-black uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920] border-t border-slate-50 pt-3">
+                                                    Browse All Cities
                                                 </Link>
-                                            ))}
-                                            <Link href="/cities" className="mt-2 text-center py-2 text-xs font-black uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920] border-t border-slate-50 pt-3">
-                                                Browse All Cities
-                                            </Link>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
@@ -210,6 +216,7 @@ export default function Navbar() {
                             {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                         </button>
                     </div>
+
                 </div>
             </div>
 

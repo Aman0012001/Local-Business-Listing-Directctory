@@ -44,9 +44,25 @@ export interface Business {
     website?: string;
 }
 
+export interface Review {
+    id: string;
+    rating: number;
+    comment: string;
+    user: {
+        firstName: string;
+        lastName: string;
+    };
+    vendorResponse?: string;
+    createdAt: string;
+}
+
 export interface SearchResponse {
     data: Business[];
-    total: number;
-    page: number;
-    limit: number;
+    meta: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+        hasMore: boolean;
+    };
 }
