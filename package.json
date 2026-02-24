@@ -19,14 +19,12 @@
   },
   "devDependencies": {
     "@alloc/quick-lru": "^5.2.0",
-    "next": "^14.2.3",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
     "tailwindcss": "^3.4.1",
     "turbo": "latest"
   },
   "overrides": {
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "rxjs": "7.8.1"
   }
 }
