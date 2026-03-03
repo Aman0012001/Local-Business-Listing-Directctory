@@ -2,7 +2,7 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Business } from '../../entities/business.entity';
+import { Listing } from '../../entities/business.entity';
 
 @Injectable()
 export class SearchService implements OnModuleInit {
@@ -10,8 +10,8 @@ export class SearchService implements OnModuleInit {
 
     constructor(
         private readonly elasticsearchService: ElasticsearchService,
-        @InjectRepository(Business)
-        private readonly businessRepository: Repository<Business>,
+        @InjectRepository(Listing)
+        private readonly businessRepository: Repository<Listing>,
     ) { }
 
     async onModuleInit() {
@@ -56,13 +56,13 @@ export class SearchService implements OnModuleInit {
     /**
      * Index a single business
      */
-    async indexBusiness(business: Business) {
+    async indexBusiness(business: Listing) {
         return this.elasticsearchService.index({
             index: this.INDEX_NAME,
             id: business.id,
             body: {
                 id: business.id,
-                name: business.name,
+                title: business.title,
                 description: business.description,
                 category: business.category?.name,
                 city: business.city,
@@ -99,7 +99,7 @@ export class SearchService implements OnModuleInit {
                     must: {
                         multi_match: {
                             query,
-                            fields: ['name^3', 'description', 'category'],
+                            fields: ['title^3', 'description', 'category'],
                         },
                     },
                     filter: filters,

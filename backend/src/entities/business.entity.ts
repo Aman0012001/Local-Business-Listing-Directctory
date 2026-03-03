@@ -9,13 +9,14 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
+import { Expose } from 'class-transformer';
 import { Vendor } from './vendor.entity';
 import { Category } from './category.entity';
 import { BusinessHours } from './business-hours.entity';
 import { BusinessAmenity } from './business-amenity.entity';
 import { Review } from './review.entity';
 import { Lead } from './lead.entity';
-import { Favorite } from './favorite.entity';
+import { SavedListing } from './favorite.entity';
 
 export enum BusinessStatus {
     PENDING = 'pending',
@@ -26,7 +27,7 @@ export enum BusinessStatus {
 
 @Entity('businesses')
 @Index(['latitude', 'longitude'])
-export class Business {
+export class Listing {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
@@ -37,9 +38,19 @@ export class Business {
     categoryId: string;
 
     // Basic Info
-    @Column()
+    @Column({ name: 'name' })
     @Index()
-    name: string;
+    title: string;
+
+    @Expose()
+    get name(): string {
+        return this.title;
+    }
+
+    @Expose()
+    get businessName(): string {
+        return this.title;
+    }
 
     @Column({ unique: true })
     @Index()
@@ -175,6 +186,25 @@ export class Business {
     @Column({ name: 'rejection_reason', nullable: true, type: 'text' })
     rejectionReason: string;
 
+    // Offer / Promo
+    @Column({ name: 'has_offer', default: false })
+    hasOffer: boolean;
+
+    @Column({ name: 'offer_title', nullable: true, length: 150 })
+    offerTitle: string;
+
+    @Column({ name: 'offer_description', nullable: true, type: 'text' })
+    offerDescription: string;
+
+    @Column({ name: 'offer_badge', nullable: true, length: 60 })
+    offerBadge: string;
+
+    @Column({ name: 'offer_expires_at', nullable: true, type: 'timestamp' })
+    offerExpiresAt: Date;
+
+    @Column({ name: 'offer_banner_url', nullable: true, type: 'text' })
+    offerBannerUrl: string;
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
@@ -202,6 +232,6 @@ export class Business {
     @OneToMany(() => Lead, (lead) => lead.business)
     leads: Lead[];
 
-    @OneToMany(() => Favorite, (favorite) => favorite.business)
-    favorites: Favorite[];
+    @OneToMany(() => SavedListing, (savedListing) => savedListing.business)
+    savedListings: SavedListing[];
 }

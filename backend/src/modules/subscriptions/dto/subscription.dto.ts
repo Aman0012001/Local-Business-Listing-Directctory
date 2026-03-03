@@ -43,10 +43,6 @@ export class CreatePlanDto {
     @IsOptional()
     isSponsored?: boolean = false;
 
-    @ApiPropertyOptional({ example: 'price_123...' })
-    @IsString()
-    @IsOptional()
-    stripePriceId?: string;
 }
 
 export class CheckoutDto {

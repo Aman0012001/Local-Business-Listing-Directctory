@@ -6,7 +6,12 @@ import {
     MaxLength,
     MinLength,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+// Helper: treat empty strings the same as undefined so @IsEmail() etc. are skipped
+const trimToUndefined = ({ value }: { value: any }) =>
+    typeof value === 'string' && value.trim() === '' ? undefined : value;
 
 export class CreateVendorDto {
     @ApiProperty({ example: 'My Awesome Shop' })
@@ -17,6 +22,7 @@ export class CreateVendorDto {
 
     @ApiPropertyOptional({ example: 'contact@mybusiness.com' })
     @IsOptional()
+    @Transform(trimToUndefined)
     @IsEmail()
     businessEmail?: string;
 
@@ -27,16 +33,19 @@ export class CreateVendorDto {
 
     @ApiPropertyOptional({ example: '123 Business Rd, Office 4B' })
     @IsOptional()
+    @Transform(trimToUndefined)
     @IsString()
     businessAddress?: string;
 
     @ApiPropertyOptional({ example: 'GSTIN123456789' })
     @IsOptional()
+    @Transform(trimToUndefined)
     @IsString()
     gstNumber?: string;
 
     @ApiPropertyOptional({ example: 'PANABCDE1234' })
     @IsOptional()
+    @Transform(trimToUndefined)
     @IsString()
     panNumber?: string;
 }
@@ -44,21 +53,37 @@ export class CreateVendorDto {
 export class UpdateVendorDto {
     @ApiPropertyOptional({ example: 'Updated Business Name' })
     @IsOptional()
+    @Transform(trimToUndefined)
     @IsString()
     businessName?: string;
 
     @ApiPropertyOptional({ example: 'newemail@business.com' })
     @IsOptional()
+    @Transform(trimToUndefined)
     @IsEmail()
     businessEmail?: string;
 
     @ApiPropertyOptional({ example: '+9876543210' })
     @IsOptional()
+    @Transform(trimToUndefined)
     @IsString()
     businessPhone?: string;
 
     @ApiPropertyOptional({ example: 'New Address' })
     @IsOptional()
+    @Transform(trimToUndefined)
     @IsString()
     businessAddress?: string;
+
+    @ApiPropertyOptional({ example: 'GSTIN123456789' })
+    @IsOptional()
+    @Transform(trimToUndefined)
+    @IsString()
+    gstNumber?: string;
+
+    @ApiPropertyOptional({ example: 'PANABCDE1234' })
+    @IsOptional()
+    @Transform(trimToUndefined)
+    @IsString()
+    panNumber?: string;
 }

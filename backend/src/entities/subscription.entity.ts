@@ -33,10 +33,6 @@ export class Subscription {
     @Index()
     planId: string;
 
-    @Column({ name: 'stripe_subscription_id', nullable: true, length: 255 })
-    @Index()
-    stripeSubscriptionId: string;
-
     @Column({
         type: 'enum',
         enum: SubscriptionStatus,

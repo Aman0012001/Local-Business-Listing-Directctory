@@ -14,7 +14,6 @@ import { User } from '../../entities/user.entity';
 import { CreatePlanDto, CheckoutDto } from './dto/subscription.dto';
 
 import { ConfigService } from '@nestjs/config';
-import { StripeService } from '../stripe/stripe.service';
 
 @Injectable()
 export class SubscriptionsService {
@@ -27,7 +26,6 @@ export class SubscriptionsService {
         private transactionRepository: Repository<Transaction>,
         @InjectRepository(Vendor)
         private vendorRepository: Repository<Vendor>,
-        private stripeService: StripeService,
         private configService: ConfigService,
     ) { }
 
@@ -47,7 +45,7 @@ export class SubscriptionsService {
     }
 
     /**
-     * Create a real Stripe checkout session
+     * Create a Mock checkout session since Stripe is removed
      */
     async createCheckoutSession(userId: string, checkoutDto: CheckoutDto) {
         const vendor = await this.vendorRepository.findOne({
@@ -58,53 +56,21 @@ export class SubscriptionsService {
 
         const plan = await this.planRepository.findOne({ where: { id: checkoutDto.planId } });
         if (!plan) throw new NotFoundException('Plan not found');
-        if (!plan.stripePriceId) throw new BadRequestException('This plan is not configured for Stripe payments');
 
-        // 1. Ensure Stripe Customer exists
-        let stripeCustomerId = vendor.stripeCustomerId;
-        if (!stripeCustomerId) {
-            if (this.configService.get('STRIPE_SECRET_KEY')) {
-                const customer = await this.stripeService.createCustomer(vendor.user.email, vendor.businessName);
-                stripeCustomerId = customer.id;
-                vendor.stripeCustomerId = stripeCustomerId;
-                await this.vendorRepository.save(vendor);
-            } else {
-                stripeCustomerId = 'MOCK-CUSTOMER-' + vendor.id;
-            }
-        }
-
-        // 2. Create Checkout Session or Mock
         const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
 
-        if (!this.configService.get('STRIPE_SECRET_KEY')) {
-            // Local Mode: Return mock success URL
-            return {
-                sessionId: 'MOCK-SESSION-' + Date.now(),
-                checkoutUrl: `${frontendUrl}/vendor/subscription/success?session_id=MOCK-SESSION-${Date.now()}&mock_plan_id=${plan.id}`,
-            };
-        }
-
-        const session = await this.stripeService.createCheckoutSession({
-            customerId: stripeCustomerId,
-            priceId: plan.stripePriceId,
-            successUrl: `${frontendUrl}/vendor/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancelUrl: `${frontendUrl}/pricing`,
-            metadata: {
-                vendorId: vendor.id,
-                planId: plan.id,
-            },
-        });
-
+        // Local Mode: Return mock success URL
         return {
-            sessionId: session.id,
-            checkoutUrl: session.url,
+            sessionId: 'MOCK-SESSION-' + Date.now(),
+            checkoutUrl: `${frontendUrl}/vendor/subscription/success?session_id=MOCK-SESSION-${Date.now()}&mock_plan_id=${plan.id}`,
         };
     }
 
+
     /**
-     * Handle Stripe Subscription Success (Webhook logic)
+     * Handle Mock Subscription Success
      */
-    async handleStripeSubscriptionSuccess(vendorId: string, planId: string, stripeSubscriptionId: string) {
+    async handleMockSubscriptionSuccess(vendorId: string, planId: string, mockSessionId: string) {
         const plan = await this.planRepository.findOne({ where: { id: planId } });
         if (!plan) throw new NotFoundException('Plan not found');
 
@@ -117,31 +83,17 @@ export class SubscriptionsService {
             { status: SubscriptionStatus.CANCELLED, cancelledAt: new Date() }
         );
 
-        // Retrieve subscription details from Stripe or Mock
-        let stripeSub: any;
-        if (stripeSubscriptionId.startsWith('MOCK-')) {
-            // Local Mode: Mock subscription data
-            const now = Math.floor(Date.now() / 1000);
-            stripeSub = {
-                current_period_start: now,
-                current_period_end: now + 30 * 24 * 60 * 60, // 30 days
-                cancel_at_period_end: false,
-                latest_invoice: 'MOCK-INV-' + Date.now(),
-                status: 'active',
-            };
-        } else {
-            stripeSub = await this.stripeService.getSubscription(stripeSubscriptionId);
-        }
+        const now = new Date();
+        const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
         const subscription = this.subscriptionRepository.create({
             vendorId,
             planId,
             status: SubscriptionStatus.ACTIVE,
-            stripeSubscriptionId,
-            startDate: new Date(stripeSub.current_period_start * 1000),
-            endDate: new Date(stripeSub.current_period_end * 1000),
+            startDate: now,
+            endDate: endDate,
             amount: plan.price,
-            autoRenew: !stripeSub.cancel_at_period_end,
+            autoRenew: true,
         });
 
         const savedSub = await this.subscriptionRepository.save(subscription);
@@ -152,51 +104,15 @@ export class SubscriptionsService {
             vendorId,
             amount: plan.price,
             status: PaymentStatus.COMPLETED,
-            paidAt: new Date(),
-            gatewayTransactionId: stripeSub.latest_invoice as string,
-            paymentGateway: 'Stripe',
-            invoiceNumber: `INV-STR-${Date.now()}`,
+            paidAt: now,
+            gatewayTransactionId: mockSessionId,
+            paymentGateway: 'Mock',
+            invoiceNumber: `INV-MOCK-${Date.now()}`,
         });
 
         await this.transactionRepository.save(transaction);
 
         return savedSub;
-    }
-
-    /**
-     * Sync subscription details from Stripe
-     */
-    async syncStripeSubscription(stripeSubscriptionId: string) {
-        const subscription = await this.subscriptionRepository.findOne({
-            where: { stripeSubscriptionId },
-        });
-        if (!subscription) return;
-
-        const stripeSub = await this.stripeService.getSubscription(stripeSubscriptionId);
-
-        subscription.endDate = new Date(stripeSub.current_period_end * 1000);
-        subscription.autoRenew = !stripeSub.cancel_at_period_end;
-
-        if (stripeSub.status === 'active') {
-            subscription.status = SubscriptionStatus.ACTIVE;
-        } else if (stripeSub.status === 'canceled' || stripeSub.status === 'unpaid') {
-            subscription.status = SubscriptionStatus.CANCELLED;
-        }
-
-        await this.subscriptionRepository.save(subscription);
-    }
-
-    /**
-     * Cancel subscription locally when deleted on Stripe
-     */
-    async cancelStripeSubscription(stripeSubscriptionId: string) {
-        await this.subscriptionRepository.update(
-            { stripeSubscriptionId },
-            {
-                status: SubscriptionStatus.CANCELLED,
-                cancelledAt: new Date()
-            }
-        );
     }
 
     /**

@@ -8,7 +8,9 @@
     "backend"
   ],
   "scripts": {
-    "dev": "npm run dev --workspaces --if-present",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev:backend": "npm run start:dev --prefix backend",
+    "dev": "concurrently \"npm run dev:web\" \"npm run dev:backend\"",
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "start": "node backend/dist/main"
@@ -27,5 +29,8 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "rxjs": "7.8.1"
+  },
+  "dependencies": {
+    "concurrently": "^9.2.1"
   }
 }

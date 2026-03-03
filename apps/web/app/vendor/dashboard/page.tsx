@@ -1,121 +1,304 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import StatsGrid from '../../../components/vendor/StatsGrid';
 import PerformanceChart from '../../../components/vendor/PerformanceChart';
 import RecentReviews from '../../../components/vendor/RecentReviews';
 import MessageCenter from '../../../components/vendor/MessageCenter';
-import { Star, Phone, ChevronRight } from 'lucide-react';
+import { Star, Phone, ChevronRight, ListTree, Heart, MessageSquare, Plus, TrendingUp, Loader2, Bell, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import Link from 'next/link';
+import { api, getImageUrl } from '../../../lib/api';
+import { Business, Review } from '../../../types/api';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const savedBusinesses = [
-    {
-        id: 1,
-        name: 'Cityscape Cafe',
-        rating: 5,
-        location: 'New York',
-        phone: '(+1) 123-456-7890',
-        image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=400'
-    },
-    {
-        id: 2,
-        name: 'Elite Fitness Gym',
-        rating: 4.5,
-        location: 'Brooklyn',
-        phone: '(+1) 123-456-7890',
-        image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=400'
-    },
-    {
-        id: 3,
-        name: 'Greenwood Dental',
-        rating: 4.8,
-        location: 'Manhattan',
-        phone: '(+1) 123-456-7890',
-        image: 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&q=80&w=400'
+export default function GenericDashboard() {
+    const { user, updateUser } = useAuth();
+    const [stats, setStats] = useState<any>(null);
+    const [savedBusinesses, setSavedBusinesses] = useState<Business[]>([]);
+    const [recentReviews, setRecentReviews] = useState<any[]>([]);
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [leads, setLeads] = useState<any[]>([]);
+    const [newLeadsCount, setNewLeadsCount] = useState(0);
+    const [loading, setLoading] = useState(true);
+
+    const isVendor = user?.role === 'vendor';
+    const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            if (!user) return;
+            try {
+                setLoading(true);
+
+                // Common data for everyone
+                const [userProfile, favoritesData] = await Promise.all([
+                    api.users.getProfile(),
+                    api.users.getFavorites()
+                ]);
+
+                setSavedBusinesses(favoritesData.data || []);
+
+                if (isVendor || isAdmin) {
+                    // Vendor/Admin specific data
+                    const [statsData, vendorProfile] = await Promise.all([
+                        api.vendors.getStats(),
+                        api.vendors.getProfile()
+                    ]);
+                    setStats(statsData);
+
+                    if (vendorProfile?.id) {
+                        const [reviewsData, leadsData] = await Promise.all([
+                            api.reviews.findAll({ vendorId: vendorProfile.id, limit: 5 }),
+                            api.leads.getForVendor({ limit: 5 })
+                        ]);
+                        setRecentReviews(reviewsData.data || []);
+                        setLeads(leadsData.data || []);
+                        setNewLeadsCount(leadsData.meta?.total || 0);
+                    }
+                } else {
+                    // Regular User specific data
+                    const [reviewsData, notifsData] = await Promise.all([
+                        api.reviews.findAll({ userId: user.id, limit: 5 }),
+                        api.users.getNotifications({ limit: 5 })
+                    ]);
+                    setRecentReviews(reviewsData.data || []);
+                    setNotifications(notifsData.data || []);
+
+                    // Simple stats for users
+                    setStats({
+                        savedCount: favoritesData.data?.length || 0,
+                        reviewsCount: reviewsData.data?.length || 0,
+                        unreadNotifs: notifsData.data?.filter((n: any) => !n.isRead).length || 0
+                    });
+                }
+
+            } catch (error) {
+                console.error('Error fetching dashboard data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchDashboardData();
+    }, [user, isVendor, isAdmin]);
+
+    const vendorStats = [
+        {
+            label: 'Total Listings',
+            value: stats?.businessCount || '0',
+            icon: ListTree,
+            color: 'bg-gradient-to-br from-[#3366CC] to-[#1144AA]',
+            shadow: 'shadow-blue-500/20'
+        },
+        {
+            label: 'Total Views',
+            value: stats?.totalViews || '0',
+            icon: Heart,
+            color: 'bg-gradient-to-br from-[#33AA88] to-[#118866]',
+            shadow: 'shadow-emerald-500/20'
+        },
+        {
+            label: 'New Leads',
+            value: String(newLeadsCount),
+            icon: MessageSquare,
+            color: 'bg-gradient-to-br from-[#FFAA33] to-[#FF8811]',
+            shadow: 'shadow-orange-500/20'
+        },
+        {
+            label: 'Total Reviews',
+            value: stats?.totalReviews || recentReviews.length || '0',
+            icon: Star,
+            color: 'bg-gradient-to-br from-[#FF6644] to-[#EE4422]',
+            shadow: 'shadow-red-500/20'
+        },
+    ];
+
+    const userStats = [
+        {
+            label: 'Saved Businesses',
+            value: String(stats?.savedCount || 0),
+            icon: Heart,
+            color: 'bg-gradient-to-br from-rose-500 to-rose-700',
+            shadow: 'shadow-rose-500/20'
+        },
+        {
+            label: 'Your Reviews',
+            value: String(stats?.reviewsCount || 0),
+            icon: Star,
+            color: 'bg-gradient-to-br from-amber-400 to-amber-600',
+            shadow: 'shadow-amber-500/20'
+        },
+        {
+            label: 'Notifications',
+            value: String(stats?.unreadNotifs || 0),
+            icon: Bell,
+            color: 'bg-gradient-to-br from-blue-500 to-blue-700',
+            shadow: 'shadow-blue-500/20'
+        },
+        {
+            label: 'Profile Status',
+            value: 'Active',
+            icon: CheckCircle2,
+            color: 'bg-gradient-to-br from-emerald-500 to-emerald-700',
+            shadow: 'shadow-emerald-500/20'
+        },
+    ];
+
+    const mappedReviews = recentReviews.map(r => ({
+        id: r.id,
+        user: r.user?.fullName || 'Anonymous',
+        location: r.business?.title || r.business?.name || 'Business',
+        rating: r.rating,
+        comment: r.comment,
+        avatar: r.user?.avatarUrl
+    }));
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh]">
+                <div className="relative">
+                    <div className="w-16 h-16 border-4 border-blue-600/20 rounded-full"></div>
+                    <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+                </div>
+                <p className="mt-6 text-slate-400 font-bold uppercase tracking-widest text-xs animate-pulse">Synchronizing Data...</p>
+            </div>
+        );
     }
-];
-
-export default function VendorDashboard() {
-    const { user } = useAuth();
 
     return (
-        <>
+        <div className="min-h-screen pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Welcome Header */}
-            <div className="mb-10 lg:mb-14">
-                <h1 className="text-3xl lg:text-5xl font-black text-slate-900 mb-3 tracking-tight">
-                    Welcome, {user?.fullName || 'Mak Smith'}!
-                </h1>
-                <p className="text-base lg:text-lg text-slate-400 font-bold tracking-tight">
-                    Access your account or create a new one.
-                </p>
-            </div>
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-10 lg:mb-14 pt-8"
+            >
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div>
+                        <h1 className="text-4xl lg:text-6xl font-black text-slate-900 mb-3 tracking-tighter">
+                            Welcome, <span className="text-blue-600 font-black">{user?.fullName?.split(' ')[0] || 'Member'}!</span>
+                        </h1>
+                        <p className="text-lg text-slate-400 font-bold tracking-tight">
+                            {isVendor ? "Here's what's happening with your business today." : "Everything you need to manage your favorite places and feedback."}
+                        </p>
+                    </div>
+                    {isVendor && (
+                        <Link href="/vendor/add-listing" className="flex items-center gap-2 px-8 py-4 bg-slate-900 text-white rounded-[16px] font-black shadow-xl shadow-slate-200 hover:scale-105 active:scale-95 transition-all w-fit">
+                            <Plus className="w-5 h-5" /> New Listing
+                        </Link>
+                    )}
+                </div>
+            </motion.div>
 
             {/* Stats Overview */}
-            <StatsGrid />
+            <div className="mb-14">
+                <StatsGrid stats={isVendor || isAdmin ? vendorStats : userStats} />
+            </div>
 
-            <div className="grid lg:grid-cols-12 gap-8 items-start">
+            <div className="grid lg:grid-cols-12 gap-10 items-start">
                 {/* Left Column - 8/12 width */}
                 <div className="lg:col-span-8 space-y-10">
 
-                    {/* Saved Businesses Section */}
-                    <section className="bg-white rounded-[40px] p-6 lg:p-10 border border-slate-100 shadow-sm relative overflow-hidden">
-                        <div className="flex items-center justify-between mb-8">
-                            <h3 className="text-xl lg:text-2xl font-black text-slate-900 tracking-tight">Businesses Saved For Later</h3>
-                            <button className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-all group">
-                                View All <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                            </button>
+                    {/* Performance Insights (Vendor Only) */}
+                    {(isVendor || isAdmin) && (
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between px-2">
+                                <h3 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                                    <TrendingUp className="w-7 h-7 text-blue-600" />
+                                    Performance Analytics
+                                </h3>
+                            </div>
+                            <div className="bg-white rounded-[16px] p-8 sm:p-10 border border-black shadow-xl shadow-slate-200/20">
+                                <PerformanceChart stats={stats} />
+                            </div>
                         </div>
-                        <div className="space-y-4">
-                            {savedBusinesses.map((biz) => (
-                                <div key={biz.id} className="group flex flex-col sm:flex-row items-center gap-6 p-5 rounded-[32px] border border-slate-50 hover:border-slate-100 hover:bg-slate-50/50 transition-all">
-                                    <div className="w-full sm:w-28 h-28 sm:h-28 rounded-2xl overflow-hidden flex-shrink-0 shadow-md">
-                                        <img src={biz.image} alt={biz.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                                    </div>
-                                    <div className="flex-grow text-center sm:text-left">
-                                        <h4 className="text-xl font-black text-slate-900 mb-1.5 group-hover:text-blue-600 transition-colors">{biz.name}</h4>
-                                        <div className="flex items-center justify-center sm:justify-start gap-4 text-xs font-bold mb-3">
-                                            <div className="flex items-center gap-1">
-                                                {[...Array(5)].map((_, i) => (
-                                                    <Star key={i} className={`w-3.5 h-3.5 ${i < Math.floor(biz.rating) ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`} />
-                                                ))}
-                                                <span className="ml-1 text-slate-900">{biz.rating}</span>
-                                            </div>
-                                            <span className="text-slate-200">|</span>
-                                            <span className="text-slate-400 uppercase tracking-widest">{biz.location}</span>
-                                        </div>
-                                        <p className="text-[13px] text-slate-400 font-bold">{biz.phone}</p>
-                                    </div>
-                                    <button className={`w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-black text-sm transition-all shadow-xl active:scale-95 whitespace-nowrap ${biz.id === 3
-                                        ? 'bg-blue-600 text-white shadow-blue-500/20 hover:bg-blue-700'
-                                        : 'bg-[#1D8E66] text-white shadow-emerald-500/20 hover:bg-emerald-700'
-                                        }`}>
-                                        <Phone className="w-4 h-4" /> Call Now
-                                    </button>
+                    )}
+
+                    {/* Saved Businesses Section (Common) */}
+                    <section className="bg-white rounded-[16px] p-8 sm:p-10 border border-black shadow-xl shadow-slate-200/20 relative overflow-hidden group">
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-rose-50 rounded-[16px] flex items-center justify-center text-rose-500 shadow-inner">
+                                    <Heart className="w-6 h-6 fill-rose-500" />
                                 </div>
-                            ))}
+                                <h3 className="text-2xl font-black text-slate-900 tracking-tight">My Saved Places</h3>
+                            </div>
+                            <Link href="/vendor/saved" className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-all group/link">
+                                View Collection <ChevronRight className="w-4 h-4 transition-transform group-hover/link:translate-x-1" />
+                            </Link>
+                        </div>
+
+                        <div className="grid sm:grid-cols-2 gap-6">
+                            {savedBusinesses.length > 0 ? (
+                                savedBusinesses.slice(0, 4).map((biz) => (
+                                    <Link key={biz.id} href={`/business/${biz.slug}`} className="flex items-center gap-5 p-4 rounded-[16px] bg-slate-50 border border-transparent hover:border-blue-500/20 hover:bg-white hover:shadow-xl transition-all group/item">
+                                        <div className="w-16 h-16 rounded-[16px] overflow-hidden flex-shrink-0 shadow-md">
+                                            <img src={getImageUrl((biz as any).coverImageUrl || (biz as any).images?.[0]) || 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=400'} alt={biz.title} className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-500" />
+                                        </div>
+                                        <div className="overflow-hidden">
+                                            <h4 className="font-black text-slate-900 truncate group-hover/item:text-blue-600 transition-colors">{biz.title}</h4>
+                                            <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                                                <span className="truncate">{biz.category?.name || 'Local'}</span>
+                                                <span className="text-slate-200">•</span>
+                                                <span className="truncate">{biz.city || 'Location'}</span>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                ))
+                            ) : (
+                                <div className="col-span-full text-center py-10 bg-slate-50 rounded-[16px] border border-dashed border-slate-200">
+                                    <p className="text-slate-400 font-bold italic">You haven't saved any businesses yet.</p>
+                                    <Link href="/search" className="inline-block mt-4 text-xs font-black text-blue-600 uppercase tracking-widest">Start Exploring</Link>
+                                </div>
+                            )}
                         </div>
                     </section>
 
-                    <div className="space-y-6">
-                        <div className="flex items-center justify-between px-2">
-                            <h3 className="text-xl lg:text-2xl font-black text-slate-900 tracking-tight">Overview of Listing Performance</h3>
-                            <button className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-all group">
-                                View All <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                            </button>
-                        </div>
-                        {/* Performance Chart */}
-                        <PerformanceChart />
-                    </div>
-
+                    {/* Pending Vendor CTA if no stats (Admin Only?) - Skipping for now to focus on User Dashboard */}
                 </div>
 
                 {/* Right Column - 4/12 width */}
-                <div className="lg:col-span-4 space-y-8 h-full">
-                    <RecentReviews />
-                    <MessageCenter />
+                <div className="lg:col-span-4 space-y-10">
+                    {/* User Notifications (User Only) */}
+                    {!isVendor && !isAdmin && (
+                        <div className="bg-white rounded-[16px] p-8 sm:p-10 border border-black shadow-xl shadow-slate-200/20">
+                            <div className="flex items-center justify-between mb-8">
+                                <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                                    <Bell className="w-6 h-6 text-blue-600" />
+                                    Alerts
+                                </h3>
+                                <Link href="/vendor/notifications" className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-blue-600">See All</Link>
+                            </div>
+                            <div className="space-y-6">
+                                {notifications.length > 0 ? (
+                                    notifications.slice(0, 4).map((notif) => (
+                                        <div key={notif.id} className="flex gap-4 group cursor-pointer">
+                                            <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${notif.isRead ? 'bg-slate-200' : 'bg-blue-600 animate-pulse'}`}></div>
+                                            <div>
+                                                <h4 className={`text-sm font-black mb-1 ${notif.isRead ? 'text-slate-600' : 'text-slate-900'}`}>{notif.title}</h4>
+                                                <p className="text-xs text-slate-400 font-medium line-clamp-2 leading-relaxed">{notif.message}</p>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-6">
+                                        <p className="text-slate-300 font-bold italic text-sm">No new notifications</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    <RecentReviews
+                        reviews={mappedReviews}
+                        loading={loading}
+                        title={isVendor || isAdmin ? "Recent Reviews" : "My Recent Reviews"}
+                    />
+
+                    {isVendor && <MessageCenter leads={leads} />}
                 </div>
             </div>
-        </>
+        </div>
     );
 }

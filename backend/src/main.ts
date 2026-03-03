@@ -1,8 +1,9 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { ValidationPipe, VersioningType, ClassSerializerInterceptor } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
+import { Reflector } from '@nestjs/core';
 import helmet from 'helmet';
 import * as compression from 'compression';
 
@@ -11,6 +12,7 @@ async function bootstrap() {
 
     // Security and Performance
     app.use(helmet({
+        crossOriginResourcePolicy: { policy: 'cross-origin' },
         contentSecurityPolicy: {
             directives: {
                 ...helmet.contentSecurityPolicy.getDefaultDirectives(),
@@ -36,8 +38,15 @@ async function bootstrap() {
 
     // CORS
     app.enableCors({
-        origin: configService.get('CORS_ORIGIN'),
-        credentials: configService.get('CORS_CREDENTIALS') === 'true',
+        origin: [
+            configService.get('CORS_ORIGIN'),
+            'http://localhost:3000',
+            'http://localhost:3001',
+            'http://127.0.0.1:3000',
+        ],
+        credentials: true,
+        methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'X-Requested-With'],
     });
 
     // Global validation pipe
@@ -51,6 +60,9 @@ async function bootstrap() {
             },
         }),
     );
+
+    // Global interceptor for virtual properties (@Expose)
+    app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
     // Swagger documentation
     if (configService.get('NODE_ENV') !== 'production') {

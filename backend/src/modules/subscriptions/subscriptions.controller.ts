@@ -73,10 +73,10 @@ export class SubscriptionsController {
     ) {
         const sub = await this.subService.getActiveSubscription(user.id);
         // This is just for development testing
-        return this.subService.handleStripeSubscriptionSuccess(
+        return this.subService.handleMockSubscriptionSuccess(
             user.vendor.id,
             planId,
-            'MOCK-STRIPE-SUB-' + Date.now()
+            'MOCK-SUB-' + Date.now()
         );
     }
 }

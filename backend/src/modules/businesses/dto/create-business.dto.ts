@@ -44,7 +44,7 @@ export class CreateBusinessDto {
     @IsString()
     @MinLength(2)
     @MaxLength(255)
-    name: string;
+    title: string;
 
     @ApiProperty({ description: 'Category UUID' })
     @IsUUID()
@@ -190,4 +190,35 @@ export class CreateBusinessDto {
     @IsOptional()
     @IsString()
     metaKeywords?: string;
+
+    // Offer / Promo Banner
+    @ApiPropertyOptional({ example: false })
+    @IsOptional()
+    hasOffer?: boolean;
+
+    @ApiPropertyOptional({ example: 'Grand Opening Sale' })
+    @IsOptional()
+    @IsString()
+    @MaxLength(150)
+    offerTitle?: string;
+
+    @ApiPropertyOptional({ example: 'Get 30% off on all services this week!' })
+    @IsOptional()
+    @IsString()
+    offerDescription?: string;
+
+    @ApiPropertyOptional({ example: '30% OFF' })
+    @IsOptional()
+    @IsString()
+    @MaxLength(60)
+    offerBadge?: string;
+
+    @ApiPropertyOptional({ example: '2025-12-31' })
+    @IsOptional()
+    offerExpiresAt?: string;
+
+    @ApiPropertyOptional({ example: 'https://cdn.example.com/banner.jpg' })
+    @IsOptional()
+    @IsString()
+    offerBannerUrl?: string;
 }

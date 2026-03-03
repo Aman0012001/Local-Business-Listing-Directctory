@@ -4,11 +4,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SearchService } from './search.service';
 import { SearchController } from './search.controller';
-import { Business } from '../../entities/business.entity';
+import { Listing } from '../../entities/business.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Business]),
+        TypeOrmModule.forFeature([Listing]),
         ElasticsearchModule.registerAsync({
             imports: [ConfigModule],
             useFactory: async (configService: ConfigService) => ({

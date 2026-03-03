@@ -68,7 +68,7 @@ function RegisterForm() {
                         </p>
                     </div>
 
-                    <div className="bg-white rounded-[40px] border border-slate-100 p-8 md:p-10 shadow-xl shadow-blue-500/5">
+                    <div className="bg-white rounded-[20px] border border-slate-100 p-8 md:p-10 shadow-xl shadow-blue-500/5">
                         <div className="flex bg-slate-100 p-1 rounded-2xl mb-8">
                             <button
                                 type="button"

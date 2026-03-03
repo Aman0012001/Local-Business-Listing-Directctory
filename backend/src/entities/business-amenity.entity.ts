@@ -6,7 +6,8 @@ import {
     ManyToOne,
     JoinColumn,
 } from 'typeorm';
-import { Business } from './business.entity';
+import { Exclude } from 'class-transformer';
+import { Listing } from './business.entity';
 import { Amenity } from './amenity.entity';
 
 @Entity('business_amenities')
@@ -21,9 +22,10 @@ export class BusinessAmenity {
     createdAt: Date;
 
     // Relations
-    @ManyToOne(() => Business, (business) => business.businessAmenities)
+    @Exclude()
+    @ManyToOne(() => Listing, (listing) => listing.businessAmenities)
     @JoinColumn({ name: 'business_id' })
-    business: Business;
+    business: Listing;
 
     @ManyToOne(() => Amenity, (amenity) => amenity.businessAmenities)
     @JoinColumn({ name: 'amenity_id' })

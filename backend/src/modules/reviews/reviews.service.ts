@@ -9,7 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Review } from '../../entities/review.entity';
 import { ReviewHelpfulVote } from '../../entities/review-helpful-vote.entity';
-import { Business } from '../../entities/business.entity';
+import { Listing } from '../../entities/business.entity';
 import { User, UserRole } from '../../entities/user.entity';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
@@ -27,8 +27,9 @@ export class ReviewsService {
         private reviewRepository: Repository<Review>,
         @InjectRepository(ReviewHelpfulVote)
         private reviewHelpfulVoteRepository: Repository<ReviewHelpfulVote>,
-        @InjectRepository(Business)
-        private businessRepository: Repository<Business>,
+        @InjectRepository(Listing)
+        private listingRepository: Repository<Listing>,
+        // Changed from Business to Listing
     ) { }
 
     /**
@@ -37,13 +38,13 @@ export class ReviewsService {
     async create(createReviewDto: CreateReviewDto, user: User): Promise<Review> {
         const { businessId } = createReviewDto;
 
-        // Verify business exists
-        const business = await this.businessRepository.findOne({
+        // Verify listing exists
+        const listing = await this.listingRepository.findOne({
             where: { id: businessId },
         });
 
-        if (!business) {
-            throw new NotFoundException('Business not found');
+        if (!listing) {
+            throw new NotFoundException('Listing not found');
         }
 
         // Check if user already reviewed this business
@@ -99,6 +100,13 @@ export class ReviewsService {
         // Filter by rating
         if (rating) {
             queryBuilder.andWhere('review.rating = :rating', { rating });
+        }
+
+        // Filter by vendor
+        if (getReviewsDto.vendorId) {
+            queryBuilder.andWhere('business.vendorId = :vendorId', {
+                vendorId: getReviewsDto.vendorId,
+            });
         }
 
         // Order by newest first
@@ -196,7 +204,7 @@ export class ReviewsService {
     ): Promise<Review> {
         const review = await this.reviewRepository.findOne({
             where: { id },
-            relations: ['business', 'business.vendor'],
+            relations: ['business', 'listing.vendor'],
         });
 
         if (!review) {
@@ -283,23 +291,23 @@ export class ReviewsService {
     async getBusinessRatingStats(idOrSlug: string) {
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
 
-        let business;
+        let listing;
 
         if (isUuid) {
-            business = await this.businessRepository.findOne({
+            listing = await this.listingRepository.findOne({
                 where: { id: idOrSlug },
             });
         } else {
-            business = await this.businessRepository.findOne({
+            listing = await this.listingRepository.findOne({
                 where: { slug: idOrSlug },
             });
         }
 
-        if (!business) {
+        if (!listing) {
             throw new NotFoundException('Business not found');
         }
 
-        const businessId = business.id;
+        const businessId = listing.id;
 
         const stats = await this.reviewRepository
             .createQueryBuilder('review')
@@ -324,8 +332,8 @@ export class ReviewsService {
         });
 
         return {
-            averageRating: business.averageRating,
-            totalReviews: business.totalReviews,
+            averageRating: listing.averageRating,
+            totalReviews: listing.totalReviews,
             ratingDistribution,
         };
     }
@@ -339,16 +347,16 @@ export class ReviewsService {
         let businessId = idOrSlug;
 
         if (!isUuid) {
-            const business = await this.businessRepository.findOne({
+            const listing = await this.listingRepository.findOne({
                 where: { slug: idOrSlug },
                 select: ['id'],
             });
 
-            if (!business) {
-                throw new NotFoundException('Business not found');
+            if (!listing) {
+                throw new NotFoundException('Listing not found');
             }
 
-            businessId = business.id;
+            businessId = listing.id;
         }
 
         return this.findAll({ ...query, businessId });
@@ -369,7 +377,7 @@ export class ReviewsService {
         const averageRating = parseFloat(result.averageRating) || 0;
         const totalReviews = parseInt(result.totalReviews) || 0;
 
-        await this.businessRepository.update(businessId, {
+        await this.listingRepository.update(businessId, {
             averageRating: Math.round(averageRating * 100) / 100, // Round to 2 decimals
             totalReviews,
         });

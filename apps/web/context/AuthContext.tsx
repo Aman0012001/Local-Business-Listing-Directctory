@@ -10,6 +10,7 @@ interface AuthContextType {
     login: (credentials: any) => Promise<void>;
     register: (userData: any) => Promise<void>;
     logout: () => void;
+    updateUser: (userData: any) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,12 +29,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
     }, []);
 
+    const redirectUser = (user: any) => {
+        if (user.role === 'admin' || user.role === 'superadmin') {
+            router.push('/admin');
+        } else {
+            router.push('/vendor/dashboard');
+        }
+    };
+
     const login = async (credentials: any) => {
         const response = await api.auth.login(credentials);
         localStorage.setItem('token', response.tokens.accessToken);
         localStorage.setItem('user', JSON.stringify(response.user));
         setUser(response.user);
-        router.push('/');
+        redirectUser(response.user);
     };
 
     const register = async (userData: any) => {
@@ -41,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('token', response.tokens.accessToken);
         localStorage.setItem('user', JSON.stringify(response.user));
         setUser(response.user);
-        router.push('/');
+        redirectUser(response.user);
     };
 
     const logout = () => {
@@ -51,8 +60,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push('/login');
     };
 
+    const updateUser = (userData: any) => {
+        const updatedUser = { ...user, ...userData };
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+    };
+
     return (
-        <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+        <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser }}>
             {children}
         </AuthContext.Provider>
     );

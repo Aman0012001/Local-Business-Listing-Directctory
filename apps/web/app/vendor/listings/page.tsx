@@ -1,156 +1,285 @@
 "use client";
 
-import React from 'react';
-import { Plus, Search, Filter, MoreVertical, Star, MapPin, Eye, MessageSquare } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Plus, Search, Filter, MoreVertical, Star, MapPin, Eye, MessageSquare, Loader2, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import Link from 'next/link';
+import AddBusinessModal from '../../../components/vendor/AddBusinessModal';
+import { useAuth } from '../../../context/AuthContext';
+import { api, getImageUrl } from '../../../lib/api';
+import { Business } from '../../../types/api';
 
-const myListings = [
-    {
-        id: 1,
-        name: 'Cityscape Cafe',
-        category: 'Restaurant',
-        status: 'Active',
-        rating: 5,
-        reviews: 24,
-        views: 1240,
-        location: 'New York',
-        image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=400'
-    },
-    {
-        id: 2,
-        name: 'Elite Fitness Gym',
-        category: 'Fitness',
-        status: 'Active',
-        rating: 4.5,
-        reviews: 18,
-        views: 840,
-        location: 'Brooklyn',
-        image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=400'
-    }
-];
+const PAGE_SIZE = 9;
 
 export default function VendorListings() {
+    const { user } = useAuth();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
+    const [listings, setListings] = useState<Business[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [sortOrder, setSortOrder] = useState<'newest' | 'rated' | 'views'>('newest');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+    const isAuthorized = user?.role === 'vendor' || user?.role === 'admin' || user?.role === 'superadmin';
+
+    const fetchListings = async () => {
+        try {
+            setLoading(true);
+            const response = await api.listings.getMyListings();
+            setListings(response.data || []);
+            setCurrentPage(1);
+        } catch (error) {
+            console.error('Error fetching listings:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (user) fetchListings();
+    }, [user]);
+
+    const handleEdit = (biz: Business) => {
+        setEditingBusiness(biz);
+        setIsModalOpen(true);
+    };
+
+    // ── Derived: filter + sort ──────────────────────────────────────────
+    const filteredListings = useMemo(() => {
+        let result = [...listings];
+
+        // Search — match title, city, category name
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            result = result.filter(b =>
+                (b as any).title?.toLowerCase().includes(q) ||
+                (b as any).city?.toLowerCase().includes(q) ||
+                (b as any).category?.name?.toLowerCase().includes(q) ||
+                (b as any).description?.toLowerCase().includes(q)
+            );
+        }
+
+        // Status filter
+        if (statusFilter !== 'all') {
+            result = result.filter(b => (b as any).status?.toLowerCase() === statusFilter);
+        }
+
+        // Sort
+        if (sortOrder === 'rated') {
+            result.sort((a, b) => ((b as any).averageRating || 0) - ((a as any).averageRating || 0));
+        } else if (sortOrder === 'views') {
+            result.sort((a, b) => ((b as any).totalViews || 0) - ((a as any).totalViews || 0));
+        } else {
+            // newest — sort by createdAt descending
+            result.sort((a, b) => new Date((b as any).createdAt || 0).getTime() - new Date((a as any).createdAt || 0).getTime());
+        }
+
+        return result;
+    }, [listings, searchQuery, sortOrder, statusFilter]);
+
+    // Reset to page 1 when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery, sortOrder, statusFilter]);
+
+    const totalPages = Math.ceil(filteredListings.length / PAGE_SIZE);
+    const paginatedListings = filteredListings.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
     return (
         <div className="space-y-8">
-            {/* Header Area */}
+            {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <h1 className="text-3xl lg:text-5xl font-black text-slate-900 mb-2 tracking-tight">Your Listings</h1>
                     <p className="text-slate-400 font-bold tracking-tight text-lg">Manage and track your business performances</p>
                 </div>
-                <button className="flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95 whitespace-nowrap">
-                    <Plus className="w-5 h-5" /> Add New Listing
-                </button>
+                {isAuthorized && (
+                    <Link href="/vendor/add-listing" className="flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95 whitespace-nowrap">
+                        <Plus className="w-5 h-5" /> Add New Listing
+                    </Link>
+                )}
             </div>
 
+            <AddBusinessModal
+                isOpen={isModalOpen}
+                business={editingBusiness}
+                onClose={() => { setIsModalOpen(false); setEditingBusiness(null); }}
+                onSuccess={() => { fetchListings(); }}
+            />
+
             {/* Filters Bar */}
-            <div className="bg-white p-4 rounded-[32px] border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4">
-                <div className="flex-grow relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                    <input
-                        type="text"
-                        placeholder="Search your listings..."
-                        className="w-full pl-12 pr-4 py-3 bg-slate-50 border-transparent focus:border-blue-500/20 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none"
-                    />
-                </div>
-                <div className="flex gap-2">
-                    <button className="flex items-center gap-2 px-6 py-3 bg-slate-50 text-slate-600 rounded-2xl font-bold border border-transparent hover:border-slate-200 transition-all">
-                        <Filter className="w-4 h-4" /> Filters
-                    </button>
-                    <select className="px-6 py-3 bg-slate-50 text-slate-600 rounded-2xl font-bold border border-transparent hover:border-slate-200 transition-all outline-none">
-                        <option>Newest First</option>
-                        <option>Highest Rated</option>
-                        <option>Most Views</option>
+            <div className="bg-white p-4 rounded-[32px] border border-slate-100 shadow-sm space-y-3">
+                <div className="flex flex-col md:flex-row gap-4">
+                    {/* Search */}
+                    <div className="flex-grow relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            placeholder="Search by title, city, or category..."
+                            className="w-full pl-12 pr-10 py-3 bg-slate-50 border-transparent focus:border-blue-500/20 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none"
+                        />
+                        {searchQuery && (
+                            <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-slate-200 hover:bg-slate-300 transition-all">
+                                <X className="w-3 h-3 text-slate-600" />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Sort */}
+                    <select
+                        value={sortOrder}
+                        onChange={e => setSortOrder(e.target.value as any)}
+                        className="px-6 py-3 bg-slate-50 text-slate-600 rounded-2xl font-bold border border-transparent hover:border-slate-200 transition-all outline-none"
+                    >
+                        <option value="newest">Newest First</option>
+                        <option value="rated">Highest Rated</option>
+                        <option value="views">Most Views</option>
                     </select>
+                </div>
+
+                {/* Status Filter Pills */}
+                <div className="flex items-center gap-2 flex-wrap">
+                    <Filter className="w-4 h-4 text-slate-400" />
+                    {(['all', 'pending', 'approved', 'rejected'] as const).map(s => (
+                        <button
+                            key={s}
+                            onClick={() => setStatusFilter(s)}
+                            className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider transition-all ${statusFilter === s
+                                ? 'bg-slate-900 text-white'
+                                : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                }`}
+                        >
+                            {s === 'all' ? 'All' : s}
+                        </button>
+                    ))}
+                    {(searchQuery || statusFilter !== 'all' || sortOrder !== 'newest') && (
+                        <button
+                            onClick={() => { setSearchQuery(''); setStatusFilter('all'); setSortOrder('newest'); }}
+                            className="px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider bg-red-50 text-red-500 hover:bg-red-100 transition-all"
+                        >
+                            Clear All
+                        </button>
+                    )}
+                    <span className="ml-auto text-xs text-slate-400 font-bold">
+                        {filteredListings.length} result{filteredListings.length !== 1 ? 's' : ''}
+                    </span>
                 </div>
             </div>
 
             {/* Listings Grid */}
             <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-8">
-                {myListings.map((biz) => (
-                    <div key={biz.id} className="group bg-white rounded-[40px] overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500 flex flex-col">
-                        {/* Image Container */}
-                        <div className="relative h-56 overflow-hidden">
-                            <img
-                                src={biz.image}
-                                alt={biz.name}
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                            />
-                            <div className="absolute top-4 left-4">
-                                <span className="px-4 py-1.5 bg-white/90 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-widest text-[#1D8E66] shadow-sm">
-                                    {biz.status}
-                                </span>
+                {loading ? (
+                    <div className="col-span-full flex flex-col items-center justify-center py-20">
+                        <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
+                        <p className="text-slate-400 font-bold uppercase tracking-widest">Loading your listings...</p>
+                    </div>
+                ) : paginatedListings.length > 0 ? (
+                    paginatedListings.map((biz: any) => (
+                        <div key={biz.id} className="group bg-white rounded-[20px] overflow-hidden border border-black shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500 flex flex-col">
+                            <div className="relative h-56 overflow-hidden">
+                                <img
+                                    src={getImageUrl(biz.coverImageUrl || biz.images?.[0]) || 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=400'}
+                                    alt={biz.title}
+                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                />
+                                <div className="absolute top-4 left-4">
+                                    <span className={`px-4 py-1.5 bg-white/90 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${biz.status === 'approved' ? 'text-green-600' :
+                                        biz.status === 'rejected' ? 'text-red-500' : 'text-amber-600'
+                                        }`}>{biz.status}</span>
+                                </div>
+                                <div className="absolute top-4 right-4">
+                                    {/* <button className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-xl flex items-center justify-center text-slate-700 hover:bg-white transition-all shadow-sm">
+                                        <MoreVertical className="w-5 h-5" />
+                                    </button> */}
+                                </div>
                             </div>
-                            <div className="absolute top-4 right-4">
-                                <button className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-xl flex items-center justify-center text-slate-700 hover:bg-white transition-all shadow-sm">
-                                    <MoreVertical className="w-5 h-5" />
-                                </button>
+
+                            <div className="p-8 flex-grow flex flex-col">
+                                <div className="flex items-start justify-between mb-2">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 mb-2 block">{biz.category?.name || 'Business'}</span>
+                                    <div className="flex items-center gap-1.5 px-2 py-1 bg-amber-50 rounded-lg">
+                                        <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                                        <span className="text-xs font-black text-amber-600">{biz.averageRating || 0}</span>
+                                    </div>
+                                </div>
+                                <h3 className="text-2xl font-black text-slate-900 mb-3 group-hover:text-blue-600 transition-colors leading-tight">{biz.title}</h3>
+                                <div className="flex items-center gap-2 text-slate-400 font-bold text-sm mb-6">
+                                    <MapPin className="w-4 h-4" />
+                                    <span>{biz.city || biz.location || 'Location'}</span>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 mt-auto">
+                                    <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                                            <Eye className="w-4 h-4 text-blue-500" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 leading-none mb-1">Views</p>
+                                            <p className="text-sm font-black text-slate-900">{biz.totalViews || 0}</p>
+                                        </div>
+                                    </div>
+                                    <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                                            <MessageSquare className="w-4 h-4 text-orange-500" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 leading-none mb-1">Reviews</p>
+                                            <p className="text-sm font-black text-slate-900">{biz.totalReviews || 0}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3 mt-8">
+                                    <button onClick={() => handleEdit(biz)} className="py-3.5 px-4 bg-slate-900 text-white rounded-xl font-black text-xs hover:bg-slate-800 transition-all active:scale-95">
+                                        Edit Listing
+                                    </button>
+                                    <Link href={`/business/${biz.slug}`} className="py-3.5 px-4 bg-white text-slate-900 border border-black rounded-xl font-black text-xs hover:bg-slate-50 transition-all active:scale-95 text-center">
+                                        View Page
+                                    </Link>
+                                </div>
                             </div>
                         </div>
-
-                        {/* Content */}
-                        <div className="p-8 flex-grow flex flex-col">
-                            <div className="flex items-start justify-between mb-2">
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 mb-2 block">{biz.category}</span>
-                                <div className="flex items-center gap-1.5 px-2 py-1 bg-amber-50 rounded-lg">
-                                    <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                                    <span className="text-xs font-black text-amber-600">{biz.rating}</span>
-                                </div>
-                            </div>
-                            <h3 className="text-2xl font-black text-slate-900 mb-3 group-hover:text-blue-600 transition-colors leading-tight">
-                                {biz.name}
-                            </h3>
-                            <div className="flex items-center gap-2 text-slate-400 font-bold text-sm mb-6">
-                                <MapPin className="w-4 h-4" />
-                                <span>{biz.location}</span>
-                            </div>
-
-                            {/* Stats Mini Grid */}
-                            <div className="grid grid-cols-2 gap-4 mt-auto">
-                                <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-3">
-                                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                                        <Eye className="w-4 h-4 text-blue-500" />
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 leading-none mb-1">Views</p>
-                                        <p className="text-sm font-black text-slate-900">{biz.views}</p>
-                                    </div>
-                                </div>
-                                <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-3">
-                                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                                        <MessageSquare className="w-4 h-4 text-orange-500" />
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 leading-none mb-1">Reviews</p>
-                                        <p className="text-sm font-black text-slate-900">{biz.reviews}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Actions */}
-                            <div className="grid grid-cols-2 gap-3 mt-8">
-                                <button className="py-3.5 px-4 bg-slate-900 text-white rounded-xl font-black text-xs hover:bg-slate-800 transition-all active:scale-95">
-                                    Edit Listing
-                                </button>
-                                <button className="py-3.5 px-4 bg-white text-slate-900 border-2 border-slate-100 rounded-xl font-black text-xs hover:bg-slate-50 transition-all active:scale-95">
-                                    View Page
-                                </button>
-                            </div>
-                        </div>
+                    ))
+                ) : (
+                    <div className="col-span-full text-center py-20 bg-slate-50 rounded-[32px] border-2 border-dashed border-slate-200">
+                        <p className="text-slate-400 font-bold italic text-lg">
+                            {searchQuery || statusFilter !== 'all' ? 'No listings match your search.' : "You haven't added any listings yet."}
+                        </p>
+                        {(searchQuery || statusFilter !== 'all') && (
+                            <button onClick={() => { setSearchQuery(''); setStatusFilter('all'); }} className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-xl font-black text-sm hover:bg-blue-700 transition-all">
+                                Clear Filters
+                            </button>
+                        )}
                     </div>
-                ))}
-
-                {/* Create New Card */}
-                <button className="group h-full min-h-[400px] border-4 border-dashed border-slate-100 rounded-[40px] flex flex-col items-center justify-center gap-6 hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-500 cursor-pointer">
-                    <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center text-slate-300 group-hover:text-blue-600 group-hover:scale-110 group-hover:rotate-90 transition-all duration-500 shadow-sm group-hover:shadow-xl group-hover:shadow-blue-500/10">
-                        <Plus className="w-8 h-8" />
-                    </div>
-                    <div className="text-center px-8">
-                        <p className="text-xl font-black text-slate-400 group-hover:text-blue-600 transition-colors mb-2">Create New Listing</p>
-                        <p className="text-sm text-slate-300 font-bold max-w-[200px]">Add another business to your portfolio and start getting leads.</p>
-                    </div>
-                </button>
+                )}
             </div>
+
+            {/* Pagination Bar */}
+            {!loading && totalPages > 1 && (
+                <div className="flex items-center justify-between bg-white border border-slate-100 rounded-2xl px-6 py-4 shadow-sm">
+                    <p className="text-sm font-bold text-slate-500">
+                        Showing <span className="text-slate-900">{(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredListings.length)}</span> of <span className="text-slate-900">{filteredListings.length}</span> listings
+                    </p>
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
+                            className="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+                            <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                            <button key={page} onClick={() => setCurrentPage(page)}
+                                className={`w-9 h-9 rounded-xl text-sm font-black transition-all ${page === currentPage ? 'bg-slate-900 text-white shadow' : 'border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+                                {page}
+                            </button>
+                        ))}
+                        <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}
+                            className="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

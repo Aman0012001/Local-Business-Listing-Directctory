@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole } from '../../entities/user.entity';
-import { Business, BusinessStatus } from '../../entities/business.entity';
+import { Listing, BusinessStatus } from '../../entities/business.entity';
 import { Review } from '../../entities/review.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { Transaction } from '../../entities/transaction.entity';
@@ -17,8 +17,8 @@ export class AdminService {
     constructor(
         @InjectRepository(User)
         private userRepository: Repository<User>,
-        @InjectRepository(Business)
-        private businessRepository: Repository<Business>,
+        @InjectRepository(Listing)
+        private businessRepository: Repository<Listing>,
         @InjectRepository(Review)
         private reviewRepository: Repository<Review>,
         @InjectRepository(Vendor)

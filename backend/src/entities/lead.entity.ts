@@ -8,7 +8,8 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
-import { Business } from './business.entity';
+import { Exclude } from 'class-transformer';
+import { Listing } from './business.entity';
 import { User } from './user.entity';
 
 export enum LeadType {
@@ -99,9 +100,10 @@ export class Lead {
     updatedAt: Date;
 
     // Relations
-    @ManyToOne(() => Business, (business) => business.leads)
+    @Exclude()
+    @ManyToOne(() => Listing, (listing) => listing.leads)
     @JoinColumn({ name: 'business_id' })
-    business: Business;
+    business: Listing;
 
     @ManyToOne(() => User, (user) => user.leads)
     @JoinColumn({ name: 'user_id' })

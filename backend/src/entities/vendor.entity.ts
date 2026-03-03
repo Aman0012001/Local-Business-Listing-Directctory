@@ -9,8 +9,9 @@ import {
     OneToMany,
     Index,
 } from 'typeorm';
+import { Expose, Exclude } from 'class-transformer';
 import { User } from './user.entity';
-import { Business } from './business.entity';
+import { Listing } from './business.entity';
 import { Subscription } from './subscription.entity';
 import { Transaction } from './transaction.entity';
 
@@ -22,13 +23,13 @@ export class Vendor {
     @Column({ name: 'user_id', type: 'uuid' })
     userId: string;
 
-    @Column({ name: 'business_name' })
+    @Column({ name: 'business_name', nullable: true })
     businessName: string;
 
     @Column({ name: 'business_email', nullable: true })
     businessEmail: string;
 
-    @Column({ name: 'business_phone', length: 20 })
+    @Column({ name: 'business_phone', length: 20, nullable: true })
     businessPhone: string;
 
     @Column({ name: 'business_address', nullable: true, type: 'text' })
@@ -46,10 +47,6 @@ export class Vendor {
     @Column({ name: 'verification_documents', nullable: true, type: 'jsonb' })
     verificationDocuments: Record<string, any>;
 
-    @Column({ name: 'stripe_customer_id', nullable: true, length: 255 })
-    @Index()
-    stripeCustomerId: string;
-
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
@@ -61,8 +58,9 @@ export class Vendor {
     @JoinColumn({ name: 'user_id' })
     user: User;
 
-    @OneToMany(() => Business, (business) => business.vendor)
-    businesses: Business[];
+    @Exclude()
+    @OneToMany(() => Listing, (listing) => listing.vendor)
+    businesses: Listing[];
 
     @OneToMany(() => Subscription, (subscription) => subscription.vendor)
     subscriptions: Subscription[];

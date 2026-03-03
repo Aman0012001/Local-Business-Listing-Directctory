@@ -6,11 +6,12 @@ import {
     ManyToOne,
     JoinColumn,
 } from 'typeorm';
+import { Exclude } from 'class-transformer';
 import { User } from './user.entity';
-import { Business } from './business.entity';
+import { Listing } from './business.entity';
 
 @Entity('favorites')
-export class Favorite {
+export class SavedListing {
     @PrimaryColumn({ name: 'user_id', type: 'uuid' })
     userId: string;
 
@@ -21,11 +22,12 @@ export class Favorite {
     createdAt: Date;
 
     // Relations
-    @ManyToOne(() => User, (user) => user.favorites)
+    @ManyToOne(() => User, (user) => user.savedListings)
     @JoinColumn({ name: 'user_id' })
     user: User;
 
-    @ManyToOne(() => Business, (business) => business.favorites)
+    @Exclude()
+    @ManyToOne(() => Listing, (listing) => listing.savedListings)
     @JoinColumn({ name: 'business_id' })
-    business: Business;
+    business: Listing;
 }

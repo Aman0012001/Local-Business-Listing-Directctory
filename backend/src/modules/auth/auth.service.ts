@@ -46,7 +46,7 @@ export class AuthService {
             password: hashedPassword,
             fullName,
             phone,
-            role: UserRole.USER,
+            role: (registerDto.role as UserRole) || UserRole.USER,
             isEmailVerified: true, // Auto-verify for local auth
             isActive: true,
         });

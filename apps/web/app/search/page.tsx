@@ -16,6 +16,7 @@ function SearchResults() {
     const query = searchParams.get('q') || '';
     const city = searchParams.get('city') || '';
     const categorySlug = searchParams.get('category') || '';
+    const minRating = searchParams.get('minRating') || '';
 
     const [results, setResults] = useState<Business[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
@@ -27,10 +28,11 @@ function SearchResults() {
             setLoading(true);
             try {
                 const [searchRes, cats] = await Promise.all([
-                    api.businesses.search({
+                    api.listings.search({
                         query: query,
                         city: city,
                         categorySlug: categorySlug,
+                        minRating: minRating,
                         limit: 20
                     }),
                     api.categories.getAll()
@@ -44,7 +46,7 @@ function SearchResults() {
             }
         };
         loadData();
-    }, [query, city, categorySlug]);
+    }, [query, city, categorySlug, minRating]);
 
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -84,8 +86,20 @@ function SearchResults() {
                                 <h4 className="text-sm font-bold text-slate-900 uppercase tracking-widest mb-4">Min. Rating</h4>
                                 <div className="flex gap-2">
                                     {[4, 3, 2, 1].map(star => (
-                                        <button key={star} className="flex-1 py-2 rounded-xl border border-slate-200 text-slate-600 hover:border-blue-500 hover:text-blue-600 transition-all font-bold text-xs flex items-center justify-center gap-1">
-                                            {star}<Star className="w-3 h-3 fill-current" />
+                                        <button
+                                            key={star}
+                                            onClick={() => {
+                                                const params = new URLSearchParams(searchParams.toString());
+                                                if (minRating === String(star)) {
+                                                    params.delete('minRating');
+                                                } else {
+                                                    params.set('minRating', String(star));
+                                                }
+                                                router.push(`/search?${params.toString()}`);
+                                            }}
+                                            className={`flex-1 py-2 rounded-xl border transition-all font-bold text-xs flex items-center justify-center gap-1 ${minRating === String(star) ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20' : 'border-slate-200 text-slate-600 hover:border-blue-500 hover:text-blue-600'}`}
+                                        >
+                                            {star}<Star className={`w-3 h-3 ${minRating === String(star) ? 'fill-current' : ''}`} />
                                         </button>
                                     ))}
                                 </div>
@@ -100,7 +114,7 @@ function SearchResults() {
                                 <h1 className="text-2xl font-bold text-slate-900">
                                     {query ? `Results for "${query}"` : categorySlug ? `Service: ${categorySlug}` : 'All Businesses'}
                                 </h1>
-                                <p className="text-slate-500 text-sm mt-1">{results.length} properties found</p>
+                                <p className="text-slate-500 text-sm mt-1">{results.length} businesses found</p>
                             </div>
                             <button
                                 onClick={() => setShowFilters(true)}
@@ -123,7 +137,7 @@ function SearchResults() {
                                 ))}
                             </div>
                         ) : (
-                            <div className="bg-white rounded-[40px] p-16 text-center border border-slate-100">
+                            <div className="bg-white rounded-[20px] p-16 text-center border border-slate-100">
                                 <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
                                     <Search className="w-8 h-8 text-slate-300" />
                                 </div>

@@ -11,7 +11,14 @@ const data = [
     { day: 'Apr 25', views: 1200, calls: 600 },
 ];
 
-export default function PerformanceChart() {
+interface PerformanceChartProps {
+    stats?: {
+        totalViews: number;
+        totalLeads: number;
+    } | null;
+}
+
+export default function PerformanceChart({ stats }: PerformanceChartProps) {
     const maxVal = 1500;
     const width = 600;
     const height = 300;
@@ -29,7 +36,7 @@ export default function PerformanceChart() {
     const callPoints = getPoints('calls');
 
     return (
-        <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm relative overflow-hidden group">
+        <div className="bg-white rounded-[20px] p-8 border border-slate-100 shadow-sm relative overflow-hidden group">
             <div className="flex items-center justify-between mb-10">
                 <div>
                     <h3 className="text-xl font-black text-slate-800 mb-1">Views & Calls</h3>
@@ -156,17 +163,17 @@ export default function PerformanceChart() {
                             <span className="w-1.5 h-1.5 bg-blue-300 rounded-full animate-pulse" />
                         </div>
                         <div className="flex items-center gap-2">
-                            <span className="text-3xl font-black leading-none">1,200</span>
+                            <span className="text-3xl font-black leading-none">{stats?.totalViews.toLocaleString() || '0'}</span>
                             <div className="bg-white/20 px-1.5 py-0.5 rounded-lg text-[10px] font-black uppercase">↑</div>
                         </div>
                     </div>
                     <div className="bg-[#FF7A30] rounded-3xl p-5 text-white shadow-xl shadow-orange-500/20 group hover:scale-[1.02] transition-all">
                         <div className="flex items-center justify-between mb-4">
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60 leading-none">Total Calls</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60 leading-none">Total Leads</p>
                             <span className="w-1.5 h-1.5 bg-orange-300 rounded-full animate-pulse" />
                         </div>
                         <div className="flex items-center gap-2">
-                            <span className="text-3xl font-black leading-none">350</span>
+                            <span className="text-3xl font-black leading-none">{stats?.totalLeads.toLocaleString() || '0'}</span>
                             <div className="bg-white/20 px-1.5 py-0.5 rounded-lg text-[10px] font-black uppercase">↑</div>
                         </div>
                     </div>

@@ -11,9 +11,10 @@ import {
     HttpCode,
     HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ParseUuidPipe } from '../../common/pipes/parse-uuid.pipe';
@@ -40,9 +41,41 @@ export class UsersController {
         return this.usersService.updateProfile(user.id, updateUserDto);
     }
 
+    @Patch('profile/avatar')
+    @ApiOperation({ summary: 'Update current user avatar URL' })
+    @ApiBody({
+        schema: {
+            type: 'object',
+            properties: {
+                avatarUrl: {
+                    type: 'string',
+                    description: 'The Cloudinary URL of the uploaded avatar',
+                },
+            },
+            required: ['avatarUrl'],
+        },
+    })
+    @ApiResponse({ status: 200, description: 'Avatar updated successfully' })
+    async updateAvatar(@CurrentUser() user: User, @Body('avatarUrl') avatarUrl: string) {
+        const updatedUser = await this.usersService.updateAvatar(user.id, avatarUrl);
+        return {
+            success: true,
+            message: 'Avatar updated successfully',
+            user: updatedUser
+        };
+    }
+
+    @Patch('password')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Change current user password' })
+    @ApiResponse({ status: 200, description: 'Password changed successfully' })
+    changePassword(@CurrentUser() user: User, @Body() changePasswordDto: ChangePasswordDto) {
+        return this.usersService.changePassword(user.id, changePasswordDto);
+    }
+
     @Get('favorites')
-    @ApiOperation({ summary: 'Get current user favorite businesses' })
-    @ApiResponse({ status: 200, description: 'Favorites retrieved successfully' })
+    @ApiOperation({ summary: 'Get current user saved listings' })
+    @ApiResponse({ status: 200, description: 'Saved listings retrieved successfully' })
     getFavorites(
         @CurrentUser() user: User,
         @Query('page') page?: number,
@@ -53,8 +86,8 @@ export class UsersController {
 
     @Post('favorites/:businessId')
     @HttpCode(HttpStatus.NO_CONTENT)
-    @ApiOperation({ summary: 'Add business to favorites' })
-    @ApiResponse({ status: 204, description: 'Added to favorites' })
+    @ApiOperation({ summary: 'Add business to saved listings' })
+    @ApiResponse({ status: 204, description: 'Added to saved listings' })
     addFavorite(
         @CurrentUser() user: User,
         @Param('businessId', ParseUuidPipe) businessId: string,
@@ -64,8 +97,8 @@ export class UsersController {
 
     @Delete('favorites/:businessId')
     @HttpCode(HttpStatus.NO_CONTENT)
-    @ApiOperation({ summary: 'Remove business from favorites' })
-    @ApiResponse({ status: 204, description: 'Removed from favorites' })
+    @ApiOperation({ summary: 'Remove business from saved listings' })
+    @ApiResponse({ status: 204, description: 'Removed from saved listings' })
     removeFavorite(
         @CurrentUser() user: User,
         @Param('businessId', ParseUuidPipe) businessId: string,

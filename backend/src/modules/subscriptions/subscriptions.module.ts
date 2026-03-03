@@ -7,9 +7,6 @@ import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
 import { Transaction } from '../../entities/transaction.entity';
 import { Vendor } from '../../entities/vendor.entity';
 
-import { StripeModule } from '../stripe/stripe.module';
-
-import { StripeWebhooksController } from './stripe-webhooks.controller';
 import { SubscriptionsSeederService } from './subscriptions-seeder.service';
 
 @Module({
@@ -20,9 +17,8 @@ import { SubscriptionsSeederService } from './subscriptions-seeder.service';
             Transaction,
             Vendor,
         ]),
-        StripeModule,
     ],
-    controllers: [SubscriptionsController, StripeWebhooksController],
+    controllers: [SubscriptionsController],
     providers: [SubscriptionsService, SubscriptionsSeederService],
     exports: [SubscriptionsService],
 })

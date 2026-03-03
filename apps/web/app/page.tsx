@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Search, MapPin, ArrowRight, TrendingUp, Compass, Sliders, Users, Heart, Phone, ShieldCheck, Star, ChefHat, Stethoscope, Sparkles, Wrench, ChevronDown } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import BusinessCard from '../components/BusinessCard';
-import { api } from '../lib/api';
+import { api, getImageUrl } from '../lib/api';
 import Link from 'next/link';
-import { Category, Business, City } from '../types/api';
+import { Category, Business, City, Review } from '../types/api';
 
 export default function HomePage() {
     const [categories, setCategories] = useState<Category[]>([]);
@@ -21,17 +21,19 @@ export default function HomePage() {
     const [isCatOpen, setIsCatOpen] = useState(false);
     const [isCityOpen, setIsCityOpen] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [statsReviews, setStatsReviews] = useState<Review[]>([]);
 
     useEffect(() => {
         const loadInitialData = async () => {
             try {
                 console.log('Fetching homepage data...');
-                const [cats, featured, cities, allCats, allCities] = await Promise.all([
+                const [cats, featured, cities, allCats, allCities, reviewsData] = await Promise.all([
                     api.categories.getPopular(8),
-                    api.businesses.getFeatured(),
+                    api.listings.getFeatured(),
                     api.cities.getPopular(),
                     api.categories.getAll(),
-                    api.cities.getAll()
+                    api.cities.getAll(),
+                    api.reviews.getPopular(3)
                 ]);
                 console.log('Homepage data loaded successfully:', { cats: cats?.length, featured: featured?.data?.length, cities: cities?.length });
                 setCategories(cats || []);
@@ -39,6 +41,7 @@ export default function HomePage() {
                 setPopularCities(cities || []);
                 setCategoriesList(allCats || []);
                 setCitiesList(allCities || []);
+                setStatsReviews(reviewsData?.data || []);
             } catch (err) {
                 console.error('CRITICAL: Failed to load homepage data:', err);
             } finally {
@@ -46,6 +49,19 @@ export default function HomePage() {
             }
         };
         loadInitialData();
+    }, []);
+
+    // Close dropdowns when clicking outside the search bar
+    const searchRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+                setIsCatOpen(false);
+                setIsCityOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
     }, []);
 
     const handleSearch = () => {
@@ -67,11 +83,11 @@ export default function HomePage() {
     }
 
     return (
-        <div className="min-h-screen bg-white font-sans text-slate-900">
+        <div className="min-h-screen bg-white font-sans text-slate-900 overflow-x-hidden">
             <Navbar />
 
             {/* Hero Section */}
-            <section className="relative h-[650px] flex items-center justify-center overflow-hidden">
+            <section className="relative h-[800px] flex items-center justify-center overflow-x-hidden">
                 <div
                     className="absolute inset-0 z-0 scale-105"
                     style={{
@@ -82,7 +98,7 @@ export default function HomePage() {
                     }}
                 />
 
-                <div className="max-w-7xl mx-auto px-4 relative z-10 text-center text-white">
+                <div className="max-w-7xl mx-auto px-4 relative z-10 text-center text-white pb-36">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -98,13 +114,14 @@ export default function HomePage() {
 
                     {/* Search Bar Container */}
                     <motion.div
+                        ref={searchRef}
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.2, duration: 0.5 }}
-                        className="max-w-5xl mx-auto bg-white/10 backdrop-blur-md p-1.5 rounded-2xl md:rounded-full shadow-2xl border border-white/20 flex flex-col md:flex-row items-stretch"
+                        className="relative z-10 max-w-5xl mx-auto bg-white/10 backdrop-blur-md p-1.5 rounded-2xl md:rounded-full shadow-2xl border border-white/20 flex flex-col md:flex-row items-stretch"
                     >
                         {/* Category Dropdown */}
-                        <div className="flex-1 relative group">
+                        <div className="flex-1 relative z-[60] group">
                             <button
                                 onClick={() => { setIsCatOpen(!isCatOpen); setIsCityOpen(false); }}
                                 className="w-full flex items-center justify-between px-8 py-5 bg-white rounded-t-2xl md:rounded-l-full md:rounded-r-none border-b md:border-b-0 md:border-r border-slate-100 text-left"
@@ -119,7 +136,7 @@ export default function HomePage() {
                                 <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-50 max-h-64 overflow-y-auto"
+                                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-black py-2 z-[999] max-h-64 overflow-y-auto"
                                 >
                                     {categoriesList.map(cat => (
                                         <button
@@ -136,7 +153,7 @@ export default function HomePage() {
                         </div>
 
                         {/* City Dropdown */}
-                        <div className="w-full md:w-80 relative">
+                        <div className="w-full md:w-80 relative z-[60]">
                             <button
                                 onClick={() => { setIsCityOpen(!isCityOpen); setIsCatOpen(false); }}
                                 className="w-full flex items-center justify-between px-8 py-5 bg-white md:rounded-none text-left"
@@ -151,7 +168,7 @@ export default function HomePage() {
                                 <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-50 max-h-64 overflow-y-auto"
+                                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-black py-2 z-[999] max-h-64 overflow-y-auto"
                                 >
                                     {citiesList.map(city => (
                                         <button
@@ -227,7 +244,7 @@ export default function HomePage() {
                                     transition={{ delay: idx * 0.05 }}
                                 >
                                     <Link href={`/categories/${cat.slug}`} className="group block">
-                                        <div className="bg-slate-50 p-8 rounded-2xl border border-slate-100 flex items-center gap-6 hover:bg-white hover:shadow-2xl hover:shadow-blue-500/5 hover:-translate-y-1 transition-all duration-500">
+                                        <div className="bg-slate-50 p-8 rounded-2xl border border-black flex items-center gap-6 hover:bg-white hover:shadow-2xl hover:shadow-blue-500/5 hover:-translate-y-1 transition-all duration-500">
                                             <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center group-hover:border-blue-200 group-hover:bg-blue-50/30 transition-all">
                                                 {iconMap[cat.slug] || <TrendingUp className="w-8 h-8 text-blue-600" />}
                                             </div>
@@ -336,7 +353,7 @@ export default function HomePage() {
                             >
                                 <Link href={`/search?city=${city.name}`} className="relative h-48 rounded-2xl overflow-hidden block group shadow-lg">
                                     <img
-                                        src={city.imageUrl || 'https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&q=80&w=400'}
+                                        src={getImageUrl(city.imageUrl) || 'https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&q=80&w=400'}
                                         alt={city.name}
                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 brightness-75 group-hover:brightness-90"
                                     />
@@ -356,36 +373,114 @@ export default function HomePage() {
             </section>
 
             {/* Testimonials - What People Are Saying */}
-            <section className="py-24 bg-white">
-                <div className="max-w-7xl mx-auto px-4">
-                    <div className="flex items-center justify-center gap-6 mb-20 text-center">
+            <section className="py-24 bg-white overflow-hidden">
+                <div className="max-w-7xl mx-auto px-4 mb-16">
+                    <div className="flex items-center justify-center gap-6 text-center">
                         <div className="h-[1px] bg-slate-200 w-24 md:w-48" />
                         <h2 className="text-4xl font-extrabold text-[#112D4E] tracking-tight whitespace-nowrap">What People Are Saying</h2>
                         <div className="h-[1px] bg-slate-200 w-24 md:w-48" />
                     </div>
-
-                    <div className="grid md:grid-cols-3 gap-10">
-                        {[
-                            { name: 'Ahmed S.', location: 'Karachi', text: '“Found a great plumber in Karachi in minutes. Highly recommend!”', img: 'https://i.pravatar.cc/150?u=ahmed' },
-                            { name: 'Zainab R.', location: 'Lahore', text: '“Excellent service. Easy to find and contact businesses in Lahore.”', img: 'https://i.pravatar.cc/150?u=zainab' },
-                            { name: 'Bilal K.', location: 'Islamabad', text: '“Trusted and reliable listings. Best platform for Pakistan.”', img: 'https://i.pravatar.cc/150?u=bilal' }
-                        ].map((rev, i) => (
-                            <motion.div
-                                key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                className="bg-[#F8FAFC] p-10 rounded-3xl border border-slate-100 flex items-start gap-6 hover:shadow-xl transition-all"
-                            >
-                                <img src={rev.img} alt={rev.name} className="w-16 h-16 rounded-full border-4 border-white shadow-sm" />
-                                <div>
-                                    <h4 className="font-black text-slate-900 text-lg mb-0.5">{rev.name}, {rev.location}</h4>
-                                    <p className="text-slate-600 font-medium italic leading-relaxed">{rev.text}</p>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
                 </div>
+
+                {/* Build cards list */}
+                {(() => {
+                    const fallbackReviews = [
+                        { id: 'f1', name: 'Ahmed S.', location: 'Karachi', text: 'Found a great plumber in Karachi in minutes. Highly recommend!', rating: 5, img: 'https://i.pravatar.cc/150?u=ahmed' },
+                        { id: 'f2', name: 'Zainab R.', location: 'Lahore', text: 'Excellent service. Easy to find and contact businesses in Lahore.', rating: 5, img: 'https://i.pravatar.cc/150?u=zainab' },
+                        { id: 'f3', name: 'Bilal K.', location: 'Islamabad', text: 'Trusted and reliable listings. Best platform for Pakistan.', rating: 5, img: 'https://i.pravatar.cc/150?u=bilal' },
+                        { id: 'f4', name: 'Sara M.', location: 'Faisalabad', text: 'Booking appointments has never been so easy. Love this platform!', rating: 4, img: 'https://i.pravatar.cc/150?u=sara' },
+                        { id: 'f5', name: 'Usman T.', location: 'Rawalpindi', text: 'Great variety of businesses listed. Found exactly what I needed.', rating: 5, img: 'https://i.pravatar.cc/150?u=usman' },
+                        { id: 'f6', name: 'Hina N.', location: 'Multan', text: 'Very user-friendly! Found a top doctor in my area within seconds.', rating: 5, img: 'https://i.pravatar.cc/150?u=hina' },
+                    ];
+
+                    const cards = statsReviews.length > 0
+                        ? statsReviews.map(rev => ({
+                            id: rev.id,
+                            name: rev.user?.fullName || 'Anonymous',
+                            location: '',
+                            text: rev.comment,
+                            rating: rev.rating,
+                            img: rev.user?.avatarUrl ? getImageUrl(rev.user.avatarUrl) as string : null,
+                        }))
+                        : fallbackReviews;
+
+                    // Duplicate cards for seamless loop
+                    const row1 = [...cards, ...cards, ...cards];
+                    const row2 = [...cards, ...cards, ...cards];
+
+                    const ReviewCard = ({ card, idx }: { card: typeof row1[0], idx: number }) => (
+                        <div
+                            key={`${card.id}-${idx}`}
+                            className="flex-shrink-0 w-80 bg-[#F8FAFC] p-6 rounded-2xl border border-slate-100 flex items-start gap-4 shadow-sm mx-3"
+                        >
+                            <div className="w-12 h-12 rounded-full border-2 border-white shadow bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-base uppercase overflow-hidden flex-shrink-0">
+                                {card.img
+                                    ? <img src={card.img} alt={card.name} className="w-full h-full object-cover" />
+                                    : card.name[0].toUpperCase()
+                                }
+                            </div>
+                            <div className="min-w-0">
+                                <h4 className="font-black text-slate-900 text-sm mb-0.5 truncate">
+                                    {card.name}{card.location ? `, ${card.location}` : ''}
+                                </h4>
+                                <div className="flex gap-0.5 mb-1.5">
+                                    {[...Array(5)].map((_, i) => (
+                                        <Star key={i} className={`w-3 h-3 ${i < (card.rating || 5) ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`} />
+                                    ))}
+                                </div>
+                                <p className="text-slate-600 text-sm italic leading-relaxed line-clamp-3">"{card.text}"</p>
+                            </div>
+                        </div>
+                    );
+
+                    return (
+                        <div className="max-w-7xl mx-auto px-4 overflow-hidden">
+                            <div className="space-y-4">
+                                {/* Row 1: Right to Left */}
+                                <div className="relative">
+                                    <div
+                                        className="flex"
+                                        style={{
+                                            animation: 'marquee-rtl 35s linear infinite',
+                                            width: 'max-content',
+                                        }}
+                                        onMouseEnter={e => (e.currentTarget.style.animationPlayState = 'paused')}
+                                        onMouseLeave={e => (e.currentTarget.style.animationPlayState = 'running')}
+                                    >
+                                        {row1.map((card, idx) => <ReviewCard key={idx} card={card} idx={idx} />)}
+                                    </div>
+                                </div>
+
+                                {/* Row 2: Left to Right */}
+                                <div className="relative">
+                                    <div
+                                        className="flex"
+                                        style={{
+                                            animation: 'marquee-ltr 35s linear infinite',
+                                            width: 'max-content',
+                                        }}
+                                        onMouseEnter={e => (e.currentTarget.style.animationPlayState = 'paused')}
+                                        onMouseLeave={e => (e.currentTarget.style.animationPlayState = 'running')}
+                                    >
+                                        {row2.map((card, idx) => <ReviewCard key={idx} card={card} idx={idx} />)}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })()}
+
+                {/* Keyframe styles */}
+                <style>{`
+                    @keyframes marquee-rtl {
+                        0%   { transform: translateX(0); }
+                        100% { transform: translateX(-33.333%); }
+                    }
+                    @keyframes marquee-ltr {
+                        0%   { transform: translateX(-33.333%); }
+                        100% { transform: translateX(0); }
+                    }
+                `}</style>
             </section>
 
             {/* Business Recruitment CTA */}

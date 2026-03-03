@@ -6,26 +6,28 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole } from '../../entities/user.entity';
-import { Favorite } from '../../entities/favorite.entity';
+import { SavedListing } from '../../entities/favorite.entity';
 import { Notification } from '../../entities/notification.entity';
-import { Business } from '../../entities/business.entity';
+import { Listing } from '../../entities/business.entity';
 import { UpdateUserDto } from './dto/update-user.dto';
 import {
     createPaginatedResponse,
     calculateSkip,
 } from '../../common/utils/pagination.util';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
     constructor(
         @InjectRepository(User)
         private userRepository: Repository<User>,
-        @InjectRepository(Favorite)
-        private favoriteRepository: Repository<Favorite>,
+        @InjectRepository(SavedListing)
+        private savedListingRepository: Repository<SavedListing>,
         @InjectRepository(Notification)
         private notificationRepository: Repository<Notification>,
-        @InjectRepository(Business)
-        private businessRepository: Repository<Business>,
+        @InjectRepository(Listing)
+        private businessRepository: Repository<Listing>,
     ) { }
 
     /**
@@ -48,10 +50,48 @@ export class UsersService {
      * Update user profile
      */
     async updateProfile(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+        console.log(`[UsersService] Updating profile for user ${id}:`, JSON.stringify(updateUserDto, null, 2));
         const user = await this.getProfile(id);
 
         Object.assign(user, updateUserDto);
-        return this.userRepository.save(user);
+        const savedUser = await this.userRepository.save(user);
+        console.log(`[UsersService] Profile saved successfully for user ${id}`);
+
+        // Re-fetch to ensure everything is up to date and relations are populated
+        return this.getProfile(id);
+    }
+
+    /**
+     * Update user avatar
+     */
+    async updateAvatar(id: string, filename: string): Promise<User> {
+        console.log(`[UsersService] Updating avatar for user ${id}`);
+        const user = await this.getProfile(id);
+        user.avatarUrl = filename;
+        await this.userRepository.save(user);
+
+        console.log(`[UsersService] Avatar saved successfully for user ${id}`);
+        return this.getProfile(id);
+    }
+
+    /**
+     * Change user password
+     */
+    async changePassword(id: string, dto: ChangePasswordDto): Promise<void> {
+        const user = await this.userRepository.findOne({
+            where: { id },
+            select: ['id', 'password'],
+        });
+
+        if (!user) throw new NotFoundException('User not found');
+        if (!user.password) throw new ConflictException('User does not have a password set');
+
+        const isPasswordValid = await bcrypt.compare(dto.oldPassword, user.password);
+        if (!isPasswordValid) throw new ConflictException('Invalid old password');
+
+        const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+        user.password = hashedPassword;
+        await this.userRepository.save(user);
     }
 
     /**
@@ -63,30 +103,31 @@ export class UsersService {
         if (!business) throw new NotFoundException('Business not found');
 
         // Check if already favoring
-        const existing = await this.favoriteRepository.findOne({ where: { userId, businessId } });
+        const existing = await this.savedListingRepository.findOne({ where: { userId, businessId } });
         if (existing) return;
 
-        const favorite = this.favoriteRepository.create({ userId, businessId });
-        await this.favoriteRepository.save(favorite);
+        const savedListing = this.savedListingRepository.create({ userId, businessId });
+        await this.savedListingRepository.save(savedListing);
     }
 
     /**
      * Remove from favorites
      */
     async removeFavorite(userId: string, businessId: string): Promise<void> {
-        const favorite = await this.favoriteRepository.findOne({ where: { userId, businessId } });
-        if (!favorite) throw new NotFoundException('Favorite not found');
+        const savedListing = await this.savedListingRepository.findOne({ where: { userId, businessId } });
+        if (!savedListing) throw new NotFoundException('Saved listing not found');
 
-        await this.favoriteRepository.remove(favorite);
+        await this.savedListingRepository.remove(savedListing);
     }
 
     /**
      * Get user favorites
      */
     async getFavorites(userId: string, page = 1, limit = 20) {
+        console.log(`[UsersService] Fetching favorites for userId: ${userId}`);
         const skip = calculateSkip(page, limit);
 
-        const [favorites, total] = await this.favoriteRepository.findAndCount({
+        const [savedListings, total] = await this.savedListingRepository.findAndCount({
             where: { userId },
             relations: ['business', 'business.category'],
             skip,
@@ -95,7 +136,7 @@ export class UsersService {
         });
 
         return createPaginatedResponse(
-            favorites.map((f) => f.business),
+            savedListings.map((f) => f.business),
             page,
             limit,
             total,

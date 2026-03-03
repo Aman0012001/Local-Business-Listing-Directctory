@@ -43,7 +43,7 @@ export default function LoginPage() {
                         <p className="text-slate-500">Sign in to your LocalFind account</p>
                     </div>
 
-                    <div className="bg-white rounded-[40px] border border-slate-100 p-8 md:p-10 shadow-xl shadow-blue-500/5">
+                    <div className="bg-white rounded-[20px] border border-slate-100 p-8 md:p-10 shadow-xl shadow-blue-500/5">
                         {error && (
                             <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-bold border border-red-100 italic">
                                 {error}
@@ -102,12 +102,9 @@ export default function LoginPage() {
                             <div className="relative flex justify-center text-xs uppercase font-bold text-slate-400 bg-white px-4">Or continue with</div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <button className="flex items-center justify-center gap-2 py-4 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors font-bold text-sm text-slate-700">
-                                <Chrome className="w-4 h-4" /> Google
-                            </button>
-                            <button className="flex items-center justify-center gap-2 py-4 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors font-bold text-sm text-slate-700">
-                                <Github className="w-4 h-4" /> GitHub
+                        <div className="text-center">
+                            <button className="flex w-full py-4 items-center justify-center gap-2 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors font-bold text-sm text-slate-700">
+                                <Chrome className="w-5 h-5" /> Google
                             </button>
                         </div>
                     </div>

@@ -14,8 +14,8 @@ import { SubscriptionsModule } from './modules/subscriptions/subscriptions.modul
 import { SearchModule } from './modules/search/search.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
-import { StripeModule } from './modules/stripe/stripe.module';
 import { CitiesModule } from './modules/cities/cities.module';
+import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { typeOrmConfig } from './config/typeorm.config';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
@@ -59,8 +59,8 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
         SearchModule,
         AdminModule,
         NotificationsModule,
-        StripeModule,
         CitiesModule,
+        CloudinaryModule,
     ],
     providers: [
         {

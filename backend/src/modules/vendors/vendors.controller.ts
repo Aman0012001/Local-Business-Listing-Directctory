@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { VendorsService } from './vendors.service';
+import { BusinessesService } from '../businesses/businesses.service';
 import { CreateVendorDto, UpdateVendorDto } from './dto/vendor.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -22,13 +23,23 @@ import { User, UserRole } from '../../entities/user.entity';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class VendorsController {
-    constructor(private readonly vendorsService: VendorsService) { }
+    constructor(
+        private readonly vendorsService: VendorsService,
+        private readonly businessesService: BusinessesService,
+    ) { }
 
     @Post('become-vendor')
     @ApiOperation({ summary: 'Register the current user as a vendor' })
     @ApiResponse({ status: 201, description: 'Vendor profile created' })
     becomeVendor(@CurrentUser() user: User, @Body() createVendorDto: CreateVendorDto) {
         return this.vendorsService.becomeVendor(user.id, createVendorDto);
+    }
+
+    @Get('my-listings')
+    @Roles(UserRole.VENDOR)
+    @ApiOperation({ summary: 'Get current vendor listings' })
+    getMyListings(@CurrentUser() user: User) {
+        return this.businessesService.getVendorBusinesses(user.id);
     }
 
     @Get('profile')

@@ -77,7 +77,7 @@ export default function CategoriesPage() {
                             transition={{ delay: idx * 0.03 }}
                         >
                             <Link href={`/categories/${cat.slug}`} className="group block h-full">
-                                <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-2 transition-all duration-500 h-full flex flex-col">
+                                <div className="bg-white p-8 rounded-[20px] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-2 transition-all duration-500 h-full flex flex-col">
                                     <div className="w-20 h-20 bg-slate-50 rounded-3xl mb-8 flex items-center justify-center group-hover:bg-blue-50 group-hover:rotate-6 transition-all duration-500">
                                         {iconMap[cat.slug] || <TrendingUp className="w-10 h-10 text-blue-600" />}
                                     </div>

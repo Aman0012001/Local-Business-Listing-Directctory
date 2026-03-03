@@ -18,9 +18,28 @@ export interface City {
     businessCount?: number;
 }
 
-export interface Business {
+export interface BusinessHours {
+    id: string;
+    dayOfWeek: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+    openTime: string;
+    closeTime: string;
+    isOpen: boolean;
+}
+
+export interface Amenity {
     id: string;
     name: string;
+    icon?: string;
+}
+
+export interface BusinessAmenity {
+    id: string;
+    amenity: Amenity;
+}
+
+export interface Business {
+    id: string;
+    title: string;
     slug: string;
     description: string;
     shortDescription?: string;
@@ -40,8 +59,11 @@ export interface Business {
     priceRange?: string;
     isVerified: boolean;
     isFeatured: boolean;
+    whatsapp?: string;
     category?: Category;
     website?: string;
+    businessHours?: BusinessHours[];
+    businessAmenities?: BusinessAmenity[];
 }
 
 export interface Review {
@@ -49,10 +71,18 @@ export interface Review {
     rating: number;
     comment: string;
     user: {
-        firstName: string;
-        lastName: string;
+        fullName: string;
+        avatarUrl?: string;
+    };
+    business?: {
+        id: string;
+        name?: string;
+        title?: string;
+        slug: string;
+        coverImageUrl?: string;
     };
     vendorResponse?: string;
+    vendorResponseAt?: string;
     createdAt: string;
 }
 

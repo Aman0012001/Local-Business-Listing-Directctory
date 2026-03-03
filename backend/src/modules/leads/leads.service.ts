@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Lead, LeadStatus } from '../../entities/lead.entity';
-import { Business } from '../../entities/business.entity';
+import { Listing } from '../../entities/business.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { User, UserRole } from '../../entities/user.entity';
 import { CreateLeadDto } from './dto/create-lead.dto';
@@ -24,8 +24,8 @@ export class LeadsService {
     constructor(
         @InjectRepository(Lead)
         private leadRepository: Repository<Lead>,
-        @InjectRepository(Business)
-        private businessRepository: Repository<Business>,
+        @InjectRepository(Listing)
+        private readonly listingRepository: Repository<Listing>,
         @InjectRepository(Vendor)
         private vendorRepository: Repository<Vendor>,
         private notificationsGateway: NotificationsGateway,
@@ -41,12 +41,12 @@ export class LeadsService {
     ): Promise<Lead> {
         const { businessId } = createLeadDto;
 
-        const business = await this.businessRepository.findOne({
+        const listing = await this.listingRepository.findOne({
             where: { id: businessId },
         });
 
-        if (!business) {
-            throw new NotFoundException('Business not found');
+        if (!listing) {
+            throw new NotFoundException('Listing not found');
         }
 
         const lead = this.leadRepository.create({
@@ -61,17 +61,17 @@ export class LeadsService {
         const savedLead = await this.leadRepository.save(lead);
 
         // Increment lead counter on business
-        await this.businessRepository.increment({ id: businessId }, 'totalLeads', 1);
+        await this.listingRepository.increment({ id: businessId }, 'totalLeads', 1);
 
         // Notify vendor in real-time
         const vendor = await this.vendorRepository.findOne({
-            where: { id: business.vendorId },
+            where: { id: listing.vendorId },
         });
 
         if (vendor) {
             this.notificationsGateway.sendToUser(vendor.userId, 'new_lead', {
                 leadId: savedLead.id,
-                businessName: business.name,
+                businessName: listing.title,
                 customerName: savedLead.name,
                 type: savedLead.type,
                 createdAt: savedLead.createdAt,
@@ -155,7 +155,7 @@ export class LeadsService {
     async findOne(id: string, userId: string): Promise<Lead> {
         const lead = await this.leadRepository.findOne({
             where: { id },
-            relations: ['business', 'business.vendor'],
+            relations: ['business', 'listing.vendor'],
         });
 
         if (!lead) {

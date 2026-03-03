@@ -7,10 +7,11 @@ import {
     OneToOne,
     OneToMany,
 } from 'typeorm';
+import { Exclude } from 'class-transformer';
 import { Vendor } from './vendor.entity';
 import { Review } from './review.entity';
 import { Lead } from './lead.entity';
-import { Favorite } from './favorite.entity';
+import { SavedListing } from './favorite.entity';
 import { Notification } from './notification.entity';
 
 export enum UserRole {
@@ -56,6 +57,12 @@ export class User {
     @Column({ name: 'is_phone_verified', default: false })
     isPhoneVerified: boolean;
 
+    @Column({ nullable: true, length: 100 })
+    city: string;
+
+    @Column({ nullable: true, length: 100 })
+    state: string;
+
     @Column({ name: 'last_login_at', nullable: true, type: 'timestamp' })
     lastLoginAt: Date;
 
@@ -66,18 +73,23 @@ export class User {
     updatedAt: Date;
 
     // Relations
+    @Exclude()
     @OneToOne(() => Vendor, (vendor) => vendor.user)
     vendor: Vendor;
 
+    @Exclude()
     @OneToMany(() => Review, (review) => review.user)
     reviews: Review[];
 
+    @Exclude()
     @OneToMany(() => Lead, (lead) => lead.user)
     leads: Lead[];
 
-    @OneToMany(() => Favorite, (favorite) => favorite.user)
-    favorites: Favorite[];
+    @Exclude()
+    @OneToMany(() => SavedListing, (savedListing) => savedListing.user)
+    savedListings: SavedListing[];
 
+    @Exclude()
     @OneToMany(() => Notification, (notification) => notification.user)
     notifications: Notification[];
 }

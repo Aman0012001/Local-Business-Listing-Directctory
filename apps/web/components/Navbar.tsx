@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Menu, ChevronDown, MapPin, User as UserIcon, LogOut, X, Search, Building2, Globe } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../lib/api';
+import { api, getImageUrl } from '../lib/api';
 import { Category, City } from '../types/api';
 
 export default function Navbar() {
@@ -173,15 +173,24 @@ export default function Navbar() {
                     <div className="flex items-center justify-end gap-3 w-48 lg:w-auto">
                         {user ? (
                             <div className="flex items-center gap-3">
-                                <Link href="/vendor/dashboard" className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer group">
-                                    <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                                        <UserIcon className="w-4 h-4 text-[#FF7A30]" />
+                                <Link href={user.role === 'admin' || user.role === 'superadmin' ? '/admin' : '/vendor/dashboard'} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer group">
+                                    <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform overflow-hidden">
+                                        {user.avatarUrl ? (
+                                            <img
+                                                src={getImageUrl(user.avatarUrl) as string}
+                                                alt="Avatar"
+                                                className="w-full h-full object-cover"
+                                                key={user.avatarUrl}
+                                            />
+                                        ) : (
+                                            <UserIcon className="w-4 h-4 text-[#FF7A30]" />
+                                        )}
                                     </div>
                                     <div className="flex flex-col">
                                         <span className="text-xs font-black text-[#112D4E] leading-tight max-w-[80px] truncate">{user.fullName || user.email}</span>
-                                        {user.role === 'vendor' && (
-                                            <span className="text-[8px] text-orange-600 font-black uppercase tracking-widest">Dashboard</span>
-                                        )}
+                                        <span className="text-[8px] text-orange-600 font-black uppercase tracking-widest">
+                                            {user.role === 'admin' || user.role === 'superadmin' ? 'Admin Dash' : 'Dashboard'}
+                                        </span>
                                     </div>
                                 </Link>
                                 <button

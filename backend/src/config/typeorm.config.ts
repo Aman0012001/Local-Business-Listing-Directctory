@@ -8,7 +8,13 @@ export const typeOrmConfig = (
     const host = configService.get('DB_HOST');
     const port = parseInt(configService.get('DB_PORT') ?? '5432');
 
+    const sync = configService.get('DB_SYNCHRONIZE') === 'true';
+    const logging = configService.get('DB_LOGGING') === 'true';
+    const ssl = configService.get('DB_SSL') === 'true';
+
     console.log('--- Database Connection Config ---');
+    console.log(`Sync: ${sync}, Logging: ${logging}, SSL: ${ssl}`);
+
     if (url) {
         console.log('Using DATABASE_URL:', url.replace(/:[^:]+@/, ':****@'));
         return {
@@ -17,7 +23,7 @@ export const typeOrmConfig = (
             entities: [__dirname + '/../**/*.entity{.ts,.js}'],
             synchronize: configService.get('DB_SYNCHRONIZE') === 'true',
             logging: configService.get('DB_LOGGING') === 'true',
-            ssl: { rejectUnauthorized: false },
+            ssl: configService.get('DB_SSL') === 'true' ? { rejectUnauthorized: false } : false,
             extra: {
                 max: 20,
                 connectionTimeoutMillis: 30000,

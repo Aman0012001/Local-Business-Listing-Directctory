@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
     LayoutDashboard,
     ListTree,
+    Plus,
     Heart,
     Star,
     MessageSquare,
@@ -16,13 +17,15 @@ import {
     ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { getImageUrl } from '../../lib/api';
 
 const menuItems = [
     { name: 'Dashboard', icon: LayoutDashboard, href: '/vendor/dashboard', badge: null },
     { name: 'My Listings', icon: ListTree, href: '/vendor/listings', badge: null },
+    { name: 'Add Listing', icon: Plus, href: '/vendor/add-listing', badge: null },
     { name: 'Saved', icon: Heart, href: '/vendor/saved', badge: null },
     { name: 'Reviews', icon: Star, href: '/vendor/reviews', badge: null },
-    { name: 'Messages', icon: MessageSquare, href: '/vendor/messages', badge: '2' },
+    { name: 'Messages', icon: MessageSquare, href: '/vendor/messages', badge: null },
     { name: 'Notifications', icon: Bell, href: '/vendor/notifications', badge: null },
     { name: 'Settings', icon: Settings, href: '/vendor/settings', badge: null },
 ];
@@ -38,9 +41,10 @@ export default function Sidebar() {
                 <div className="relative mb-4 group cursor-pointer">
                     <div className="w-24 h-24 rounded-[32px] overflow-hidden border-4 border-white shadow-2xl transition-transform duration-500 group-hover:scale-105">
                         <img
-                            src={user?.avatar || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200"}
+                            src={getImageUrl(user?.avatarUrl) || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200"}
                             alt="Profile"
                             className="w-full h-full object-cover"
+                            key={user?.avatarUrl} // Force re-render on URL change
                         />
                     </div>
                     <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-600 rounded-xl border-4 border-[#F8FAFC] flex items-center justify-center text-white shadow-lg">
@@ -64,37 +68,45 @@ export default function Sidebar() {
 
             {/* Navigation Menu */}
             <nav className="flex-grow space-y-2">
-                {menuItems.map((item) => {
-                    const isActive = pathname === item.href;
-                    return (
-                        <Link
-                            key={item.name}
-                            href={item.href}
-                            className={`flex items-center justify-between px-5 py-4 rounded-[24px] group transition-all duration-300 ${isActive
+                {menuItems
+                    .filter(item => {
+                        const isVendorOrAdmin = user?.role === 'vendor' || user?.role === 'admin' || user?.role === 'superadmin';
+                        if (!isVendorOrAdmin) {
+                            return ['Dashboard', 'Saved', 'Notifications', 'Settings', 'Reviews'].includes(item.name);
+                        }
+                        return true;
+                    })
+                    .map((item) => {
+                        const isActive = pathname === item.href;
+                        return (
+                            <Link
+                                key={item.name}
+                                href={item.href}
+                                className={`flex items-center justify-between px-5 py-4 rounded-[3px] group transition-all duration-300 ${isActive
                                     ? 'bg-white text-slate-900 shadow-xl shadow-slate-200/40 translate-x-1'
                                     : 'text-slate-500 hover:text-slate-900 hover:bg-white/60'
-                                }`}
-                        >
-                            <div className="flex items-center gap-4">
-                                <item.icon className={`w-5 h-5 transition-all duration-300 ${isActive ? 'text-blue-600 scale-110' : 'text-slate-400 group-hover:text-slate-900 group-hover:scale-110'
-                                    }`} />
-                                <span className={`text-[15px] tracking-tight transition-all ${isActive ? 'font-black' : 'font-bold'}`}>{item.name}</span>
-                            </div>
-                            {item.badge && (
-                                <span className="flex items-center justify-center px-2 min-w-[20px] h-5 rounded-lg bg-[#FF7A30] text-white text-[10px] font-black shadow-lg shadow-orange-500/20">
-                                    {item.badge}
-                                </span>
-                            )}
-                        </Link>
-                    );
-                })}
+                                    }`}
+                            >
+                                <div className="flex items-center gap-4">
+                                    <item.icon className={`w-5 h-5 transition-all duration-300 ${isActive ? 'text-blue-600 scale-110' : 'text-slate-400 group-hover:text-slate-900 group-hover:scale-110'
+                                        }`} />
+                                    <span className={`text-[15px] tracking-tight transition-all ${isActive ? 'font-black' : 'font-bold'}`}>{item.name}</span>
+                                </div>
+                                {item.badge && (
+                                    <span className="flex items-center justify-center px-2 min-w-[20px] h-5 rounded-lg bg-[#FF7A30] text-white text-[10px] font-black shadow-lg shadow-orange-500/20">
+                                        {item.badge}
+                                    </span>
+                                )}
+                            </Link>
+                        );
+                    })}
             </nav>
 
             {/* Logout Action */}
             <div className="mt-10 pt-6 border-t border-slate-200/60">
                 <button
                     onClick={logout}
-                    className="flex items-center gap-4 px-5 py-4 w-full rounded-[24px] text-slate-500 hover:text-red-500 hover:bg-red-50/50 transition-all group active:scale-95"
+                    className="flex items-center gap-4 px-5 py-4 w-full rounded-[3px] text-slate-500 hover:text-red-500 hover:bg-red-50/50 transition-all group active:scale-95"
                 >
                     <LogOut className="w-5 h-5 text-slate-400 group-hover:text-red-500 group-hover:-translate-x-1 transition-all" />
                     <span className="font-bold text-[15px] tracking-tight">Log Out</span>

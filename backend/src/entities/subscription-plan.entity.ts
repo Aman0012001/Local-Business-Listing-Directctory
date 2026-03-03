@@ -61,9 +61,6 @@ export class SubscriptionPlan {
     @Column({ name: 'is_active', default: true })
     isActive: boolean;
 
-    @Column({ name: 'stripe_price_id', nullable: true, length: 255 })
-    stripePriceId: string;
-
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 

@@ -6,7 +6,8 @@ import {
     ManyToOne,
     JoinColumn,
 } from 'typeorm';
-import { Business } from './business.entity';
+import { Exclude } from 'class-transformer';
+import { Listing } from './business.entity';
 
 export enum DayOfWeek {
     MONDAY = 'monday',
@@ -46,7 +47,8 @@ export class BusinessHours {
     createdAt: Date;
 
     // Relations
-    @ManyToOne(() => Business, (business) => business.businessHours)
+    @Exclude()
+    @ManyToOne(() => Listing, (listing) => listing.businessHours)
     @JoinColumn({ name: 'business_id' })
-    business: Business;
+    business: Listing;
 }

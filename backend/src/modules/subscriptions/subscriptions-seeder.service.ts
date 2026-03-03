@@ -36,7 +36,6 @@ export class SubscriptionsSeederService implements OnModuleInit {
                 maxListings: 1,
                 isFeatured: false,
                 isActive: true,
-                stripePriceId: null,
             },
             {
                 id: '00000000-0000-0000-0000-000000000002',
@@ -49,7 +48,6 @@ export class SubscriptionsSeederService implements OnModuleInit {
                 maxListings: 10,
                 isFeatured: true,
                 isActive: true,
-                stripePriceId: this.configService.get<string>('STRIPE_PRICE_BASIC'),
             },
             {
                 id: '00000000-0000-0000-0000-000000000003',
@@ -62,7 +60,6 @@ export class SubscriptionsSeederService implements OnModuleInit {
                 maxListings: 999,
                 isFeatured: false,
                 isActive: true,
-                stripePriceId: this.configService.get<string>('STRIPE_PRICE_PREMIUM'),
             },
         ];
 
@@ -76,7 +73,6 @@ export class SubscriptionsSeederService implements OnModuleInit {
                 this.logger.log(`Updating plan: ${planData.name}`);
                 await this.planRepository.update(existing.id, {
                     ...planData,
-                    stripePriceId: existing.stripePriceId || planData.stripePriceId,
                 });
             } else {
                 this.logger.log(`Creating new plan: ${planData.name}`);

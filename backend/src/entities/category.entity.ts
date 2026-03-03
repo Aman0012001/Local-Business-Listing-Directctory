@@ -8,7 +8,8 @@ import {
     OneToMany,
     JoinColumn,
 } from 'typeorm';
-import { Business } from './business.entity';
+import { Exclude } from 'class-transformer';
+import { Listing } from './business.entity';
 
 @Entity('categories')
 export class Category {
@@ -56,6 +57,7 @@ export class Category {
     @OneToMany(() => Category, (category) => category.parent)
     subcategories: Category[];
 
-    @OneToMany(() => Business, (business) => business.category)
-    businesses: Business[];
+    @Exclude()
+    @OneToMany(() => Listing, (listing) => listing.category)
+    businesses: Listing[];
 }

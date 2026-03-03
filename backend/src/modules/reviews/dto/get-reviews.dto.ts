@@ -21,4 +21,9 @@ export class GetReviewsDto extends PaginationDto {
     @Min(1)
     @Max(5)
     rating?: number;
+
+    @ApiPropertyOptional({ description: 'Filter by vendor UUID' })
+    @IsOptional()
+    @IsUUID()
+    vendorId?: string;
 }

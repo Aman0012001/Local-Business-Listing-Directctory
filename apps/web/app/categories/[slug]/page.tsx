@@ -52,8 +52,6 @@ export default function CategoryDetailPage() {
             setError(null);
 
             try {
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-                console.log(`[CategoryDetail] Full Fetch URL: ${apiUrl}/categories/slug/${normalizedSlug}`);
                 const catData = await api.categories.getBySlug(normalizedSlug);
                 console.log(`[CategoryDetail] Category found:`, catData.name);
                 setCategory(catData);
@@ -72,7 +70,7 @@ export default function CategoryDetailPage() {
                         openNow: filters.openNow
                     };
                     console.log(`[CategoryDetail] Fetching businesses...`);
-                    const searchRes = await api.businesses.search(searchParams);
+                    const searchRes = await api.listings.search(searchParams);
                     setBusinesses(searchRes.data);
                 } catch (searchErr: any) {
                     console.error('[CategoryDetail] Search error:', searchErr);
@@ -162,7 +160,7 @@ export default function CategoryDetailPage() {
                         </div>
                         <div className="flex flex-col items-end gap-3">
                             <div className="bg-blue-50 px-6 py-3 rounded-2xl border border-blue-100 text-blue-600 font-bold">
-                                {businesses.length} Verified Listings
+                                {businesses.length} Verified Businesses
                             </div>
                         </div>
                     </div>

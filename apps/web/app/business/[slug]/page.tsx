@@ -9,7 +9,7 @@ import {
 import Navbar from '../../../components/Navbar';
 import Footer from '../../../components/Footer';
 import Link from 'next/link';
-import { api } from '../../../lib/api';
+import { api, getImageUrl } from '../../../lib/api';
 import { Business, Review } from '../../../types/api';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -30,12 +30,12 @@ export default function BusinessDetailsPage() {
     useEffect(() => {
         const loadBusiness = async () => {
             try {
-                const data = await api.businesses.getBySlug(slug as string);
+                const data = await api.listings.getBySlug(slug as string);
                 setBusiness(data);
 
                 // Load reviews
                 const reviewsData = await api.reviews.getByBusiness(slug as string);
-                setReviews(reviewsData);
+                setReviews(reviewsData.data || []);
 
                 // Check if favorite
                 if (user) {
@@ -73,7 +73,7 @@ export default function BusinessDetailsPage() {
 
     const handleShare = async () => {
         const shareData = {
-            title: business?.name,
+            title: business?.title,
             text: business?.shortDescription || business?.description,
             url: window.location.href,
         };
@@ -103,16 +103,21 @@ export default function BusinessDetailsPage() {
         }
         if (!business) return;
 
+        if (reviewComment.trim() && reviewComment.trim().length < 10) {
+            alert('Review comment must be at least 10 characters long.');
+            return;
+        }
+
         setSubmittingReview(true);
         try {
             await api.reviews.create({
                 businessId: business.id,
                 rating: reviewRating,
-                comment: reviewComment
+                ...(reviewComment.trim() ? { comment: reviewComment.trim() } : {})
             });
             // Refresh reviews
             const reviewsData = await api.reviews.getByBusiness(slug as string);
-            setReviews(reviewsData);
+            setReviews(reviewsData.data || []);
             setShowReviewModal(false);
             setReviewComment('');
             setReviewRating(5);
@@ -136,7 +141,7 @@ export default function BusinessDetailsPage() {
                 <ChevronRight className="w-4 h-4" />
                 <Link href={`/search?category=${business.category?.slug || ''}`} className="hover:text-blue-600">{business.category?.name || 'Category'}</Link>
                 <ChevronRight className="w-4 h-4" />
-                <span className="text-slate-900 font-medium">{business.name}</span>
+                <span className="text-slate-900 font-medium">{business.title}</span>
             </div>
 
             <main className="max-w-7xl mx-auto px-4 py-12">
@@ -156,7 +161,7 @@ export default function BusinessDetailsPage() {
                                         {business.category?.name || 'Business'}
                                     </div>
                                 </div>
-                                <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-4">{business.name}</h1>
+                                <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-4">{business.title}</h1>
                                 <div className="flex flex-wrap items-center gap-6 text-slate-600">
                                     <div className="flex items-center gap-1.5">
                                         <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
@@ -192,23 +197,23 @@ export default function BusinessDetailsPage() {
 
                         {/* Gallery */}
                         <div className="grid grid-cols-4 grid-rows-2 h-[500px] gap-4 mb-16">
-                            <div className="col-span-2 row-span-2 rounded-[40px] overflow-hidden border border-slate-100 bg-slate-50">
+                            <div className="col-span-2 row-span-2 rounded-[20px] overflow-hidden border border-slate-100 bg-slate-50">
                                 <img
-                                    src={(business.images && business.images[0]) || business.coverImageUrl || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200'}
+                                    src={getImageUrl((business.images && business.images[0]) || business.coverImageUrl) || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200'}
                                     className="w-full h-full object-cover"
-                                    alt={business.name}
+                                    alt={business.title}
                                 />
                             </div>
-                            <div className="col-span-2 row-span-1 rounded-[40px] overflow-hidden border border-slate-100 bg-slate-50">
+                            <div className="col-span-2 row-span-1 rounded-[20px] overflow-hidden border border-slate-100 bg-slate-50">
                                 <img
-                                    src={(business.images && business.images[1]) || 'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=800'}
+                                    src={getImageUrl(business.images && business.images[1]) || 'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=800'}
                                     className="w-full h-full object-cover"
                                     alt="Business interior"
                                 />
                             </div>
                             <div className="col-span-1 row-span-1 rounded-[32px] overflow-hidden border border-slate-100 bg-slate-50">
                                 <img
-                                    src={(business.images && business.images[2]) || 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=600'}
+                                    src={getImageUrl(business.images && business.images[2]) || 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=600'}
                                     className="w-full h-full object-cover"
                                     alt="Business storefront"
                                 />
@@ -220,7 +225,7 @@ export default function BusinessDetailsPage() {
 
                         {/* Tabs / Content */}
                         <div className="border-b border-slate-100 flex items-center gap-12 mb-10 overflow-x-auto scrollbar-hide">
-                            {['Overview', 'Reviews', 'Amenities', 'Offers'].map(tab => (
+                            {['Overview', 'Reviews', 'Amenities'].concat(business.shortDescription?.toLowerCase().includes('offer') ? ['Offers'] : []).map(tab => (
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
@@ -234,7 +239,7 @@ export default function BusinessDetailsPage() {
                         <div className="min-h-[400px]">
                             {activeTab === 'Overview' && (
                                 <div className="prose prose-slate max-w-none animate-in fade-in duration-500">
-                                    <h3 className="text-2xl font-bold text-slate-900 mb-6 italic">About {business.name}</h3>
+                                    <h3 className="text-2xl font-bold text-slate-900 mb-6 italic">About {business.title}</h3>
                                     <p className="text-lg text-slate-600 leading-relaxed mb-8">
                                         {business.description}
                                     </p>
@@ -268,11 +273,15 @@ export default function BusinessDetailsPage() {
                                                 <div key={review.id} className="p-8 bg-white rounded-[32px] border border-slate-100 shadow-sm transition-all hover:shadow-md">
                                                     <div className="flex items-center justify-between mb-4">
                                                         <div className="flex items-center gap-4">
-                                                            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 font-bold">
-                                                                {review.user?.firstName?.[0]}{review.user?.lastName?.[0]}
+                                                            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 font-bold overflow-hidden shadow-inner">
+                                                                {review.user?.avatarUrl ? (
+                                                                    <img src={getImageUrl(review.user.avatarUrl) as string} alt={review.user.fullName || 'User'} className="w-full h-full object-cover" />
+                                                                ) : (
+                                                                    (review.user?.fullName?.[0] || 'U').toUpperCase()
+                                                                )}
                                                             </div>
                                                             <div>
-                                                                <h4 className="font-bold text-slate-900">{review.user?.firstName} {review.user?.lastName}</h4>
+                                                                <h4 className="font-bold text-slate-900">{review.user?.fullName || 'Anonymous'}</h4>
                                                                 <div className="flex items-center gap-1 mt-0.5">
                                                                     {[...Array(5)].map((_, i) => (
                                                                         <Star
@@ -300,12 +309,12 @@ export default function BusinessDetailsPage() {
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className="p-12 bg-slate-50 rounded-[40px] text-center border border-dashed border-slate-200">
+                                        <div className="p-12 bg-slate-50 rounded-[20px] text-center border border-dashed border-slate-200">
                                             <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
                                                 <MessageSquare className="w-8 h-8 text-slate-300" />
                                             </div>
                                             <h4 className="font-bold text-slate-900 mb-2">No reviews yet</h4>
-                                            <p className="text-sm text-slate-500">Be the first to share your experience with {business.name}.</p>
+                                            <p className="text-sm text-slate-500">Be the first to share your experience with {business.title}.</p>
                                         </div>
                                     )}
                                 </div>
@@ -315,14 +324,25 @@ export default function BusinessDetailsPage() {
                                 <div className="animate-in fade-in duration-500">
                                     <h3 className="text-2xl font-bold text-slate-900 mb-8">Business Amenities</h3>
                                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
-                                        {['Free WiFi', 'Parking Space', 'Accepts Cards', 'Air Conditioned', 'Wheelchair Access', 'Outdoor Seating'].map(item => (
-                                            <div key={item} className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
-                                                    <CheckCircle2 className="w-5 h-5" />
+                                        {business.businessAmenities && business.businessAmenities.length > 0 ? (
+                                            business.businessAmenities.map(item => (
+                                                <div key={item.id} className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+                                                        <CheckCircle2 className="w-5 h-5" />
+                                                    </div>
+                                                    <span className="font-bold text-slate-700">{item.amenity.name}</span>
                                                 </div>
-                                                <span className="font-bold text-slate-700">{item}</span>
-                                            </div>
-                                        ))}
+                                            ))
+                                        ) : (
+                                            ['Free WiFi', 'Parking Space', 'Accepts Cards', 'Air Conditioned', 'Wheelchair Access', 'Outdoor Seating'].map(item => (
+                                                <div key={item} className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+                                                        <CheckCircle2 className="w-5 h-5" />
+                                                    </div>
+                                                    <span className="font-bold text-slate-700">{item}</span>
+                                                </div>
+                                            ))
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -330,13 +350,18 @@ export default function BusinessDetailsPage() {
                             {activeTab === 'Offers' && (
                                 <div className="animate-in fade-in duration-500">
                                     <h3 className="text-2xl font-bold text-slate-900 mb-8">Exclusive Offers</h3>
-                                    <div className="p-8 bg-orange-50 rounded-[40px] border border-orange-100 relative overflow-hidden group">
+                                    <div className="p-8 bg-orange-50 rounded-[20px] border border-orange-100 relative overflow-hidden group">
                                         <div className="absolute top-0 right-0 w-32 h-32 bg-orange-100 rotate-45 translate-x-16 -translate-y-16 rounded-full group-hover:scale-110 transition-transform duration-500" />
                                         <div className="relative z-10">
                                             <span className="inline-block px-3 py-1 bg-white text-orange-600 rounded-full text-[10px] font-black uppercase tracking-widest mb-4 shadow-sm">Hot Deal</span>
-                                            <h4 className="text-3xl font-black text-slate-900 mb-2">15% Discount on First Visit</h4>
-                                            <p className="text-slate-600 mb-6 font-medium">Mention "LocalFind15" at checkout to redeem this exclusive offer.</p>
-                                            <button className="px-8 py-3 bg-[#FF7A30] text-white rounded-xl font-bold hover:bg-[#E86920] shadow-lg shadow-orange-500/20 transition-all active:scale-95">Claim Offer</button>
+                                            <h4 className="text-3xl font-black text-slate-900 mb-2">Welcome Special</h4>
+                                            <p className="text-slate-600 mb-6 font-medium">Contact the business and mention you found them on our platform to enquire about current specials.</p>
+                                            <a
+                                                href={`tel:${business.phone}`}
+                                                className="inline-block px-8 py-3 bg-[#FF7A30] text-white rounded-xl font-bold hover:bg-[#E86920] shadow-lg shadow-orange-500/20 transition-all active:scale-95"
+                                            >
+                                                Claim Offer
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
@@ -358,20 +383,42 @@ export default function BusinessDetailsPage() {
                                 <h4 className="text-xl font-bold mb-6">Connect with Business</h4>
 
                                 <div className="space-y-4 mb-8">
-                                    <button className="w-full py-4 bg-white text-slate-900 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-slate-100 transition-all">
+                                    <a
+                                        href={`tel:${business.phone}`}
+                                        className="w-full py-4 bg-white text-slate-900 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-slate-100 transition-all"
+                                    >
                                         <Phone className="w-5 h-5" /> Call Now
-                                    </button>
-                                    <button className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-blue-700 transition-all">
+                                    </a>
+                                    <a
+                                        href={`https://wa.me/${business.whatsapp || business.phone}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-blue-700 transition-all"
+                                    >
                                         <MessageSquare className="w-5 h-5" /> WhatsApp Express
-                                    </button>
+                                    </a>
                                 </div>
 
                                 <div className="pt-8 border-t border-white/10 space-y-4">
-                                    <div className="flex items-center justify-between text-sm">
-                                        <div className="flex items-center gap-3 text-slate-400"><Clock className="w-4 h-4" /> Open Today</div>
-                                        <span className="font-bold">09:00 - 21:00</span>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-3 text-slate-400 mb-2"><Clock className="w-4 h-4" /> Operating Hours</div>
+                                        {business.businessHours && business.businessHours.length > 0 ? (
+                                            business.businessHours.map((hour) => (
+                                                <div key={hour.id} className="flex items-center justify-between text-xs">
+                                                    <span className="capitalize text-slate-400">{hour.dayOfWeek}</span>
+                                                    <span className={`font-bold ${hour.isOpen ? 'text-white' : 'text-rose-400'}`}>
+                                                        {hour.isOpen ? `${hour.openTime} - ${hour.closeTime}` : 'Closed'}
+                                                    </span>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="flex items-center justify-between text-sm">
+                                                <div className="flex items-center gap-3 text-slate-400"><Clock className="w-4 h-4" /> Open Today</div>
+                                                <span className="font-bold">09:00 - 21:00</span>
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="flex items-center justify-between text-sm">
+                                    <div className="flex items-center justify-between text-sm pt-4 border-t border-white/5">
                                         <div className="flex items-center gap-3 text-slate-400"><Globe className="w-4 h-4" /> Website</div>
                                         <a href={business.website} target="_blank" className="font-bold border-b border-blue-400 text-blue-400">Visit Site</a>
                                     </div>
@@ -379,15 +426,22 @@ export default function BusinessDetailsPage() {
                             </div>
 
                             {/* Location Card */}
-                            <div className="bg-white rounded-[40px] border border-slate-100 p-8">
+                            <div className="bg-white rounded-[20px] border border-slate-100 p-8">
                                 <h4 className="font-bold text-slate-900 mb-6 flex items-center gap-2">
                                     <MapPin className="w-5 h-5 text-blue-600" /> Business Location
                                 </h4>
                                 <div className="aspect-video bg-slate-100 rounded-3xl mb-4 overflow-hidden relative">
-                                    {/* Placeholder for Map */}
-                                    <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-xs italic text-center px-6">
-                                        Interactive Map Loading... <br /> (Long: {business.longitude}, Lat: {business.latitude})
-                                    </div>
+                                    {/* Placeholder for Map - Linked to Google Maps */}
+                                    <a
+                                        href={`https://www.google.com/maps/search/?api=1&query=${business.latitude},${business.longitude}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="absolute inset-0 flex flex-col items-center justify-center bg-slate-100 hover:bg-slate-200 transition-colors text-slate-400 text-xs italic text-center px-6"
+                                    >
+                                        <MapPin className="w-8 h-8 text-blue-600 mb-2 animate-bounce" />
+                                        <span>Click to open in Google Maps</span>
+                                        <span className="mt-1 opacity-50">(Long: {business.longitude}, Lat: {business.latitude})</span>
+                                    </a>
                                 </div>
                                 <p className="text-slate-500 text-sm">{business.address}, {business.city}, {business.state} - {business.pincode}</p>
                             </div>
@@ -414,7 +468,7 @@ export default function BusinessDetailsPage() {
 
                         <div className="text-center mb-8">
                             <h3 className="text-3xl font-black text-slate-900 mb-2">Write a Review</h3>
-                            <p className="text-slate-500">Share your experience with {business.name}</p>
+                            <p className="text-slate-500">Share your experience with {business.title}</p>
                         </div>
 
                         <form onSubmit={handleReviewSubmit} className="space-y-6">

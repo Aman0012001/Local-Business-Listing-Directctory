@@ -9,7 +9,8 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
-import { Business } from './business.entity';
+import { Exclude } from 'class-transformer';
+import { Listing } from './business.entity';
 import { User } from './user.entity';
 import { ReviewHelpfulVote } from './review-helpful-vote.entity';
 
@@ -63,9 +64,9 @@ export class Review {
     updatedAt: Date;
 
     // Relations
-    @ManyToOne(() => Business, (business) => business.reviews)
+    @ManyToOne(() => Listing, (listing) => listing.reviews)
     @JoinColumn({ name: 'business_id' })
-    business: Business;
+    business: Listing;
 
     @ManyToOne(() => User, (user) => user.reviews)
     @JoinColumn({ name: 'user_id' })

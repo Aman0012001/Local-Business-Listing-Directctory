@@ -8,7 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Vendor } from '../../entities/vendor.entity';
 import { User, UserRole } from '../../entities/user.entity';
-import { Business } from '../../entities/business.entity';
+import { Listing } from '../../entities/business.entity';
 import { Subscription } from '../../entities/subscription.entity';
 import { CreateVendorDto, UpdateVendorDto } from './dto/vendor.dto';
 
@@ -19,8 +19,8 @@ export class VendorsService {
         private vendorRepository: Repository<Vendor>,
         @InjectRepository(User)
         private userRepository: Repository<User>,
-        @InjectRepository(Business)
-        private businessRepository: Repository<Business>,
+        @InjectRepository(Listing)
+        private listingRepository: Repository<Listing>,
     ) { }
 
     /**
@@ -65,13 +65,34 @@ export class VendorsService {
     }
 
     /**
-     * Update vendor profile
+     * Update vendor profile — creates a vendor record if one doesn't exist yet (upsert)
      */
     async updateProfile(userId: string, updateVendorDto: UpdateVendorDto): Promise<Vendor> {
-        const vendor = await this.getProfile(userId);
+        console.log(`[VendorsService] Updating profile for vendor (user ${userId}):`, JSON.stringify(updateVendorDto, null, 2));
+
+        let vendor = await this.vendorRepository.findOne({
+            where: { userId },
+            relations: ['businesses', 'subscriptions'],
+        });
+
+        if (!vendor) {
+            // Auto-create a vendor record for users who have the vendor role
+            // but whose vendor profile row was never persisted (race condition / legacy data)
+            console.log(`[VendorsService] No vendor record found for user ${userId} — creating one`);
+            vendor = this.vendorRepository.create({
+                userId,
+                isVerified: false,
+            });
+        }
 
         Object.assign(vendor, updateVendorDto);
-        return this.vendorRepository.save(vendor);
+        await this.vendorRepository.save(vendor);
+        console.log(`[VendorsService] Vendor profile saved successfully for user ${userId}`);
+
+        return this.vendorRepository.findOne({
+            where: { userId },
+            relations: ['businesses', 'subscriptions'],
+        });
     }
 
     /**
@@ -80,22 +101,22 @@ export class VendorsService {
     async getDashboardStats(userId: string) {
         const vendor = await this.getProfile(userId);
 
-        const businessCount = await this.businessRepository.count({
+        const businessCount = await this.listingRepository.count({
             where: { vendorId: vendor.id },
         });
 
         // We'll add lead/review counts later when we integrate those modules
         // but the query builder can handle it now
-        const totalLeads = await this.businessRepository
-            .createQueryBuilder('business')
-            .select('SUM(business.total_leads)', 'total')
-            .where('business.vendor_id = :vendorId', { vendorId: vendor.id })
+        const totalLeads = await this.listingRepository
+            .createQueryBuilder('listing')
+            .select('SUM(listing.totalLeads)', 'total')
+            .where('listing.vendorId = :vendorId', { vendorId: vendor.id })
             .getRawOne();
 
-        const totalViews = await this.businessRepository
-            .createQueryBuilder('business')
-            .select('SUM(business.total_views)', 'total')
-            .where('business.vendor_id = :vendorId', { vendorId: vendor.id })
+        const totalViews = await this.listingRepository
+            .createQueryBuilder('listing')
+            .select('SUM(listing.totalViews)', 'total')
+            .where('listing.vendorId = :vendorId', { vendorId: vendor.id })
             .getRawOne();
 
         return {
