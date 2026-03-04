@@ -88,9 +88,9 @@ async function bootstrap() {
     }
 
     const port = configService.get('PORT') || 3001;
-    await app.listen(port);
+    await app.listen(port, '0.0.0.0');
 
-    console.log(`🚀 Application is running on: http://localhost:${port}`);
+    console.log(`🚀 Application is running on: http://0.0.0.0:${port}`);
     console.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
 }
 
