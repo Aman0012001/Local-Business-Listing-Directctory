@@ -1,14 +1,10 @@
 providers = ["node"]
 
-[phases.build]
-cmds = [
-    "npm install --include=dev",
-    "npm run build --workspace=@business-saas/api"
-]
+[phases.install]
+cmds = ["npm install --include=dev"]
 
-[phases.production]
-dependsOn = ["build"]
-cmds = ["npm prune --production"]
+[phases.build]
+cmds = ["npm run build --workspace=@business-saas/api"]
 
 [start]
-cmd = "npm run start:prod --prefix backend"
+cmd = "node backend/dist/main.js"

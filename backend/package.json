@@ -7,7 +7,7 @@
     "license": "UNLICENSED",
     "scripts": {
         "prebuild": "rimraf dist tsconfig.tsbuildinfo",
-        "build": "npx tsc -p tsconfig.json",
+        "build": "nest build",
         "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
         "start": "nest start",
         "dev": "npm run start:dev",
