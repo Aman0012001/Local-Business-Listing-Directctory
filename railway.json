@@ -5,7 +5,8 @@
     },
     "deploy": {
         "startCommand": "node backend/dist/main",
-        "healthcheckPath": "/api/health",
+        "healthcheckPath": "/api/v1/health",
+        "healthcheckTimeout": 120,
         "restartPolicyType": "ON_FAILURE"
     }
 }

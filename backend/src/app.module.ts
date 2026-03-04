@@ -18,6 +18,7 @@ import { CitiesModule } from './modules/cities/cities.module';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { typeOrmConfig } from './config/typeorm.config';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
     imports: [
@@ -61,6 +62,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
         NotificationsModule,
         CitiesModule,
         CloudinaryModule,
+        HealthModule,
     ],
     providers: [
         {
