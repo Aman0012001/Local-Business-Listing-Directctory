@@ -1,0 +1,33 @@
+import { Repository } from 'typeorm';
+import { Listing } from '../../entities/business.entity';
+import { BusinessHours } from '../../entities/business-hours.entity';
+import { BusinessAmenity } from '../../entities/business-amenity.entity';
+import { Amenity } from '../../entities/amenity.entity';
+import { Category } from '../../entities/category.entity';
+import { Vendor } from '../../entities/vendor.entity';
+import { User } from '../../entities/user.entity';
+import { CreateBusinessDto } from './dto/create-business.dto';
+import { UpdateBusinessDto } from './dto/update-business.dto';
+import { SearchBusinessDto } from './dto/search-business.dto';
+import { NotificationsService } from '../notifications/notifications.service';
+export declare class BusinessesService {
+    private listingRepository;
+    private businessHoursRepository;
+    private businessAmenityRepository;
+    private amenityRepository;
+    private categoryRepository;
+    private vendorRepository;
+    private notificationsService;
+    constructor(listingRepository: Repository<Listing>, businessHoursRepository: Repository<BusinessHours>, businessAmenityRepository: Repository<BusinessAmenity>, amenityRepository: Repository<Amenity>, categoryRepository: Repository<Category>, vendorRepository: Repository<Vendor>, notificationsService: NotificationsService);
+    create(createBusinessDto: CreateBusinessDto, user: User): Promise<Listing>;
+    search(searchDto: SearchBusinessDto): Promise<import("../../common").PaginatedResponse<any>>;
+    findOne(id: string, viewerUserId?: string): Promise<Listing>;
+    findBySlug(slug: string, viewerUserId?: string): Promise<Listing>;
+    update(id: string, updateBusinessDto: UpdateBusinessDto, user: User): Promise<Listing>;
+    remove(id: string, user: User): Promise<void>;
+    getVendorBusinesses(userId: string, page?: number, limit?: number): Promise<import("../../common").PaginatedResponse<Listing>>;
+    getSimilar(idOrSlug: string, limit?: number): Promise<Listing[]>;
+    updateImage(id: string, imageUrl: string, user: User): Promise<Listing>;
+    getAllAmenities(): Promise<Amenity[]>;
+    createAmenity(name: string, icon?: string): Promise<Amenity>;
+}
