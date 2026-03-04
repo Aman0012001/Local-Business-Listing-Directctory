@@ -38,15 +38,19 @@ async function bootstrap() {
 
     // CORS
     app.enableCors({
-        origin: [
-            configService.get('CORS_ORIGIN'),
-            'http://localhost:3000',
-            'http://localhost:3001',
-            'http://127.0.0.1:3000',
-        ],
+        origin: true,
         credentials: true,
         methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'X-Requested-With'],
+        allowedHeaders: [
+            'Content-Type',
+            'Accept',
+            'Authorization',
+            'X-Requested-With',
+            'X-HTTP-Method-Override',
+            'Content-Range',
+            'Range',
+        ],
+        exposedHeaders: ['Content-Range', 'X-Content-Range'],
     });
 
     // Global validation pipe
