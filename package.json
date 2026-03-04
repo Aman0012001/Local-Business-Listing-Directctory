@@ -9,11 +9,12 @@
   ],
   "scripts": {
     "dev:web": "npm run dev --workspace=apps/web",
-    "dev:backend": "npm run start:dev --prefix backend",
+    "dev:backend": "npm run start:dev --workspace=@business-saas/api",
     "dev": "concurrently \"npm run dev:web\" \"npm run dev:backend\"",
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build --workspace=@business-saas/api",
     "lint": "npm run lint --workspaces --if-present",
-    "start": "node backend/dist/main"
+    "start": "npm run start:prod --prefix backend",
+    "debug:dist": "ls -R backend/dist"
   },
   "engines": {
     "node": ">=20.0.0",
