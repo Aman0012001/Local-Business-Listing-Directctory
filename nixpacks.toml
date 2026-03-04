@@ -1,0 +1,7 @@
+providers = ["node"]
+
+[phases.build]
+cmds = ["npm install", "npm run build --workspace=@business-saas/api"]
+
+[start]
+cmd = "npm run start:prod --prefix backend"
