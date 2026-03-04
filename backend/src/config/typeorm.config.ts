@@ -23,7 +23,7 @@ export const typeOrmConfig = (
             entities: [__dirname + '/../**/*.entity{.ts,.js}'],
             synchronize: configService.get('DB_SYNCHRONIZE') === 'true',
             logging: configService.get('DB_LOGGING') === 'true',
-            ssl: configService.get('DB_SSL') === 'true' ? { rejectUnauthorized: false } : false,
+            ssl: configService.get('DB_SSL') === 'true' || configService.get('NODE_ENV') === 'production' ? { rejectUnauthorized: false } : false,
             extra: {
                 max: 20,
                 connectionTimeoutMillis: 30000,
