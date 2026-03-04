@@ -1,14 +1,16 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Settings, User, Phone, MapPin, Globe, Save, Loader2, CheckCircle2, AlertCircle, Upload, KeyRound, Camera } from 'lucide-react';
+import { Settings, User, Phone, MapPin, Globe, Save, Loader2, CheckCircle2, AlertCircle, Upload, KeyRound, Camera, ChevronDown, Clock, Facebook, Instagram, Linkedin, Twitter, Youtube, ExternalLink, Trash2, Plus, Share2 } from 'lucide-react';
 import { api, getImageUrl } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
+import { City } from '../../../types/api';
 
 export default function AccountSettings() {
-    const { user, updateUser } = useAuth();
+    const { user, loading: authLoading, updateUser } = useAuth();
     const [loading, setLoading] = useState(true);
     const hasFetched = useRef(false);
+    const isFetching = useRef(false);
 
     // Profile State
     const [saving, setSaving] = useState(false);
@@ -17,6 +19,8 @@ export default function AccountSettings() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [allCities, setAllCities] = useState<City[]>([]);
+    const [availableStates, setAvailableStates] = useState<string[]>([]);
 
     const [formData, setFormData] = useState({
         fullName: '',
@@ -24,13 +28,16 @@ export default function AccountSettings() {
         avatarUrl: '',
         city: '',
         state: '',
+        country: 'Pakistan',
         // Vendor Fields
         businessName: '',
         businessEmail: '',
         businessPhone: '',
         businessAddress: '',
         gstNumber: '',
-        panNumber: ''
+        ntnNumber: '',
+        businessHours: {} as Record<string, { isOpen: boolean, openTime: string, closeTime: string }>,
+        socialLinks: [] as { platform: string, url: string }[]
     });
 
     // Password State
@@ -44,12 +51,40 @@ export default function AccountSettings() {
     });
 
     useEffect(() => {
-        const fetchInitialProfile = async () => {
-            if (hasFetched.current) return;
-            hasFetched.current = true;
+        const fetchData = async () => {
+            console.log('[AccountSettings] fetchData triggered', { hasFetched: hasFetched.current, isFetching: isFetching.current, authLoading, hasUser: !!user });
+            if (hasFetched.current || isFetching.current) return;
+
+            // Wait for auth to resolve before making decisions
+            if (authLoading) return;
+
+            // If auth resolved and no user, we can't fetch profile
+            if (!user) {
+                console.log('[AccountSettings] auth resolved but no user, ending load');
+                setLoading(false);
+                return;
+            }
+
+            console.log('[AccountSettings] starting profile fetch');
+            isFetching.current = true;
             setLoading(true);
+
             try {
-                const profile = await api.users.getProfile();
+                // Fetch cities and profile in parallel
+                const [citiesData, profile] = await Promise.all([
+                    api.cities.getAll().catch((err: any) => {
+                        console.error('Failed to fetch cities:', err);
+                        return [];
+                    }),
+                    api.users.getProfile()
+                ]);
+
+                // Update Cities State
+                setAllCities(citiesData);
+                const states = Array.from(new Set(citiesData.map((c: any) => c.state).filter(Boolean))) as string[];
+                setAvailableStates(states.sort());
+
+                // Update Profile State
                 if (profile) {
                     setFormData(prev => ({
                         ...prev,
@@ -58,12 +93,23 @@ export default function AccountSettings() {
                         avatarUrl: profile.avatarUrl || '',
                         city: profile.city || '',
                         state: profile.state || '',
+                        country: profile.country || 'Pakistan',
                         businessName: profile.vendor?.businessName || '',
                         businessEmail: profile.vendor?.businessEmail || '',
                         businessPhone: profile.vendor?.businessPhone || '',
                         businessAddress: profile.vendor?.businessAddress || '',
                         gstNumber: profile.vendor?.gstNumber || '',
-                        panNumber: profile.vendor?.panNumber || ''
+                        ntnNumber: profile.vendor?.ntnNumber || '',
+                        businessHours: profile.vendor?.businessHours || {
+                            monday: { isOpen: true, openTime: '09:00', closeTime: '18:00' },
+                            tuesday: { isOpen: true, openTime: '09:00', closeTime: '18:00' },
+                            wednesday: { isOpen: true, openTime: '09:00', closeTime: '18:00' },
+                            thursday: { isOpen: true, openTime: '09:00', closeTime: '18:00' },
+                            friday: { isOpen: true, openTime: '09:00', closeTime: '18:00' },
+                            saturday: { isOpen: false, openTime: '09:00', closeTime: '18:00' },
+                            sunday: { isOpen: false, openTime: '09:00', closeTime: '18:00' },
+                        },
+                        socialLinks: profile.vendor?.socialLinks || []
                     }));
                     if (profile.avatarUrl) {
                         setPreviewImage(getImageUrl(profile.avatarUrl));
@@ -72,20 +118,20 @@ export default function AccountSettings() {
                         updateUser(profile);
                     }
                 }
+                console.log('[AccountSettings] fetch success', { profile: !!profile });
+                hasFetched.current = true;
             } catch (err) {
-                console.error('Failed to initial fetch profile:', err);
-                setError('Failed to load profile data');
+                console.error('[AccountSettings] fetch error', err);
+                setError('Failed to load profile data. Please try refreshing.');
             } finally {
+                console.log('[AccountSettings] finally: setting loading to false');
                 setLoading(false);
+                isFetching.current = false;
             }
         };
 
-        if (user && !hasFetched.current) {
-            fetchInitialProfile();
-        } else if (!user) {
-            setLoading(false);
-        }
-    }, [user, updateUser]);
+        fetchData();
+    }, [user, authLoading, updateUser]);
 
     // Profile Handlers
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,6 +139,62 @@ export default function AccountSettings() {
         setFormData(prev => ({ ...prev, [name]: value }));
         if (success) setSuccess(false);
         if (error) setError(null);
+    };
+
+    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => {
+            const newData = { ...prev, [name]: value };
+            // Reset state/city if country changes
+            if (name === 'country') {
+                newData.state = '';
+                newData.city = '';
+            }
+            // Reset city if state changes
+            if (name === 'state') {
+                newData.city = '';
+            }
+            return newData;
+        });
+        if (success) setSuccess(false);
+        if (error) setError(null);
+    };
+
+    const handleBusinessHoursChange = (day: string, field: string, value: any) => {
+        setFormData(prev => ({
+            ...prev,
+            businessHours: {
+                ...prev.businessHours,
+                [day]: {
+                    ...prev.businessHours[day],
+                    [field]: value
+                }
+            }
+        }));
+        if (success) setSuccess(false);
+        if (error) setError(null);
+    };
+
+    const addSocialLink = () => {
+        setFormData(prev => ({
+            ...prev,
+            socialLinks: [...prev.socialLinks, { platform: 'facebook', url: '' }]
+        }));
+    };
+
+    const removeSocialLink = (index: number) => {
+        setFormData(prev => ({
+            ...prev,
+            socialLinks: prev.socialLinks.filter((_, i) => i !== index)
+        }));
+    };
+
+    const handleSocialLinkChange = (index: number, field: string, value: string) => {
+        setFormData(prev => {
+            const newLinks = [...prev.socialLinks];
+            newLinks[index] = { ...newLinks[index], [field]: value };
+            return { ...prev, socialLinks: newLinks };
+        });
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,19 +235,22 @@ export default function AccountSettings() {
                 phone: formData.phone,
                 city: formData.city,
                 state: formData.state,
+                country: formData.country,
                 avatarUrl: currentAvatarUrl
             });
 
             // 3. Update vendor profile — ONLY if the user is explicitly a vendor
             if (user?.role === 'vendor') {
                 // Strip empty strings — @IsOptional() only skips undefined/null, not ""
-                const vendorPayload: Record<string, string | undefined> = {
+                const vendorPayload: any = {
                     businessName: formData.businessName || undefined,
                     businessEmail: formData.businessEmail || undefined,
                     businessPhone: formData.businessPhone || undefined,
                     businessAddress: formData.businessAddress || undefined,
                     gstNumber: formData.gstNumber || undefined,
-                    panNumber: formData.panNumber || undefined,
+                    ntnNumber: formData.ntnNumber || undefined,
+                    businessHours: formData.businessHours,
+                    socialLinks: formData.socialLinks,
                 };
                 // Remove undefined keys so they aren't serialised to JSON as null
                 Object.keys(vendorPayload).forEach(k => {
@@ -169,12 +274,15 @@ export default function AccountSettings() {
                 avatarUrl: finalFullProfile.avatarUrl || '',
                 city: finalFullProfile.city || '',
                 state: finalFullProfile.state || '',
+                country: finalFullProfile.country || 'Pakistan',
                 businessName: finalFullProfile.vendor?.businessName || '',
                 businessEmail: finalFullProfile.vendor?.businessEmail || '',
                 businessPhone: finalFullProfile.vendor?.businessPhone || '',
                 businessAddress: finalFullProfile.vendor?.businessAddress || '',
                 gstNumber: finalFullProfile.vendor?.gstNumber || '',
-                panNumber: finalFullProfile.vendor?.panNumber || ''
+                ntnNumber: finalFullProfile.vendor?.ntnNumber || '',
+                businessHours: finalFullProfile.vendor?.businessHours || formData.businessHours,
+                socialLinks: finalFullProfile.vendor?.socialLinks || []
             }));
 
             if (finalFullProfile.avatarUrl) {
@@ -342,30 +450,113 @@ export default function AccountSettings() {
 
                         <div className="space-y-3">
                             <label className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400 ml-1">
-                                <MapPin className="w-3.5 h-3.5" /> City
+                                <Globe className="w-3.5 h-3.5" /> Country / Region
                             </label>
-                            <input
-                                type="text"
-                                name="city"
-                                value={formData.city}
-                                onChange={handleChange}
-                                placeholder="e.g. New York"
-                                className="w-full px-6 py-4 bg-slate-50 border-transparent focus:border-blue-500/20 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none"
-                            />
+                            <div className="relative">
+                                <select
+                                    name="country"
+                                    value={formData.country}
+                                    onChange={handleSelectChange}
+                                    className="w-full px-6 py-4 bg-slate-50 border-transparent focus:border-blue-500/20 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none appearance-none cursor-pointer"
+                                >
+                                    <option value="Pakistan">Pakistan</option>
+                                    <option value="India">India</option>
+                                    <option value="United Arab Emirates">United Arab Emirates</option>
+                                    <option value="Saudi Arabia">Saudi Arabia</option>
+                                    <option value="United Kingdom">United Kingdom</option>
+                                    <option value="United States">United States</option>
+                                    <option value="Canada">Canada</option>
+                                    <option value="Australia">Australia</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                            </div>
                         </div>
 
                         <div className="space-y-3">
                             <label className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400 ml-1">
-                                <Globe className="w-3.5 h-3.5" /> State / Region
+                                <Globe className="w-3.5 h-3.5" /> State / Province
                             </label>
-                            <input
-                                type="text"
-                                name="state"
-                                value={formData.state}
-                                onChange={handleChange}
-                                placeholder="e.g. NY"
-                                className="w-full px-6 py-4 bg-slate-50 border-transparent focus:border-blue-500/20 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none"
-                            />
+                            <div className="relative">
+                                <select
+                                    name="state"
+                                    value={formData.state}
+                                    onChange={handleSelectChange}
+                                    className="w-full px-6 py-4 bg-slate-50 border-transparent focus:border-blue-500/20 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none appearance-none cursor-pointer"
+                                >
+                                    <option value="">Select State</option>
+                                    {formData.country === 'Pakistan' ? (
+                                        availableStates.map(state => (
+                                            <option key={state} value={state}>{state}</option>
+                                        ))
+                                    ) : (() => {
+                                        const FALLBACK_STATES: Record<string, string[]> = {
+                                            'India': ['Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Delhi', 'Jammu & Kashmir', 'Ladakh'],
+                                            'United Arab Emirates': ['Abu Dhabi', 'Dubai', 'Sharjah', 'Ajman', 'Fujairah', 'Ras Al Khaimah', 'Umm Al Quwain'],
+                                            'Saudi Arabia': ['Riyadh', 'Makkah', 'Madinah', 'Eastern Province', 'Asir', 'Tabuk', 'Qassim', 'Hail', 'Jizan', 'Najran', 'Al Jawf', 'Al Bahah', 'Northern Borders'],
+                                            'United Kingdom': ['England', 'Scotland', 'Wales', 'Northern Ireland', 'Greater London', 'West Midlands', 'Greater Manchester', 'West Yorkshire'],
+                                            'United States': ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'],
+                                            'Canada': ['Alberta', 'British Columbia', 'Manitoba', 'New Brunswick', 'Newfoundland and Labrador', 'Nova Scotia', 'Ontario', 'Prince Edward Island', 'Quebec', 'Saskatchewan', 'Northwest Territories', 'Nunavut', 'Yukon'],
+                                            'Australia': ['New South Wales', 'Victoria', 'Queensland', 'South Australia', 'Western Australia', 'Tasmania', 'Australian Capital Territory', 'Northern Territory'],
+                                        };
+                                        const opts = FALLBACK_STATES[formData.country] || [];
+                                        return opts.map(s => <option key={s} value={s}>{s}</option>);
+                                    })()}
+                                    <option value="Other">Other</option>
+                                </select>
+                                <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                            </div>
+                            {formData.state === 'Other' && (
+                                <input
+                                    type="text"
+                                    placeholder="Type state/province name"
+                                    className="w-full px-6 py-4 bg-slate-50 border-transparent focus:border-blue-500/20 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none mt-3"
+                                    onChange={e => setFormData(prev => ({ ...prev, state: e.target.value }))}
+                                />
+                            )}
+                        </div>
+
+                        <div className="space-y-3">
+                            <label className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400 ml-1">
+                                <MapPin className="w-3.5 h-3.5" /> City
+                            </label>
+                            <div className="relative">
+                                <select
+                                    name="city"
+                                    value={formData.city}
+                                    onChange={handleSelectChange}
+                                    disabled={!formData.state}
+                                    className="w-full px-6 py-4 bg-slate-50 border-transparent focus:border-blue-500/20 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <option value="">Select City</option>
+                                    {formData.country === 'Pakistan' ? (
+                                        allCities
+                                            .filter(c => c.state === formData.state)
+                                            .map(city => (
+                                                <option key={city.id} value={city.name}>{city.name}</option>
+                                            ))
+                                    ) : (() => {
+                                        const FALLBACK_CITIES: Record<string, string[]> = {
+                                            'Punjab': ['Amritsar', 'Ludhiana', 'Jalandhar', 'Patiala'],
+                                            'Delhi': ['New Delhi', 'Old Delhi', 'Gurugram', 'Noida', 'Faridabad', 'Ghaziabad'],
+                                            'Dubai': ['Deira', 'Bur Dubai', 'Marina', 'Downtown'],
+                                            'Abu Dhabi': ['Khalifa City', 'Al Reem Island'],
+                                        };
+                                        const opts = FALLBACK_CITIES[formData.state] || [];
+                                        return opts.map(c => <option key={c} value={c}>{c}</option>);
+                                    })()}
+                                    <option value="Other">Other</option>
+                                </select>
+                                <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                            </div>
+                            {formData.city === 'Other' && (
+                                <input
+                                    type="text"
+                                    placeholder="Type city name"
+                                    className="w-full px-6 py-4 bg-slate-50 border-transparent focus:border-blue-500/20 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none mt-3"
+                                    onChange={e => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                                />
+                            )}
                         </div>
                     </div>
 
@@ -469,14 +660,14 @@ export default function AccountSettings() {
                                 </div>
                                 <div className="space-y-3">
                                     <label className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400 ml-1">
-                                        PAN Number
+                                        National Tax Number (NTN)
                                     </label>
                                     <input
                                         type="text"
-                                        name="panNumber"
-                                        value={formData.panNumber}
+                                        name="ntnNumber"
+                                        value={formData.ntnNumber}
                                         onChange={handleChange}
-                                        placeholder="Optional"
+                                        placeholder="1234567-8"
                                         className="w-full px-6 py-4 bg-slate-50 border-transparent focus:border-blue-500/20 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none"
                                     />
                                 </div>
@@ -493,6 +684,192 @@ export default function AccountSettings() {
                             </button>
                         </div>
                     </form>
+                </div>
+            )}
+
+            {/* Business Hours (Vendor Only) */}
+            {(user?.role === 'vendor' || user?.vendor) && (
+                <div className="bg-white rounded-[20px] border border-slate-100 shadow-sm overflow-hidden">
+                    <div className="p-8 lg:p-12 border-b border-slate-50 bg-slate-50/30 flex items-start gap-4">
+                        <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shrink-0">
+                            <Clock className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-black text-slate-900 mb-2">Business Hours</h3>
+                            <p className="text-sm text-slate-500 font-medium">Set your weekly availability. This will be shown to customers on your listings.</p>
+                        </div>
+                    </div>
+
+                    <div className="p-8 lg:p-12 space-y-6">
+                        {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => (
+                            <div key={day} className="flex flex-col sm:flex-row sm:items-center gap-4 py-4 border-b border-slate-50 last:border-0">
+                                <div className="w-32">
+                                    <span className="text-sm font-black text-slate-900 uppercase tracking-widest">{day}</span>
+                                </div>
+                                <div className="flex items-center gap-6">
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            className="sr-only peer"
+                                            checked={formData.businessHours[day]?.isOpen || false}
+                                            onChange={(e) => handleBusinessHoursChange(day, 'isOpen', e.target.checked)}
+                                        />
+                                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                                        <span className="ms-3 text-sm font-bold text-slate-600">
+                                            {formData.businessHours[day]?.isOpen ? 'Open' : 'Closed'}
+                                        </span>
+                                    </label>
+
+                                    {formData.businessHours[day]?.isOpen && (
+                                        <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2">
+                                            <input
+                                                type="time"
+                                                value={formData.businessHours[day]?.openTime || '09:00'}
+                                                onChange={(e) => handleBusinessHoursChange(day, 'openTime', e.target.value)}
+                                                className="px-3 py-2 bg-slate-50 border-transparent focus:border-blue-500/20 focus:bg-white rounded-xl text-xs font-bold transition-all outline-none"
+                                            />
+                                            <span className="text-slate-400 font-bold">to</span>
+                                            <input
+                                                type="time"
+                                                value={formData.businessHours[day]?.closeTime || '18:00'}
+                                                onChange={(e) => handleBusinessHoursChange(day, 'closeTime', e.target.value)}
+                                                className="px-3 py-2 bg-slate-50 border-transparent focus:border-blue-500/20 focus:bg-white rounded-xl text-xs font-bold transition-all outline-none"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+
+                        <div className="pt-6 flex justify-end">
+                            <button
+                                onClick={handleSubmit}
+                                disabled={saving}
+                                className="flex items-center justify-center gap-3 px-10 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50 disabled:scale-100"
+                            >
+                                {saving ? 'Updating...' : 'Save Business Hours'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Social Media Profiles (Vendor Only) */}
+            {(user?.role === 'vendor' || user?.vendor) && (
+                <div className="bg-white rounded-[20px] border border-slate-100 shadow-sm overflow-hidden">
+                    <div className="p-8 lg:p-12 border-b border-slate-50 bg-slate-50/30 flex items-start gap-4">
+                        <div className="w-12 h-12 bg-pink-100 text-pink-600 rounded-2xl flex items-center justify-center shrink-0">
+                            <Share2 className="w-6 h-6" />
+                        </div>
+                        <div className="flex-1">
+                            <div className="flex items-center justify-between gap-4 flex-wrap">
+                                <div>
+                                    <h3 className="text-xl font-black text-slate-900 mb-2">Social Media Profiles</h3>
+                                    <p className="text-sm text-slate-500 font-medium">Add links to your social media profiles to help customers find you.</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={addSocialLink}
+                                    className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl text-sm font-black hover:bg-slate-800 transition-all active:scale-95"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Add Social
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-8 lg:p-12 space-y-6">
+                        {formData.socialLinks.length === 0 ? (
+                            <div className="text-center py-12 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
+                                <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4">
+                                    <Globe className="w-8 h-8 text-slate-300" />
+                                </div>
+                                <h4 className="text-slate-900 font-black mb-1">No social profiles added</h4>
+                                <p className="text-slate-500 text-sm font-medium mb-6">Connect with your customers on other platforms.</p>
+                                <button
+                                    type="button"
+                                    onClick={addSocialLink}
+                                    className="text-blue-600 font-black text-sm hover:underline"
+                                >
+                                    Add your first social link
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {formData.socialLinks.map((link, index) => (
+                                    <div key={index} className="flex flex-col sm:flex-row gap-4 items-start sm:items-center p-4 bg-slate-50 rounded-2xl border border-slate-100 animate-in fade-in slide-in-from-bottom-2">
+                                        <div className="w-full sm:w-48">
+                                            <div className="relative">
+                                                <select
+                                                    value={link.platform}
+                                                    onChange={(e) => handleSocialLinkChange(index, 'platform', e.target.value)}
+                                                    className="w-full pl-12 pr-10 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold appearance-none outline-none focus:border-blue-500/20 transition-all"
+                                                >
+                                                    <option value="facebook">Facebook</option>
+                                                    <option value="instagram">Instagram</option>
+                                                    <option value="linkedin">LinkedIn</option>
+                                                    <option value="twitter">Twitter / X</option>
+                                                    <option value="youtube">YouTube</option>
+                                                    <option value="whatsapp">WhatsApp</option>
+                                                    <option value="website">Website</option>
+                                                </select>
+                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                                                    {link.platform === 'facebook' && <Facebook className="w-4 h-4" />}
+                                                    {link.platform === 'instagram' && <Instagram className="w-4 h-4" />}
+                                                    {link.platform === 'linkedin' && <Linkedin className="w-4 h-4" />}
+                                                    {link.platform === 'twitter' && <Twitter className="w-4 h-4" />}
+                                                    {link.platform === 'youtube' && <Youtube className="w-4 h-4" />}
+                                                    {link.platform === 'website' && <Globe className="w-4 h-4" />}
+                                                    {link.platform === 'whatsapp' && <Phone className="w-4 h-4" />}
+                                                </div>
+                                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex-1 w-full relative">
+                                            <input
+                                                type="url"
+                                                value={link.url}
+                                                onChange={(e) => handleSocialLinkChange(index, 'url', e.target.value)}
+                                                placeholder={
+                                                    link.platform === 'whatsapp'
+                                                        ? "Enter Phone Number"
+                                                        : link.platform === 'website'
+                                                            ? "https://yourwebsite.com"
+                                                            : `https://${link.platform}.com/yourprofile`
+                                                }
+                                                className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-blue-500/20 transition-all"
+                                            />
+                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300">
+                                                <ExternalLink className="w-4 h-4" />
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => removeSocialLink(index)}
+                                            className="p-3 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                                        >
+                                            <Trash2 className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {formData.socialLinks.length > 0 && (
+                            <div className="pt-6 border-t border-slate-50 flex justify-end">
+                                <button
+                                    onClick={handleSubmit}
+                                    disabled={saving}
+                                    className="flex items-center justify-center gap-3 px-10 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50 disabled:scale-100"
+                                >
+                                    {saving ? 'Updating...' : 'Save Social Links'}
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
 

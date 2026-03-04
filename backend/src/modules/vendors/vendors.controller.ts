@@ -4,6 +4,7 @@ import {
     Post,
     Patch,
     Body,
+    Query,
     UseGuards,
     HttpCode,
     HttpStatus,
@@ -16,6 +17,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 import { User, UserRole } from '../../entities/user.entity';
 
 @ApiTags('vendors')
@@ -27,6 +29,15 @@ export class VendorsController {
         private readonly vendorsService: VendorsService,
         private readonly businessesService: BusinessesService,
     ) { }
+
+    @Public()
+    @Get('by-city')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Get public vendor profiles in a given city (no auth required)' })
+    @ApiResponse({ status: 200, description: 'Vendor profiles retrieved' })
+    getByCity(@Query('city') city: string) {
+        return this.vendorsService.getByCity(city || '');
+    }
 
     @Post('become-vendor')
     @ApiOperation({ summary: 'Register the current user as a vendor' })

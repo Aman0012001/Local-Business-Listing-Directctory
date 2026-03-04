@@ -63,6 +63,9 @@ export class User {
     @Column({ nullable: true, length: 100 })
     state: string;
 
+    @Column({ nullable: true, length: 100, default: 'Pakistan' })
+    country: string;
+
     @Column({ name: 'last_login_at', nullable: true, type: 'timestamp' })
     lastLoginAt: Date;
 
@@ -73,7 +76,6 @@ export class User {
     updatedAt: Date;
 
     // Relations
-    @Exclude()
     @OneToOne(() => Vendor, (vendor) => vendor.user)
     vendor: Vendor;
 

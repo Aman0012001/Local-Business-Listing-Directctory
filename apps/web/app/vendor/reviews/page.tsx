@@ -1,379 +1,448 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { Star, Calendar, Building2, User as UserIcon, MessageCircle, Quote, ThumbsUp, ChevronLeft, ChevronRight, Send, X, MessageSquareQuote } from 'lucide-react';
+import React, { useEffect, useState, useMemo } from 'react';
+import {
+    Star, Calendar, Building2, User as UserIcon, MessageCircle, Quote,
+    ChevronLeft, ChevronRight, Send, X, MessageSquareQuote, Search,
+    Filter, RefreshCw, TrendingUp
+} from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { api, getImageUrl } from '../../../lib/api';
 import { Review } from '../../../types/api';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// ─── helpers ──────────────────────────────────────────────────────────────────
+const formatDate = (d: string) => {
+    try { return new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).format(new Date(d)); }
+    catch { return d; }
+};
+
+function StarRow({ rating, max = 5 }: { rating: number; max?: number }) {
+    return (
+        <div className="flex items-center gap-0.5">
+            {Array.from({ length: max }, (_, i) => (
+                <Star key={i} className={`w-4 h-4 ${i < rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`} />
+            ))}
+        </div>
+    );
+}
+
+// ─── Rating distribution bar ──────────────────────────────────────────────────
+function RatingBar({ star, count, total }: { star: number; count: number; total: number }) {
+    const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+    return (
+        <div className="flex items-center gap-3">
+            <span className="text-xs font-black text-slate-500 w-3">{star}</span>
+            <Star className="w-3 h-3 text-amber-400 fill-amber-400 flex-shrink-0" />
+            <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${pct}%` }}
+                    transition={{ duration: 0.7, ease: 'easeOut' }}
+                    className="h-full bg-amber-400 rounded-full"
+                />
+            </div>
+            <span className="text-xs font-bold text-slate-400 w-6 text-right">{count}</span>
+        </div>
+    );
+}
+
+// ─── Review Card ───────────────────────────────────────────────────────────────
+function ReviewCard({ review, isVendor, onReply }: { review: Review; isVendor: boolean; onReply: (r: Review) => void }) {
+    return (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-white rounded-[20px] p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col"
+        >
+            {/* Business */}
+            <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 border border-slate-100">
+                    {(review as any).business?.coverImageUrl ? (
+                        <img src={getImageUrl((review as any).business.coverImageUrl) as string}
+                            alt={(review as any).business?.title || ''}
+                            className="w-full h-full object-cover" />
+                    ) : <Building2 className="w-5 h-5 text-slate-300 m-auto mt-2.5" />}
+                </div>
+                <div className="min-w-0">
+                    <p className="font-black text-slate-900 text-sm truncate">{(review as any).business?.title || (review as any).business?.name || 'Listing'}</p>
+                    <div className="flex items-center gap-1 text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
+                        <Calendar className="w-2.5 h-2.5" /> {formatDate(review.createdAt)}
+                    </div>
+                </div>
+            </div>
+
+            {/* Stars */}
+            <div className="mb-3"><StarRow rating={review.rating} /></div>
+
+            {/* Comment */}
+            <div className="flex-1 mb-4">
+                <p className="text-slate-600 text-sm leading-relaxed italic line-clamp-4">"{review.comment}"</p>
+            </div>
+
+            {/* Reviewer + reply */}
+            <div className="pt-4 border-t border-slate-50">
+                <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-slate-900 flex items-center justify-center flex-shrink-0">
+                            <UserIcon className="w-3.5 h-3.5 text-white" />
+                        </div>
+                        <span className="text-xs font-black text-slate-900 uppercase tracking-widest">
+                            {review.user?.fullName || 'Customer'}
+                        </span>
+                    </div>
+                    {isVendor && !review.vendorResponse && (
+                        <button onClick={() => onReply(review)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-[10px] font-black rounded-xl hover:bg-blue-700 transition-all">
+                            <Send className="w-3 h-3" /> Reply
+                        </button>
+                    )}
+                </div>
+
+                {review.vendorResponse && (
+                    <div className="mt-3 p-3 bg-blue-50/50 rounded-xl border border-blue-100/50">
+                        <div className="flex items-center gap-1.5 mb-1">
+                            <MessageCircle className="w-3 h-3 text-blue-600" />
+                            <span className="text-[9px] font-black uppercase tracking-widest text-blue-600">Official Reply</span>
+                        </div>
+                        <p className="text-slate-500 text-xs leading-relaxed italic line-clamp-2">{review.vendorResponse}</p>
+                    </div>
+                )}
+            </div>
+        </motion.div>
+    );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+const ITEMS_PER_PAGE = 9;
+
 export default function VendorReviews() {
     const { user } = useAuth();
     const [reviews, setReviews] = useState<Review[]>([]);
     const [loading, setLoading] = useState(true);
-    const [stats, setStats] = useState({
-        total: 0,
-        average: 0
-    });
-
-    // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 9;
 
-    // Response Modal State
+    // Filters
+    const [search, setSearch] = useState('');
+    const [ratingFilter, setRatingFilter] = useState<number | ''>('');
+    const [listingFilter, setListingFilter] = useState('');
+
+    // Reply modal
     const [respondingTo, setRespondingTo] = useState<Review | null>(null);
     const [responseText, setResponseText] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const formatDate = (dateString: string) => {
-        try {
-            return new Intl.DateTimeFormat('en-US', {
-                month: 'short',
-                day: '2-digit',
-                year: 'numeric'
-            }).format(new Date(dateString));
-        } catch (e) {
-            return dateString;
-        }
-    };
+    const isVendor = user?.role === 'vendor' || user?.role === 'admin' || user?.role === 'superadmin';
 
     const fetchReviews = async () => {
         if (!user) return;
+        setLoading(true);
         try {
-            setLoading(true);
-            const params: any = {
-                page: 1,
-                limit: 100
-            };
-
-            if (user.role === 'vendor' && user.vendor?.id) {
-                params.vendorId = user.vendor.id;
+            const params: any = { page: 1, limit: 200 };
+            if (isVendor && (user as any).vendor?.id) {
+                params.vendorId = (user as any).vendor.id;
             } else {
                 params.userId = user.id;
             }
-
-            const response = await api.reviews.findAll(params);
-            setReviews(response.data);
-
-            if (response.data.length > 0) {
-                const total = response.data.length;
-                const sum = response.data.reduce((acc: number, curr: Review) => acc + curr.rating, 0);
-                setStats({
-                    total,
-                    average: Math.round((sum / total) * 10) / 10
-                });
-            }
-        } catch (error) {
-            console.error('Failed to fetch reviews:', error);
+            const res = await api.reviews.findAll(params);
+            setReviews(res.data || []);
+        } catch (e) {
+            console.error('Failed to fetch reviews:', e);
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => {
-        fetchReviews();
-    }, [user]);
+    useEffect(() => { fetchReviews(); }, [user]);
 
-    const handleRespond = async () => {
+    // Derived stats
+    const stats = useMemo(() => {
+        const total = reviews.length;
+        const sum = reviews.reduce((a, r) => a + r.rating, 0);
+        const avg = total > 0 ? Math.round((sum / total) * 10) / 10 : 0;
+        const distribution = [5, 4, 3, 2, 1].map(s => ({ star: s, count: reviews.filter(r => r.rating === s).length }));
+        const unanswered = reviews.filter(r => !r.vendorResponse).length;
+        return { total, avg, distribution, unanswered };
+    }, [reviews]);
+
+    // Unique listings for filter dropdown
+    const listings = useMemo(() => {
+        const map = new Map<string, string>();
+        reviews.forEach(r => {
+            const b = (r as any).business;
+            if (b?.id) map.set(b.id, b.title || b.name || b.id);
+        });
+        return Array.from(map.entries()).map(([id, title]) => ({ id, title }));
+    }, [reviews]);
+
+    // Filtered + paginated
+    const filtered = useMemo(() => {
+        return reviews.filter(r => {
+            if (ratingFilter !== '' && r.rating !== ratingFilter) return false;
+            if (listingFilter && (r as any).business?.id !== listingFilter) return false;
+            if (search) {
+                const q = search.toLowerCase();
+                const name = (r.user?.fullName || '').toLowerCase();
+                const comment = (r.comment || '').toLowerCase();
+                if (!name.includes(q) && !comment.includes(q)) return false;
+            }
+            return true;
+        });
+    }, [reviews, ratingFilter, listingFilter, search]);
+
+    const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+    const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+    const handleReply = async () => {
         if (!respondingTo || !responseText.trim()) return;
+        setIsSubmitting(true);
         try {
-            setIsSubmitting(true);
             await api.reviews.respond(respondingTo.id, responseText);
             setRespondingTo(null);
             setResponseText('');
             await fetchReviews();
-        } catch (error) {
-            console.error('Failed to submit response:', error);
-            alert('Failed to submit response. Please try again.');
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    // Pagination Logic
-    const totalPages = Math.ceil(reviews.length / itemsPerPage);
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentReviews = reviews.slice(indexOfFirstItem, indexOfLastItem);
-
-    const paginate = (pageNumber: number) => {
-        setCurrentPage(pageNumber);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch { alert('Failed to submit. Try again.'); }
+        finally { setIsSubmitting(false); }
     };
 
     if (loading && reviews.length === 0) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
-                <div className="relative">
-                    <div className="w-16 h-16 border-4 border-blue-600/20 rounded-full"></div>
-                    <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+                <div className="relative w-16 h-16">
+                    <div className="w-16 h-16 border-4 border-amber-400/20 rounded-full" />
+                    <div className="w-16 h-16 border-4 border-amber-400 border-t-transparent rounded-full animate-spin absolute top-0 left-0" />
                 </div>
             </div>
-        );
-    }
-
-    if (reviews.length === 0) {
-        return (
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4"
-            >
-                <div className="w-24 h-24 bg-gradient-to-tr from-amber-50 to-amber-100 rounded-3xl flex items-center justify-center mb-8 shadow-xl shadow-amber-200/20 rotate-3">
-                    <Star className="w-12 h-12 text-amber-500 fill-amber-500 animate-pulse" />
-                </div>
-                <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Your Review Hub</h1>
-                <p className="text-slate-400 font-bold max-w-sm text-lg leading-relaxed">
-                    {user?.role === 'vendor'
-                        ? "Currently, there are no reviews for your listings. Encourage your customers to share their feedback!"
-                        : "You haven't voiced your opinion yet. Start exploring and sharing your experiences with others!"}
-                </p>
-                <button className="mt-8 px-8 py-4 bg-slate-900 text-white font-black rounded-2xl shadow-xl shadow-slate-200 hover:scale-105 active:scale-95 transition-all">
-                    Explore Businesses
-                </button>
-            </motion.div>
         );
     }
 
     return (
-        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-10 pb-32">
-            {/* Header / Stats Section */}
-            <div className="relative overflow-hidden bg-slate-900 rounded-[40px] p-8 sm:p-12 mb-12 shadow-2xl shadow-slate-900/20">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 blur-[100px] rounded-full -mr-32 -mt-32"></div>
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-amber-400/10 blur-[100px] rounded-full -ml-32 -mb-32"></div>
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-32">
 
-                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-10">
-                    <div className="text-center md:text-left">
-                        <h1 className="text-4xl sm:text-5xl font-black text-white mb-4 tracking-tighter">
-                            {user?.role === 'vendor' ? 'Business Reputation' : 'Review History'}
-                        </h1>
-                        <p className="text-slate-400 font-bold text-lg max-w-md">
-                            Insight into {user?.role === 'vendor' ? 'how customers perceive your brand' : 'the feedback you\'ve shared with the community'}.
-                        </p>
+            {/* ── Header ─────────────────────────────────────────── */}
+            <div className="relative overflow-hidden bg-slate-900 rounded-[32px] p-8 sm:p-10 mb-8 shadow-2xl">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-amber-400/10 blur-[100px] rounded-full -mr-32 -mt-32" />
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-600/15 blur-[80px] rounded-full -ml-24 -mb-24" />
+
+                <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+                    <div>
+                        <h1 className="text-4xl font-black text-white tracking-tight mb-2">Business Reputation</h1>
+                        <p className="text-slate-400 font-bold">All customer reviews across your listings</p>
                     </div>
 
-                    <div className="flex items-center gap-6 sm:gap-12 bg-white/5 backdrop-blur-xl p-8 rounded-[32px] border border-white/10">
-                        <div className="text-center">
-                            <div className="text-5xl font-black text-white tabular-nums mb-2">{stats.average}</div>
-                            <div className="flex items-center justify-center gap-1">
-                                {[1, 2, 3, 4, 5].map((s) => (
-                                    <Star
-                                        key={s}
-                                        className={`w-4 h-4 ${s <= Math.round(stats.average) ? 'text-amber-400 fill-amber-400' : 'text-white/20'}`}
-                                    />
-                                ))}
+                    {/* Stats pills */}
+                    <div className="flex flex-wrap items-center gap-4">
+                        <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl px-6 py-4 text-center">
+                            <div className="text-4xl font-black text-white tabular-nums">{stats.avg || '—'}</div>
+                            <StarRow rating={Math.round(stats.avg)} />
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Avg Rating</div>
+                        </div>
+                        <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl px-6 py-4 text-center">
+                            <div className="text-4xl font-black text-white tabular-nums">{stats.total}</div>
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Total Reviews</div>
+                        </div>
+                        {isVendor && (
+                            <div className="bg-amber-500/20 border border-amber-400/20 rounded-2xl px-6 py-4 text-center">
+                                <div className="text-4xl font-black text-amber-400 tabular-nums">{stats.unanswered}</div>
+                                <div className="text-[10px] font-black text-amber-400/70 uppercase tracking-widest mt-1">Unanswered</div>
                             </div>
-                        </div>
-                        <div className="w-px h-16 bg-white/10"></div>
-                        <div className="text-center">
-                            <div className="text-5xl font-black text-white tabular-nums mb-2">{stats.total}</div>
-                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Reviews</div>
-                        </div>
+                        )}
                     </div>
                 </div>
+
+                {/* Rating distribution */}
+                {stats.total > 0 && (
+                    <div className="relative z-10 mt-8 bg-white/5 rounded-2xl p-5 border border-white/10 space-y-2">
+                        {stats.distribution.map(({ star, count }) => (
+                            <RatingBar key={star} star={star} count={count} total={stats.total} />
+                        ))}
+                    </div>
+                )}
             </div>
 
-            {/* Reviews Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <AnimatePresence mode="popLayout">
-                    {currentReviews.map((review, idx) => (
-                        <motion.div
-                            key={review.id}
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            transition={{ delay: idx * 0.05 }}
-                            className="bg-white rounded-[16px] p-8 border border-black shadow-xl shadow-slate-200/30 hover:shadow-2xl hover:shadow-slate-300/40 transition-all duration-500 group relative flex flex-col items-center text-center h-full"
-                        >
+            {/* ── Filters ────────────────────────────────────────── */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 mb-6 flex flex-col sm:flex-row gap-3">
+                {/* Search */}
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                        id="review-search"
+                        type="text"
+                        placeholder="Search by reviewer name or comment…"
+                        value={search}
+                        onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
+                        className="w-full pl-10 pr-4 py-2.5 text-sm font-medium bg-slate-50 rounded-xl border border-transparent focus:border-amber-400 focus:bg-white outline-none transition-all"
+                    />
+                </div>
 
-                            {/* Business Info Header */}
-                            <div className="flex flex-col items-center gap-4 mb-6">
-                                <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-md ring-4 ring-slate-50 flex-shrink-0 bg-white">
-                                    {review.business?.coverImageUrl ? (
-                                        <img
-                                            src={getImageUrl(review.business.coverImageUrl)}
-                                            alt={review.business.title || review.business.name}
-                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-slate-300">
-                                            <Building2 className="w-8 h-8" />
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="overflow-hidden">
-                                    <h3 className="font-black text-xl text-slate-900 leading-tight">
-                                        {review.business?.title || review.business?.name || 'Local Favorite'}
-                                    </h3>
-                                    <div className="flex items-center justify-center gap-1 text-[9px] font-black uppercase tracking-widest text-slate-400 mt-2">
-                                        <Calendar className="w-3 h-3 text-blue-500" />
-                                        {formatDate(review.createdAt)}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Rating */}
-                            <div className="flex items-center gap-0.5 mb-6 bg-slate-50 px-4 py-2 rounded-full border border-slate-100">
-                                {[1, 2, 3, 4, 5].map((s) => (
-                                    <Star
-                                        key={s}
-                                        className={`w-4 h-4 ${s <= review.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`}
-                                    />
-                                ))}
-                            </div>
-
-                            {/* Review Content */}
-                            <div className="relative mb-8 flex-grow">
-                                <Quote className="absolute -top-6 left-1/2 -translate-x-1/2 w-10 h-10 text-slate-50 -z-10" />
-                                <p className="text-slate-600 font-bold text-lg leading-relaxed italic px-4 line-clamp-4">
-                                    "{review.comment}"
-                                </p>
-                            </div>
-
-                            {/* User Info & Actions */}
-                            <div className="mt-auto pt-6 border-t border-slate-50 w-full">
-                                <div className="flex flex-col items-center gap-4">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white flex-shrink-0">
-                                            <UserIcon className="w-4 h-4" />
-                                        </div>
-                                        <div className="text-[10px] font-black text-slate-900 uppercase tracking-widest">
-                                            {user?.id === (review as any).userId ? 'Me' : review.user?.fullName}
-                                        </div>
-                                    </div>
-
-                                    {user?.role === 'vendor' && !review.vendorResponse && (
-                                        <button
-                                            onClick={() => setRespondingTo(review)}
-                                            className="w-full py-3 bg-blue-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
-                                        >
-                                            <Send className="w-3.5 h-3.5" />
-                                            Reply
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Vendor Response Tag/Preview */}
-                            {review.vendorResponse && (
-                                <div className="mt-6 p-5 bg-blue-50/50 rounded-[24px] border border-blue-100/30">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <MessageCircle className="w-3 h-3 text-blue-600" />
-                                        <span className="text-[8px] font-black uppercase tracking-widest text-blue-600">Official Reply</span>
-                                    </div>
-                                    <p className="text-slate-500 font-bold text-xs leading-relaxed line-clamp-2 italic">
-                                        {review.vendorResponse}
-                                    </p>
-                                </div>
-                            )}
-                        </motion.div>
-                    ))}
-                </AnimatePresence>
-            </div>
-
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-4 mt-20 bg-white p-4 rounded-3xl border border-slate-100 shadow-sm w-fit mx-auto">
-                    <button
-                        disabled={currentPage === 1}
-                        onClick={() => paginate(currentPage - 1)}
-                        className="p-3 bg-slate-50 text-slate-400 rounded-2xl hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:hover:bg-slate-50 disabled:hover:text-slate-400 transition-all border border-slate-200"
+                {/* Rating filter */}
+                <div className="relative">
+                    <Star className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    <select
+                        id="review-rating-filter"
+                        value={ratingFilter}
+                        onChange={e => { setRatingFilter(e.target.value === '' ? '' : Number(e.target.value)); setCurrentPage(1); }}
+                        className="pl-9 pr-8 py-2.5 text-sm font-bold bg-slate-50 rounded-xl border border-transparent focus:border-amber-400 outline-none appearance-none cursor-pointer"
                     >
-                        <ChevronLeft className="w-6 h-6" />
-                    </button>
+                        <option value="">All Ratings</option>
+                        {[5, 4, 3, 2, 1].map(s => <option key={s} value={s}>{s} Stars</option>)}
+                    </select>
+                </div>
 
+                {/* Listing filter */}
+                {listings.length > 1 && (
+                    <div className="relative">
+                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                        <select
+                            id="review-listing-filter"
+                            value={listingFilter}
+                            onChange={e => { setListingFilter(e.target.value); setCurrentPage(1); }}
+                            className="pl-9 pr-8 py-2.5 text-sm font-bold bg-slate-50 rounded-xl border border-transparent focus:border-amber-400 outline-none appearance-none cursor-pointer max-w-[200px] truncate"
+                        >
+                            <option value="">All Listings</option>
+                            {listings.map(l => <option key={l.id} value={l.id}>{l.title}</option>)}
+                        </select>
+                    </div>
+                )}
+
+                {/* Refresh */}
+                <button onClick={fetchReviews} disabled={loading}
+                    className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-slate-400 hover:text-slate-700 hover:border-slate-300 transition-all">
+                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                </button>
+            </div>
+
+            {/* Result count */}
+            {(search || ratingFilter !== '' || listingFilter) && (
+                <p className="text-xs font-bold text-slate-400 mb-4">
+                    Showing {filtered.length} of {stats.total} reviews
+                    {ratingFilter !== '' && ` · ${ratingFilter}★ only`}
+                    {listingFilter && ` · ${listings.find(l => l.id === listingFilter)?.title}`}
+                </p>
+            )}
+
+            {/* ── Reviews Grid ────────────────────────────────────── */}
+            {filtered.length === 0 && !loading ? (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    className="flex flex-col items-center justify-center py-24 gap-4">
+                    <div className="w-20 h-20 bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl flex items-center justify-center">
+                        <Star className="w-10 h-10 text-amber-300" />
+                    </div>
+                    <div className="text-center">
+                        <p className="text-slate-700 font-black text-lg">
+                            {stats.total === 0
+                                ? 'No reviews yet'
+                                : 'No reviews match your filters'}
+                        </p>
+                        <p className="text-slate-400 text-sm mt-1">
+                            {stats.total === 0
+                                ? 'Encourage your customers to leave a review on your listings!'
+                                : 'Try adjusting your search or filters.'}
+                        </p>
+                        {(search || ratingFilter !== '' || listingFilter) && (
+                            <button onClick={() => { setSearch(''); setRatingFilter(''); setListingFilter(''); }}
+                                className="mt-4 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all">
+                                Clear Filters
+                            </button>
+                        )}
+                    </div>
+                </motion.div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <AnimatePresence mode="popLayout">
+                        {paginated.map((review, idx) => (
+                            <ReviewCard
+                                key={review.id}
+                                review={review}
+                                isVendor={isVendor}
+                                onReply={setRespondingTo}
+                            />
+                        ))}
+                    </AnimatePresence>
+                </div>
+            )}
+
+            {/* ── Pagination ─────────────────────────────────────── */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-3 mt-12">
+                    <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}
+                        className="p-3 bg-white border border-slate-200 rounded-xl text-slate-400 hover:border-slate-300 disabled:opacity-30 transition-all">
+                        <ChevronLeft className="w-5 h-5" />
+                    </button>
                     <div className="flex items-center gap-2">
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
-                            <button
-                                key={number}
-                                onClick={() => paginate(number)}
-                                className={`w-12 h-12 flex items-center justify-center rounded-2xl font-black text-sm transition-all border ${currentPage === number
-                                    ? 'bg-slate-900 text-white border-slate-900 shadow-lg shadow-slate-200'
-                                    : 'bg-white text-slate-400 border-slate-200 hover:border-slate-400 hover:text-slate-900'
-                                    }`}
-                            >
-                                {number}
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
+                            <button key={n} onClick={() => setCurrentPage(n)}
+                                className={`w-10 h-10 rounded-xl font-black text-sm border transition-all ${currentPage === n ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-400 border-slate-200 hover:border-slate-400'}`}>
+                                {n}
                             </button>
                         ))}
                     </div>
-
-                    <button
-                        disabled={currentPage === totalPages}
-                        onClick={() => paginate(currentPage + 1)}
-                        className="p-3 bg-slate-50 text-slate-400 rounded-2xl hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:hover:bg-slate-50 disabled:hover:text-slate-400 transition-all border border-slate-200"
-                    >
-                        <ChevronRight className="w-6 h-6" />
+                    <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}
+                        className="p-3 bg-white border border-slate-200 rounded-xl text-slate-400 hover:border-slate-300 disabled:opacity-30 transition-all">
+                        <ChevronRight className="w-5 h-5" />
                     </button>
                 </div>
             )}
 
-            {/* Vendor Response Modal - Remains Same */}
+            {/* ── Reply Modal ────────────────────────────────────── */}
             <AnimatePresence>
                 {respondingTo && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             onClick={() => setRespondingTo(null)}
-                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
-                        ></motion.div>
+                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" />
                         <motion.div
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="bg-white rounded-[40px] w-full max-w-xl p-8 sm:p-10 shadow-2xl relative z-10 border border-slate-100"
+                            className="bg-white rounded-[32px] w-full max-w-xl p-8 shadow-2xl relative z-10 border border-slate-100"
                         >
-                            <button
-                                onClick={() => setRespondingTo(null)}
-                                className="absolute top-6 right-6 p-2 hover:bg-slate-50 rounded-full transition-colors"
-                            >
+                            <button onClick={() => setRespondingTo(null)}
+                                className="absolute top-6 right-6 p-2 hover:bg-slate-50 rounded-full transition-colors">
                                 <X className="w-6 h-6 text-slate-400" />
                             </button>
 
-                            <div className="flex items-center gap-3 mb-8">
+                            <div className="flex items-center gap-3 mb-6">
                                 <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
                                     <MessageSquareQuote className="w-6 h-6 text-blue-600" />
                                 </div>
                                 <div>
-                                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Post Response</h2>
-                                    <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-1">Replying to {respondingTo.user?.fullName}</p>
+                                    <h2 className="text-2xl font-black text-slate-900">Post Response</h2>
+                                    <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-0.5">
+                                        Replying to {respondingTo.user?.fullName}
+                                    </p>
                                 </div>
                             </div>
 
-                            <div className="bg-slate-50 rounded-3xl p-6 mb-8 border border-slate-100">
-                                <p className="text-slate-500 font-bold italic text-sm">
-                                    "{respondingTo.comment}"
-                                </p>
+                            <div className="bg-slate-50 rounded-2xl p-5 mb-6 border border-slate-100">
+                                <div className="flex items-center gap-1 mb-2">
+                                    <StarRow rating={respondingTo.rating} />
+                                </div>
+                                <p className="text-slate-500 font-bold italic text-sm">"{respondingTo.comment}"</p>
                             </div>
 
                             <textarea
                                 value={responseText}
-                                onChange={(e) => setResponseText(e.target.value)}
+                                onChange={e => setResponseText(e.target.value)}
                                 placeholder="Type your professional response here..."
-                                className="w-full h-40 bg-white border border-slate-200 rounded-[32px] p-6 text-slate-700 font-bold focus:outline-none focus:ring-8 focus:ring-blue-600/5 transition-all resize-none"
-                            ></textarea>
+                                className="w-full h-36 bg-white border border-slate-200 rounded-2xl p-5 text-slate-700 font-bold focus:outline-none focus:ring-4 focus:ring-blue-600/10 transition-all resize-none"
+                            />
 
-                            <div className="flex gap-4 mt-8">
-                                <button
-                                    onClick={() => setRespondingTo(null)}
-                                    className="flex-1 py-4 bg-slate-100 text-slate-500 font-black rounded-2xl hover:bg-slate-200 transition-all"
-                                >
+                            <div className="flex gap-3 mt-6">
+                                <button onClick={() => setRespondingTo(null)}
+                                    className="flex-1 py-3.5 bg-slate-100 text-slate-500 font-black rounded-2xl hover:bg-slate-200 transition-all">
                                     Cancel
                                 </button>
                                 <button
                                     disabled={isSubmitting || !responseText.trim()}
-                                    onClick={handleRespond}
-                                    className="flex-[2] py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl shadow-blue-200 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:scale-100 transition-all flex items-center justify-center gap-2"
+                                    onClick={handleReply}
+                                    className="flex-[2] py-3.5 bg-blue-600 text-white font-black rounded-2xl shadow-lg hover:bg-blue-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
                                 >
-                                    {isSubmitting ? (
-                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                    ) : (
-                                        <>
-                                            <Send className="w-4 h-4" />
-                                            Submit Response
-                                        </>
-                                    )}
+                                    {isSubmitting
+                                        ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        : <><Send className="w-4 h-4" /> Submit Response</>
+                                    }
                                 </button>
                             </div>
                         </motion.div>

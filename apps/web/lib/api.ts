@@ -24,26 +24,40 @@ async function fetcher<T>(endpoint: string, options?: RequestInit): Promise<T> {
         headers.set('Content-Type', 'application/json');
     }
 
-    // Add Authorization header if token exists
-    if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('token');
-        if (token) {
-            headers.set('Authorization', `Bearer ${token}`);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+    }
+
+    console.log(`[api.ts] Fetching: ${API_BASE_URL}${endpoint}`);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+    try {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            ...options,
+            headers,
+            signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
+            throw new Error(error.message || 'API request failed');
         }
+
+        // Check if the response has content before parsing as JSON
+        const text = await response.text();
+        return text ? JSON.parse(text) : (undefined as any);
+    } catch (error: any) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+            throw new Error('Request timed out. Please check your connection.');
+        }
+        throw error;
     }
-
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        ...options,
-        headers,
-    });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
-        throw new Error(error.message || 'API request failed');
-    }
-
-    const text = await response.text();
-    return text ? JSON.parse(text) : (undefined as any);
 }
 
 export const api = {
@@ -190,11 +204,32 @@ export const api = {
             method: 'PATCH',
             body: JSON.stringify(profileData),
         }),
+        getByCity: (city: string) => fetcher<any>(`/vendors/by-city?city=${encodeURIComponent(city)}`),
     },
     leads: {
         getForVendor: (params: any = {}) => {
             const query = new URLSearchParams(params).toString();
             return fetcher<any>(`/leads/vendor?${query}`);
+        },
+        getStats: () => fetcher<any>('/leads/vendor/stats'),
+        updateStatus: (id: string, status: string) => fetcher<any>(`/leads/${id}/status`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status }),
+        }),
+        createEnquiry: (data: {
+            businessId: string;
+            name: string;
+            email: string;
+            phone?: string;
+            message: string;
+            source?: string;
+        }) => fetcher<any>('/leads', {
+            method: 'POST',
+            body: JSON.stringify({ ...data, type: 'chat' }),
+        }),
+        getMyEnquiries: (params: any = {}) => {
+            const query = new URLSearchParams(params).toString();
+            return fetcher<any>(`/leads/my-enquiries?${query}`);
         },
     },
     auth: {
@@ -217,5 +252,17 @@ export const api = {
         verifyVendor: (id: string, status: boolean) => fetcher<any>(`/admin/vendor/${id}/verify?status=${status}`, {
             method: 'POST',
         }),
-    }
+    },
+    notifications: {
+        getAll: () => fetcher<any>('/notifications'),
+        markRead: (id: string) => fetcher<any>(`/notifications/${id}/read`, { method: 'PATCH' }),
+        markAllRead: () => fetcher<any>('/notifications/read-all', { method: 'PATCH' }),
+        delete: (id: string) => fetcher<any>(`/notifications/${id}`, { method: 'DELETE' }),
+    },
+    enquiries: {
+        reply: (leadId: string, message: string) => fetcher<any>(`/leads/${leadId}/reply`, {
+            method: 'PATCH',
+            body: JSON.stringify({ message }),
+        }),
+    },
 };

@@ -1,15 +1,16 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
     Loader2, Store, MapPin, Phone, TextQuote, Layers,
     ArrowLeft, CheckCircle, ImagePlus, Building2, Tag,
-    FileText, Navigation, Sparkles, X, Images, Check, Plus
+    FileText, Navigation, Sparkles, X, Images, Check, Plus,
+    ChevronLeft, ChevronRight, Hash
 } from 'lucide-react';
 import { api, getImageUrl } from '../../../lib/api';
 import { Category, City } from '../../../types/api';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const steps = [
     { id: 1, label: 'Business Info', icon: Building2 },
@@ -46,6 +47,40 @@ export default function AddListingPage() {
     const [newAmenityName, setNewAmenityName] = useState('');
     const [creatingAmenity, setCreatingAmenity] = useState(false);
 
+    // ── Keywords ────────────────────────────────────────────────────
+    const [keywords, setKeywords] = useState<string[]>([]);
+    const [keywordInput, setKeywordInput] = useState('');
+    const keywordInputRef = useRef<HTMLInputElement>(null);
+
+    const addKeyword = (raw: string) => {
+        const tag = raw.trim().toLowerCase().replace(/[,]+$/, '');
+        if (tag && !keywords.includes(tag) && keywords.length < 20) {
+            const updated = [...keywords, tag];
+            setKeywords(updated);
+            setFormData(prev => ({ ...prev, metaKeywords: updated.join(',') }));
+        }
+        setKeywordInput('');
+    };
+
+    const removeKeyword = (kw: string) => {
+        const updated = keywords.filter(k => k !== kw);
+        setKeywords(updated);
+        setFormData(prev => ({ ...prev, metaKeywords: updated.join(',') }));
+    };
+
+    const handleKeywordKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            addKeyword(keywordInput);
+        } else if (e.key === 'Backspace' && !keywordInput && keywords.length > 0) {
+            removeKeyword(keywords[keywords.length - 1]);
+        }
+    };
+
+    // Lightbox state
+    const [showLightbox, setShowLightbox] = useState(false);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
     const [formData, setFormData] = useState({
         title: '',
         categoryId: '',
@@ -67,6 +102,7 @@ export default function AddListingPage() {
         offerBannerUrl: '',
         country: 'Pakistan',
         amenityIds: [] as string[],
+        metaKeywords: '',
     });
 
     useEffect(() => {
@@ -171,6 +207,21 @@ export default function AddListingPage() {
     const removeGalleryImage = (index: number) => {
         setGalleryPreviews(prev => prev.filter((_, i) => i !== index));
         setFormData(prev => ({ ...prev, images: prev.images.filter((_: string, i: number) => i !== index) }));
+    };
+
+    const openLightbox = (index: number) => {
+        setCurrentImageIndex(index);
+        setShowLightbox(true);
+    };
+
+    const nextImage = (e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        setCurrentImageIndex((prev) => (prev + 1) % galleryPreviews.length);
+    };
+
+    const prevImage = (e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        setCurrentImageIndex((prev) => (prev - 1 + galleryPreviews.length) % galleryPreviews.length);
     };
 
     const toggleAmenity = (id: string) => {
@@ -553,12 +604,19 @@ export default function AddListingPage() {
                                 {galleryPreviews.length > 0 && (
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                                         {galleryPreviews.map((src, i) => (
-                                            <div key={i} className="relative group rounded-xl overflow-hidden aspect-square bg-slate-100">
-                                                <img src={src} alt={`Gallery ${i + 1}`} className="w-full h-full object-cover" />
+                                            <div
+                                                key={i}
+                                                onClick={() => openLightbox(i)}
+                                                className="relative group rounded-xl overflow-hidden aspect-square bg-slate-100 cursor-pointer"
+                                            >
+                                                <img src={src} alt={`Gallery ${i + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                                     <button
                                                         type="button"
-                                                        onClick={() => removeGalleryImage(i)}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            removeGalleryImage(i);
+                                                        }}
                                                         className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center text-white hover:bg-red-600 transition-colors shadow-lg"
                                                     >
                                                         <X className="w-4 h-4" />
@@ -667,159 +725,118 @@ export default function AddListingPage() {
                                 </div>
 
                                 {/* STATE / PROVINCE */}
-                                {formData.country && (() => {
-                                    const STATES: Record<string, string[]> = {
-                                        'Pakistan': ['Punjab', 'Sindh', 'Khyber Pakhtunkhwa (KPK)', 'Balochistan', 'Islamabad Capital Territory (ICT)', 'Gilgit-Baltistan', 'Azad Jammu & Kashmir (AJK)', 'Lahore Division', 'Rawalpindi Division', 'Faisalabad Division', 'Multan Division', 'Gujranwala Division', 'Sargodha Division', 'Bahawalpur Division', 'Sahiwal Division', 'Dera Ghazi Khan Division', 'Karachi Division', 'Hyderabad Division', 'Sukkur Division', 'Larkana Division', 'Peshawar Division', 'Mardan Division', 'Hazara Division', 'Malakand Division', 'Kohat Division', 'Bannu Division', 'Dera Ismail Khan Division', 'Quetta Division', 'Kalat Division', 'Makran Division'],
-                                        'India': ['Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Delhi', 'Jammu & Kashmir', 'Ladakh'],
-                                        'United Arab Emirates': ['Abu Dhabi', 'Dubai', 'Sharjah', 'Ajman', 'Fujairah', 'Ras Al Khaimah', 'Umm Al Quwain'],
-                                        'Saudi Arabia': ['Riyadh', 'Makkah', 'Madinah', 'Eastern Province', 'Asir', 'Tabuk', 'Qassim', 'Hail', 'Jizan', 'Najran', 'Al Jawf', 'Al Bahah', 'Northern Borders'],
-                                        'United Kingdom': ['England', 'Scotland', 'Wales', 'Northern Ireland', 'Greater London', 'West Midlands', 'Greater Manchester', 'West Yorkshire'],
-                                        'United States': ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'],
-                                        'Canada': ['Alberta', 'British Columbia', 'Manitoba', 'New Brunswick', 'Newfoundland and Labrador', 'Nova Scotia', 'Ontario', 'Prince Edward Island', 'Quebec', 'Saskatchewan', 'Northwest Territories', 'Nunavut', 'Yukon'],
-                                        'Australia': ['New South Wales', 'Victoria', 'Queensland', 'South Australia', 'Western Australia', 'Tasmania', 'Australian Capital Territory', 'Northern Territory'],
-                                    };
-                                    const opts = STATES[formData.country] || [];
-                                    return (
-                                        <div>
-                                            <label className={labelClass}>State / Province <span className="text-orange-500">*</span></label>
-                                            <div className="relative">
-                                                <select
-                                                    required
-                                                    name="state"
-                                                    value={formData.state}
-                                                    onChange={e => setFormData(prev => ({ ...prev, state: e.target.value, city: '', address: '' }))}
-                                                    className={selectClass}
-                                                >
-                                                    <option value="">-- Select State / Province --</option>
-                                                    {opts.length > 0
-                                                        ? opts.map(s => <option key={s} value={s}>{s}</option>)
-                                                        : <option value="Other">Other / Not Listed</option>
-                                                    }
-                                                    {opts.length > 0 && <option value="Other">Other</option>}
-                                                </select>
-                                                <MapPin className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                                            </div>
-                                            {formData.state === 'Other' && (
-                                                <input type="text" placeholder="Type state / province" className={`${inputClass} mt-2`}
-                                                    onChange={e => setFormData(prev => ({ ...prev, state: e.target.value }))} />
-                                            )}
+                                {formData.country && (
+                                    <div>
+                                        <label className={labelClass}>State / Province <span className="text-orange-500">*</span></label>
+                                        <div className="relative">
+                                            <select
+                                                required
+                                                name="state"
+                                                value={formData.state}
+                                                onChange={e => setFormData(prev => ({ ...prev, state: e.target.value, city: '', address: '' }))}
+                                                className={selectClass}
+                                            >
+                                                <option value="">-- Select State / Province --</option>
+                                                {formData.country === 'Pakistan' ? (
+                                                    // Get unique states from the dynamic cities list for Pakistan
+                                                    Array.from(new Set(cities.filter(c => c.state).map(c => c.state)))
+                                                        .sort()
+                                                        .map(s => <option key={s} value={s!}>{s}</option>)
+                                                ) : (() => {
+                                                    const FALLBACK_STATES: Record<string, string[]> = {
+                                                        'India': ['Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Delhi', 'Jammu & Kashmir', 'Ladakh'],
+                                                        'United Arab Emirates': ['Abu Dhabi', 'Dubai', 'Sharjah', 'Ajman', 'Fujairah', 'Ras Al Khaimah', 'Umm Al Quwain'],
+                                                        'Saudi Arabia': ['Riyadh', 'Makkah', 'Madinah', 'Eastern Province', 'Asir', 'Tabuk', 'Qassim', 'Hail', 'Jizan', 'Najran', 'Al Jawf', 'Al Bahah', 'Northern Borders'],
+                                                        'United Kingdom': ['England', 'Scotland', 'Wales', 'Northern Ireland', 'Greater London', 'West Midlands', 'Greater Manchester', 'West Yorkshire'],
+                                                        'United States': ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'],
+                                                        'Canada': ['Alberta', 'British Columbia', 'Manitoba', 'New Brunswick', 'Newfoundland and Labrador', 'Nova Scotia', 'Ontario', 'Prince Edward Island', 'Quebec', 'Saskatchewan', 'Northwest Territories', 'Nunavut', 'Yukon'],
+                                                        'Australia': ['New South Wales', 'Victoria', 'Queensland', 'South Australia', 'Western Australia', 'Tasmania', 'Australian Capital Territory', 'Northern Territory'],
+                                                    };
+                                                    const opts = FALLBACK_STATES[formData.country] || [];
+                                                    return opts.map(s => <option key={s} value={s}>{s}</option>);
+                                                })()}
+                                                <option value="Other">Other</option>
+                                            </select>
+                                            <MapPin className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                                         </div>
-                                    );
-                                })()}
+                                        {formData.state === 'Other' && (
+                                            <input type="text" placeholder="Type state / province" className={`${inputClass} mt-2`}
+                                                onChange={e => setFormData(prev => ({ ...prev, state: e.target.value }))} />
+                                        )}
+                                    </div>
+                                )}
 
                                 {/* CITY */}
-                                {formData.state && (() => {
-                                    const CITIES: Record<string, string[]> = {
-                                        'Punjab': ['Lahore', 'Rawalpindi', 'Faisalabad', 'Multan', 'Gujranwala', 'Sialkot', 'Bahawalpur', 'Sargodha', 'Sheikhupura', 'Jhang', 'Rahim Yar Khan', 'Gujrat', 'Kasur', 'Sahiwal', 'Okara', 'Wah Cantonment', 'Dera Ghazi Khan', 'Chiniot', 'Khanewal', 'Hafizabad', 'Muzaffargarh', 'Jhelum', 'Attock', 'Narowal', 'Mianwali', 'Chakwal', 'Khushab', 'Rajanpur', 'Bahawalnagar'],
-                                        'Lahore Division': ['Lahore', 'Sheikhupura', 'Nankana Sahib', 'Kasur'],
-                                        'Rawalpindi Division': ['Rawalpindi', 'Islamabad', 'Attock', 'Chakwal', 'Jhelum', 'Taxila', 'Wah Cantt', 'Murree'],
-                                        'Faisalabad Division': ['Faisalabad', 'Chiniot', 'Toba Tek Singh', 'Jhang'],
-                                        'Multan Division': ['Multan', 'Khanewal', 'Lodhran', 'Muzaffargarh', 'Vehari'],
-                                        'Gujranwala Division': ['Gujranwala', 'Sialkot', 'Gujrat', 'Hafizabad', 'Narowal', 'Wazirabad', 'Kamoke', 'Mandi Bahauddin'],
-                                        'Bahawalpur Division': ['Bahawalpur', 'Rahim Yar Khan', 'Bahawalnagar', 'Sadiqabad', 'Hasilpur', 'Ahmadpur East'],
-                                        'Sahiwal Division': ['Sahiwal', 'Okara', 'Pakpattan'],
-                                        'Dera Ghazi Khan Division': ['Dera Ghazi Khan', 'Rajanpur', 'Layyah', 'Muzaffargarh'],
-                                        'Sindh': ['Karachi', 'Hyderabad', 'Sukkur', 'Larkana', 'Nawabshah', 'Mirpurkhas', 'Jacobabad', 'Shikarpur', 'Khairpur', 'Dadu'],
-                                        'Karachi Division': ['Karachi', 'Malir', 'Korangi', 'Landhi', 'Gadap'],
-                                        'Hyderabad Division': ['Hyderabad', 'Matiari', 'Jamshoro', 'Tando Allahyar', 'Tando Muhammad Khan'],
-                                        'Sukkur Division': ['Sukkur', 'Khairpur', 'Ghotki', 'Shikarpur', 'Kashmore'],
-                                        'Larkana Division': ['Larkana', 'Shahdadkot', 'Kamber', 'Jacobabad', 'Qambar'],
-                                        'Khyber Pakhtunkhwa (KPK)': ['Peshawar', 'Mardan', 'Kohat', 'Abbottabad', 'Mansehra', 'Swat', 'Dera Ismail Khan', 'Nowshera', 'Charsadda', 'Bannu'],
-                                        'Peshawar Division': ['Peshawar', 'Nowshera', 'Charsadda', 'Khyber'],
-                                        'Mardan Division': ['Mardan', 'Swabi'],
-                                        'Hazara Division': ['Abbottabad', 'Mansehra', 'Haripur', 'Battagram', 'Kohistan'],
-                                        'Malakand Division': ['Swat', 'Dir Lower', 'Dir Upper', 'Chitral', 'Malakand', 'Bajur', 'Shangla', 'Buner'],
-                                        'Kohat Division': ['Kohat', 'Hangu', 'Karak', 'Orakzai', 'Kurram'],
-                                        'Bannu Division': ['Bannu', 'Lakki Marwat', 'North Waziristan', 'South Waziristan'],
-                                        'Dera Ismail Khan Division': ['Dera Ismail Khan', 'Tank'],
-                                        'Balochistan': ['Quetta', 'Turbat', 'Khuzdar', 'Gwadar', 'Hub', 'Chaman', 'Zhob'],
-                                        'Quetta Division': ['Quetta', 'Nushki', 'Mastung', 'Kalat'],
-                                        'Kalat Division': ['Kalat', 'Khuzdar', 'Kharan', 'Washuk'],
-                                        'Makran Division': ['Turbat', 'Gwadar', 'Pasni', 'Ormara'],
-                                        'Sibi Division': ['Sibi', 'Dera Bugti', 'Kohlu', 'Ziarat'],
-                                        'Zhob Division': ['Zhob', 'Qila Saifullah', 'Musakhel', 'Barkhan', 'Sherani'],
-                                        'Nasirabad Division': ['Dera Murad Jamali', 'Jaffarabad', 'Sohbatpur', 'Nasirabad'],
-                                        'Islamabad Capital Territory (ICT)': ['Islamabad'],
-                                        'Gilgit-Baltistan': ['Gilgit', 'Skardu', 'Hunza', 'Ghanche', 'Ghizer', 'Astore', 'Diamer', 'Nagar'],
-                                        'Azad Jammu & Kashmir (AJK)': ['Muzaffarabad', 'Mirpur', 'Rawalakot', 'Bagh', 'Kotli', 'Bhimber', 'Poonch', 'Neelum'],
-                                        'United Arab Emirates': ['Abu Dhabi', 'Dubai', 'Sharjah', 'Ajman', 'Fujairah', 'Ras Al Khaimah', 'Umm Al Quwain'],
-                                        'Delhi': ['New Delhi', 'Old Delhi', 'Gurugram', 'Noida', 'Faridabad', 'Ghaziabad'],
-                                    };
-                                    const opts = CITIES[formData.state] || cities.map(c => c.name);
-                                    return (
-                                        <div>
-                                            <label className={labelClass}>City <span className="text-orange-500">*</span></label>
-                                            <div className="relative">
-                                                <select
-                                                    required
-                                                    name="city"
-                                                    value={formData.city}
-                                                    onChange={e => setFormData(prev => ({ ...prev, city: e.target.value, address: '' }))}
-                                                    className={selectClass}
-                                                >
-                                                    <option value="">-- Select City --</option>
-                                                    {opts.map(c => <option key={c} value={c}>{c}</option>)}
-                                                    <option value="Other">Other</option>
-                                                </select>
-                                                <MapPin className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                                            </div>
-                                            {formData.city === 'Other' && (
-                                                <input type="text" placeholder="Type city name" className={`${inputClass} mt-2`}
-                                                    onChange={e => setFormData(prev => ({ ...prev, city: e.target.value }))} />
-                                            )}
+                                {formData.state && (
+                                    <div>
+                                        <label className={labelClass}>City <span className="text-orange-500">*</span></label>
+                                        <div className="relative">
+                                            <select
+                                                required
+                                                name="city"
+                                                value={formData.city}
+                                                onChange={e => setFormData(prev => ({ ...prev, city: e.target.value, address: '' }))}
+                                                className={selectClass}
+                                            >
+                                                <option value="">-- Select City --</option>
+                                                {formData.country === 'Pakistan' ? (
+                                                    cities
+                                                        .filter(c => c.state === formData.state)
+                                                        .sort((a, b) => a.name.localeCompare(b.name))
+                                                        .map(c => <option key={c.id} value={c.name}>{c.name}</option>)
+                                                ) : (() => {
+                                                    const FALLBACK_CITIES: Record<string, string[]> = {
+                                                        'Punjab': ['Amritsar', 'Ludhiana', 'Jalandhar', 'Patiala'],
+                                                        'Delhi': ['New Delhi', 'Old Delhi', 'Gurugram', 'Noida', 'Faridabad', 'Ghaziabad'],
+                                                        'Dubai': ['Deira', 'Bur Dubai', 'Marina', 'Downtown'],
+                                                        'Abu Dhabi': ['Khalifa City', 'Al Reem Island'],
+                                                    };
+                                                    const opts = FALLBACK_CITIES[formData.state] || [];
+                                                    return opts.map(c => <option key={c} value={c}>{c}</option>);
+                                                })()}
+                                                <option value="Other">Other</option>
+                                            </select>
+                                            <MapPin className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                                         </div>
-                                    );
-                                })()}
+                                        {formData.city === 'Other' && (
+                                            <input type="text" placeholder="Type city name" className={`${inputClass} mt-2`}
+                                                onChange={e => setFormData(prev => ({ ...prev, city: e.target.value }))} />
+                                        )}
+                                    </div>
+                                )}
 
                                 {/* AREA / STREET */}
-                                {formData.city && (() => {
-                                    const AREAS: Record<string, string[]> = {
-                                        'Lahore': ['DHA Phase 1', 'DHA Phase 2', 'DHA Phase 3', 'DHA Phase 4', 'DHA Phase 5', 'DHA Phase 6', 'Gulberg I', 'Gulberg II', 'Gulberg III', 'Model Town', 'Johar Town', 'Bahria Town Lahore', 'Cavalry Ground', 'Cantt', 'Iqbal Town', 'Garden Town', 'Shadman', 'Samanabad', 'Faisal Town', 'Wapda Town', 'Township', 'Raiwind Road', 'Bedian Road', 'Ferozpur Road', 'Mall Road', 'Liberty Market', 'M.M. Alam Road', 'Canal Road', 'Thokar Niaz Baig', 'Halloki', 'Bahria Orchard'],
-                                        'Karachi': ['Clifton', 'DHA Phase 1', 'DHA Phase 2', 'DHA Phase 5', 'DHA Phase 6', 'DHA Phase 7', 'DHA Phase 8', 'Gulshan-e-Iqbal', 'Gulistan-e-Jauhar', 'PECHS', 'Bahadurabad', 'Defence View', 'North Nazimabad', 'Federal B Area', 'Nazimabad', 'Korangi', 'Landhi', 'Malir', 'Shah Faisal Colony', 'Scheme 33', 'Scheme 45', 'North Karachi', 'Surjani Town', 'Orangi Town', 'Liaquatabad', 'Kemari', 'Saddar', 'Garden', 'Lyari', 'Gulberg', 'Baldia'],
-                                        'Islamabad': ['Blue Area', 'F-6 Markaz', 'F-7 Markaz', 'F-8 Markaz', 'F-10 Markaz', 'F-11', 'G-6', 'G-7', 'G-8', 'G-9', 'G-10', 'G-11', 'G-13', 'G-14', 'H-8', 'H-9', 'I-8', 'I-9', 'I-10', 'I-14', 'I-15', 'E-7', 'E-11', 'DHA Phase 1', 'DHA Phase 2', 'Bahria Town', 'PWD Colony', 'Gulshan-e-Sehat', 'Saidpur Village', 'Bani Gala', 'Golra Sharif', 'Rawat', 'Koral', 'Tarlai'],
-                                        'Rawalpindi': ['DHA Rawalpindi', 'Bahria Town', 'Saddar', 'Satellite Town', 'Westridge', 'Chaklala', 'Rajah Bazaar', 'Murree Road', 'GT Road', 'Taxila', 'Wah Cantt', 'Adiala Road', 'Peshawar Road', 'Chakri Road', '6th Road', 'Commercial Market'],
-                                        'Faisalabad': ['Canal Road', 'D-Ground', 'Gulberg', 'Jinnah Colony', 'Madina Town', 'Peoples Colony', 'Samanabad', 'Satiana Road', 'Sargodha Road', 'Susan Road', 'Millat Road', 'Jaranwala Road', 'Sheikhupura Road'],
-                                        'Multan': ['Cantt', 'Shah Rukn-e-Alam', 'New Multan', 'Gulgasht Colony', 'Model Town', 'Bosan Road', 'Nawabpur Road', 'Khanewal Road', 'Abu Baker Block', 'Shah Shams'],
-                                        'Gujranwala': ['Cantt', 'Civil Lines', 'Satellite Town', 'GT Road Gujranwala', 'Saidpur Road', 'People Colony', 'Gulshan Iqbal'],
-                                        'Sialkot': ['Cantt', 'Iqbal Road', 'Kashmir Road', 'Paris Road', 'Industrial Area', 'Sambrial'],
-                                        'Peshawar': ['University Road', 'Hayatabad Phase 1', 'Hayatabad Phase 2', 'Hayatabad Phase 3', 'Hayatabad Phase 4', 'DHA Peshawar', 'Gulbahar', 'Saddar', 'Cantt', 'Warsak Road', 'Ring Road', 'Board Bazar', 'Qissa Khwani', 'Charsadda Road'],
-                                        'Quetta': ['Cantt', 'Satellite Town', 'Jinnah Town', 'Sariab Road', 'Brewery Road', 'Airport Road', 'Zarghoon Road', 'Jinnah Road', 'Liaquat Bazaar'],
-                                        'Hyderabad': ['Latifabad', 'Qasimabad', 'Hirabad', 'Auto Bhan Road', 'Bypass', 'Kotri', 'Jamshoro Road', 'Court Road'],
-                                        'Abbottabad': ['Cantt', 'Mandian', 'Jinnahabad', 'Kaghan Road', 'Supply Bazar', 'Nawan Shehr'],
-                                        'Gwadar': ['Port Area', 'New Gwadar', 'Satellite Town Gwadar', 'MDA Chowk', 'East Bay', 'West Bay'],
-                                        'Gilgit': ['City Center', 'Jutial', 'Konodas', 'Danyore', 'Barmas', 'Sakwar'],
-                                        'Dubai': ['Downtown Dubai', 'Deira', 'Bur Dubai', 'Jumeirah', 'Marina', 'JLT', 'Business Bay', 'DIFC', 'Al Quoz', 'Al Barsha', 'Mirdif', 'Silicon Oasis'],
-                                        'Abu Dhabi': ['Al Reem Island', 'Khalifa City', 'Al Ain', 'Mushrif', 'Corniche', 'Tourist Club Area', 'Mohammed Bin Zayed City'],
-                                        'Riyadh': ['Olaya', 'Al Malaz', 'Al Rawdah', 'Al Sulaimaniyah', 'Al Muraba', 'Diplomatic Quarter', 'King Fahd District'],
-                                    };
-                                    const areas = AREAS[formData.city] || [];
-                                    return (
-                                        <div>
-                                            <label className={labelClass}>Area / Street <span className="text-orange-500">*</span></label>
-                                            <div className="relative">
-                                                <select
-                                                    required
-                                                    name="address"
-                                                    value={formData.address}
-                                                    onChange={handleChange}
-                                                    className={selectClass}
-                                                >
-                                                    <option value="">-- Select Area / Street --</option>
-                                                    {areas.length > 0
-                                                        ? areas.map(a => <option key={a} value={a}>{a}</option>)
-                                                        : null
-                                                    }
-                                                    <option value="Other">Other (type manually)</option>
-                                                </select>
-                                                <MapPin className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                                            </div>
-                                            {formData.address === 'Other' && (
-                                                <input type="text" placeholder="Type area / street name" className={`${inputClass} mt-2`}
-                                                    onChange={e => setFormData(prev => ({ ...prev, address: e.target.value }))} />
-                                            )}
+                                {formData.city && (
+                                    <div>
+                                        <label className={labelClass}>Area / Street <span className="text-orange-500">*</span></label>
+                                        <div className="relative">
+                                            <select
+                                                required
+                                                name="address"
+                                                value={formData.address}
+                                                onChange={handleChange}
+                                                className={selectClass}
+                                            >
+                                                <option value="">-- Select Area / Street --</option>
+                                                {(() => {
+                                                    const FALLBACK_AREAS: Record<string, string[]> = {
+                                                        'Lahore': ['DHA Phase 1', 'DHA Phase 2', 'DHA Phase 3', 'DHA Phase 4', 'DHA Phase 5', 'DHA Phase 6', 'Gulberg I', 'Gulberg II', 'Gulberg III', 'Model Town', 'Johar Town', 'Bahria Town Lahore', 'Cavalry Ground', 'Cantt', 'Iqbal Town', 'Garden Town', 'Shadman', 'Samanabad', 'Faisal Town', 'Wapda Town', 'Township', 'Raiwind Road', 'Bedian Road', 'Ferozpur Road', 'Mall Road', 'Liberty Market', 'M.M. Alam Road', 'Canal Road', 'Thokar Niaz Baig', 'Halloki', 'Bahria Orchard'],
+                                                        'Karachi': ['Clifton', 'DHA Phase 1', 'DHA Phase 2', 'DHA Phase 5', 'DHA Phase 6', 'DHA Phase 7', 'DHA Phase 8', 'Gulshan-e-Iqbal', 'Gulistan-e-Jauhar', 'PECHS', 'Bahadurabad', 'Defence View', 'North Nazimabad', 'Federal B Area', 'Nazimabad', 'Korangi', 'Landhi', 'Malir', 'Shah Faisal Colony', 'Scheme 33', 'Scheme 45', 'North Karachi', 'Surjani Town', 'Orangi Town', 'Liaquatabad', 'Kemari', 'Saddar', 'Garden', 'Lyari', 'Gulberg', 'Baldia'],
+                                                        'Islamabad': ['Blue Area', 'F-6 Markaz', 'F-7 Markaz', 'F-8 Markaz', 'F-10 Markaz', 'F-11', 'G-6', 'G-7', 'G-8', 'G-9', 'G-10', 'G-11', 'G-13', 'G-14', 'H-8', 'H-9', 'I-8', 'I-9', 'I-10', 'I-14', 'I-15', 'E-7', 'E-11', 'DHA Phase 1', 'DHA Phase 2', 'Bahria Town', 'PWD Colony', 'Gulshan-e-Sehat', 'Saidpur Village', 'Bani Gala', 'Golra Sharif', 'Rawat', 'Koral', 'Tarlai'],
+                                                    };
+                                                    const areas = FALLBACK_AREAS[formData.city] || [];
+                                                    return areas.map(a => <option key={a} value={a}>{a}</option>);
+                                                })()}
+                                                <option value="Other">Other (type manually)</option>
+                                            </select>
+                                            <MapPin className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                                         </div>
-                                    );
-                                })()}
+                                        {formData.address === 'Other' && (
+                                            <input type="text" placeholder="Type area / street name" className={`${inputClass} mt-2`}
+                                                onChange={e => setFormData(prev => ({ ...prev, address: e.target.value }))} />
+                                        )}
+                                    </div>
+                                )}
 
                                 {/* PINCODE */}
                                 <div className="grid grid-cols-2 gap-4">
@@ -1150,6 +1167,58 @@ export default function AddListingPage() {
                             )}
                         </div>
 
+                        {/* ── Search Keywords ──────────────────────────────── */}
+                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                            <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
+                                    <Hash className="w-4 h-4 text-orange-500" />
+                                </div>
+                                <div>
+                                    <h3 className="font-black text-slate-900">Search Keywords</h3>
+                                    <p className="text-[11px] text-slate-400 font-medium">Help customers find you · max 20 keywords</p>
+                                </div>
+                            </div>
+                            <div className="p-6 space-y-3">
+                                {/* Tag input box */}
+                                <div
+                                    onClick={() => keywordInputRef.current?.focus()}
+                                    className="min-h-[56px] flex flex-wrap gap-2 cursor-text p-3 bg-slate-50 border border-slate-200 rounded-xl focus-within:ring-2 focus-within:ring-orange-400 focus-within:border-transparent transition-all"
+                                >
+                                    {keywords.map(kw => (
+                                        <span
+                                            key={kw}
+                                            className="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-50 text-orange-700 border border-orange-200 rounded-full text-xs font-black"
+                                        >
+                                            #{kw}
+                                            <button
+                                                type="button"
+                                                onClick={e => { e.stopPropagation(); removeKeyword(kw); }}
+                                                className="w-3.5 h-3.5 rounded-full bg-orange-200 hover:bg-orange-400 flex items-center justify-center transition-colors"
+                                            >
+                                                <X className="w-2 h-2" />
+                                            </button>
+                                        </span>
+                                    ))}
+                                    <input
+                                        ref={keywordInputRef}
+                                        type="text"
+                                        value={keywordInput}
+                                        onChange={e => setKeywordInput(e.target.value)}
+                                        onKeyDown={handleKeywordKeyDown}
+                                        onBlur={() => { if (keywordInput.trim()) addKeyword(keywordInput); }}
+                                        placeholder={keywords.length === 0 ? 'Type keyword, press Enter or comma to add…' : ''}
+                                        className="flex-1 min-w-[160px] bg-transparent outline-none text-sm font-semibold text-slate-700 placeholder:text-slate-300"
+                                    />
+                                </div>
+                                <p className="text-[11px] text-slate-400 font-medium">
+                                    ✨ Keywords boost your listing to the <strong>top of search results</strong> when customers search for those terms.
+                                </p>
+                                <p className="text-[11px] text-slate-400">
+                                    e.g. <span className="italic">home delivery · open 24 hours · best biryani · bridal makeup · free wifi</span>
+                                </p>
+                            </div>
+                        </div>
+
                         {/* Summary Preview */}
                         <div className="bg-gradient-to-br from-slate-50 to-orange-50/30 rounded-2xl border border-orange-100 p-6">
                             <h3 className="font-black text-slate-700 text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -1199,6 +1268,70 @@ export default function AddListingPage() {
                     </motion.div>
                 )}
             </form>
+
+            <AnimatePresence>
+                {showLightbox && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-10"
+                        onClick={() => setShowLightbox(false)}
+                    >
+                        <button
+                            className="absolute top-6 right-6 z-[110] w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all border border-white/10"
+                            onClick={() => setShowLightbox(false)}
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+
+                        <div className="relative w-full max-w-5xl aspect-video md:aspect-[16/9] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                            <button
+                                type="button"
+                                className="absolute left-0 -translate-x-full md:-translate-x-20 z-[110] w-14 h-14 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all border border-white/10"
+                                onClick={prevImage}
+                            >
+                                <ChevronLeft className="w-8 h-8" />
+                            </button>
+
+                            <motion.div
+                                key={currentImageIndex}
+                                initial={{ opacity: 0, scale: 0.95, x: 20 }}
+                                animate={{ opacity: 1, scale: 1, x: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, x: -20 }}
+                                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                                className="w-full h-full rounded-[32px] overflow-hidden border border-white/10 shadow-2xl"
+                            >
+                                <img
+                                    src={galleryPreviews[currentImageIndex]}
+                                    className="w-full h-full object-contain bg-black/50"
+                                    alt="Gallery selection"
+                                />
+                            </motion.div>
+
+                            <button
+                                type="button"
+                                className="absolute right-0 translate-x-full md:translate-x-20 z-[110] w-14 h-14 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all border border-white/10"
+                                onClick={nextImage}
+                            >
+                                <ChevronRight className="w-8 h-8" />
+                            </button>
+
+                            {/* Thumbnails Indicator */}
+                            <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 flex gap-3">
+                                {galleryPreviews.map((_, i) => (
+                                    <button
+                                        type="button"
+                                        key={i}
+                                        onClick={() => setCurrentImageIndex(i)}
+                                        className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${i === currentImageIndex ? 'bg-orange-500 w-8' : 'bg-white/20 hover:bg-white/40'}`}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

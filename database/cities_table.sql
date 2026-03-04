@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS cities (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(100) NOT NULL,
     slug VARCHAR(100) UNIQUE NOT NULL,
+    state VARCHAR(100),
     description TEXT,
     hero_image_url TEXT,
     is_popular BOOLEAN DEFAULT false,
@@ -15,6 +16,3 @@ CREATE TABLE IF NOT EXISTS cities (
 
 CREATE INDEX IF NOT EXISTS idx_cities_slug ON cities(slug);
 CREATE INDEX IF NOT EXISTS idx_cities_popular ON cities(is_popular);
-
--- Trigger for updated_at
-CREATE TRIGGER update_cities_updated_at BEFORE UPDATE ON cities FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

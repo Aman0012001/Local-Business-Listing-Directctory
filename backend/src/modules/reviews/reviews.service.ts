@@ -38,13 +38,19 @@ export class ReviewsService {
     async create(createReviewDto: CreateReviewDto, user: User): Promise<Review> {
         const { businessId } = createReviewDto;
 
-        // Verify listing exists
+        // Verify listing exists and load vendor relation
         const listing = await this.listingRepository.findOne({
             where: { id: businessId },
+            relations: ['vendor'],
         });
 
         if (!listing) {
             throw new NotFoundException('Listing not found');
+        }
+
+        // Prevent vendors from reviewing their own listing
+        if (listing.vendor?.userId === user.id) {
+            throw new ForbiddenException('You cannot review your own business listing');
         }
 
         // Check if user already reviewed this business
@@ -204,7 +210,7 @@ export class ReviewsService {
     ): Promise<Review> {
         const review = await this.reviewRepository.findOne({
             where: { id },
-            relations: ['business', 'listing.vendor'],
+            relations: ['business', 'business.vendor'],
         });
 
         if (!review) {

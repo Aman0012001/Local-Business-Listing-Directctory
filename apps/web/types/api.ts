@@ -14,6 +14,8 @@ export interface City {
     id: string;
     name: string;
     slug: string;
+    state?: string;
+    country?: string;
     imageUrl?: string;
     businessCount?: number;
 }
@@ -64,6 +66,21 @@ export interface Business {
     website?: string;
     businessHours?: BusinessHours[];
     businessAmenities?: BusinessAmenity[];
+    vendorId?: string;
+    vendor?: {
+        id: string;
+        userId?: string;
+        user?: { id: string; fullName?: string; };
+    };
+    // SEO / Search
+    metaKeywords?: string;
+    // Offer / Promo
+    hasOffer?: boolean;
+    offerTitle?: string;
+    offerDescription?: string;
+    offerBadge?: string;
+    offerExpiresAt?: string;
+    offerBannerUrl?: string;
 }
 
 export interface Review {

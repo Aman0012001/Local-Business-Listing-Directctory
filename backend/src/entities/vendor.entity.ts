@@ -38,14 +38,20 @@ export class Vendor {
     @Column({ name: 'gst_number', nullable: true, length: 15 })
     gstNumber: string;
 
-    @Column({ name: 'pan_number', nullable: true, length: 10 })
-    panNumber: string;
+    @Column({ name: 'ntn_number', nullable: true, length: 15 })
+    ntnNumber: string;
 
     @Column({ name: 'is_verified', default: false })
     isVerified: boolean;
 
     @Column({ name: 'verification_documents', nullable: true, type: 'jsonb' })
     verificationDocuments: Record<string, any>;
+
+    @Column({ name: 'business_hours', nullable: true, type: 'jsonb' })
+    businessHours: Record<string, { isOpen: boolean, openTime: string, closeTime: string }>;
+
+    @Column({ name: 'social_links', nullable: true, type: 'jsonb', default: '[]' })
+    socialLinks: { platform: string, url: string }[];
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;

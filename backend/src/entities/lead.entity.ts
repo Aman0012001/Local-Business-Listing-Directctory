@@ -92,6 +92,13 @@ export class Lead {
     @Column({ nullable: true, type: 'text' })
     notes: string;
 
+    // Vendor reply to enquiry
+    @Column({ name: 'vendor_reply', nullable: true, type: 'text' })
+    vendorReply: string;
+
+    @Column({ name: 'vendor_replied_at', nullable: true, type: 'timestamp' })
+    vendorRepliedAt: Date;
+
     @CreateDateColumn({ name: 'created_at' })
     @Index()
     createdAt: Date;

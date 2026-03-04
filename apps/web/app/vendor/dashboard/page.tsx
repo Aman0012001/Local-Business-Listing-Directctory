@@ -5,7 +5,7 @@ import StatsGrid from '../../../components/vendor/StatsGrid';
 import PerformanceChart from '../../../components/vendor/PerformanceChart';
 import RecentReviews from '../../../components/vendor/RecentReviews';
 import MessageCenter from '../../../components/vendor/MessageCenter';
-import { Star, Phone, ChevronRight, ListTree, Heart, MessageSquare, Plus, TrendingUp, Loader2, Bell, CheckCircle2 } from 'lucide-react';
+import { Star, Phone, ChevronRight, ListTree, Heart, MessageSquare, Plus, TrendingUp, Loader2, Bell, CheckCircle2, Send, Clock } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import Link from 'next/link';
 import { api, getImageUrl } from '../../../lib/api';
@@ -20,6 +20,7 @@ export default function GenericDashboard() {
     const [notifications, setNotifications] = useState<any[]>([]);
     const [leads, setLeads] = useState<any[]>([]);
     const [newLeadsCount, setNewLeadsCount] = useState(0);
+    const [enquiries, setEnquiries] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     const isVendor = user?.role === 'vendor';
@@ -48,13 +49,15 @@ export default function GenericDashboard() {
                     setStats(statsData);
 
                     if (vendorProfile?.id) {
-                        const [reviewsData, leadsData] = await Promise.all([
+                        const [reviewsData, leadsData, enquiriesData] = await Promise.all([
                             api.reviews.findAll({ vendorId: vendorProfile.id, limit: 5 }),
-                            api.leads.getForVendor({ limit: 5 })
+                            api.leads.getForVendor({ limit: 5 }),
+                            api.leads.getForVendor({ limit: 5, type: 'chat' })
                         ]);
                         setRecentReviews(reviewsData.data || []);
                         setLeads(leadsData.data || []);
                         setNewLeadsCount(leadsData.meta?.total || 0);
+                        setEnquiries(enquiriesData.data || []);
                     }
                 } else {
                     // Regular User specific data
@@ -296,7 +299,66 @@ export default function GenericDashboard() {
                         title={isVendor || isAdmin ? "Recent Reviews" : "My Recent Reviews"}
                     />
 
-                    {isVendor && <MessageCenter leads={leads} />}
+                    {isVendor && (
+                        <section className="bg-white rounded-[16px] p-8 border border-black shadow-xl shadow-slate-200/20">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-gradient-to-br from-violet-100 to-blue-100 rounded-[14px] flex items-center justify-center">
+                                        <Send className="w-5 h-5 text-violet-600" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-black text-slate-900 tracking-tight">Enquiries</h3>
+                                        {enquiries.filter(e => e.status === 'new').length > 0 && (
+                                            <span className="text-xs font-black text-violet-600">
+                                                {enquiries.filter(e => e.status === 'new').length} new
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                                <Link href="/vendor/leads" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-violet-600 transition-all flex items-center gap-1">
+                                    View All <ChevronRight className="w-3 h-3" />
+                                </Link>
+                            </div>
+                            <div className="space-y-3">
+                                {enquiries.length > 0 ? (
+                                    enquiries.slice(0, 4).map((enq) => (
+                                        <div key={enq.id} className={`p-4 rounded-[14px] border transition-all hover:shadow-sm ${enq.status === 'new' ? 'bg-violet-50/60 border-violet-100' : 'bg-slate-50 border-slate-100'
+                                            }`}>
+                                            <div className="flex items-start justify-between gap-2 mb-1">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-violet-200 to-blue-200 flex items-center justify-center text-violet-700 font-black text-xs flex-shrink-0">
+                                                        {(enq.name?.[0] || '?').toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-black text-slate-900 leading-none">{enq.name || 'Guest'}</p>
+                                                        {enq.email && <p className="text-[10px] text-slate-400 font-medium mt-0.5">{enq.email}</p>}
+                                                    </div>
+                                                </div>
+                                                {enq.status === 'new' && (
+                                                    <span className="flex-shrink-0 px-2 py-0.5 bg-violet-600 text-white text-[10px] font-black rounded-full uppercase">New</span>
+                                                )}
+                                            </div>
+                                            {enq.message && (
+                                                <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 mt-2 pl-9">{enq.message}</p>
+                                            )}
+                                            <div className="flex items-center gap-1 text-[10px] text-slate-300 font-medium mt-2 pl-9">
+                                                <Clock className="w-3 h-3" />
+                                                {new Date(enq.createdAt).toLocaleDateString('en-US', { day: '2-digit', month: 'short' })}
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="py-8 text-center">
+                                        <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                                            <Send className="w-6 h-6 text-slate-300" />
+                                        </div>
+                                        <p className="text-sm text-slate-400 font-bold">No enquiries yet</p>
+                                        <p className="text-xs text-slate-300 mt-1">Customers can enquire from your listing page</p>
+                                    </div>
+                                )}
+                            </div>
+                        </section>
+                    )}
                 </div>
             </div>
         </div>

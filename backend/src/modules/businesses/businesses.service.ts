@@ -23,6 +23,7 @@ import {
 } from '../../common/utils/pagination.util';
 import { generateSlug, generateUniqueSlug } from '../../common/utils/slug.util';
 import { calculateDistance } from '../../common/utils/geolocation.util';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class BusinessesService {
@@ -39,6 +40,7 @@ export class BusinessesService {
         private categoryRepository: Repository<Category>,
         @InjectRepository(Vendor)
         private vendorRepository: Repository<Vendor>,
+        private notificationsService: NotificationsService,
     ) { }
 
     /**
@@ -112,7 +114,17 @@ export class BusinessesService {
         }
 
         // Return fully populated listing
-        return this.findOne(savedListing.id);
+        const result = await this.findOne(savedListing.id);
+
+        // Broadcast to all users: new listing is live
+        this.notificationsService.broadcast({
+            title: '📍 New Business Listed!',
+            message: `"${result.title}" just joined ${result.category?.name ? result.category.name + ' listings' : 'our directory'}. Check it out!`,
+            type: 'new_listing',
+            data: { businessId: result.id, slug: result.slug },
+        }).catch(() => {/* non-blocking */ });
+
+        return result;
     }
 
     /**
@@ -146,10 +158,10 @@ export class BusinessesService {
             .leftJoinAndSelect('businessAmenities.amenity', 'amenity')
             .where('listing.status IN (:...statuses)', { statuses: [BusinessStatus.PENDING, BusinessStatus.APPROVED] });
 
-        // Text search
+        // Text search — matches title, description and vendor-added search keywords
         if (searchDto.query) {
             queryBuilder.andWhere(
-                '(listing.title ILIKE :query OR listing.description ILIKE :query)',
+                '(listing.title ILIKE :query OR listing.description ILIKE :query OR listing.metaKeywords ILIKE :query)',
                 { query: `%${searchDto.query}%` },
             );
         }
@@ -218,23 +230,32 @@ export class BusinessesService {
         }
 
         // Sorting
+        // 1) Keyword boost: if the query matches a vendor's metaKeywords, rank that listing first
+        if (searchDto.query) {
+            queryBuilder.addOrderBy(
+                `CASE WHEN listing.metaKeywords ILIKE :kwQuery THEN 0 ELSE 1 END`,
+                'ASC',
+            );
+            queryBuilder.setParameter('kwQuery', `%${searchDto.query}%`);
+        }
+
+        // 2) Secondary sort (user-selected or default relevance)
         switch (sortBy) {
             case SearchSortBy.DISTANCE:
                 if (latitude && longitude) {
-                    // Distance calculation using latitude/longitude columns if geography fails
-                    queryBuilder.orderBy('distance', 'ASC');
+                    queryBuilder.addOrderBy('distance', 'ASC');
                 }
                 break;
             case SearchSortBy.RATING:
-                queryBuilder.orderBy('listing.averageRating', 'DESC');
+                queryBuilder.addOrderBy('listing.averageRating', 'DESC');
                 break;
             case 'newest':
-                queryBuilder.orderBy('listing.createdAt', 'DESC');
+                queryBuilder.addOrderBy('listing.createdAt', 'DESC');
                 break;
             default:
                 // Relevance (sponsored > featured > rating)
                 queryBuilder
-                    .orderBy('listing.isSponsored', 'DESC')
+                    .addOrderBy('listing.isSponsored', 'DESC')
                     .addOrderBy('listing.isFeatured', 'DESC')
                     .addOrderBy('listing.averageRating', 'DESC');
         }
@@ -258,7 +279,7 @@ export class BusinessesService {
     /**
      * Get listing by ID
      */
-    async findOne(id: string): Promise<Listing> {
+    async findOne(id: string, viewerUserId?: string): Promise<Listing> {
         const listing = await this.listingRepository.findOne({
             where: { id },
             relations: [
@@ -277,8 +298,12 @@ export class BusinessesService {
             throw new NotFoundException('Listing not found');
         }
 
-        // Increment view count
-        await this.listingRepository.increment({ id }, 'totalViews', 1);
+        // Only count views from non-owners (skip vendor self-views)
+        const isOwner = viewerUserId && listing.vendor?.user?.id === viewerUserId;
+        if (!isOwner) {
+            await this.listingRepository.increment({ id }, 'totalViews', 1);
+            listing.totalViews = (listing.totalViews || 0) + 1;
+        }
 
         return listing;
     }
@@ -286,7 +311,7 @@ export class BusinessesService {
     /**
      * Get listing by slug
      */
-    async findBySlug(slug: string): Promise<Listing> {
+    async findBySlug(slug: string, viewerUserId?: string): Promise<Listing> {
         const listing = await this.listingRepository.findOne({
             where: { slug },
             relations: [
@@ -305,8 +330,12 @@ export class BusinessesService {
             throw new NotFoundException('Listing not found');
         }
 
-        // Increment view count
-        await this.listingRepository.increment({ id: listing.id }, 'totalViews', 1);
+        // Only count views from non-owners (skip vendor self-views)
+        const isOwner = viewerUserId && listing.vendor?.user?.id === viewerUserId;
+        if (!isOwner) {
+            await this.listingRepository.increment({ id: listing.id }, 'totalViews', 1);
+            listing.totalViews = (listing.totalViews || 0) + 1;
+        }
 
         return listing;
     }

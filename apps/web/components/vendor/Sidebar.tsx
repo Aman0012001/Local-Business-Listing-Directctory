@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -9,30 +9,43 @@ import {
     Plus,
     Heart,
     Star,
-    MessageSquare,
+    Send,
     Bell,
     Settings,
     LogOut,
     ChevronDown,
-    ShieldCheck
+    ShieldCheck,
+    Phone
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { getImageUrl } from '../../lib/api';
-
-const menuItems = [
-    { name: 'Dashboard', icon: LayoutDashboard, href: '/vendor/dashboard', badge: null },
-    { name: 'My Listings', icon: ListTree, href: '/vendor/listings', badge: null },
-    { name: 'Add Listing', icon: Plus, href: '/vendor/add-listing', badge: null },
-    { name: 'Saved', icon: Heart, href: '/vendor/saved', badge: null },
-    { name: 'Reviews', icon: Star, href: '/vendor/reviews', badge: null },
-    { name: 'Messages', icon: MessageSquare, href: '/vendor/messages', badge: null },
-    { name: 'Notifications', icon: Bell, href: '/vendor/notifications', badge: null },
-    { name: 'Settings', icon: Settings, href: '/vendor/settings', badge: null },
-];
+import { getImageUrl, api } from '../../lib/api';
 
 export default function Sidebar() {
     const { user, logout } = useAuth();
     const pathname = usePathname();
+    const [newEnquiryCount, setNewEnquiryCount] = useState(0);
+
+    // Fetch new enquiry count for vendor badge
+    useEffect(() => {
+        const isVendorOrAdmin = user?.role === 'vendor' || user?.role === 'admin' || user?.role === 'superadmin';
+        if (!isVendorOrAdmin) return;
+
+        api.leads.getStats()
+            .then((stats: any) => setNewEnquiryCount(stats?.new || 0))
+            .catch(() => { });
+    }, [user]);
+
+    const menuItems = [
+        { name: 'Dashboard', icon: LayoutDashboard, href: '/vendor/dashboard', badge: null },
+        { name: 'My Listings', icon: ListTree, href: '/vendor/listings', badge: null },
+        { name: 'Add Listing', icon: Plus, href: '/vendor/add-listing', badge: null },
+        { name: 'Leads', icon: Phone, href: '/vendor/leads', badge: null },
+        { name: 'Saved', icon: Heart, href: '/vendor/saved', badge: null },
+        { name: 'Reviews', icon: Star, href: '/vendor/reviews', badge: null },
+        { name: 'Enquiries', icon: Send, href: '/vendor/messages', badge: newEnquiryCount > 0 ? String(newEnquiryCount) : null },
+        { name: 'Notifications', icon: Bell, href: '/vendor/notifications', badge: null },
+        { name: 'Settings', icon: Settings, href: '/vendor/settings', badge: null },
+    ];
 
     return (
         <aside className="w-72 bg-[#F8FAFC] border-r border-slate-200 h-[calc(100vh-80px)] sticky top-20 flex flex-col p-6 overflow-y-auto hidden lg:flex">
@@ -44,7 +57,7 @@ export default function Sidebar() {
                             src={getImageUrl(user?.avatarUrl) || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200"}
                             alt="Profile"
                             className="w-full h-full object-cover"
-                            key={user?.avatarUrl} // Force re-render on URL change
+                            key={user?.avatarUrl}
                         />
                     </div>
                     <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-600 rounded-xl border-4 border-[#F8FAFC] flex items-center justify-center text-white shadow-lg">
@@ -78,6 +91,7 @@ export default function Sidebar() {
                     })
                     .map((item) => {
                         const isActive = pathname === item.href;
+                        const isEnquiries = item.name === 'Enquiries';
                         return (
                             <Link
                                 key={item.name}
@@ -88,12 +102,14 @@ export default function Sidebar() {
                                     }`}
                             >
                                 <div className="flex items-center gap-4">
-                                    <item.icon className={`w-5 h-5 transition-all duration-300 ${isActive ? 'text-blue-600 scale-110' : 'text-slate-400 group-hover:text-slate-900 group-hover:scale-110'
+                                    <item.icon className={`w-5 h-5 transition-all duration-300 ${isActive
+                                        ? isEnquiries ? 'text-violet-600 scale-110' : 'text-blue-600 scale-110'
+                                        : 'text-slate-400 group-hover:text-slate-900 group-hover:scale-110'
                                         }`} />
                                     <span className={`text-[15px] tracking-tight transition-all ${isActive ? 'font-black' : 'font-bold'}`}>{item.name}</span>
                                 </div>
                                 {item.badge && (
-                                    <span className="flex items-center justify-center px-2 min-w-[20px] h-5 rounded-lg bg-[#FF7A30] text-white text-[10px] font-black shadow-lg shadow-orange-500/20">
+                                    <span className={`flex items-center justify-center px-2 min-w-[20px] h-5 rounded-lg text-white text-[10px] font-black shadow-lg ${isEnquiries ? 'bg-violet-600 shadow-violet-500/20' : 'bg-[#FF7A30] shadow-orange-500/20'}`}>
                                         {item.badge}
                                     </span>
                                 )}

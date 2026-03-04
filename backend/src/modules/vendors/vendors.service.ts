@@ -137,4 +137,74 @@ export class VendorsService {
         // In a real app, this might trigger an admin notification
         return this.vendorRepository.save(vendor);
     }
+
+    /**
+     * Get public vendor profiles whose listings are in a given city
+     */
+    async getByCity(city: string) {
+        // Find all distinct vendorIds that have at least one approved listing in the given city
+        const rows = await this.listingRepository
+            .createQueryBuilder('listing')
+            .select('listing.vendorId', 'vendorId')
+            .addSelect('COUNT(listing.id)', 'listingCount')
+            .addSelect('AVG(CAST(listing.averageRating AS FLOAT))', 'avgRating')
+            .addSelect('SUM(listing.totalViews)', 'totalViews')
+            .where('LOWER(listing.city) = LOWER(:city)', { city })
+            .andWhere('listing.status = :status', { status: 'approved' })
+            .groupBy('listing.vendorId')
+            .getRawMany();
+
+        if (!rows.length) return [];
+
+        const vendorIds = rows.map(r => r.vendorId);
+
+        // Load vendor + user data for each
+        const vendors = await this.vendorRepository
+            .createQueryBuilder('vendor')
+            .leftJoinAndSelect('vendor.user', 'user')
+            .whereInIds(vendorIds)
+            .getMany();
+
+        // Load one representative listing per vendor (for cover image + categories)
+        const sampleListings = await this.listingRepository
+            .createQueryBuilder('listing')
+            .leftJoinAndSelect('listing.category', 'category')
+            .where('listing.vendorId IN (:...ids)', { ids: vendorIds })
+            .andWhere('listing.status = :status', { status: 'approved' })
+            .orderBy('listing.averageRating', 'DESC')
+            .getMany();
+
+        // Build vendor profile cards
+        return vendors.map(vendor => {
+            const stat = rows.find(r => r.vendorId === vendor.id);
+            const listings = sampleListings.filter(l => l.vendorId === vendor.id);
+            const cover = listings.find(l => l.images?.length) || listings[0];
+            const categories = [...new Set(listings.map(l => l.category?.name).filter(Boolean))];
+
+            return {
+                id: vendor.id,
+                businessName: vendor.businessName || vendor.user?.fullName || 'Unnamed Business',
+                vendorName: vendor.user?.email
+                    ? vendor.user.email.split('@')[0]
+                    : (vendor.user?.fullName || vendor.businessName || 'Unknown'),
+                businessEmail: vendor.businessEmail,
+                businessPhone: vendor.businessPhone,
+                businessAddress: vendor.businessAddress,
+                isVerified: vendor.isVerified,
+                socialLinks: vendor.socialLinks || [],
+                avatarUrl: vendor.user?.avatarUrl || null,
+                coverImage: cover?.images?.[0] || null,
+                listingCount: parseInt(stat?.listingCount || '0'),
+                avgRating: parseFloat(parseFloat(stat?.avgRating || '0').toFixed(1)),
+                totalViews: parseInt(stat?.totalViews || '0'),
+                categories,
+                sampleListings: listings.slice(0, 3).map(l => ({
+                    id: l.id,
+                    title: l.title,
+                    slug: l.slug,
+                    images: l.images,
+                })),
+            };
+        });
+    }
 }

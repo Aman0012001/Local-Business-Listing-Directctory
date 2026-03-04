@@ -4,8 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import {
     Star, MapPin, Globe, Phone, Mail, Clock, ShieldCheck,
-    Share2, Heart, MessageSquare, ChevronRight, CheckCircle2
+    Share2, Heart, MessageSquare, ChevronLeft, ChevronRight, CheckCircle2, X,
+    Send, User, Tag, Zap, Calendar
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '../../../components/Navbar';
 import Footer from '../../../components/Footer';
 import Link from 'next/link';
@@ -26,6 +28,20 @@ export default function BusinessDetailsPage() {
     const [reviewComment, setReviewComment] = useState('');
     const [submittingReview, setSubmittingReview] = useState(false);
     const [copySuccess, setCopySuccess] = useState(false);
+
+    // Enquiry modal state
+    const [showEnquiryModal, setShowEnquiryModal] = useState(false);
+    const [enquiryName, setEnquiryName] = useState('');
+    const [enquiryEmail, setEnquiryEmail] = useState('');
+    const [enquiryPhone, setEnquiryPhone] = useState('');
+    const [enquiryMessage, setEnquiryMessage] = useState('');
+    const [submittingEnquiry, setSubmittingEnquiry] = useState(false);
+    const [enquirySuccess, setEnquirySuccess] = useState(false);
+    const [enquiryError, setEnquiryError] = useState('');
+
+    // Lightbox state
+    const [showLightbox, setShowLightbox] = useState(false);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     useEffect(() => {
         const loadBusiness = async () => {
@@ -50,6 +66,14 @@ export default function BusinessDetailsPage() {
         };
         if (slug) loadBusiness();
     }, [slug, user]);
+
+    // Pre-fill enquiry form when user is available
+    useEffect(() => {
+        if (user) {
+            setEnquiryName(user.fullName || '');
+            setEnquiryEmail(user.email || '');
+        }
+    }, [user]);
 
     const handleLike = async () => {
         if (!user) {
@@ -95,6 +119,44 @@ export default function BusinessDetailsPage() {
         }
     };
 
+    const handleEnquirySubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!business) return;
+        if (!enquiryName.trim() || !enquiryEmail.trim() || !enquiryMessage.trim()) {
+            setEnquiryError('Please fill in all required fields.');
+            return;
+        }
+        setSubmittingEnquiry(true);
+        setEnquiryError('');
+        try {
+            await api.leads.createEnquiry({
+                businessId: business.id,
+                name: enquiryName.trim(),
+                email: enquiryEmail.trim(),
+                phone: enquiryPhone.trim() || undefined,
+                message: enquiryMessage.trim(),
+                source: 'business-page',
+            });
+            setEnquirySuccess(true);
+            setEnquiryMessage('');
+            setTimeout(() => {
+                setShowEnquiryModal(false);
+                setEnquirySuccess(false);
+            }, 2500);
+        } catch (err: any) {
+            setEnquiryError(err.message || 'Failed to send enquiry. Please try again.');
+        } finally {
+            setSubmittingEnquiry(false);
+        }
+    };
+
+    const openEnquiryModal = () => {
+        setEnquirySuccess(false);
+        setEnquiryError('');
+        setEnquiryMessage('');
+        setShowEnquiryModal(true);
+    };
+
     const handleReviewSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user) {
@@ -130,6 +192,32 @@ export default function BusinessDetailsPage() {
 
     if (loading) return <div className="min-h-screen bg-white"><Navbar /><div className="max-w-7xl mx-auto px-4 py-20 text-center text-slate-400">Loading business details...</div></div>;
     if (!business) return <div className="min-h-screen bg-white"><Navbar /><div className="max-w-7xl mx-auto px-4 py-20 text-center text-slate-400">Business not found.</div></div>;
+
+    // Check if current logged-in user is the owner of this business
+    const isOwner = !!user && !!business.vendor && (
+        business.vendor.userId === user.id ||
+        business.vendor.user?.id === user.id
+    );
+
+    const galleryImages = [
+        getImageUrl(business.coverImageUrl || (business.images && business.images[0])),
+        ...(business.images || []).map(img => getImageUrl(img))
+    ].filter(Boolean) as string[];
+
+    const openLightbox = (index: number) => {
+        setCurrentImageIndex(index);
+        setShowLightbox(true);
+    };
+
+    const nextImage = (e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        setCurrentImageIndex((prev) => (prev + 1) % galleryImages.length);
+    };
+
+    const prevImage = (e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        setCurrentImageIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
+    };
 
     return (
         <div className="min-h-screen bg-white">
@@ -197,35 +285,48 @@ export default function BusinessDetailsPage() {
 
                         {/* Gallery */}
                         <div className="grid grid-cols-4 grid-rows-2 h-[500px] gap-4 mb-16">
-                            <div className="col-span-2 row-span-2 rounded-[20px] overflow-hidden border border-slate-100 bg-slate-50">
+                            <div
+                                onClick={() => openLightbox(0)}
+                                className="col-span-2 row-span-2 rounded-[20px] overflow-hidden border border-slate-100 bg-slate-50 cursor-pointer group/outer"
+                            >
                                 <img
-                                    src={getImageUrl((business.images && business.images[0]) || business.coverImageUrl) || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200'}
-                                    className="w-full h-full object-cover"
+                                    src={galleryImages[0] || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200'}
+                                    className="w-full h-full object-cover group-hover/outer:scale-105 transition-transform duration-700"
                                     alt={business.title}
                                 />
                             </div>
-                            <div className="col-span-2 row-span-1 rounded-[20px] overflow-hidden border border-slate-100 bg-slate-50">
+                            <div
+                                onClick={() => openLightbox(1)}
+                                className="col-span-2 row-span-1 rounded-[20px] overflow-hidden border border-slate-100 bg-slate-50 cursor-pointer group/outer"
+                            >
                                 <img
-                                    src={getImageUrl(business.images && business.images[1]) || 'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=800'}
-                                    className="w-full h-full object-cover"
+                                    src={galleryImages[1] || 'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=800'}
+                                    className="w-full h-full object-cover group-hover/outer:scale-105 transition-transform duration-700"
                                     alt="Business interior"
                                 />
                             </div>
-                            <div className="col-span-1 row-span-1 rounded-[32px] overflow-hidden border border-slate-100 bg-slate-50">
+                            <div
+                                onClick={() => openLightbox(2)}
+                                className="col-span-1 row-span-1 rounded-[16px] overflow-hidden border border-slate-100 bg-slate-50 cursor-pointer group/outer"
+                            >
                                 <img
-                                    src={getImageUrl(business.images && business.images[2]) || 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=600'}
-                                    className="w-full h-full object-cover"
+                                    src={galleryImages[2] || 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=600'}
+                                    className="w-full h-full object-cover group-hover/outer:scale-105 transition-transform duration-700"
                                     alt="Business storefront"
                                 />
                             </div>
-                            <div className="col-span-1 row-span-1 rounded-[32px] bg-slate-100 flex items-center justify-center cursor-pointer hover:bg-slate-200 transition-colors">
-                                <span className="text-slate-900 font-bold">View +{Math.max(0, (business.images?.length || 0) - 3)}</span>
+                            <div
+                                onClick={() => openLightbox(0)}
+                                className="col-span-1 row-span-1 rounded-[16px] bg-slate-100 flex items-center justify-center cursor-pointer hover:bg-slate-200 transition-colors"
+                            >
+                                <span className="text-slate-900 font-bold uppercase tracking-widest text-[10px]">View +{Math.max(0, (galleryImages.length) - 3)}</span>
                             </div>
                         </div>
 
                         {/* Tabs / Content */}
+
                         <div className="border-b border-slate-100 flex items-center gap-12 mb-10 overflow-x-auto scrollbar-hide">
-                            {['Overview', 'Reviews', 'Amenities'].concat(business.shortDescription?.toLowerCase().includes('offer') ? ['Offers'] : []).map(tab => (
+                            {['Overview', 'Reviews', 'Amenities', ...(business.hasOffer ? ['Offer / Deal'] : [])].map(tab => (
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
@@ -259,12 +360,19 @@ export default function BusinessDetailsPage() {
                                 <div className="space-y-8 animate-in fade-in duration-500">
                                     <div className="flex items-center justify-between">
                                         <h3 className="text-2xl font-bold text-slate-900">Customer Reviews</h3>
-                                        <button
-                                            onClick={() => setShowReviewModal(true)}
-                                            className="px-6 py-2 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-all"
-                                        >
-                                            Write a Review
-                                        </button>
+                                        {isOwner ? (
+                                            <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-100 rounded-xl">
+                                                <ShieldCheck className="w-4 h-4 text-blue-500" />
+                                                <span className="text-xs font-bold text-blue-600">Your Business</span>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={() => setShowReviewModal(true)}
+                                                className="px-6 py-2 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-all"
+                                            >
+                                                Write a Review
+                                            </button>
+                                        )}
                                     </div>
 
                                     {reviews.length > 0 ? (
@@ -347,34 +455,75 @@ export default function BusinessDetailsPage() {
                                 </div>
                             )}
 
-                            {activeTab === 'Offers' && (
+                            {activeTab === 'Offer / Deal' && (
                                 <div className="animate-in fade-in duration-500">
-                                    <h3 className="text-2xl font-bold text-slate-900 mb-8">Exclusive Offers</h3>
-                                    <div className="p-8 bg-orange-50 rounded-[20px] border border-orange-100 relative overflow-hidden group">
-                                        <div className="absolute top-0 right-0 w-32 h-32 bg-orange-100 rotate-45 translate-x-16 -translate-y-16 rounded-full group-hover:scale-110 transition-transform duration-500" />
+                                    <h3 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
+                                        <Tag className="w-6 h-6 text-orange-500" /> Offer / Banner Ad
+                                    </h3>
+
+                                    {/* Banner image */}
+                                    {business.offerBannerUrl && (
+                                        <div className="rounded-[20px] overflow-hidden mb-6 h-52 sm:h-72">
+                                            <img src={business.offerBannerUrl} alt={business.offerTitle || 'Offer Banner'}
+                                                className="w-full h-full object-cover" />
+                                        </div>
+                                    )}
+
+                                    {/* Offer card */}
+                                    <div className="relative p-8 bg-gradient-to-br from-orange-50 to-amber-50 rounded-[20px] border border-orange-100 overflow-hidden">
+                                        {/* Decorative blob */}
+                                        <div className="absolute -top-8 -right-8 w-40 h-40 bg-orange-100 rounded-full opacity-60" />
                                         <div className="relative z-10">
-                                            <span className="inline-block px-3 py-1 bg-white text-orange-600 rounded-full text-[10px] font-black uppercase tracking-widest mb-4 shadow-sm">Hot Deal</span>
-                                            <h4 className="text-3xl font-black text-slate-900 mb-2">Welcome Special</h4>
-                                            <p className="text-slate-600 mb-6 font-medium">Contact the business and mention you found them on our platform to enquire about current specials.</p>
-                                            <a
-                                                href={`tel:${business.phone}`}
-                                                className="inline-block px-8 py-3 bg-[#FF7A30] text-white rounded-xl font-bold hover:bg-[#E86920] shadow-lg shadow-orange-500/20 transition-all active:scale-95"
-                                            >
-                                                Claim Offer
-                                            </a>
+                                            {business.offerBadge && (
+                                                <span className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-orange-500 text-white rounded-full text-[11px] font-black uppercase tracking-widest mb-5 shadow-md shadow-orange-500/30">
+                                                    <Zap className="w-3 h-3" /> {business.offerBadge}
+                                                </span>
+                                            )}
+                                            <h4 className="text-3xl font-black text-slate-900 mb-3 leading-tight">
+                                                {business.offerTitle || 'Special Offer'}
+                                            </h4>
+                                            {business.offerDescription && (
+                                                <p className="text-slate-600 text-base leading-relaxed mb-6 max-w-2xl">
+                                                    {business.offerDescription}
+                                                </p>
+                                            )}
+                                            <div className="flex flex-wrap items-center gap-4">
+                                                {!isOwner && (
+                                                    <button
+                                                        onClick={openEnquiryModal}
+                                                        className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-2xl font-black text-sm hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg shadow-orange-500/25 active:scale-95"
+                                                    >
+                                                        <Zap className="w-4 h-4" /> Enquire About This Offer
+                                                    </button>
+                                                )}
+                                                {business.phone && (
+                                                    <a href={`tel:${business.phone}`}
+                                                        className="inline-flex items-center gap-2 px-6 py-3.5 bg-white border border-slate-200 text-slate-700 rounded-2xl font-bold text-sm hover:border-orange-400 hover:text-orange-600 transition-all"
+                                                    >
+                                                        <Phone className="w-4 h-4" /> Call to Claim
+                                                    </a>
+                                                )}
+                                            </div>
+                                            {business.offerExpiresAt && (
+                                                <div className="flex items-center gap-2 mt-6 text-sm text-slate-500 font-medium">
+                                                    <Calendar className="w-4 h-4 text-orange-400" />
+                                                    <span>Offer valid until <strong className="text-orange-600">{new Date(business.offerExpiresAt).toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</strong></span>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
                             )}
-                        </div>
-                    </div>
+
+                        </div>{/* end min-h-[400px] */}
+                    </div>{/* end lg:col-span-2 */}
 
                     {/* Sidebar Area */}
                     <aside>
                         <div className="sticky top-28 space-y-8">
 
                             {/* Actions/Contact Card */}
-                            <div className="bg-slate-900 rounded-[48px] p-8 text-white shadow-2xl shadow-blue-500/20">
+                            <div className="bg-slate-900 rounded-[16px] p-8 text-white shadow-2xl shadow-blue-500/20">
                                 <div className="flex items-center justify-between mb-8">
                                     <div className="text-xs font-bold uppercase tracking-widest text-slate-400">Available Now</div>
                                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -398,6 +547,22 @@ export default function BusinessDetailsPage() {
                                         <MessageSquare className="w-5 h-5" /> WhatsApp Express
                                     </a>
                                 </div>
+
+                                {/* Enquiry Button - hidden for the owner */}
+                                {!isOwner && (
+                                    <button
+                                        id="send-enquiry-btn"
+                                        onClick={openEnquiryModal}
+                                        className="w-full py-4 bg-gradient-to-r from-violet-600 to-blue-600 text-white rounded-2xl font-bold flex items-center justify-center gap-3 hover:from-violet-700 hover:to-blue-700 transition-all shadow-lg shadow-violet-500/20 active:scale-95"
+                                    >
+                                        <Send className="w-5 h-5" /> Send Enquiry
+                                    </button>
+                                )}
+                                {isOwner && (
+                                    <div className="w-full py-3 bg-blue-900/30 border border-blue-700/30 text-blue-300 rounded-2xl font-bold flex items-center justify-center gap-2 text-sm">
+                                        <ShieldCheck className="w-4 h-4" /> You own this listing
+                                    </div>
+                                )}
 
                                 <div className="pt-8 border-t border-white/10 space-y-4">
                                     <div className="space-y-3">
@@ -447,73 +612,279 @@ export default function BusinessDetailsPage() {
                             </div>
 
                         </div>
-                    </aside>
+                    </aside >
 
-                </div>
-            </main>
+                </div >
+            </main >
 
             <Footer />
 
             {/* Review Modal */}
-            {showReviewModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-white w-full max-w-lg rounded-[48px] p-8 shadow-2xl relative animate-in zoom-in-95 duration-300">
-                        <button
-                            onClick={() => setShowReviewModal(false)}
-                            className="absolute top-8 right-8 text-slate-400 hover:text-slate-900 transition-colors"
+            {
+                showReviewModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+                        <div className="bg-white w-full max-w-lg rounded-[48px] p-8 shadow-2xl relative animate-in zoom-in-95 duration-300">
+                            <button
+                                onClick={() => setShowReviewModal(false)}
+                                className="absolute top-8 right-8 text-slate-400 hover:text-slate-900 transition-colors"
+                            >
+                                <span className="sr-only">Close</span>
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+
+                            <div className="text-center mb-8">
+                                <h3 className="text-3xl font-black text-slate-900 mb-2">Write a Review</h3>
+                                <p className="text-slate-500">Share your experience with {business.title}</p>
+                            </div>
+
+                            <form onSubmit={handleReviewSubmit} className="space-y-6">
+                                <div className="flex flex-col items-center">
+                                    <label className="block text-sm font-bold text-slate-700 mb-4">How was your experience?</label>
+                                    <div className="flex gap-2">
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <button
+                                                key={star}
+                                                type="button"
+                                                onClick={() => setReviewRating(star)}
+                                                className="p-1 transition-transform hover:scale-110 active:scale-90"
+                                            >
+                                                <Star
+                                                    className={`w-10 h-10 ${star <= reviewRating ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`}
+                                                />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Your review</label>
+                                    <textarea
+                                        required
+                                        value={reviewComment}
+                                        onChange={(e) => setReviewComment(e.target.value)}
+                                        rows={4}
+                                        placeholder="Tell others what you liked or disliked..."
+                                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-3xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-slate-300 text-slate-600"
+                                    />
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={submittingReview}
+                                    className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+                                >
+                                    {submittingReview ? 'Submitting...' : 'Submit Review'}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Enquiry Modal */}
+            <AnimatePresence>
+                {showEnquiryModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/60 backdrop-blur-sm"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                            className="bg-white w-full max-w-lg rounded-[40px] shadow-2xl relative overflow-hidden"
                         >
-                            <span className="sr-only">Close</span>
-                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            {/* Header gradient bar */}
+                            <div className="h-2 w-full bg-gradient-to-r from-violet-500 via-blue-500 to-indigo-500" />
+
+                            <div className="p-8">
+                                <button
+                                    onClick={() => setShowEnquiryModal(false)}
+                                    className="absolute top-6 right-6 text-slate-400 hover:text-slate-900 transition-colors p-1 rounded-full hover:bg-slate-100"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+
+                                {enquirySuccess ? (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="py-8 text-center"
+                                    >
+                                        <div className="w-20 h-20 bg-gradient-to-br from-violet-100 to-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                                            <CheckCircle2 className="w-10 h-10 text-violet-600" />
+                                        </div>
+                                        <h3 className="text-2xl font-black text-slate-900 mb-2">Enquiry Sent!</h3>
+                                        <p className="text-slate-500">The business owner will get back to you soon.</p>
+                                    </motion.div>
+                                ) : (
+                                    <>
+                                        <div className="mb-8">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-100 to-blue-100 flex items-center justify-center">
+                                                    <Send className="w-5 h-5 text-violet-600" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-2xl font-black text-slate-900">Send Enquiry</h3>
+                                                    <p className="text-sm text-slate-400">to {business?.title}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <form onSubmit={handleEnquirySubmit} className="space-y-4">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Full Name *</label>
+                                                    <div className="relative">
+                                                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+                                                        <input
+                                                            id="enquiry-name"
+                                                            type="text"
+                                                            required
+                                                            value={enquiryName}
+                                                            onChange={e => setEnquiryName(e.target.value)}
+                                                            placeholder="Your name"
+                                                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 outline-none transition-all placeholder:text-slate-300"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Email *</label>
+                                                    <div className="relative">
+                                                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+                                                        <input
+                                                            id="enquiry-email"
+                                                            type="email"
+                                                            required
+                                                            value={enquiryEmail}
+                                                            onChange={e => setEnquiryEmail(e.target.value)}
+                                                            placeholder="your@email.com"
+                                                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 outline-none transition-all placeholder:text-slate-300"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Phone <span className="normal-case font-medium text-slate-300">(optional)</span></label>
+                                                <div className="relative">
+                                                    <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+                                                    <input
+                                                        id="enquiry-phone"
+                                                        type="tel"
+                                                        value={enquiryPhone}
+                                                        onChange={e => setEnquiryPhone(e.target.value)}
+                                                        placeholder="+60 123 456 7890"
+                                                        className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 outline-none transition-all placeholder:text-slate-300"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Your Message *</label>
+                                                <textarea
+                                                    id="enquiry-message"
+                                                    required
+                                                    value={enquiryMessage}
+                                                    onChange={e => setEnquiryMessage(e.target.value)}
+                                                    rows={4}
+                                                    placeholder="Hi, I'd like to enquire about your services..."
+                                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 outline-none transition-all placeholder:text-slate-300 resize-none"
+                                                />
+                                            </div>
+
+                                            {enquiryError && (
+                                                <div className="px-4 py-3 bg-rose-50 border border-rose-100 rounded-2xl text-sm text-rose-600 font-medium">
+                                                    {enquiryError}
+                                                </div>
+                                            )}
+
+                                            <button
+                                                type="submit"
+                                                id="enquiry-submit-btn"
+                                                disabled={submittingEnquiry}
+                                                className="w-full py-4 bg-gradient-to-r from-violet-600 to-blue-600 text-white rounded-2xl font-bold flex items-center justify-center gap-3 hover:from-violet-700 hover:to-blue-700 transition-all shadow-lg shadow-violet-500/20 active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+                                            >
+                                                {submittingEnquiry ? (
+                                                    <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Sending...</>
+                                                ) : (
+                                                    <><Send className="w-5 h-5" /> Send Enquiry</>
+                                                )}
+                                            </button>
+                                        </form>
+                                    </>
+                                )}
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Image Lightbox Slider */}
+            <AnimatePresence>
+                {showLightbox && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-10"
+                        onClick={() => setShowLightbox(false)}
+                    >
+                        <button
+                            className="absolute top-6 right-6 z-[110] w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all border border-white/10"
+                            onClick={() => setShowLightbox(false)}
+                        >
+                            <X className="w-6 h-6" />
                         </button>
 
-                        <div className="text-center mb-8">
-                            <h3 className="text-3xl font-black text-slate-900 mb-2">Write a Review</h3>
-                            <p className="text-slate-500">Share your experience with {business.title}</p>
-                        </div>
+                        <div className="relative w-full max-w-5xl aspect-video md:aspect-[16/9] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                            <button
+                                className="absolute left-0 -translate-x-full md:-translate-x-20 z-[110] w-14 h-14 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all border border-white/10"
+                                onClick={prevImage}
+                            >
+                                <ChevronLeft className="w-8 h-8" />
+                            </button>
 
-                        <form onSubmit={handleReviewSubmit} className="space-y-6">
-                            <div className="flex flex-col items-center">
-                                <label className="block text-sm font-bold text-slate-700 mb-4">How was your experience?</label>
-                                <div className="flex gap-2">
-                                    {[1, 2, 3, 4, 5].map((star) => (
-                                        <button
-                                            key={star}
-                                            type="button"
-                                            onClick={() => setReviewRating(star)}
-                                            className="p-1 transition-transform hover:scale-110 active:scale-90"
-                                        >
-                                            <Star
-                                                className={`w-10 h-10 ${star <= reviewRating ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`}
-                                            />
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-2">Your review</label>
-                                <textarea
-                                    required
-                                    value={reviewComment}
-                                    onChange={(e) => setReviewComment(e.target.value)}
-                                    rows={4}
-                                    placeholder="Tell others what you liked or disliked..."
-                                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-3xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-slate-300 text-slate-600"
+                            <motion.div
+                                key={currentImageIndex}
+                                initial={{ opacity: 0, scale: 0.95, x: 20 }}
+                                animate={{ opacity: 1, scale: 1, x: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, x: -20 }}
+                                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                                className="w-full h-full rounded-[32px] overflow-hidden border border-white/10 shadow-2xl"
+                            >
+                                <img
+                                    src={galleryImages[currentImageIndex]}
+                                    className="w-full h-full object-contain bg-black/50"
+                                    alt="Gallery selection"
                                 />
-                            </div>
+                            </motion.div>
 
                             <button
-                                type="submit"
-                                disabled={submittingReview}
-                                className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+                                className="absolute right-0 translate-x-full md:translate-x-20 z-[110] w-14 h-14 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all border border-white/10"
+                                onClick={nextImage}
                             >
-                                {submittingReview ? 'Submitting...' : 'Submit Review'}
+                                <ChevronRight className="w-8 h-8" />
                             </button>
-                        </form>
-                    </div>
-                </div>
-            )}
-        </div>
+
+                            {/* Thumbnails Indicator */}
+                            <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 flex gap-3">
+                                {galleryImages.map((_, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => setCurrentImageIndex(i)}
+                                        className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${i === currentImageIndex ? 'bg-blue-500 w-8' : 'bg-white/20 hover:bg-white/40'}`}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div >
     );
 }
 

@@ -27,7 +27,8 @@ export default function HomePage() {
         const loadInitialData = async () => {
             try {
                 console.log('Fetching homepage data...');
-                const [cats, featured, cities, allCats, allCities, reviewsData] = await Promise.all([
+                // Use Promise.allSettled to prevent one hang/error from blocking the entire page
+                const results = await Promise.allSettled([
                     api.categories.getPopular(8),
                     api.listings.getFeatured(),
                     api.cities.getPopular(),
@@ -35,15 +36,29 @@ export default function HomePage() {
                     api.cities.getAll(),
                     api.reviews.getPopular(3)
                 ]);
-                console.log('Homepage data loaded successfully:', { cats: cats?.length, featured: featured?.data?.length, cities: cities?.length });
+
+                console.log('Homepage data settling...');
+
+                // Helper to extract value or fallback
+                const getValue = (result: PromiseSettledResult<any>, fallback: any) =>
+                    result.status === 'fulfilled' ? result.value : fallback;
+
+                const cats = getValue(results[0], []);
+                const featured = getValue(results[1], { data: [] });
+                const cities = getValue(results[2], []);
+                const allCats = getValue(results[3], []);
+                const allCities = getValue(results[4], []);
+                const reviewsData = getValue(results[5], { data: [] });
+
                 setCategories(cats || []);
                 setFeaturedBusinesses(featured?.data || []);
                 setPopularCities(cities || []);
                 setCategoriesList(allCats || []);
                 setCitiesList(allCities || []);
                 setStatsReviews(reviewsData?.data || []);
+
             } catch (err) {
-                console.error('CRITICAL: Failed to load homepage data:', err);
+                console.error('CRITICAL: Unexpected error in loadInitialData:', err);
             } finally {
                 setLoading(false);
             }

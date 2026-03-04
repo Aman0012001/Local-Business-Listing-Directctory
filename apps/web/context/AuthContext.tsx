@@ -21,13 +21,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const router = useRouter();
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        const token = localStorage.getItem('token');
-        if (storedUser && token) {
-            setUser(JSON.parse(storedUser));
-        }
-        setLoading(false);
+        const initAuth = async () => {
+            try {
+                const storedUser = localStorage.getItem('user');
+                const token = localStorage.getItem('token');
+
+                if (storedUser && token) {
+                    try {
+                        const parsedUser = JSON.parse(storedUser);
+                        setUser(parsedUser);
+
+                        // Sync profile with backend to get latest data (including vendor relation)
+                        await syncProfile();
+                    } catch (e) {
+                        console.error('Failed to parse stored user:', e);
+                        localStorage.removeItem('user');
+                        localStorage.removeItem('token');
+                    }
+                }
+            } catch (err) {
+                console.error('Auth initialization error:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        initAuth();
     }, []);
+
+    const syncProfile = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            const response = await api.users.getProfile();
+            if (response) {
+                setUser(response);
+                localStorage.setItem('user', JSON.stringify(response));
+                console.log('[AuthContext] Profile synced successfully');
+            }
+        } catch (err) {
+            console.error('[AuthContext] Profile sync failed:', err);
+            // If it's a 401, we might want to logout, but fetcher handles non-ok responses
+        }
+    };
 
     const redirectUser = (user: any) => {
         if (user.role === 'admin' || user.role === 'superadmin') {

@@ -43,11 +43,11 @@ export class CreateVendorDto {
     @IsString()
     gstNumber?: string;
 
-    @ApiPropertyOptional({ example: 'PANABCDE1234' })
+    @ApiPropertyOptional({ example: '1234567-8' })
     @IsOptional()
     @Transform(trimToUndefined)
     @IsString()
-    panNumber?: string;
+    ntnNumber?: string;
 }
 
 export class UpdateVendorDto {
@@ -81,9 +81,17 @@ export class UpdateVendorDto {
     @IsString()
     gstNumber?: string;
 
-    @ApiPropertyOptional({ example: 'PANABCDE1234' })
+    @ApiPropertyOptional({ example: '1234567-8' })
     @IsOptional()
     @Transform(trimToUndefined)
     @IsString()
-    panNumber?: string;
+    ntnNumber?: string;
+
+    @ApiPropertyOptional({ example: { monday: { isOpen: true, openTime: '09:00', closeTime: '17:00' } } })
+    @IsOptional()
+    businessHours?: Record<string, { isOpen: boolean, openTime: string, closeTime: string }>;
+
+    @ApiPropertyOptional({ example: [{ platform: 'facebook', url: 'https://facebook.com/mybusiness' }] })
+    @IsOptional()
+    socialLinks?: { platform: string, url: string }[];
 }

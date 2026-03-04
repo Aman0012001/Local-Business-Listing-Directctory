@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { X, Loader2, Store, MapPin, Phone, TextQuote, Layers, Sparkles, Plus, Check } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Loader2, Store, MapPin, Phone, TextQuote, Layers, Sparkles, Plus, Check, Hash } from 'lucide-react';
 import { api, getImageUrl } from '../../lib/api';
 
 import { Category, Business, City } from '../../types/api';
@@ -32,8 +32,39 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
         latitude: 40.7128,
         longitude: -74.0060,
         coverImageUrl: '',
-        amenityIds: [] as string[]
+        amenityIds: [] as string[],
+        metaKeywords: ''
     });
+
+    // Keywords tag state
+    const [keywords, setKeywords] = useState<string[]>([]);
+    const [keywordInput, setKeywordInput] = useState('');
+    const keywordInputRef = useRef<HTMLInputElement>(null);
+
+    const addKeyword = (raw: string) => {
+        const tag = raw.trim().toLowerCase().replace(/[,]+$/, '');
+        if (tag && !keywords.includes(tag) && keywords.length < 20) {
+            const updated = [...keywords, tag];
+            setKeywords(updated);
+            setFormData(prev => ({ ...prev, metaKeywords: updated.join(',') }));
+        }
+        setKeywordInput('');
+    };
+
+    const removeKeyword = (kw: string) => {
+        const updated = keywords.filter(k => k !== kw);
+        setKeywords(updated);
+        setFormData(prev => ({ ...prev, metaKeywords: updated.join(',') }));
+    };
+
+    const handleKeywordKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            addKeyword(keywordInput);
+        } else if (e.key === 'Backspace' && !keywordInput && keywords.length > 0) {
+            removeKeyword(keywords[keywords.length - 1]);
+        }
+    };
 
     const [amenities, setAmenities] = useState<any[]>([]);
     const [amenitiesLoading, setAmenitiesLoading] = useState(false);
@@ -81,14 +112,19 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                 latitude: Number(business.latitude) || 40.7128,
                 longitude: Number(business.longitude) || -74.0060,
                 coverImageUrl: business.coverImageUrl || '',
-                amenityIds: business.businessAmenities?.map(ba => ba.amenity.id) || []
+                amenityIds: business.businessAmenities?.map(ba => ba.amenity.id) || [],
+                metaKeywords: (business as any).metaKeywords || ''
             });
+            // Pre-fill keyword pills from saved metaKeywords
+            const saved = ((business as any).metaKeywords || '').split(',').map((k: string) => k.trim()).filter(Boolean);
+            setKeywords(saved);
         } else if (!business && isOpen && cities.length > 0 && categories.length > 0) {
             setFormData(prev => ({
                 ...prev,
                 categoryId: categories[0]?.id || '',
                 city: cities[0]?.name || ''
             }));
+            setKeywords([]);
         }
     }, [business, isOpen, categories, cities]);
 
@@ -472,6 +508,52 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                                         );
                                     })}
                                 </div>
+                            </div>
+
+                            {/* ── Search Keywords ─────────────────────────────────── */}
+                            <div className="space-y-3">
+                                <label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                                    <Hash className="w-3.5 h-3.5 text-orange-500" />
+                                    Search Keywords
+                                    <span className="ml-auto text-[9px] font-bold text-slate-300 normal-case tracking-normal">
+                                        Boosts your listing in search · max 20
+                                    </span>
+                                </label>
+
+                                {/* Tag input wrapper */}
+                                <div
+                                    onClick={() => keywordInputRef.current?.focus()}
+                                    className="input-premium min-h-[52px] flex flex-wrap gap-2 cursor-text p-3"
+                                >
+                                    {keywords.map(kw => (
+                                        <span
+                                            key={kw}
+                                            className="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-50 text-orange-700 border border-orange-200 rounded-full text-xs font-black"
+                                        >
+                                            #{kw}
+                                            <button
+                                                type="button"
+                                                onClick={(e) => { e.stopPropagation(); removeKeyword(kw); }}
+                                                className="w-3.5 h-3.5 rounded-full bg-orange-200 hover:bg-orange-400 flex items-center justify-center transition-colors"
+                                            >
+                                                <X className="w-2 h-2" />
+                                            </button>
+                                        </span>
+                                    ))}
+                                    <input
+                                        ref={keywordInputRef}
+                                        type="text"
+                                        value={keywordInput}
+                                        onChange={e => setKeywordInput(e.target.value)}
+                                        onKeyDown={handleKeywordKeyDown}
+                                        onBlur={() => { if (keywordInput.trim()) addKeyword(keywordInput); }}
+                                        placeholder={keywords.length === 0 ? 'Type a keyword, press Enter or comma…' : ''}
+                                        className="flex-1 min-w-[140px] bg-transparent outline-none text-sm font-bold text-slate-700 placeholder:text-slate-300"
+                                    />
+                                </div>
+                                <p className="text-[10px] text-slate-400 font-medium">
+                                    e.g. <span className="italic">haircut, bridal, kuala lumpur salon, home service</span>
+                                </p>
                             </div>
 
                             <div className="pt-8 mb-4">

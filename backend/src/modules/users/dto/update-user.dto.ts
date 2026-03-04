@@ -36,4 +36,9 @@ export class UpdateUserDto {
     @IsOptional()
     @IsString()
     state?: string;
+
+    @ApiPropertyOptional({ example: 'Pakistan' })
+    @IsOptional()
+    @IsString()
+    country?: string;
 }

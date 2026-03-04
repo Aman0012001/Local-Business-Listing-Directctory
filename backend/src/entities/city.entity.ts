@@ -12,6 +12,13 @@ export class City {
     @Column({ length: 100 })
     slug: string;
 
+    @Column({ length: 100, nullable: true })
+    state: string;
+
+    @Column({ length: 100, default: 'Pakistan', nullable: true })
+    @Index()
+    country: string;
+
     @Column({ type: 'text', nullable: true })
     description: string;
 

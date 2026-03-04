@@ -94,4 +94,17 @@ export class LeadsController {
     ) {
         return this.leadsService.updateStatus(id, updateLeadStatusDto, user.id);
     }
+
+    @Patch(':id/reply')
+    @Roles(UserRole.VENDOR, UserRole.ADMIN)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Vendor replies to an enquiry, notifying the user' })
+    @ApiResponse({ status: 200, description: 'Reply sent successfully' })
+    async replyToEnquiry(
+        @Param('id', ParseUuidPipe) id: string,
+        @Body('message') message: string,
+        @CurrentUser() user: User,
+    ) {
+        return this.leadsService.replyToEnquiry(id, message, user.id);
+    }
 }

@@ -20,6 +20,7 @@ import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../../common/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { ParseUuidPipe } from '../../common/pipes/parse-uuid.pipe';
 import { Listing } from '../../entities/business.entity';
@@ -77,22 +78,22 @@ export class BusinessesController {
         return this.businessesService.search(searchDto);
     }
 
-    @Public()
+    @UseGuards(OptionalJwtAuthGuard)
     @Get('slug/:slug')
     @ApiOperation({ summary: 'Get listing by slug' })
     @ApiResponse({ status: 200, description: 'Listing found' })
     @ApiResponse({ status: 404, description: 'Listing not found' })
-    findBySlug(@Param('slug') slug: string) {
-        return this.businessesService.findBySlug(slug);
+    findBySlug(@Param('slug') slug: string, @CurrentUser() user?: User) {
+        return this.businessesService.findBySlug(slug, user?.id);
     }
 
-    @Public()
+    @UseGuards(OptionalJwtAuthGuard)
     @Get(':id')
     @ApiOperation({ summary: 'Get listing by ID' })
     @ApiResponse({ status: 200, description: 'Listing found' })
     @ApiResponse({ status: 404, description: 'Listing not found' })
-    findOne(@Param('id', ParseUuidPipe) id: string) {
-        return this.businessesService.findOne(id);
+    findOne(@Param('id', ParseUuidPipe) id: string, @CurrentUser() user?: User) {
+        return this.businessesService.findOne(id, user?.id);
     }
 
     @Patch(':id')

@@ -18,6 +18,7 @@ import {
 } from '../../common/utils/pagination.util';
 
 import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class LeadsService {
@@ -29,6 +30,7 @@ export class LeadsService {
         @InjectRepository(Vendor)
         private vendorRepository: Repository<Vendor>,
         private notificationsGateway: NotificationsGateway,
+        private notificationsService: NotificationsService,
     ) { }
 
     /**
@@ -220,5 +222,41 @@ export class LeadsService {
             acc[curr.status] = parseInt(curr.count);
             return acc;
         }, {});
+    }
+    /**
+     * Vendor replies to a user enquiry
+     */
+    async replyToEnquiry(
+        leadId: string,
+        replyMessage: string,
+        vendorUserId: string,
+    ): Promise<Lead> {
+        const lead = await this.leadRepository.findOne({
+            where: { id: leadId },
+            relations: ['business', 'business.vendor'],
+        });
+
+        if (!lead) throw new NotFoundException('Enquiry not found');
+        if (lead.business.vendor.userId !== vendorUserId) {
+            throw new ForbiddenException('You can only reply to your own enquiries');
+        }
+
+        lead.vendorReply = replyMessage;
+        lead.vendorRepliedAt = new Date();
+        lead.status = LeadStatus.CONTACTED;
+        const saved = await this.leadRepository.save(lead);
+
+        // Notify the user who sent the enquiry (if they have an account)
+        if (lead.userId) {
+            await this.notificationsService.create({
+                userId: lead.userId,
+                title: '💬 Vendor Replied to Your Enquiry',
+                message: `${lead.business.title} has replied to your enquiry: "${replyMessage.slice(0, 80)}${replyMessage.length > 80 ? '...' : ''}"`,
+                type: 'enquiry_reply',
+                data: { leadId: lead.id, businessId: lead.businessId, slug: lead.business.slug },
+            });
+        }
+
+        return saved;
     }
 }

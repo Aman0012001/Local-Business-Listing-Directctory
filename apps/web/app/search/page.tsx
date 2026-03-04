@@ -111,10 +111,31 @@ function SearchResults() {
                     <div className="flex-1">
                         <div className="flex items-center justify-between mb-8">
                             <div>
-                                <h1 className="text-2xl font-bold text-slate-900">
-                                    {query ? `Results for "${query}"` : categorySlug ? `Service: ${categorySlug}` : 'All Businesses'}
+                                {city && (
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <a href="/cities" className="text-xs font-bold text-slate-400 hover:text-orange-500 transition-colors">Cities</a>
+                                        <span className="text-slate-300 text-xs">›</span>
+                                        <span className="text-xs font-bold text-orange-500">{city}</span>
+                                    </div>
+                                )}
+                                <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                                    {city ? (
+                                        <>
+                                            <MapPin className="w-6 h-6 text-orange-500 flex-shrink-0" />
+                                            Businesses in <span className="text-orange-500 ml-1">{city}</span>
+                                        </>
+                                    ) : query ? (
+                                        `Results for "${query}"`
+                                    ) : categorySlug ? (
+                                        `Category: ${categorySlug}`
+                                    ) : (
+                                        'All Businesses'
+                                    )}
                                 </h1>
-                                <p className="text-slate-500 text-sm mt-1">{results.length} businesses found</p>
+                                <p className="text-slate-500 text-sm mt-1">
+                                    {results.length} {results.length === 1 ? 'business' : 'businesses'} found
+                                    {city ? ` in ${city}` : ''}
+                                </p>
                             </div>
                             <button
                                 onClick={() => setShowFilters(true)}

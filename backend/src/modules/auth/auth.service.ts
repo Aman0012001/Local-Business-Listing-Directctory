@@ -12,6 +12,7 @@ import { User, UserRole } from '../../entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtPayload, JwtTokens } from '../../common/interfaces/jwt-payload.interface';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +21,7 @@ export class AuthService {
         private userRepository: Repository<User>,
         private jwtService: JwtService,
         private configService: ConfigService,
+        private notificationsService: NotificationsService,
     ) { }
 
     /**
@@ -58,6 +60,16 @@ export class AuthService {
 
         // Remove sensitive data
         delete savedUser.password;
+
+        // Broadcast new vendor notification to all users
+        if (savedUser.role === UserRole.VENDOR) {
+            this.notificationsService.broadcast({
+                title: '🏪 New Vendor Joined!',
+                message: `${savedUser.fullName || savedUser.email} just joined as a vendor. Check out their upcoming listings!`,
+                type: 'new_vendor',
+                data: { vendorUserId: savedUser.id },
+            }).catch(() => {/* non-blocking */ });
+        }
 
         return { user: savedUser, tokens };
     }
@@ -156,6 +168,7 @@ export class AuthService {
     async validateUser(userId: string): Promise<User> {
         const user = await this.userRepository.findOne({
             where: { id: userId, isActive: true },
+            relations: ['vendor'],
         });
 
         if (!user) {

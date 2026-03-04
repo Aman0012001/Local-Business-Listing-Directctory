@@ -50,7 +50,7 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
     if (layout === 'list') {
         return (
             <Link href={`/business/${business.slug}`} className="group block">
-                <div className="bg-white rounded-[32px] border border-black overflow-hidden hover:shadow-2xl hover:shadow-blue-500/5 transition-all duration-500 flex flex-col md:flex-row h-full md:h-64">
+                <div className="bg-white rounded-2xl border border-black overflow-hidden hover:shadow-2xl hover:shadow-blue-500/5 transition-all duration-500 flex flex-col md:flex-row h-full md:h-64">
                     {/* Image Container */}
                     <div className="relative w-full md:w-80 h-48 md:h-full overflow-hidden">
                         <img
@@ -119,7 +119,7 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
 
     return (
         <Link href={`/business/${business.slug}`} className="group h-full">
-            <div className="bg-white rounded-3xl border border-black overflow-hidden hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-500 flex flex-col h-full">
+            <div className="bg-white rounded-2xl border border-black overflow-hidden hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-500 flex flex-col h-full">
                 {/* Image Container */}
                 <div className="relative h-48 overflow-hidden">
                     <img

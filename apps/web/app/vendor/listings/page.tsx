@@ -59,16 +59,16 @@ export default function VendorListings() {
             );
         }
 
-        // Status filter
+        // Status filter (case-insensitive)
         if (statusFilter !== 'all') {
-            result = result.filter(b => (b as any).status?.toLowerCase() === statusFilter);
+            result = result.filter(b => ((b as any).status || '').toLowerCase() === statusFilter);
         }
 
-        // Sort
+        // Sort — use explicit number coercion so PostgreSQL decimal strings sort correctly
         if (sortOrder === 'rated') {
-            result.sort((a, b) => ((b as any).averageRating || 0) - ((a as any).averageRating || 0));
+            result.sort((a, b) => parseFloat((b as any).averageRating || '0') - parseFloat((a as any).averageRating || '0'));
         } else if (sortOrder === 'views') {
-            result.sort((a, b) => ((b as any).totalViews || 0) - ((a as any).totalViews || 0));
+            result.sort((a, b) => Number((b as any).totalViews || 0) - Number((a as any).totalViews || 0));
         } else {
             // newest — sort by createdAt descending
             result.sort((a, b) => new Date((b as any).createdAt || 0).getTime() - new Date((a as any).createdAt || 0).getTime());

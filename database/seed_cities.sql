@@ -1,87 +1,41 @@
--- Seed 10+ Major Pakistani Cities
-INSERT INTO cities (name, slug, description, hero_image_url, is_popular, display_order) VALUES
-(
-    'Karachi', 
-    'karachi', 
-    'Karachi, the city of lights and Pakistan''s largest metropolis, is a bustling hub of commerce, culture, and coastal beauty. From the historic Quaid-e-Azam House to the vibrant Clifton Beach, it offers a diverse urban experience.', 
-    'https://images.unsplash.com/photo-1563280044-dc6e5d62f86a?auto=format&fit=crop&q=80&w=1600', 
-    true, 
-    1
-),
-(
-    'Lahore', 
-    'lahore', 
-    'Lahore, the cultural heart of Pakistan, is famous for its rich Mughal history, stunning architecture like Badshahi Mosque, and its legendary food street in the walled city.', 
-    'https://images.unsplash.com/photo-1595180632314-1b4731336a5c?auto=format&fit=crop&q=80&w=1600', 
-    true, 
-    2
-),
-(
-    'Islamabad', 
-    'islamabad', 
-    'The beautiful capital of Pakistan, Islamabad is known for its serene environment, lush greenery, and modern architecture, including the iconic Faisal Mosque.', 
-    'https://images.unsplash.com/photo-1595180632314-1b4731336a5c?auto=format&fit=crop&q=80&w=1600', 
-    true, 
-    3
-),
-(
-    'Faisalabad', 
-    'faisalabad', 
-    'The industrial hub of Pakistan, Faisalabad is known for its textile industry and its unique clock tower around which eight markets are designed.', 
-    'https://images.unsplash.com/photo-1616854125134-9721752b0200?auto=format&fit=crop&q=80&w=1600', 
-    true, 
-    4
-),
-(
-    'Rawalpindi', 
-    'rawalpindi', 
-    'The twin city of Islamabad, Rawalpindi is a historic city with a mix of colonial-era architecture and modern developments, serving as a gateway to the north.', 
-    'https://images.unsplash.com/photo-1627993416954-5a396264906a?auto=format&fit=crop&q=80&w=1600', 
-    true, 
-    5
-),
-(
-    'Multan', 
-    'multan', 
-    'The City of Saints, Multan is one of the oldest cities in the world, famous for its magnificent shrines, blue pottery, and sweet mangoes.', 
-    'https://images.unsplash.com/photo-1627993416954-5a396264906a?auto=format&fit=crop&q=80&w=1600', 
-    true, 
-    6
-),
-(
-    'Peshawar', 
-    'peshawar', 
-    'A historic city at the gateway to the Khyber Pass, Peshawar is known for its ancient bazaar culture, hospitality, and rich cultural heritage.', 
-    'https://images.unsplash.com/photo-1627993416954-5a396264906a?auto=format&fit=crop&q=80&w=1600', 
-    true, 
-    7
-),
-(
-    'Quetta', 
-    'quetta', 
-    'The Fruit Garden of Pakistan, Quetta is surrounded by majestic mountains and known for its pleasant climate, high-quality dried fruits, and unique cultural diversity.', 
-    'https://images.unsplash.com/photo-1627993416954-5a396264906a?auto=format&fit=crop&q=80&w=1600', 
-    false, 
-    8
-),
-(
-    'Sialkot', 
-    'sialkot', 
-    'Famous worldwide for its sports goods and surgical instruments, Sialkot is a major industrial and export hub with a rich entrepreneurial spirit.', 
-    'https://images.unsplash.com/photo-1627993416954-5a396264906a?auto=format&fit=crop&q=80&w=1600', 
-    false, 
-    9
-),
-(
-    'Gujranwala', 
-    'gujranwala', 
-    'Known as the City of Wrestlers, Gujranwala is a major industrial city famous for its vibrant food culture and heavy manufacturing industries.', 
-    'https://images.unsplash.com/photo-1627993416954-5a396264906a?auto=format&fit=crop&q=80&w=1600', 
-    false, 
-    10
-)
+INSERT INTO cities (name, slug, state, description, is_popular, display_order) VALUES
+-- Major Cities with Province as State
+('Lahore', 'lahore', 'Punjab', 'The cultural heart of Pakistan, famous for history and food.', true, 1),
+('Karachi', 'karachi', 'Sindh', 'The largest city and economic hub of Pakistan.', true, 1),
+('Islamabad', 'islamabad', 'Islamabad Capital Territory', 'The beautiful capital city of Pakistan.', true, 1),
+('Peshawar', 'peshawar', 'Khyber Pakhtunkhwa', 'Historic gateway city with rich culture.', true, 1),
+('Quetta', 'quetta', 'Balochistan', 'The provincial capital and fruit garden.', true, 1),
+('Faisalabad', 'faisalabad', 'Punjab', 'The industrial hub of Pakistan.', true, 2),
+('Rawalpindi', 'rawalpindi', 'Punjab', 'Twin city of Islamabad and military headquarters.', true, 3),
+('Multan', 'multan', 'Punjab', 'The City of Saints, famous for shrines and mangoes.', true, 4),
+('Hyderabad', 'hyderabad', 'Sindh', 'Known for history, bangles and literature.', true, 2),
+('Gujranwala', 'gujranwala', 'Punjab', 'City of Wrestlers and industrial hub.', false, 5),
+('Sialkot', 'sialkot', 'Punjab', 'Global hub for sports goods and surgical instruments.', false, 6),
+
+-- Divisions as Regions (adding more entries to ensure they appear in the State list)
+('Lahore City', 'lahore-city', 'Lahore Division', 'Central hub of Lahore Division.', false, 100),
+('Karachi South', 'karachi-south', 'Karachi Division', 'Business center of Karachi Division.', false, 100),
+('Faisalabad City', 'faisalabad-city', 'Faisalabad Division', 'Industrial center of Faisalabad Division.', false, 100),
+('Rawalpindi City', 'rawalpindi-city', 'Rawalpindi Division', 'Center of Rawalpindi Division.', false, 100),
+('Multan City', 'multan-city', 'Multan Division', 'Center of Multan Division.', false, 100),
+('Gujranwala City', 'gujranwala-city', 'Gujranwala Division', 'Center of Gujranwala Division.', false, 100),
+('Sargodha City', 'sargodha-city', 'Sargodha Division', 'Center of Sargodha Division.', false, 100),
+('Bahawalpur City', 'bahawalpur-city', 'Bahawalpur Division', 'Center of Bahawalpur Division.', false, 100),
+('Sahiwal City', 'sahiwal-city', 'Sahiwal Division', 'Center of Sahiwal Division.', false, 100),
+('Dera Ghazi Khan City', 'dg-khan-city', 'Dera Ghazi Khan Division', 'Center of DG Khan Division.', false, 100),
+('Sukkur City', 'sukkur-city', 'Sukkur Division', 'Center of Sukkur Division.', false, 100),
+('Larkana City', 'larkana-city', 'Larkana Division', 'Center of Larkana Division.', false, 100),
+('Mirpur Khas City', 'mirpur-khas-city', 'Mirpur Khas Division', 'Center of Mirpur Khas Division.', false, 100),
+('Peshawar City', 'peshawar-city', 'Peshawar Division', 'Center of Peshawar Division.', false, 100),
+('Mardan City', 'mardan-city', 'Mardan Division', 'Center of Mardan Division.', false, 100),
+('Hazara City', 'hazara-city', 'Hazara Division', 'Center of Hazara Division.', false, 100),
+('Malakand City', 'malakand-city', 'Malakand Division', 'Center of Malakand Division.', false, 100),
+('Makran City', 'makran-city', 'Makran Division', 'Center of Makran Division.', false, 100),
+
+-- Ensure all major provinces are represented
+('Muzaffarabad', 'muzaffarabad', 'Azad Jammu & Kashmir', 'The capital of Azad Kashmir.', true, 1),
+('Gilgit', 'gilgit', 'Gilgit-Baltistan', 'Major hub for mountaineering and trade.', true, 1)
+
 ON CONFLICT (slug) DO UPDATE SET 
-    description = EXCLUDED.description,
-    hero_image_url = EXCLUDED.hero_image_url,
-    is_popular = EXCLUDED.is_popular,
-    display_order = EXCLUDED.display_order;
+    state = EXCLUDED.state,
+    description = EXCLUDED.description;

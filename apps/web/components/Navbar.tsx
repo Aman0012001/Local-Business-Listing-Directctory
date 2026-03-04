@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { Menu, ChevronDown, MapPin, User as UserIcon, LogOut, X, Search, Building2, Globe } from 'lucide-react';
+import { Menu, ChevronDown, MapPin, User as UserIcon, LogOut, X, Search, Building2, Globe, Bell, Check, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api, getImageUrl } from '../lib/api';
 import { Category, City } from '../types/api';
@@ -11,6 +11,77 @@ export default function Navbar() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [cities, setCities] = useState<City[]>([]);
     const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+
+    // ── Notifications ───────────────────────────────────────────────
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [showBell, setShowBell] = useState(false);
+    const bellRef = useRef<HTMLDivElement>(null);
+
+    const fetchNotifications = useCallback(async () => {
+        if (!user) return;
+        try {
+            const res = await api.notifications.getAll();
+            setNotifications(res.notifications || []);
+            setUnreadCount(res.unreadCount || 0);
+        } catch { /* ignore */ }
+    }, [user]);
+
+    useEffect(() => {
+        fetchNotifications();
+        const interval = setInterval(fetchNotifications, 30000);
+        return () => clearInterval(interval);
+    }, [fetchNotifications]);
+
+    // Close bell dropdown on outside click
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
+                setShowBell(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    const handleMarkRead = async (id: string) => {
+        await api.notifications.markRead(id).catch(() => { });
+        setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+        setUnreadCount(prev => Math.max(0, prev - 1));
+    };
+
+    const handleMarkAllRead = async () => {
+        await api.notifications.markAllRead().catch(() => { });
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        setUnreadCount(0);
+    };
+
+    const handleDelete = async (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        await api.notifications.delete(id).catch(() => { });
+        setNotifications(prev => prev.filter(n => n.id !== id));
+        setUnreadCount(prev => {
+            const deleted = notifications.find(n => n.id === id);
+            return deleted && !deleted.isRead ? Math.max(0, prev - 1) : prev;
+        });
+    };
+
+    const timeAgo = (date: string) => {
+        const diff = Date.now() - new Date(date).getTime();
+        const m = Math.floor(diff / 60000);
+        if (m < 1) return 'just now';
+        if (m < 60) return `${m}m ago`;
+        const h = Math.floor(m / 60);
+        if (h < 24) return `${h}h ago`;
+        return `${Math.floor(h / 24)}d ago`;
+    };
+
+    const typeColor: Record<string, string> = {
+        new_listing: 'bg-blue-100 text-blue-600',
+        enquiry_reply: 'bg-green-100 text-green-700',
+        new_vendor: 'bg-purple-100 text-purple-700',
+        info: 'bg-slate-100 text-slate-500',
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -148,7 +219,7 @@ export default function Navbar() {
                                                 {cities.map((city) => (
                                                     <Link
                                                         key={city.id}
-                                                        href={`/search?city=${city.name}`}
+                                                        href={`/cities/${encodeURIComponent(city.name.toLowerCase())}`}
                                                         className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item"
                                                     >
                                                         <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover/item:text-emerald-500 group-hover/item:bg-emerald-50">
@@ -193,6 +264,91 @@ export default function Navbar() {
                                         </span>
                                     </div>
                                 </Link>
+
+                                {/* 🔔 Notification Bell */}
+                                <div ref={bellRef} className="relative">
+                                    <button
+                                        onClick={() => setShowBell(v => !v)}
+                                        className="relative p-2.5 rounded-xl text-slate-500 hover:text-[#FF7A30] hover:bg-orange-50 transition-all"
+                                        title="Notifications"
+                                    >
+                                        <Bell className="w-5 h-5" />
+                                        {unreadCount > 0 && (
+                                            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-[#FF7A30] text-white text-[10px] font-black rounded-full flex items-center justify-center leading-none">
+                                                {unreadCount > 9 ? '9+' : unreadCount}
+                                            </span>
+                                        )}
+                                    </button>
+
+                                    {showBell && (
+                                        <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden">
+                                            {/* Header */}
+                                            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                                                <span className="font-black text-slate-900 text-sm">Notifications</span>
+                                                {unreadCount > 0 && (
+                                                    <button
+                                                        onClick={handleMarkAllRead}
+                                                        className="text-[11px] font-black text-[#FF7A30] hover:text-[#E86920] flex items-center gap-1 transition-colors"
+                                                    >
+                                                        <Check className="w-3 h-3" /> Mark all read
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {/* List */}
+                                            <div className="max-h-80 overflow-y-auto divide-y divide-slate-50">
+                                                {notifications.length === 0 ? (
+                                                    <div className="py-10 text-center">
+                                                        <Bell className="w-8 h-8 mx-auto text-slate-200 mb-2" />
+                                                        <p className="text-sm text-slate-400 font-medium">No notifications yet</p>
+                                                    </div>
+                                                ) : (
+                                                    notifications.slice(0, 10).map(n => (
+                                                        <div
+                                                            key={n.id}
+                                                            onClick={() => { if (!n.isRead) handleMarkRead(n.id); }}
+                                                            className={`flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 transition-colors group ${n.isRead ? 'opacity-60' : 'bg-orange-50/30'
+                                                                }`}
+                                                        >
+                                                            {/* Dot */}
+                                                            <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${n.isRead ? 'bg-slate-200' : 'bg-[#FF7A30]'
+                                                                }`} />
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex items-center gap-2 mb-0.5">
+                                                                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${typeColor[n.type] || typeColor.info
+                                                                        }`}>
+                                                                        {n.type?.replace(/_/g, ' ')}
+                                                                    </span>
+                                                                    <span className="text-[10px] text-slate-400 font-medium ml-auto">{timeAgo(n.createdAt)}</span>
+                                                                </div>
+                                                                <p className="text-xs font-black text-slate-900 leading-snug">{n.title}</p>
+                                                                <p className="text-[11px] text-slate-500 font-medium mt-0.5 line-clamp-2">{n.message}</p>
+                                                            </div>
+                                                            <button
+                                                                onClick={e => handleDelete(e, n.id)}
+                                                                className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-red-50 hover:text-red-500 transition-all text-slate-300 flex-shrink-0"
+                                                            >
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+
+                                            {/* Footer */}
+                                            <div className="border-t border-slate-100 px-4 py-2.5">
+                                                <Link
+                                                    href="/vendor/notifications"
+                                                    onClick={() => setShowBell(false)}
+                                                    className="text-[11px] font-black text-[#FF7A30] hover:text-[#E86920] transition-colors"
+                                                >
+                                                    View all notifications →
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
                                 <button
                                     onClick={logout}
                                     className="p-2.5 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
