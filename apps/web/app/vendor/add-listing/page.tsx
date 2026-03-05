@@ -11,6 +11,7 @@ import {
 import { api, getImageUrl } from '../../../lib/api';
 import { Category, City } from '../../../types/api';
 import { motion, AnimatePresence } from 'framer-motion';
+import Script from 'next/script';
 
 const steps = [
     { id: 1, label: 'Business Info', icon: Building2 },
@@ -132,6 +133,136 @@ export default function AddListingPage() {
         metaKeywords: '',
     });
 
+    const autoCompleteRef = useRef<any>(null);
+    const addressInputRef = useRef<HTMLInputElement>(null);
+    const mapRef = useRef<any>(null);
+    const markerRef = useRef<any>(null);
+    const mapContainerRef = useRef<HTMLDivElement>(null);
+    const formDataRef = useRef(formData);
+
+    // Keep ref in sync
+    useEffect(() => {
+        formDataRef.current = formData;
+    }, [formData]);
+
+    const updateLocationFromCoords = (lat: number, lng: number) => {
+        if (!(window as any).google) return;
+        const geocoder = new (window as any).google.maps.Geocoder();
+        geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
+            if (status === "OK" && results[0]) {
+                const place = results[0];
+                let city = '';
+                let state = '';
+                let pincode = '';
+                let address = place.formatted_address || '';
+
+                place.address_components?.forEach((component: any) => {
+                    const types = component.types;
+                    if (types.includes("locality")) city = component.long_name;
+                    else if (types.includes("administrative_area_level_2") && !city) city = component.long_name;
+                    else if (types.includes("administrative_area_level_1")) state = component.long_name;
+                    else if (types.includes("postal_code")) pincode = component.long_name;
+                });
+
+                setFormData(prev => ({
+                    ...prev,
+                    address,
+                    city: city || prev.city,
+                    state: state || prev.state,
+                    pincode: pincode || prev.pincode,
+                    latitude: lat,
+                    longitude: lng,
+                }));
+            }
+        });
+    };
+
+    const initAutocomplete = () => {
+        if (!(window as any).google || !addressInputRef.current || !mapContainerRef.current) return;
+
+        const defaultCenter = { lat: formData.latitude, lng: formData.longitude };
+
+        if (!mapRef.current) {
+            mapRef.current = new (window as any).google.maps.Map(mapContainerRef.current, {
+                center: defaultCenter,
+                zoom: 15,
+                mapTypeControl: false,
+                streetViewControl: false,
+                fullscreenControl: false,
+            });
+
+            markerRef.current = new (window as any).google.maps.Marker({
+                position: defaultCenter,
+                map: mapRef.current,
+                draggable: true,
+                animation: (window as any).google.maps.Animation.DROP,
+            });
+
+            markerRef.current.addListener("dragend", () => {
+                const pos = markerRef.current.getPosition();
+                updateLocationFromCoords(pos.lat(), pos.lng());
+            });
+
+            mapRef.current.addListener("click", (e: any) => {
+                if (e.latLng) {
+                    markerRef.current.setPosition(e.latLng);
+                    updateLocationFromCoords(e.latLng.lat(), e.latLng.lng());
+                }
+            });
+        }
+
+        if (!autoCompleteRef.current) {
+            autoCompleteRef.current = new (window as any).google.maps.places.Autocomplete(
+                addressInputRef.current,
+                {
+                    componentRestrictions: { country: "pk" },
+                    fields: ["address_components", "geometry", "formatted_address"],
+                }
+            );
+
+            autoCompleteRef.current.addListener("place_changed", () => {
+                const place = autoCompleteRef.current.getPlace();
+                if (!place.geometry) return;
+
+                const lat = place.geometry.location.lat();
+                const lng = place.geometry.location.lng();
+
+                mapRef.current.setCenter({ lat, lng });
+                mapRef.current.setZoom(17);
+                markerRef.current.setPosition({ lat, lng });
+
+                let city = '';
+                let state = '';
+                let pincode = '';
+                let address = place.formatted_address || '';
+
+                place.address_components?.forEach((component: any) => {
+                    const types = component.types;
+                    if (types.includes("locality")) city = component.long_name;
+                    else if (types.includes("administrative_area_level_2") && !city) city = component.long_name;
+                    else if (types.includes("administrative_area_level_1")) state = component.long_name;
+                    else if (types.includes("postal_code")) pincode = component.long_name;
+                });
+
+                setFormData(prev => ({
+                    ...prev,
+                    address: address || prev.address,
+                    city: city || prev.city,
+                    state: state || prev.state,
+                    pincode: pincode || prev.pincode,
+                    latitude: lat,
+                    longitude: lng,
+                }));
+            });
+        }
+    };
+
+    useEffect(() => {
+        if (activeStep === 2 && (window as any).google) {
+            setTimeout(initAutocomplete, 100);
+        }
+    }, [activeStep]);
+
     useEffect(() => {
         const fetchInitialData = async () => {
             setCatsLoading(true);
@@ -168,8 +299,17 @@ export default function AddListingPage() {
         e.preventDefault();
         setLoading(true);
         setError(null);
+
+        // Use the latest ref value to avoid stale closures
+        const submissionData = {
+            ...formDataRef.current,
+            phone: countryCode + phoneNumber
+        };
+
+        console.log('[AddListing] Submitting listing data:', submissionData);
+
         try {
-            await api.listings.create(formData);
+            await api.listings.create(submissionData);
             // Save social links to vendor profile if any were added
             const linksToSave = socialLinks.filter(s => s.url.trim());
             if (linksToSave.length > 0) {
@@ -374,7 +514,7 @@ export default function AddListingPage() {
                 </motion.div>
             )}
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} autoComplete="off">
                 {/* ── STEP 1: Business Info ── */}
                 {activeStep === 1 && (
                     <motion.div
@@ -721,43 +861,54 @@ export default function AddListingPage() {
                         animate={{ opacity: 1, x: 0 }}
                         className="space-y-6"
                     >
-                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm">
+                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                             <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
                                     <MapPin className="w-4 h-4 text-green-500" />
                                 </div>
                                 <h3 className="font-black text-slate-900">Location Details</h3>
                             </div>
-                            <div className="p-6 space-y-5">
 
-                                {/* COUNTRY */}
-                                <div>
-                                    <label className={labelClass}>Country <span className="text-orange-500">*</span></label>
-                                    <div className="relative">
-                                        <select
-                                            required
-                                            name="country"
-                                            value={formData.country}
-                                            onChange={e => {
-                                                setFormData(prev => ({ ...prev, country: e.target.value, state: '', city: '', address: '' }));
-                                            }}
-                                            className={selectClass}
-                                        >
-                                            <option value="">-- Select Country --</option>
-                                            {[
-                                                '🇵🇰 Pakistan', '🇮🇳 India', '🇦🇪 United Arab Emirates', '🇸🇦 Saudi Arabia',
-                                                '🇬🇧 United Kingdom', '🇺🇸 United States', '🇨🇦 Canada', '🇦🇺 Australia',
-                                                '🇧🇩 Bangladesh', '🇱🇰 Sri Lanka', '🇳🇵 Nepal', '🇲🇾 Malaysia',
-                                                '🇸🇬 Singapore', '🇶🇦 Qatar', '🇰🇼 Kuwait', '🇧🇭 Bahrain', '🇴🇲 Oman',
-                                                '🌍 Other'
-                                            ].map(c => <option key={c} value={c.replace(/^[^ ]+ /, '')}>{c}</option>)}
-                                        </select>
-                                        <MapPin className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                            <div className="grid grid-cols-1 lg:grid-cols-2">
+                                {/* LEFT: FORM FIELDS */}
+                                <div className="p-6 space-y-5 border-b lg:border-b-0 lg:border-r border-slate-100">
+                                    {/* SEARCH ADDRESS (GOOGLE PLACES) */}
+                                    <div>
+                                        <label className={labelClass}>Search Address (Google Maps) <span className="text-orange-500">*</span></label>
+                                        <div className="relative">
+                                            <input
+                                                ref={addressInputRef}
+                                                type="text"
+                                                placeholder="Start typing your address..."
+                                                className={inputClass}
+                                            />
+                                            <MapPin className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-500 pointer-events-none" />
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 mt-1 font-medium italic">
+                                            Select from suggestions to auto-fill fields & move map
+                                        </p>
                                     </div>
-                                </div>
 
-                                {/* STATE / PROVINCE */}
-                                {formData.country && (
+                                    <div className="h-px bg-slate-100 my-2" />
+
+                                    {/* COUNTRY */}
+                                    <div>
+                                        <label className={labelClass}>Country <span className="text-orange-500">*</span></label>
+                                        <div className="relative">
+                                            <select
+                                                disabled // Locked to Pakistan
+                                                required
+                                                name="country"
+                                                value="Pakistan"
+                                                className={`${selectClass} bg-slate-100 cursor-not-allowed`}
+                                            >
+                                                <option value="Pakistan">🇵🇰 Pakistan</option>
+                                            </select>
+                                            <MapPin className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                        </div>
+                                    </div>
+
+                                    {/* STATE / PROVINCE */}
                                     <div>
                                         <label className={labelClass}>State / Province <span className="text-orange-500">*</span></label>
                                         <div className="relative">
@@ -769,37 +920,18 @@ export default function AddListingPage() {
                                                 className={selectClass}
                                             >
                                                 <option value="">-- Select State / Province --</option>
-                                                {formData.country === 'Pakistan' ? (
-                                                    // Get unique states from the dynamic cities list for Pakistan
+                                                {cities.length > 0 ? (
                                                     Array.from(new Set(cities.filter(c => c.state).map(c => c.state)))
                                                         .sort()
                                                         .map(s => <option key={s} value={s!}>{s}</option>)
-                                                ) : (() => {
-                                                    const FALLBACK_STATES: Record<string, string[]> = {
-                                                        'India': ['Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Delhi', 'Jammu & Kashmir', 'Ladakh'],
-                                                        'United Arab Emirates': ['Abu Dhabi', 'Dubai', 'Sharjah', 'Ajman', 'Fujairah', 'Ras Al Khaimah', 'Umm Al Quwain'],
-                                                        'Saudi Arabia': ['Riyadh', 'Makkah', 'Madinah', 'Eastern Province', 'Asir', 'Tabuk', 'Qassim', 'Hail', 'Jizan', 'Najran', 'Al Jawf', 'Al Bahah', 'Northern Borders'],
-                                                        'United Kingdom': ['England', 'Scotland', 'Wales', 'Northern Ireland', 'Greater London', 'West Midlands', 'Greater Manchester', 'West Yorkshire'],
-                                                        'United States': ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'],
-                                                        'Canada': ['Alberta', 'British Columbia', 'Manitoba', 'New Brunswick', 'Newfoundland and Labrador', 'Nova Scotia', 'Ontario', 'Prince Edward Island', 'Quebec', 'Saskatchewan', 'Northwest Territories', 'Nunavut', 'Yukon'],
-                                                        'Australia': ['New South Wales', 'Victoria', 'Queensland', 'South Australia', 'Western Australia', 'Tasmania', 'Australian Capital Territory', 'Northern Territory'],
-                                                    };
-                                                    const opts = FALLBACK_STATES[formData.country] || [];
-                                                    return opts.map(s => <option key={s} value={s}>{s}</option>);
-                                                })()}
+                                                ) : <option value="Punjab">Punjab</option>}
                                                 <option value="Other">Other</option>
                                             </select>
                                             <MapPin className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                                         </div>
-                                        {formData.state === 'Other' && (
-                                            <input type="text" placeholder="Type state / province" className={`${inputClass} mt-2`}
-                                                onChange={e => setFormData(prev => ({ ...prev, state: e.target.value }))} />
-                                        )}
                                     </div>
-                                )}
 
-                                {/* CITY */}
-                                {formData.state && (
+                                    {/* CITY */}
                                     <div>
                                         <label className={labelClass}>City <span className="text-orange-500">*</span></label>
                                         <div className="relative">
@@ -811,103 +943,82 @@ export default function AddListingPage() {
                                                 className={selectClass}
                                             >
                                                 <option value="">-- Select City --</option>
-                                                {formData.country === 'Pakistan' ? (
-                                                    cities
-                                                        .filter(c => c.state === formData.state)
-                                                        .sort((a, b) => a.name.localeCompare(b.name))
-                                                        .map(c => <option key={c.id} value={c.name}>{c.name}</option>)
-                                                ) : (() => {
-                                                    const FALLBACK_CITIES: Record<string, string[]> = {
-                                                        'Punjab': ['Amritsar', 'Ludhiana', 'Jalandhar', 'Patiala'],
-                                                        'Delhi': ['New Delhi', 'Old Delhi', 'Gurugram', 'Noida', 'Faridabad', 'Ghaziabad'],
-                                                        'Dubai': ['Deira', 'Bur Dubai', 'Marina', 'Downtown'],
-                                                        'Abu Dhabi': ['Khalifa City', 'Al Reem Island'],
-                                                    };
-                                                    const opts = FALLBACK_CITIES[formData.state] || [];
-                                                    return opts.map(c => <option key={c} value={c}>{c}</option>);
-                                                })()}
+                                                {cities
+                                                    .filter(c => !formData.state || c.state === formData.state)
+                                                    .sort((a, b) => a.name.localeCompare(b.name))
+                                                    .map(c => <option key={c.id} value={c.name}>{c.name}</option>)
+                                                }
                                                 <option value="Other">Other</option>
                                             </select>
                                             <MapPin className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                                         </div>
-                                        {formData.city === 'Other' && (
-                                            <input type="text" placeholder="Type city name" className={`${inputClass} mt-2`}
-                                                onChange={e => setFormData(prev => ({ ...prev, city: e.target.value }))} />
-                                        )}
                                     </div>
-                                )}
 
-                                {/* AREA / STREET */}
-                                {formData.city && (
+                                    {/* AREA / STREET */}
                                     <div>
                                         <label className={labelClass}>Area / Street <span className="text-orange-500">*</span></label>
                                         <div className="relative">
-                                            <select
+                                            <input
                                                 required
                                                 name="address"
                                                 value={formData.address}
                                                 onChange={handleChange}
-                                                className={selectClass}
-                                            >
-                                                <option value="">-- Select Area / Street --</option>
-                                                {(() => {
-                                                    const FALLBACK_AREAS: Record<string, string[]> = {
-                                                        'Lahore': ['DHA Phase 1', 'DHA Phase 2', 'DHA Phase 3', 'DHA Phase 4', 'DHA Phase 5', 'DHA Phase 6', 'Gulberg I', 'Gulberg II', 'Gulberg III', 'Model Town', 'Johar Town', 'Bahria Town Lahore', 'Cavalry Ground', 'Cantt', 'Iqbal Town', 'Garden Town', 'Shadman', 'Samanabad', 'Faisal Town', 'Wapda Town', 'Township', 'Raiwind Road', 'Bedian Road', 'Ferozpur Road', 'Mall Road', 'Liberty Market', 'M.M. Alam Road', 'Canal Road', 'Thokar Niaz Baig', 'Halloki', 'Bahria Orchard'],
-                                                        'Karachi': ['Clifton', 'DHA Phase 1', 'DHA Phase 2', 'DHA Phase 5', 'DHA Phase 6', 'DHA Phase 7', 'DHA Phase 8', 'Gulshan-e-Iqbal', 'Gulistan-e-Jauhar', 'PECHS', 'Bahadurabad', 'Defence View', 'North Nazimabad', 'Federal B Area', 'Nazimabad', 'Korangi', 'Landhi', 'Malir', 'Shah Faisal Colony', 'Scheme 33', 'Scheme 45', 'North Karachi', 'Surjani Town', 'Orangi Town', 'Liaquatabad', 'Kemari', 'Saddar', 'Garden', 'Lyari', 'Gulberg', 'Baldia'],
-                                                        'Islamabad': ['Blue Area', 'F-6 Markaz', 'F-7 Markaz', 'F-8 Markaz', 'F-10 Markaz', 'F-11', 'G-6', 'G-7', 'G-8', 'G-9', 'G-10', 'G-11', 'G-13', 'G-14', 'H-8', 'H-9', 'I-8', 'I-9', 'I-10', 'I-14', 'I-15', 'E-7', 'E-11', 'DHA Phase 1', 'DHA Phase 2', 'Bahria Town', 'PWD Colony', 'Gulshan-e-Sehat', 'Saidpur Village', 'Bani Gala', 'Golra Sharif', 'Rawat', 'Koral', 'Tarlai'],
-                                                    };
-                                                    const areas = FALLBACK_AREAS[formData.city] || [];
-                                                    return areas.map(a => <option key={a} value={a}>{a}</option>);
-                                                })()}
-                                                <option value="Other">Other (type manually)</option>
-                                            </select>
+                                                placeholder="e.g. 123 Street name, Area"
+                                                className={inputClass}
+                                            />
                                             <MapPin className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                                         </div>
-                                        {formData.address === 'Other' && (
-                                            <input type="text" placeholder="Type area / street name" className={`${inputClass} mt-2`}
-                                                onChange={e => setFormData(prev => ({ ...prev, address: e.target.value }))} />
-                                        )}
                                     </div>
-                                )}
 
-                                {/* PINCODE */}
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className={labelClass}>Pincode <span className="text-orange-500">*</span></label>
-                                        <input
-                                            required
-                                            name="pincode"
-                                            value={formData.pincode}
-                                            onChange={handleChange}
-                                            placeholder="e.g. 54000"
-                                            className={inputClass}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className={labelClass}>Latitude / Longitude</label>
-                                        <div className="flex gap-2">
+                                    {/* PINCODE */}
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <div>
+                                            <label className={labelClass}>Pincode <span className="text-orange-500">*</span></label>
                                             <input
-                                                type="number"
-                                                step="any"
-                                                name="latitude"
-                                                value={formData.latitude}
+                                                required
+                                                name="pincode"
+                                                value={formData.pincode}
                                                 onChange={handleChange}
-                                                placeholder="Lat"
+                                                placeholder="e.g. 54000"
                                                 className={inputClass}
                                             />
-                                            <input
-                                                type="number"
-                                                step="any"
-                                                name="longitude"
-                                                value={formData.longitude}
-                                                onChange={handleChange}
-                                                placeholder="Long"
-                                                className={inputClass}
-                                            />
+                                        </div>
+                                        <div>
+                                            <label className={labelClass}>Latitude / Longitude</label>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="number"
+                                                    step="any"
+                                                    name="latitude"
+                                                    value={formData.latitude}
+                                                    onChange={handleChange}
+                                                    placeholder="Lat"
+                                                    className={inputClass}
+                                                />
+                                                <input
+                                                    type="number"
+                                                    step="any"
+                                                    name="longitude"
+                                                    value={formData.longitude}
+                                                    onChange={handleChange}
+                                                    placeholder="Long"
+                                                    className={inputClass}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
+                                {/* RIGHT: INTERACTIVE MAP */}
+                                <div className="relative bg-slate-50 min-h-[400px] lg:min-h-full">
+                                    <div ref={mapContainerRef} className="absolute inset-0 w-full h-full" />
+                                    <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+                                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-tighter flex items-center gap-1.5">
+                                            <Navigation className="w-3 h-3 text-orange-500" />
+                                            Drag marker or click map to adjust location
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -1443,6 +1554,11 @@ export default function AddListingPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            <Script
+                src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`}
+                onLoad={initAutocomplete}
+            />
         </div>
     );
 }
