@@ -159,20 +159,20 @@ function LeadDetailModal({ lead, onClose, onStatusChange }: {
 
                 <div>
                     <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Update Status</p>
-                    <div className="grid grid-cols-2 gap-2">
-                        {(Object.keys(STATUS_CONFIG) as LeadStatus[]).map(s => {
-                            const cfg = STATUS_CONFIG[s];
-                            const Icon = cfg.icon;
-                            const isActive = lead.status === s;
-                            return (
-                                <button key={s} onClick={() => handleStatus(s)} disabled={updating || isActive}
-                                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold border transition-all ${isActive ? `${cfg.bg} ${cfg.color} border-current` : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
-                                        } disabled:opacity-50`}>
-                                    {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Icon className="w-4 h-4" />}
-                                    {cfg.label}
-                                </button>
-                            );
-                        })}
+                    <div className="relative">
+                        <select
+                            value={lead.status}
+                            onChange={(e) => handleStatus(e.target.value as LeadStatus)}
+                            disabled={updating}
+                            className="w-full pl-4 pr-10 py-3 rounded-xl text-sm font-bold border border-slate-200 bg-white text-slate-700 focus:border-blue-400 focus:ring-4 focus:ring-blue-50 outline-none transition-all appearance-none cursor-pointer disabled:opacity-50"
+                        >
+                            {(Object.keys(STATUS_CONFIG) as LeadStatus[]).map(s => (
+                                <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
+                            ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                            {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronDown className="w-4 h-4" />}
+                        </div>
                     </div>
                 </div>
             </motion.div>
@@ -376,7 +376,20 @@ export default function VendorLeadsPage() {
                                                     )}
                                                 </td>
                                                 <td className="px-4 py-4"><TypeBadge type={lead.type} /></td>
-                                                <td className="px-4 py-4"><StatusBadge status={lead.status} /></td>
+                                                <td className="px-4 py-4">
+                                                    <div className="relative inline-block mt-0.5">
+                                                        <select
+                                                            value={lead.status}
+                                                            onChange={(e) => handleStatusChange(lead.id, e.target.value as LeadStatus)}
+                                                            className={`appearance-none pl-3 pr-8 py-1 rounded-full text-xs font-bold border outline-none cursor-pointer transition-all ${STATUS_CONFIG[lead.status].bg} ${STATUS_CONFIG[lead.status].color} focus:ring-2 focus:ring-current/20`}
+                                                        >
+                                                            {(Object.keys(STATUS_CONFIG) as LeadStatus[]).map(s => (
+                                                                <option key={s} value={s} className="bg-white text-slate-900 font-bold">{STATUS_CONFIG[s].label}</option>
+                                                            ))}
+                                                        </select>
+                                                        <ChevronDown className={`absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none opacity-60`} />
+                                                    </div>
+                                                </td>
                                                 <td className="px-4 py-4 max-w-[200px]">
                                                     <p className="text-sm text-slate-500 truncate">{lead.message || '—'}</p>
                                                 </td>
