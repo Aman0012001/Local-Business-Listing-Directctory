@@ -129,7 +129,7 @@ export default function AdminSettingsPage() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as any)}
                             className={`w-full flex items-center gap-4 px-6 py-4 rounded-[16px] transition-all group ${activeTab === tab.id
-                                ? 'bg-white text-slate-900 shadow-xl shadow-slate-200/50 translate-x-1 font-black'
+                                ? 'bg-white text-slate-900  shadow-slate-200/50 translate-x-1 font-black'
                                 : 'text-slate-400 hover:text-slate-600 hover:bg-white/50 font-bold'
                                 }`}
                         >
@@ -145,7 +145,7 @@ export default function AdminSettingsPage() {
                         key={activeTab}
                         initial={{ opacity: 0, x: 10 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="bg-white rounded-[16px] p-10 shadow-xl shadow-slate-200/40 border border-slate-50"
+                        className="bg-white rounded-[16px] p-10  shadow-slate-200/40 border border-slate-50"
                     >
                         <form onSubmit={handleSave} className="space-y-8">
                             {activeTab === 'general' && (

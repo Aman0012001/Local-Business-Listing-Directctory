@@ -119,7 +119,7 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
 
     return (
         <Link href={`/business/${business.slug}`} className="group h-full">
-            <div className="bg-white rounded-2xl border border-black overflow-hidden hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-500 flex flex-col h-full">
+            <div className="bg-white rounded-2xl border  overflow-hidden hover: hover:shadow-blue-500/5 transition-all duration-500 flex flex-col h-full">
                 {/* Image Container */}
                 <div className="relative h-48 overflow-hidden">
                     <img
@@ -127,11 +127,11 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                         alt={business.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     />
-                    {business.isFeatured && (
+                    {/* {business.isFeatured && (
                         <div className="absolute top-4 left-4 px-3 py-1 bg-blue-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-lg">
                             Featured
                         </div>
-                    )}
+                    )} */}
                     {business.isVerified && (
                         <div className="absolute top-4 right-4 px-3 py-1 bg-amber-500 text-white text-[10px] font-bold uppercase tracking-widest rounded-full shadow-lg">
                             Verified
@@ -162,8 +162,8 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                     </div>
 
                     <div className="mt-auto">
-                        <div className={`block w-full text-center py-4 rounded-2xl font-bold transition-all shadow-lg active:scale-95 ${getButtonStyles()}`}>
-                            {getButtonText()}
+                        <div className={`block w-full text-center py-2  font-bold transition-all s active:scale-95`} style={{backgroundColor: "#eff6ff", borderRadius: "10px"}}>
+                            {/* {getButtonText()} */} View Details
                         </div>
                     </div>
                 </div>

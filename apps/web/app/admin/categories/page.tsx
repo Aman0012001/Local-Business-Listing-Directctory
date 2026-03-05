@@ -68,7 +68,15 @@ export default function AdminCategoriesPage() {
         e.preventDefault();
         setActionLoading('create');
         try {
-            await api.categories.adminCreate(formData);
+            // Sanitize data: remove empty strings/null for optional fields
+            const dataToSubmit: any = { ...formData };
+            Object.keys(dataToSubmit).forEach(key => {
+                if (dataToSubmit[key] === '' || dataToSubmit[key] === null) {
+                    delete dataToSubmit[key];
+                }
+            });
+
+            await api.categories.adminCreate(dataToSubmit);
             await fetchCategories();
             setIsCreateModalOpen(false);
             resetForm();
@@ -84,7 +92,15 @@ export default function AdminCategoriesPage() {
         if (!selectedCategory) return;
         setActionLoading('update');
         try {
-            await api.categories.adminUpdate(selectedCategory.id, formData);
+            // Sanitize data: remove empty strings/null for optional fields
+            const dataToSubmit: any = { ...formData };
+            Object.keys(dataToSubmit).forEach(key => {
+                if (dataToSubmit[key] === '' || dataToSubmit[key] === null) {
+                    delete dataToSubmit[key];
+                }
+            });
+
+            await api.categories.adminUpdate(selectedCategory.id, dataToSubmit);
             await fetchCategories();
             setIsEditModalOpen(false);
             resetForm();
@@ -117,7 +133,7 @@ export default function AdminCategoriesPage() {
             setIsDeleteModalOpen(false);
             setSelectedCategory(null);
         } catch (err: any) {
-            alert(err.message || 'Failed to delete category. Make sure it has no subcategories or listings.');
+            alert(err.message || 'Failed to delete category. Make sure it has no subcategories or active listings.');
         } finally {
             setActionLoading(null);
         }
@@ -176,7 +192,7 @@ export default function AdminCategoriesPage() {
                     </button>
                     <button
                         onClick={() => { resetForm(); setIsCreateModalOpen(true); }}
-                        className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white hover:bg-slate-800 rounded-2xl font-bold transition-all shadow-xl shadow-slate-900/20 active:scale-95"
+                        className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white hover:bg-slate-800 rounded-2xl font-bold transition-all  shadow-slate-900/20 active:scale-95"
                     >
                         <Plus className="w-5 h-5" /> Add Category
                     </button>
@@ -198,7 +214,7 @@ export default function AdminCategoriesPage() {
             </div>
 
             {/* Table */}
-            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
+            <div className="bg-white rounded-[2.5rem] border border-slate-100  shadow-slate-200/50 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
@@ -229,73 +245,91 @@ export default function AdminCategoriesPage() {
                                         </td>
                                     </tr>
                                 ) : (
-                                    filteredCategories.map((c, idx) => (
-                                        <motion.tr
-                                            key={c.id}
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0 }}
-                                            transition={{ delay: idx * 0.03 }}
-                                            className="group border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors"
-                                        >
-                                            <td className="px-8 py-6">
-                                                <div className="flex items-center gap-5">
-                                                    <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center shadow-inner overflow-hidden">
-                                                        {c.imageUrl ? (
-                                                            <img src={c.imageUrl} className="w-full h-full object-cover" alt="" />
-                                                        ) : (
-                                                            <div className="text-xl text-slate-400 font-bold">{c.icon || <LayoutGrid className="w-6 h-6" />}</div>
+                                    filteredCategories.map((c, idx) => {
+                                        const parent = categories.find(p => p.id === c.parentId);
+                                        const isSubcategory = !!c.parentId;
+
+                                        return (
+                                            <motion.tr
+                                                key={c.id}
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0 }}
+                                                transition={{ delay: idx * 0.03 }}
+                                                className="group border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors"
+                                            >
+                                                <td className="px-8 py-6">
+                                                    <div className={`flex items-center gap-5 ${isSubcategory ? 'ml-12' : ''}`}>
+                                                        {isSubcategory && (
+                                                            <div className="flex items-center text-slate-300">
+                                                                <div className="w-6 h-px bg-slate-200 mr-2" />
+                                                                <div className="w-px h-10 bg-slate-200 -mt-10 mr-2 absolute left-[98px]" />
+                                                            </div>
                                                         )}
+                                                        <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center shadow-inner overflow-hidden flex-shrink-0">
+                                                            {c.imageUrl ? (
+                                                                <img src={c.imageUrl} className="w-full h-full object-cover" alt="" />
+                                                            ) : (
+                                                                <div className="text-xl text-slate-400 font-bold">{c.icon || <LayoutGrid className="w-6 h-6" />}</div>
+                                                            )}
+                                                        </div>
+                                                        <div>
+                                                            <div className="flex items-center gap-2">
+                                                                <p className="font-black text-slate-900 text-base">{c.name}</p>
+                                                                {parent && (
+                                                                    <span className="px-2 py-0.5 bg-slate-100 text-[10px] font-black uppercase text-slate-400 rounded-md">
+                                                                        in {parent.name}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <p className="text-xs text-slate-400 font-medium mt-0.5 mt-1 line-clamp-1 max-w-[200px]">{c.description || 'No description'}</p>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <p className="font-black text-slate-900 text-base">{c.name}</p>
-                                                        <p className="text-xs text-slate-400 font-medium mt-0.5 mt-1 line-clamp-1 max-w-[200px]">{c.description || 'No description'}</p>
+                                                </td>
+                                                <td className="px-8 py-6">
+                                                    <code className="px-2 py-1 bg-slate-100 rounded-lg text-xs font-bold text-slate-600">{c.slug}</code>
+                                                </td>
+                                                <td className="px-8 py-6">
+                                                    <button
+                                                        onClick={() => handleToggleStatus(c)}
+                                                        disabled={actionLoading === c.id}
+                                                        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all ${c.status === 'active'
+                                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100'
+                                                            : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
+                                                            }`}
+                                                    >
+                                                        {actionLoading === c.id ? (
+                                                            <Loader2 className="w-3 h-3 animate-spin" />
+                                                        ) : (
+                                                            <>
+                                                                {c.status === 'active' ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                                                                {c.status}
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                </td>
+                                                <td className="px-8 py-6">
+                                                    <span className="text-sm text-slate-500 font-medium">{new Date(c.createdAt).toLocaleDateString()}</span>
+                                                </td>
+                                                <td className="px-8 py-6 text-right">
+                                                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={() => openEditModal(c)}
+                                                            className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-900 hover:border-slate-900 transition-all shadow-sm"
+                                                        >
+                                                            <Edit2 className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => { setSelectedCategory(c); setIsDeleteModalOpen(true); }}
+                                                            className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-red-600 hover:border-red-600 transition-all shadow-sm"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <code className="px-2 py-1 bg-slate-100 rounded-lg text-xs font-bold text-slate-600">{c.slug}</code>
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <button
-                                                    onClick={() => handleToggleStatus(c)}
-                                                    disabled={actionLoading === c.id}
-                                                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all ${c.status === 'active'
-                                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100'
-                                                        : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
-                                                        }`}
-                                                >
-                                                    {actionLoading === c.id ? (
-                                                        <Loader2 className="w-3 h-3 animate-spin" />
-                                                    ) : (
-                                                        <>
-                                                            {c.status === 'active' ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                                                            {c.status}
-                                                        </>
-                                                    )}
-                                                </button>
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <span className="text-sm text-slate-500 font-medium">{new Date(c.createdAt).toLocaleDateString()}</span>
-                                            </td>
-                                            <td className="px-8 py-6 text-right">
-                                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button
-                                                        onClick={() => openEditModal(c)}
-                                                        className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-900 hover:border-slate-900 transition-all shadow-sm"
-                                                    >
-                                                        <Edit2 className="w-4 h-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => { setSelectedCategory(c); setIsDeleteModalOpen(true); }}
-                                                        className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-red-600 hover:border-red-600 transition-all shadow-sm"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </motion.tr>
-                                    ))
+                                                </td>
+                                            </motion.tr>
+                                        );
+                                    })
                                 )}
                             </AnimatePresence>
                         </tbody>
@@ -381,6 +415,28 @@ export default function AdminCategoriesPage() {
                                     />
                                 </div>
 
+                                {/* Parent Category Selection */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Parent Category</label>
+                                    <div className="relative">
+                                        <select
+                                            value={formData.parentId || ''}
+                                            onChange={e => setFormData({ ...formData, parentId: e.target.value })}
+                                            className="w-full h-14 px-5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-slate-100 font-bold transition-all appearance-none cursor-pointer"
+                                        >
+                                            <option value="">None (Root Category)</option>
+                                            {categories
+                                                .filter(c => isEditModalOpen ? c.id !== selectedCategory?.id : true)
+                                                .map(c => (
+                                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                                ))}
+                                        </select>
+                                        <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                            <ChevronRight className="w-5 h-5 rotate-90" />
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div className="flex gap-4 pt-4">
                                     <button
                                         type="submit"
@@ -428,7 +484,7 @@ export default function AdminCategoriesPage() {
                                 <button
                                     onClick={handleDelete}
                                     disabled={!!actionLoading}
-                                    className="flex-1 h-14 bg-red-600 text-white rounded-2xl font-black hover:bg-red-700 transition-all active:scale-95 shadow-xl shadow-red-600/20 disabled:opacity-50"
+                                    className="flex-1 h-14 bg-red-600 text-white rounded-2xl font-black hover:bg-red-700 transition-all active:scale-95  shadow-red-600/20 disabled:opacity-50"
                                 >
                                     {actionLoading === 'delete' ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Yes, Delete'}
                                 </button>

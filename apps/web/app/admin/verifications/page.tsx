@@ -94,7 +94,7 @@ export default function AdminVerificationsPage() {
                                 key={f}
                                 onClick={() => { setFilter(f); setPage(1); }}
                                 className={`flex-1 md:flex-none px-6 h-[58px] rounded-[20px] font-black text-sm transition-all border capitalize ${filter === f
-                                    ? 'bg-slate-900 text-white border-slate-900 shadow-xl shadow-slate-900/20'
+                                    ? 'bg-slate-900 text-white border-slate-900  shadow-slate-900/20'
                                     : 'bg-white border-slate-200 text-slate-500 hover:border-slate-400'
                                     }`}
                             >
@@ -128,7 +128,7 @@ export default function AdminVerificationsPage() {
                     <p className="text-slate-400 font-medium mt-2 max-w-xs">There are no vendors matching your current filters.</p>
                 </div>
             ) : (
-                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
+                <div className="bg-white rounded-[2.5rem] border border-slate-100  shadow-slate-200/50 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
@@ -338,7 +338,7 @@ export default function AdminVerificationsPage() {
                                     <button
                                         onClick={() => handleVerify(selectedVendor.id, true)}
                                         disabled={!!actionLoading}
-                                        className="flex-1 px-8 py-5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[2rem] font-black text-sm flex items-center justify-center gap-3 shadow-xl shadow-emerald-500/30 transition-all active:scale-95 disabled:opacity-50"
+                                        className="flex-1 px-8 py-5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[2rem] font-black text-sm flex items-center justify-center gap-3  shadow-emerald-500/30 transition-all active:scale-95 disabled:opacity-50"
                                     >
                                         {actionLoading === selectedVendor.id
                                             ? <Loader2 className="w-5 h-5 animate-spin" />

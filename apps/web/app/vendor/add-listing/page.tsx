@@ -705,7 +705,7 @@ export default function AddListingPage() {
                         <button
                             type="button"
                             onClick={() => setActiveStep(2)}
-                            className="w-full py-4 bg-gradient-to-r from-[#0B2244] to-[#0D2E61] text-white rounded-2xl font-black text-base shadow-xl hover:shadow-blue-900/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                            className="w-full py-4 bg-gradient-to-r from-[#0B2244] to-[#0D2E61] text-white rounded-2xl font-black text-base  hover:shadow-blue-900/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                         >
                             Continue to Location
                             <Navigation className="w-4 h-4" />
@@ -922,7 +922,7 @@ export default function AddListingPage() {
                             <button
                                 type="button"
                                 onClick={() => setActiveStep(3)}
-                                className="flex-[2] py-4 bg-gradient-to-r from-[#0B2244] to-[#0D2E61] text-white rounded-2xl font-black text-base shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                                className="flex-[2] py-4 bg-gradient-to-r from-[#0B2244] to-[#0D2E61] text-white rounded-2xl font-black text-base  transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                             >
                                 Continue to Details <FileText className="w-4 h-4" />
                             </button>
@@ -1361,7 +1361,7 @@ export default function AddListingPage() {
                             <button
                                 disabled={loading}
                                 type="submit"
-                                className="flex-[2] py-4 bg-gradient-to-r from-[#FF7A30] to-[#FF9050] text-white rounded-2xl font-black text-base shadow-xl shadow-orange-500/20 hover:from-[#E86920] hover:to-[#FF7A30] transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
+                                className="flex-[2] py-4 bg-gradient-to-r from-[#FF7A30] to-[#FF9050] text-white rounded-2xl font-black text-base  shadow-orange-500/20 hover:from-[#E86920] hover:to-[#FF7A30] transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
                             >
                                 {loading ? (
                                     <Loader2 className="w-5 h-5 animate-spin" />

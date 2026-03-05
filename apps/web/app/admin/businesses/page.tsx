@@ -149,7 +149,7 @@ export default function AdminBusinessesPage() {
                     <p className="text-slate-400 font-medium mt-2 max-w-xs">Try adjusting your search or filters to find what you're looking for.</p>
                 </div>
             ) : (
-                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
+                <div className="bg-white rounded-[2.5rem] border border-slate-100  shadow-slate-200/50 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>

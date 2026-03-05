@@ -187,7 +187,7 @@ export default function GenericDashboard() {
                         </p>
                     </div>
                     {isVendor && (
-                        <Link href="/vendor/add-listing" className="flex items-center gap-2 px-8 py-4 bg-slate-900 text-white rounded-[16px] font-black shadow-xl shadow-slate-200 hover:scale-105 active:scale-95 transition-all w-fit">
+                        <Link href="/vendor/add-listing" className="flex items-center gap-2 px-8 py-4 bg-slate-900 text-white rounded-[16px] font-black  shadow-slate-200 hover:scale-105 active:scale-95 transition-all w-fit">
                             <Plus className="w-5 h-5" /> New Listing
                         </Link>
                     )}
@@ -212,14 +212,14 @@ export default function GenericDashboard() {
                                     Performance Analytics
                                 </h3>
                             </div>
-                            <div className="bg-white rounded-[16px] p-8 sm:p-10 border border-black shadow-xl shadow-slate-200/20">
+                            <div className="bg-white rounded-[16px] p-8 sm:p-10 border border-black  shadow-slate-200/20">
                                 <PerformanceChart stats={stats} />
                             </div>
                         </div>
                     )}
 
                     {/* Saved Businesses Section (Common) */}
-                    <section className="bg-white rounded-[16px] p-8 sm:p-10 border border-black shadow-xl shadow-slate-200/20 relative overflow-hidden group">
+                    <section className="bg-white rounded-[16px] p-8 sm:p-10 border border-black  shadow-slate-200/20 relative overflow-hidden group">
                         <div className="flex items-center justify-between mb-8">
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 bg-rose-50 rounded-[16px] flex items-center justify-center text-rose-500 shadow-inner">
@@ -235,7 +235,7 @@ export default function GenericDashboard() {
                         <div className="grid sm:grid-cols-2 gap-6">
                             {savedBusinesses.length > 0 ? (
                                 savedBusinesses.slice(0, 4).map((biz) => (
-                                    <Link key={biz.id} href={`/business/${biz.slug}`} className="flex items-center gap-5 p-4 rounded-[16px] bg-slate-50 border border-transparent hover:border-blue-500/20 hover:bg-white hover:shadow-xl transition-all group/item">
+                                    <Link key={biz.id} href={`/business/${biz.slug}`} className="flex items-center gap-5 p-4 rounded-[16px] bg-slate-50 border border-transparent hover:border-blue-500/20 hover:bg-white hover: transition-all group/item">
                                         <div className="w-16 h-16 rounded-[16px] overflow-hidden flex-shrink-0 shadow-md">
                                             <img src={getImageUrl((biz as any).coverImageUrl || (biz as any).images?.[0]) || 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=400'} alt={biz.title} className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-500" />
                                         </div>
@@ -265,7 +265,7 @@ export default function GenericDashboard() {
                 <div className="lg:col-span-4 space-y-10">
                     {/* User Notifications (User Only) */}
                     {!isVendor && !isAdmin && (
-                        <div className="bg-white rounded-[16px] p-8 sm:p-10 border border-black shadow-xl shadow-slate-200/20">
+                        <div className="bg-white rounded-[16px] p-8 sm:p-10 border border-black  shadow-slate-200/20">
                             <div className="flex items-center justify-between mb-8">
                                 <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
                                     <Bell className="w-6 h-6 text-blue-600" />
@@ -300,7 +300,7 @@ export default function GenericDashboard() {
                     />
 
                     {isVendor && (
-                        <section className="bg-white rounded-[16px] p-8 border border-black shadow-xl shadow-slate-200/20">
+                        <section className="bg-white rounded-[16px] p-8 border border-black  shadow-slate-200/20">
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 bg-gradient-to-br from-violet-100 to-blue-100 rounded-[14px] flex items-center justify-center">

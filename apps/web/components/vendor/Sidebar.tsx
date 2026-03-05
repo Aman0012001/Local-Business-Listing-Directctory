@@ -101,7 +101,7 @@ export default function Sidebar() {
                                 key={item.name}
                                 href={item.href}
                                 className={`flex items-center justify-between px-5 py-4 rounded-[3px] group transition-all duration-300 ${isActive
-                                    ? 'bg-white text-slate-900 shadow-xl shadow-slate-200/40 translate-x-1'
+                                    ? 'bg-white text-slate-900  shadow-slate-200/40 translate-x-1'
                                     : 'text-slate-500 hover:text-slate-900 hover:bg-white/60'
                                     }`}
                             >

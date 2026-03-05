@@ -382,7 +382,7 @@ export default function AccountSettings() {
                     {/* Avatar Upload */}
                     <div className="flex flex-col sm:flex-row items-start gap-8 border-b border-slate-100 pb-8">
                         <div className="relative group">
-                            <div className="w-32 h-32 rounded-3xl overflow-hidden bg-slate-100 border-4 border-white shadow-xl">
+                            <div className="w-32 h-32 rounded-3xl overflow-hidden bg-slate-100 border-4 border-white ">
                                 {previewImage ? (
                                     <img src={previewImage} alt="Profile" className="w-full h-full object-cover" />
                                 ) : (
@@ -564,7 +564,7 @@ export default function AccountSettings() {
                         <button
                             type="submit"
                             disabled={saving}
-                            className="flex items-center justify-center gap-3 px-10 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50 disabled:scale-100"
+                            className="flex items-center justify-center gap-3 px-10 py-4 bg-blue-600 text-white rounded-2xl font-black  shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50 disabled:scale-100"
                         >
                             {saving ? (
                                 <>
@@ -678,7 +678,7 @@ export default function AccountSettings() {
                             <button
                                 type="submit"
                                 disabled={saving}
-                                className="flex items-center justify-center gap-3 px-10 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50 disabled:scale-100"
+                                className="flex items-center justify-center gap-3 px-10 py-4 bg-blue-600 text-white rounded-2xl font-black  shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50 disabled:scale-100"
                             >
                                 {saving ? 'Updating...' : 'Save Business Info'}
                             </button>
@@ -745,7 +745,7 @@ export default function AccountSettings() {
                             <button
                                 onClick={handleSubmit}
                                 disabled={saving}
-                                className="flex items-center justify-center gap-3 px-10 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50 disabled:scale-100"
+                                className="flex items-center justify-center gap-3 px-10 py-4 bg-blue-600 text-white rounded-2xl font-black  shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50 disabled:scale-100"
                             >
                                 {saving ? 'Updating...' : 'Save Business Hours'}
                             </button>
@@ -863,7 +863,7 @@ export default function AccountSettings() {
                                 <button
                                     onClick={handleSubmit}
                                     disabled={saving}
-                                    className="flex items-center justify-center gap-3 px-10 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50 disabled:scale-100"
+                                    className="flex items-center justify-center gap-3 px-10 py-4 bg-blue-600 text-white rounded-2xl font-black  shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50 disabled:scale-100"
                                 >
                                     {saving ? 'Updating...' : 'Save Social Links'}
                                 </button>
@@ -947,7 +947,7 @@ export default function AccountSettings() {
                         <button
                             type="submit"
                             disabled={pwdSaving || !pwdData.oldPassword || !pwdData.newPassword || !pwdData.confirmPassword}
-                            className="flex items-center justify-center gap-3 px-10 py-4 bg-[#FF7A30] text-white rounded-2xl font-black shadow-xl shadow-orange-500/20 hover:bg-[#E86920] transition-all active:scale-95 disabled:opacity-50 disabled:scale-100"
+                            className="flex items-center justify-center gap-3 px-10 py-4 bg-[#FF7A30] text-white rounded-2xl font-black  shadow-orange-500/20 hover:bg-[#E86920] transition-all active:scale-95 disabled:opacity-50 disabled:scale-100"
                         >
                             {pwdSaving ? (
                                 <>

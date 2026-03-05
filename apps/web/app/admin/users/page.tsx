@@ -183,7 +183,7 @@ export default function AdminUsersPage() {
                             key={r}
                             onClick={() => setRoleFilter(r as any)}
                             className={`group rounded-3xl p-5 text-left transition-all border-2 ${roleFilter === r
-                                ? 'border-slate-900 bg-slate-900 text-white shadow-xl'
+                                ? 'border-slate-900 bg-slate-900 text-white '
                                 : 'border-transparent bg-white hover:border-slate-200 text-slate-700 shadow-sm'
                                 }`}
                         >

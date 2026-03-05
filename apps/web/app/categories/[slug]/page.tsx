@@ -123,7 +123,7 @@ export default function CategoryDetailPage() {
                     <p className="text-slate-500 mb-10 max-w-md mx-auto font-medium leading-relaxed">
                         The category <code className="bg-slate-100 px-2 py-1 rounded text-[#FF7A30]">{slug}</code> doesn't exist or has been removed.
                     </p>
-                    <Link href="/" className="px-10 py-4 bg-[#FF7A30] text-white rounded-2xl font-bold hover:bg-[#E86920] shadow-xl shadow-orange-500/20 transition-all active:scale-95">
+                    <Link href="/" className="px-10 py-4 bg-[#FF7A30] text-white rounded-2xl font-bold hover:bg-[#E86920]  shadow-orange-500/20 transition-all active:scale-95">
                         Return to Homepage
                     </Link>
                 </div>
@@ -340,7 +340,7 @@ export default function CategoryDetailPage() {
                                             openNow: false
                                         });
                                     }}
-                                    className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20"
+                                    className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all  shadow-blue-500/20"
                                 >
                                     Reset Filters
                                 </button>

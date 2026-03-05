@@ -70,7 +70,7 @@ export class Category {
     @JoinColumn({ name: 'parent_id' })
     parent: Category;
 
-    @OneToMany(() => Category, (category) => category.parent)
+    @OneToMany(() => Category, (category) => category.parentId)
     subcategories: Category[];
 
     @Exclude()

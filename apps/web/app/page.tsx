@@ -128,7 +128,7 @@ const sliderSettings = {
             <Navbar />
 
             {/* Hero Section */}
-            <section className="relative pt-32 pb-44 px-4 overflow-visible" style={{height: "90vh"}}>
+            <section className="relative pt-32 pb-44 px-4 overflow-visible" style={{height: "100vh"}}>
                <div className="absolute inset-0 z-0">
 
   <Slider {...sliderSettings}>
@@ -156,7 +156,7 @@ const sliderSettings = {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8 }}
                     >
-                        <h1 className="text-4xl md:text-7xl font-extrabold mb-6 tracking-tight drop-shadow-xl">
+                        <h1 className="text-4xl md:text-7xl font-extrabold mb-6 tracking-tight drop-">
                             Discover Trusted Local Businesses Instantly
                         </h1>
                         <p className="text-lg md:text-2xl text-white/95 mb-12 max-w-3xl mx-auto font-medium drop-shadow-lg">
@@ -170,7 +170,7 @@ const sliderSettings = {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.2, duration: 0.5 }}
-                        className="relative z-[70] max-w-4xl mx-auto bg-white/10 backdrop-blur-md p-2 rounded-2xl md:rounded-full shadow-2xl border border-white/20 flex flex-col md:flex-row items-stretch gap-2"
+                        className="relative z-[70] max-w-4xl mx-auto bg-white/10 backdrop-blur-md   p-2 border border-white/20 flex flex-col md:flex-row items-stretch gap-2" style={{borderRadius: "10px"}}
                     >
                         <div className="flex-1 relative z-50">
                             <div className="relative h-full">
@@ -185,7 +185,7 @@ const sliderSettings = {
                                     }}
                                     onFocus={() => setIsSuggestionsOpen(true)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                    className="w-full pl-16 pr-8 py-6 bg-white text-slate-900 placeholder-slate-400 rounded-2xl md:rounded-full border-0 focus:ring-2 focus:ring-[#FF7A30] text-xl font-semibold outline-none transition-all shadow-inner"
+                                    className="w-full pl-16 pr-8 py-6 bg-white text-slate-900 placeholder-slate-400  border-0 focus:ring-2 focus:ring-[#FF7A30] text-xl font-semibold outline-none transition-all shadow-inner" style={{borderRadius: "10px"}}
                                 />
                             </div>
 
@@ -193,7 +193,7 @@ const sliderSettings = {
                                 <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="absolute top-full left-0 right-0 mt-3 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100 py-4 z-[100] max-h-[500px] overflow-y-auto"
+                                    className="absolute top-full left-0 right-0 mt-3 bg-white  border border-slate-100 py-4 z-[100] max-h-[500px] overflow-y-auto" style={{borderRadius: "10px"}}
                                 >
                                     {filteredCategories.length > 0 && (
                                         <div className="px-6 py-2">
@@ -210,7 +210,7 @@ const sliderSettings = {
                                                 >
                                                     <div className="flex items-center gap-4">
                                                         <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-[#FF7A30] group-hover:scale-110 transition-transform">
-                                                            <TrendingUp className="w-5 h-5" />
+                                                            <Search className="w-5 h-5" />
                                                         </div>
                                                         <span className="group-hover:text-[#FF7A30] transition-colors">{cat.name}</span>
                                                     </div>
@@ -250,9 +250,9 @@ const sliderSettings = {
 
                         <button
                             onClick={handleSearch}
-                            className="bg-[#FF7A30] hover:bg-[#E86920] text-white px-12 py-5 rounded-2xl md:rounded-full font-black text-xl transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3 group shrink-0"
+                            className="bg-[#FF7A30] hover:bg-[#E86920] text-white px-12 py-5  font-black text-xl transition-all  active:scale-95 flex items-center justify-center  group shrink-0" style={{borderRadius: "10px"}}
                         >
-                            <Search className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                            <Search className="w-6 h-6 me-3 group-hover:scale-110 transition-transform" />
                             Search
                         </button>
                     </motion.div>
@@ -288,12 +288,12 @@ const sliderSettings = {
                                 transition={{ delay: idx * 0.05 }}
                             >
                                 <Link href={`/search?category=${cat.slug}`} className="group block">
-                                    <div className="bg-slate-50 p-8 rounded-2xl border border-black flex items-center gap-6 hover:bg-white hover:shadow-2xl hover:shadow-blue-500/5 hover:-translate-y-1 transition-all duration-500">
+                                    <div className="bg-slate-50 p-5 rounded-2xl border  flex items-center gap-6 hover:bg-white  hover:-translate-y-1 transition-all duration-500">
                                         <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center group-hover:border-blue-200 group-hover:bg-blue-50/30 transition-all">
                                             <span className="text-3xl">{cat.icon || '📁'}</span>
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-xl text-slate-900 mb-1 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{cat.name}</h3>
+                                            <h3 className="font-bold text-sm text-slate-900 mb-1 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{cat.name}</h3>
                                             <p className="text-sm text-slate-500 font-bold uppercase tracking-widest opacity-80">
                                                 {cat.businessCount || 0}+ Listings
                                             </p>

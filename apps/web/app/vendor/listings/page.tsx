@@ -94,7 +94,7 @@ export default function VendorListings() {
                     <p className="text-slate-400 font-bold tracking-tight text-lg">Manage and track your business performances</p>
                 </div>
                 {isAuthorized && (
-                    <Link href="/vendor/add-listing" className="flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95 whitespace-nowrap">
+                    <Link href="/vendor/add-listing" className="flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-2xl font-black  shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95 whitespace-nowrap">
                         <Plus className="w-5 h-5" /> Add New Listing
                     </Link>
                 )}

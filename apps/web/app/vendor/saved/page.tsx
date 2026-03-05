@@ -49,7 +49,7 @@ export default function VendorSaved() {
                 </div>
                 <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Please Log In</h1>
                 <p className="text-slate-400 font-bold max-w-md text-lg mb-8">You need to be logged in to view your saved businesses.</p>
-                <Link href="/login" className="px-10 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 shadow-xl shadow-blue-500/20 transition-all active:scale-95">
+                <Link href="/login" className="px-10 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700  shadow-blue-500/20 transition-all active:scale-95">
                     Login Now
                 </Link>
             </div>
@@ -83,7 +83,7 @@ export default function VendorSaved() {
                     </div>
                     <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">Your collection is empty</h3>
                     <p className="text-slate-400 font-bold max-w-sm mb-10">Start browsing the directory and click the heart icon to save businesses for later.</p>
-                    <Link href="/search" className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-black transition-all shadow-xl active:scale-95">
+                    <Link href="/search" className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-black transition-all  active:scale-95">
                         Discover Businesses
                     </Link>
                 </div>

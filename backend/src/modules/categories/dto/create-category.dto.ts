@@ -8,6 +8,7 @@ import {
     MinLength,
     MaxLength,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CategoryStatus } from '../../../entities/category.entity';
 
@@ -41,8 +42,10 @@ export class CreateCategoryDto {
 
     @ApiPropertyOptional({ description: 'Parent category UUID for subcategories' })
     @IsOptional()
+    @Transform(({ value }) => (value === '' ? undefined : value))
     @IsUUID()
     parentId?: string;
+
 
     @ApiPropertyOptional({ example: 1, description: 'Display order (lower = first)' })
     @IsOptional()

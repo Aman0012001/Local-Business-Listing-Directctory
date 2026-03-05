@@ -109,7 +109,7 @@ export default function Navbar() {
                     {/* Logo - Fixed Width Area */}
                     <div className="flex-shrink-0 w-48">
                         <Link href="/" className="flex items-center gap-2 group">
-                            <div className="w-10 h-10 bg-[#112D4E] rounded-xl flex items-center justify-center relative shadow-lg group-hover:bg-[#FF7A30] transition-all duration-300 group-hover:rotate-6">
+                            <div className="w-10 h-10 bg-[#112D4E] rounded-xl flex items-center justify-center relative  group-hover:bg-[#FF7A30] transition-all duration-300 group-hover:rotate-6">
                                 <MapPin className="w-6 h-6 text-white fill-white" />
                                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-[#FF7A30] rounded-full border-2 border-[#112D4E] group-hover:bg-white group-hover:border-[#FF7A30] transition-colors duration-300" />
                             </div>
@@ -137,26 +137,52 @@ export default function Navbar() {
                                 </button>
 
                                 {activeDropdown === 'categories' && (
-                                    <div className="absolute top-full left-0 pt-2 w-64 animate-in fade-in slide-in-from-top-2 duration-200 " style={{zIndex: "1000"}}>
-                                        <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-2">
-                                            <div className="grid grid-cols-1 gap-1">
-                                                {categories.map((cat) => (
-                                                    <Link
-                                                        key={cat.id}
-                                                        href={`/categories/${cat.slug}`}
-                                                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all group/item"
-                                                    >
-                                                        <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover/item:bg-blue-50 group-hover/item:text-blue-500">
-                                                            <Search className="w-4 h-4" />
+                                    <div className="absolute top-full left-0  w-64 animate-in fade-in slide-in-from-top-2 duration-200 " style={{ zIndex: "1000"}}>
+
+                                        <div className="grid grid-cols-4 gap-6 p-4">
+                                            {activeDropdown === 'categories' && (
+                                                <div className="absolute top-full left-1/2 -translate-x-1/2 pt-3 w-[700px] animate-in fade-in slide-in-from-top-2 duration-200">
+
+                                                    <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-6">
+
+                                                        <div className="grid grid-cols-4 gap-6">
+
+                                                            {categories.map((cat) => (
+                                                                <Link
+                                                                    key={cat.id}
+                                                                    href={`/categories/${cat.slug}`}
+                                                                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group"
+                                                                >
+                                                                    <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500">
+                                                                        <Search className="w-4 h-4" />
+                                                                    </div>
+
+                                                                    <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900">
+                                                                        {cat.name}
+                                                                    </span>
+                                                                </Link>
+                                                            ))}
+
                                                         </div>
-                                                        <span className="text-sm font-bold text-slate-600 group-hover/item:text-slate-900">{cat.name}</span>
-                                                    </Link>
-                                                ))}
-                                                <Link href="/categories" className="mt-2 text-center py-2 text-xs font-bold uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920] border-t border-slate-50 pt-3">
+
+                                                        <div className="border-t border-slate-100 mt-4 pt-3 text-center">
+                                                            <Link
+                                                                href="/categories"
+                                                                className="text-xs font-bold uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920]"
+                                                            >
+                                                                View All Categories
+                                                            </Link>
+                                                        </div>
+
+                                                    </div>
+
+                                                </div>
+                                            )}
+                                            {/* <Link href="/categories" className="mt-2 text-center py-2 text-xs font-bold uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920] border-t border-slate-50 pt-3">
                                                     View All Categories
-                                                </Link>
-                                            </div>
+                                                </Link> */}
                                         </div>
+
                                     </div>
                                 )}
                             </div>
@@ -170,11 +196,13 @@ export default function Navbar() {
                                 <button className="flex items-center gap-1 text-[#2D3E50]/70 font-bold text-[15px] px-4 py-2 rounded-xl hover:bg-slate-50 hover:text-[#2D3E50] transition-all group">
                                     Businesses <ChevronDown className={`w-4 h-4 opacity-40 group-hover:opacity-100 transition-all ${activeDropdown === 'businesses' ? 'rotate-180' : ''}`} />
                                 </button>
+ <div className="absolute top-full left-0  w-64 animate-in fade-in slide-in-from-top-2 duration-200 " style={{ zIndex: "1000"}}>
 
+                                        <div className="grid grid-cols-4 gap-6 p-4"></div>
                                 {activeDropdown === 'businesses' && (
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-64 animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <div className="absolute  top-full left-1/2 -translate-x-1/2 pt-2 w-64 animate-in fade-in slide-in-from-top-2 duration-200" >
                                         <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-2">
-                                            <div className="grid grid-cols-1 gap-1">
+                                            <div className="grid grid-cols-1 gap-6 ">
                                                 <Link href="/search?filter=featured" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
                                                     <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-[#FF7A30]">
                                                         <Building2 className="w-4 h-4" />
@@ -200,6 +228,7 @@ export default function Navbar() {
                                         </div>
                                     </div>
                                 )}
+                                </div>
                             </div>
 
                             {/* Cities Dropdown */}
@@ -211,32 +240,49 @@ export default function Navbar() {
                                 <button className="flex items-center gap-1 text-[#2D3E50]/70 font-bold text-[15px] px-4 py-2 rounded-xl hover:bg-slate-50 hover:text-[#2D3E50] transition-all group">
                                     Cities <ChevronDown className={`w-4 h-4 opacity-40 group-hover:opacity-100 transition-all ${activeDropdown === 'cities' ? 'rotate-180' : ''}`} />
                                 </button>
+ <div className="absolute top-full left-0  w-64 animate-in fade-in slide-in-from-top-2 duration-200 " style={{ zIndex: "1000"}}>
 
-                                {activeDropdown === 'cities' && (
-                                    <div className="absolute top-full right-0 pt-2 w-64 animate-in fade-in slide-in-from-top-2 duration-200">
-                                        <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-2">
-                                            <div className="grid grid-cols-1 gap-1">
-                                                {cities.map((city) => (
-                                                    <Link
-                                                        key={city.id}
-                                                        href={`/cities/${encodeURIComponent(city.name.toLowerCase())}`}
-                                                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item"
-                                                    >
-                                                        <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover/item:text-emerald-500 group-hover/item:bg-emerald-50">
-                                                            <Globe className="w-4 h-4" />
-                                                        </div>
-                                                        <span className="text-sm font-bold text-slate-600 group-hover/item:text-slate-900">{city.name}</span>
-                                                    </Link>
-                                                ))}
-                                                <Link href="/cities" className="mt-2 text-center py-2 text-xs font-bold uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920] border-t border-slate-50 pt-3">
-                                                    Browse All Cities
-                                                </Link>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
+                                        <div className="grid grid-cols-4 gap-6 p-4"></div>
+                            {activeDropdown === 'cities' && (
+  <div className="absolute top-full left-1/2 -translate-x-1/2 pt-3 w-[700px] animate-in fade-in slide-in-from-top-2 duration-200">
+
+    <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-6">
+
+      <div className="grid grid-cols-4 gap-8">
+
+        {cities.map((city) => (
+          <Link
+            key={city.id}
+            href={`/cities/${encodeURIComponent(city.name.toLowerCase())}`}
+            className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group"
+          >
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500">
+              <Globe className="w-4 h-4"/>
+            </div>
+
+            <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900">
+              {city.name}
+            </span>
+          </Link>
+        ))}
+
+      </div>
+
+      <div className="border-t border-slate-100 mt-4 pt-3 text-center">
+        <Link
+          href="/cities"
+          className="text-xs font-bold uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920]"
+        >
+          Browse All Cities
+        </Link>
+      </div>
+
+    </div>
+
+  </div>
+)}
                             </div>
-
+</div>
                         </div>
                     </div>
 

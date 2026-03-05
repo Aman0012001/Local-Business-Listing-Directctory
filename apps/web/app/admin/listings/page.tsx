@@ -72,7 +72,7 @@ export default function AdminListingsPage() {
     };
 
     return (
-        <div className="space-y-8 pb-20">
+        <div className="space-y-8 pb-20 min-w-0 overflow-x-hidden ">
             {/* Header */}
             <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div>
@@ -96,7 +96,7 @@ export default function AdminListingsPage() {
                         key={tab}
                         onClick={() => { setFilter(tab); setPage(1); }}
                         className={`flex items-center gap-3 px-6 py-3.5 rounded-2xl font-black text-sm transition-all border whitespace-nowrap ${filter === tab
-                            ? 'bg-slate-900 text-white border-slate-900 shadow-xl shadow-slate-900/20'
+                            ? 'bg-slate-900 text-white border-slate-900  shadow-slate-900/20'
                             : 'bg-white border-slate-200 text-slate-500 hover:border-slate-400'
                             }`}
                     >
@@ -138,7 +138,7 @@ export default function AdminListingsPage() {
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 transition={{ delay: idx * 0.05 }}
-                                className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden group hover:border-blue-200 transition-all duration-500"
+                                className="bg-white rounded-[2.5rem] border border-slate-100  shadow-slate-200/40 overflow-hidden group hover:border-blue-200 transition-all duration-500"
                             >
                                 <div className="flex flex-col lg:flex-row lg:items-center gap-8 p-8">
                                     {/* Visual Group */}
@@ -160,7 +160,7 @@ export default function AdminListingsPage() {
                                     </div>
 
                                     {/* Main Info */}
-                                    <div className="flex-1 min-w-0">
+                                    <div className="flex-1 min-w-0" style={{width: "100px"}}>
                                         <h3 className="text-2xl font-black text-slate-900 mb-2 truncate group-hover:text-blue-600 transition-colors">{listing.title}</h3>
                                         <div className="flex flex-wrap gap-y-2 gap-x-5 text-sm">
                                             <span className="flex items-center gap-1.5 text-slate-600 font-bold">
@@ -186,7 +186,7 @@ export default function AdminListingsPage() {
                                         <button
                                             onClick={() => moderate(listing.id, 'approved')}
                                             disabled={!!actionLoading}
-                                            className="flex-1 flex items-center justify-center gap-2 px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[1.5rem] font-black text-sm transition-all disabled:opacity-50 shadow-xl shadow-emerald-500/30 active:scale-95"
+                                            className="flex-1 flex items-center justify-center gap-2 px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[1.5rem] font-black text-sm transition-all disabled:opacity-50  shadow-emerald-500/30 active:scale-95"
                                         >
                                             <CheckCircle2 className="w-5 h-5" /> Approve
                                         </button>
@@ -280,7 +280,7 @@ export default function AdminListingsPage() {
                                 <button
                                     onClick={() => moderate(rejectionModal.id, 'rejected', rejectionReason)}
                                     disabled={!rejectionReason || !!actionLoading}
-                                    className="px-6 py-4 bg-red-500 hover:bg-red-600 text-white rounded-[1.5rem] font-black text-sm shadow-xl shadow-red-500/30 transition-all disabled:opacity-50"
+                                    className="px-6 py-4 bg-red-500 hover:bg-red-600 text-white rounded-[1.5rem] font-black text-sm  shadow-red-500/30 transition-all disabled:opacity-50"
                                 >
                                     {actionLoading?.includes('rejected') ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Confirm Rejection'}
                                 </button>

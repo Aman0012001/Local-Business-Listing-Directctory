@@ -102,7 +102,7 @@ export default function CitiesPage() {
                             placeholder="Search city or province…"
                             value={query}
                             onChange={e => setQuery(e.target.value)}
-                            className="w-full pl-12 pr-4 py-4 bg-white rounded-2xl font-semibold text-slate-900 text-sm shadow-xl focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-slate-400"
+                            className="w-full pl-12 pr-4 py-4 bg-white rounded-2xl font-semibold text-slate-900 text-sm  focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-slate-400"
                         />
                     </div>
 
@@ -174,7 +174,7 @@ export default function CitiesPage() {
                             <Link
                                 key={city.id}
                                 href={`/cities/${encodeURIComponent(city.name.toLowerCase())}`}
-                                className="group relative rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                                className="group relative rounded-2xl overflow-hidden shadow-sm hover: transition-all duration-300 hover:-translate-y-1"
                             >
                                 {/* Gradient background */}
                                 <div className={`absolute inset-0 bg-gradient-to-br ${gradients[idx % gradients.length]} opacity-90 group-hover:opacity-100 transition-opacity`} />

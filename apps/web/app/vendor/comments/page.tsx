@@ -131,7 +131,7 @@ export default function VendorCommentsPage() {
             </AnimatePresence>
 
             {/* Comments Table */}
-            <div className="bg-white rounded-[32px] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
+            <div className="bg-white rounded-[32px] border border-slate-100  shadow-slate-200/50 overflow-hidden">
                 <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                     <div>
                         <h2 className="font-black text-slate-900 text-lg">Recent Feedbacks</h2>
@@ -338,7 +338,7 @@ export default function VendorCommentsPage() {
                                         CANCEL
                                     </button>
                                     <button type="submit" disabled={replying || !replyText.trim()}
-                                        className="flex-[2] py-4 bg-slate-900 text-white rounded-2xl font-black text-sm shadow-xl shadow-slate-900/10 hover:bg-blue-600 transition-all disabled:opacity-50 flex items-center justify-center gap-3">
+                                        className="flex-[2] py-4 bg-slate-900 text-white rounded-2xl font-black text-sm  shadow-slate-900/10 hover:bg-blue-600 transition-all disabled:opacity-50 flex items-center justify-center gap-3">
                                         {replying ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                                         {activeComment.reply ? 'UPDATE RESPONSE' : 'SEND RESPONSE'}
                                     </button>
@@ -367,7 +367,7 @@ export default function VendorCommentsPage() {
                                     CANCEL
                                 </button>
                                 <button onClick={handleDeleteReply}
-                                    className="flex-1 py-4 bg-rose-500 text-white rounded-2xl font-black text-sm hover:bg-rose-600 transition-all shadow-xl shadow-rose-500/20">
+                                    className="flex-1 py-4 bg-rose-500 text-white rounded-2xl font-black text-sm hover:bg-rose-600 transition-all  shadow-rose-500/20">
                                     DELETE
                                 </button>
                             </div>

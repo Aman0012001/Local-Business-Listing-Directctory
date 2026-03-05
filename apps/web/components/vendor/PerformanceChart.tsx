@@ -157,7 +157,7 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
 
                 {/* Stats Cards - Right Side */}
                 <div className="lg:w-48 flex flex-col gap-4">
-                    <div className="bg-[#3B82F6] rounded-3xl p-5 text-white shadow-xl shadow-blue-500/20 group hover:scale-[1.02] transition-all">
+                    <div className="bg-[#3B82F6] rounded-3xl p-5 text-white  shadow-blue-500/20 group hover:scale-[1.02] transition-all">
                         <div className="flex items-center justify-between mb-4">
                             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60 leading-none">Total Views</p>
                             <span className="w-1.5 h-1.5 bg-blue-300 rounded-full animate-pulse" />
@@ -167,7 +167,7 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
                             <div className="bg-white/20 px-1.5 py-0.5 rounded-lg text-[10px] font-black uppercase">↑</div>
                         </div>
                     </div>
-                    <div className="bg-[#FF7A30] rounded-3xl p-5 text-white shadow-xl shadow-orange-500/20 group hover:scale-[1.02] transition-all">
+                    <div className="bg-[#FF7A30] rounded-3xl p-5 text-white  shadow-orange-500/20 group hover:scale-[1.02] transition-all">
                         <div className="flex items-center justify-between mb-4">
                             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60 leading-none">Total Leads</p>
                             <span className="w-1.5 h-1.5 bg-orange-300 rounded-full animate-pulse" />

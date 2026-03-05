@@ -203,7 +203,7 @@ export default function AdminPlansPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         className={`group relative bg-white rounded-[32px] p-8 border-2 transition-all flex flex-col h-full ${plan.isActive
-                            ? 'border-slate-50 shadow-xl shadow-slate-200/40'
+                            ? 'border-slate-50  shadow-slate-200/40'
                             : 'border-slate-100 opacity-75 grayscale-[0.5]'
                             }`}
                     >
@@ -288,7 +288,7 @@ export default function AdminPlansPage() {
                     onClick={() => handleOpenModal()}
                     className="group border-4 border-dashed border-slate-100 rounded-[32px] flex flex-col items-center justify-center p-12 hover:border-slate-200 hover:bg-slate-50/50 transition-all min-h-[400px]"
                 >
-                    <div className="w-20 h-20 rounded-[28px] bg-white shadow-xl shadow-slate-200/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <div className="w-20 h-20 rounded-[28px] bg-white  shadow-slate-200/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                         <Plus className="w-10 h-10 text-slate-400" />
                     </div>
                     <span className="text-lg font-black text-slate-900">Add Another Tier</span>
@@ -462,7 +462,7 @@ export default function AdminPlansPage() {
                                     <button
                                         type="submit"
                                         disabled={saving}
-                                        className="flex-[2] py-5 bg-slate-900 hover:bg-black text-white rounded-2xl font-black text-sm shadow-xl shadow-slate-900/20 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+                                        className="flex-[2] py-5 bg-slate-900 hover:bg-black text-white rounded-2xl font-black text-sm  shadow-slate-900/20 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
                                     >
                                         {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                                         {editingPlan ? 'Update Plan' : 'Create Plan'}

@@ -57,7 +57,7 @@ export default function StatsGrid({ stats = defaultStats }: StatsGridProps) {
             {stats.map((stat) => (
                 <div
                     key={stat.label}
-                    className={`${stat.color} rounded-[16px] p-6 text-white shadow-xl ${stat.shadow} flex items-center gap-5 group hover:scale-[1.02] transition-all duration-300 cursor-pointer`}
+                    className={`${stat.color} rounded-[16px] p-6 text-white  ${stat.shadow} flex items-center gap-5 group hover:scale-[1.02] transition-all duration-300 cursor-pointer`}
                 >
                     <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center transition-transform group-hover:rotate-6">
                         <stat.icon className="w-6 h-6 text-white" />
