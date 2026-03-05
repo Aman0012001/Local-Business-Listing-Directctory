@@ -164,9 +164,21 @@ export default function AddListingPage() {
                     else if (types.includes("postal_code")) pincode = component.long_name;
                 });
 
+                // Clean up address: try to remove city, state, country and pincode from the formatted address
+                // to get just the "Area / Street" part.
+                let cleanAddress = address;
+                [city, state, "Pakistan", pincode].forEach(term => {
+                    if (term) {
+                        const regex = new RegExp(`,?\\s*${term}\\s*,?`, 'gi');
+                        cleanAddress = cleanAddress.replace(regex, '').trim();
+                    }
+                });
+                // Remove trailing commas
+                cleanAddress = cleanAddress.replace(/,$/, '').trim();
+
                 setFormData(prev => ({
                     ...prev,
-                    address,
+                    address: cleanAddress || address,
                     city: city || prev.city,
                     state: state || prev.state,
                     pincode: pincode || prev.pincode,
@@ -244,9 +256,21 @@ export default function AddListingPage() {
                     else if (types.includes("postal_code")) pincode = component.long_name;
                 });
 
+                // Clean up address: try to remove city, state, country and pincode from the formatted address
+                // to get just the "Area / Street" part.
+                let cleanAddress = address;
+                [city, state, "Pakistan", pincode].forEach(term => {
+                    if (term) {
+                        const regex = new RegExp(`,?\\s*${term}\\s*,?`, 'gi');
+                        cleanAddress = cleanAddress.replace(regex, '').trim();
+                    }
+                });
+                // Remove trailing commas
+                cleanAddress = cleanAddress.replace(/,$/, '').trim();
+
                 setFormData(prev => ({
                     ...prev,
-                    address: address || prev.address,
+                    address: cleanAddress || address || prev.address,
                     city: city || prev.city,
                     state: state || prev.state,
                     pincode: pincode || prev.pincode,
