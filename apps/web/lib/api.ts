@@ -1,6 +1,6 @@
 import { Business, Category, City, SearchResponse, Review } from '../types/api';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ||  'https://local-business-listing-directctory-production.up.railway.app/api/v1' || 'http://localhost:3001/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:3001/api/v1' : 'https://local-business-listing-directctory-production.up.railway.app/api/v1');
 const API_ROOT = API_BASE_URL.split('/api')[0];
 
 export const getImageUrl = (path: string | null | undefined) => {

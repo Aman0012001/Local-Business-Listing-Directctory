@@ -5,9 +5,11 @@ export interface Category {
     description?: string;
     icon?: string;
     imageUrl?: string;
+    parentId?: string;
     displayOrder?: number;
     status: 'active' | 'disabled';
     businessCount?: number;
+    subcategories?: Category[];
     createdAt: string;
 }
 

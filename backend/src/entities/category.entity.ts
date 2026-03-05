@@ -39,6 +39,9 @@ export class Category {
     @Column({ name: 'image_url', nullable: true, type: 'text' })
     imageUrl: string;
 
+    @Column({ name: 'parent_id', nullable: true, type: 'uuid' })
+    parentId: string;
+
     @Column({ name: 'display_order', default: 0 })
     displayOrder: number;
 
@@ -63,6 +66,13 @@ export class Category {
     updatedAt: Date;
 
     // Relations
+    @ManyToOne(() => Category, (category) => category.subcategories)
+    @JoinColumn({ name: 'parent_id' })
+    parent: Category;
+
+    @OneToMany(() => Category, (category) => category.parentId)
+    subcategories: Category[];
+
     @Exclude()
     @OneToMany(() => Listing, (listing) => listing.category)
     businesses: Listing[];
