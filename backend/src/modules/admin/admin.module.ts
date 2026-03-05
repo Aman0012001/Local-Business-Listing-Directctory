@@ -8,6 +8,8 @@ import { Review } from '../../entities/review.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { Transaction } from '../../entities/transaction.entity';
 
+import { SystemSetting } from '../../entities/system-setting.entity';
+
 @Module({
     imports: [
         TypeOrmModule.forFeature([
@@ -16,6 +18,7 @@ import { Transaction } from '../../entities/transaction.entity';
             Review,
             Vendor,
             Transaction,
+            SystemSetting,
         ]),
     ],
     controllers: [AdminController],

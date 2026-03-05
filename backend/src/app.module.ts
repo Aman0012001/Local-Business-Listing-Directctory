@@ -19,6 +19,8 @@ import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { typeOrmConfig } from './config/typeorm.config';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { HealthModule } from './modules/health/health.module';
+import { OffersModule } from './modules/offers/offers.module';
+import { CommentsModule } from './modules/comments/comments.module';
 
 @Module({
     imports: [
@@ -63,6 +65,8 @@ import { HealthModule } from './modules/health/health.module';
         CitiesModule,
         CloudinaryModule,
         HealthModule,
+        OffersModule,
+        CommentsModule,
     ],
     providers: [
         {

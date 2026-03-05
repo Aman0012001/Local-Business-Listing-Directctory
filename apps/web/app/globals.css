@@ -3,23 +3,42 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
+  --foreground-rgb: 17, 24, 39;
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+body {
+  font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-weight: 400;
+  color: #111827;
+  line-height: 1.6;
+  background-color: white;
 }
 
-body {
-  background-color: white;
-  color: #0f172a;
-  /* text-slate-900 */
+/* Heading Hierarchy */
+h1 {
+  @apply text-[32px] font-bold leading-tight;
+}
+
+h2 {
+  @apply text-[28px] font-semibold leading-tight;
+}
+
+h3 {
+  @apply text-[22px] font-semibold leading-snug;
+}
+
+h4 {
+  @apply text-[18px] font-medium leading-normal;
+}
+
+/* Ensure all elements inherit fonts unless specifically overridden */
+input,
+button,
+textarea,
+select {
+  font-family: inherit;
 }
 
 @layer utilities {

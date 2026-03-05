@@ -14,6 +14,7 @@ import { User } from './user.entity';
 import { Listing } from './business.entity';
 import { Subscription } from './subscription.entity';
 import { Transaction } from './transaction.entity';
+import { CommentReply } from './comment-reply.entity';
 
 @Entity('vendors')
 export class Vendor {
@@ -73,4 +74,7 @@ export class Vendor {
 
     @OneToMany(() => Transaction, (transaction) => transaction.vendor)
     transactions: Transaction[];
+
+    @OneToMany(() => CommentReply, (reply) => reply.vendor)
+    replies: CommentReply[];
 }

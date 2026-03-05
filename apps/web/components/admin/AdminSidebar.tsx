@@ -7,13 +7,14 @@ import {
     LayoutDashboard,
     Users,
     ListTree,
-    Star,
     CheckCircle,
     Settings,
     LogOut,
     ChevronDown,
     ShieldCheck,
-    ShieldAlert
+    ShieldAlert,
+    CreditCard,
+    LayoutGrid
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getImageUrl } from '../../lib/api';
@@ -22,9 +23,10 @@ import { getImageUrl } from '../../lib/api';
 const menuItems = [
     { name: 'Overview', icon: LayoutDashboard, href: '/admin', badge: null },
     { name: 'Users', icon: Users, href: '/admin/users', badge: null },
+    { name: 'Categories', icon: LayoutGrid, href: '/admin/categories', badge: null },
     { name: 'Businesses', icon: ListTree, href: '/admin/businesses', badge: null },
-    { name: 'Listings Approval', icon: ShieldAlert, href: '/admin/listings', badge: 'Review' },
-    { name: 'Reviews', icon: Star, href: '/admin/reviews', badge: null },
+    { name: 'Listings Approval', icon: ShieldAlert, href: '/admin/listings', badge: null },
+    { name: 'Plans', icon: CreditCard, href: '/admin/plans', badge: null },
     { name: 'Verifications', icon: CheckCircle, href: '/admin/verifications', badge: null },
     { name: 'Settings', icon: Settings, href: '/admin/settings', badge: null },
 ];
@@ -40,7 +42,7 @@ export default function AdminSidebar() {
                 <div className="relative mb-4 group cursor-pointer">
                     <div className="w-24 h-24 rounded-[32px] overflow-hidden border-4 border-white shadow-2xl transition-transform duration-500 group-hover:scale-105">
                         <img
-                            src={getImageUrl(user?.avatarUrl) || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200"}
+                            src={getImageUrl(user?.avatarUrl) || "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
                             alt="Profile"
                             className="w-full h-full object-cover"
                         />
@@ -52,14 +54,14 @@ export default function AdminSidebar() {
 
                 <div className="text-center w-full">
                     <button className="flex items-center justify-center gap-1 mx-auto mb-1 group">
-                        <span className="text-xl font-black text-slate-900 group-hover:text-red-600 transition-colors">
+                        <span className="text-xl font-bold text-slate-900 group-hover:text-red-600 transition-colors">
                             {user?.fullName || 'Admin'}
                         </span>
                         <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-red-600 transition-transform group-hover:translate-y-0.5" />
                     </button>
                     <div className="flex items-center justify-center gap-1.5 px-3 py-1 bg-red-50/50 rounded-full w-fit mx-auto border border-red-100/50">
                         <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
-                        <span className="text-[9px] text-red-600 font-black uppercase tracking-widest">{user?.role || 'administrator'}</span>
+                        <span className="text-[9px] text-red-600 font-bold uppercase tracking-widest">{user?.role || 'administrator'}</span>
                     </div>
                 </div>
             </div>
@@ -80,10 +82,10 @@ export default function AdminSidebar() {
                             <div className="flex items-center gap-4">
                                 <item.icon className={`w-5 h-5 transition-all duration-300 ${isActive ? 'text-red-600 scale-110' : 'text-slate-400 group-hover:text-slate-900 group-hover:scale-110'
                                     }`} />
-                                <span className={`text-[15px] tracking-tight transition-all ${isActive ? 'font-black' : 'font-bold'}`}>{item.name}</span>
+                                <span className={`text-[15px] tracking-tight transition-all ${isActive ? 'font-bold' : 'font-bold'}`}>{item.name}</span>
                             </div>
                             {item.badge && (
-                                <span className="flex items-center justify-center px-2 min-w-[20px] h-5 rounded-lg bg-red-500 text-white text-[10px] font-black shadow-lg shadow-red-500/20">
+                                <span className="flex items-center justify-center px-2 min-w-[20px] h-5 rounded-lg bg-red-500 text-white text-[10px] font-bold shadow-lg shadow-red-500/20">
                                     {item.badge}
                                 </span>
                             )}

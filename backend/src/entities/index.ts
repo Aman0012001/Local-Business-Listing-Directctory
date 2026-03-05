@@ -27,3 +27,11 @@ export * from './transaction.entity';
 
 // Notifications
 export * from './notification.entity';
+
+// System Settings
+export * from './system-setting.entity';
+
+// Offers & Events
+export * from './offer-event.entity';
+export * from './comment.entity';
+export * from './comment-reply.entity';

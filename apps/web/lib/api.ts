@@ -64,7 +64,25 @@ export const api = {
     categories: {
         getAll: () => fetcher<Category[]>('/categories'),
         getPopular: (limit = 8) => fetcher<Category[]>(`/categories/popular?limit=${limit}`),
+        getTree: () => fetcher<Category[]>('/categories/tree'),
         getBySlug: (slug: string) => fetcher<Category>(`/categories/slug/${slug}`),
+        // Admin endpoints
+        adminGetAll: () => fetcher<Category[]>('/categories/admin'),
+        adminCreate: (data: any) => fetcher<Category>('/categories/admin', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+        adminUpdate: (id: string, data: any) => fetcher<Category>(`/categories/admin/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        }),
+        adminUpdateStatus: (id: string, status: string) => fetcher<Category>(`/categories/admin/${id}/status`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status }),
+        }),
+        adminDelete: (id: string) => fetcher<void>(`/categories/admin/${id}`, {
+            method: 'DELETE',
+        }),
     },
     listings: {
         create: (listingData: any) => fetcher<Business>('/businesses', {
@@ -84,7 +102,7 @@ export const api = {
             return fetcher<SearchResponse>(`/businesses/search?${query}`);
         },
         getBySlug: (slug: string) => fetcher<Business>(`/businesses/slug/${slug}`),
-        getFeatured: () => fetcher<SearchResponse>('/businesses/search?featuredOnly=true&limit=6'),
+        getFeatured: (page = 1, limit = 12) => fetcher<SearchResponse>(`/businesses/search?featuredOnly=true&page=${page}&limit=${limit}`),
         uploadImage: async (file: File) => {
             const result = await api.cloudinary.uploadToCloudinary(file, 'listings');
             return { url: result.secure_url };
@@ -241,17 +259,73 @@ export const api = {
             method: 'POST',
             body: JSON.stringify(userData),
         }),
+        googleLogin: (data: { credential: string, role?: string }) => fetcher<any>('/auth/google', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
     },
     admin: {
         getStats: () => fetcher<any>('/admin/stats'),
         getUsers: (page = 1, limit = 10) => fetcher<any>(`/admin/users?page=${page}&limit=${limit}`),
-        moderateBusiness: (id: string, action: 'approve' | 'reject' | 'suspend') => fetcher<any>(`/admin/business/${id}/moderate`, {
+        updateUserRole: (id: string, role: string) => fetcher<any>(`/admin/users/${id}/role`, {
             method: 'PATCH',
-            body: JSON.stringify({ action }),
+            body: JSON.stringify({ role }),
         }),
+        toggleUserStatus: (id: string, isActive: boolean) => fetcher<any>(`/admin/users/${id}/status`, {
+            method: 'PATCH',
+            body: JSON.stringify({ isActive }),
+        }),
+        deleteUser: (id: string) => fetcher<any>(`/admin/users/${id}`, {
+            method: 'DELETE',
+        }),
+        getBusinesses: (page = 1, limit = 20, status?: string, search?: string) => {
+            const params = new URLSearchParams({
+                page: page.toString(),
+                limit: limit.toString(),
+                ...(status && { status }),
+                ...(search && { search }),
+            });
+            return fetcher<any>(`/admin/businesses?${params}`);
+        },
+        moderateBusiness: (id: string, status: string, reason?: string) => fetcher<any>(`/admin/business/${id}/moderate`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status, reason }),
+        }),
+        deleteBusiness: (id: string) => fetcher<any>(`/admin/businesses/${id}`, {
+            method: 'DELETE',
+        }),
+        getVendors: (page = 1, limit = 20, isVerified?: boolean, search?: string) => {
+            const params = new URLSearchParams({
+                page: page.toString(),
+                limit: limit.toString(),
+                ...(isVerified !== undefined && { isVerified: isVerified.toString() }),
+                ...(search && { search }),
+            });
+            return fetcher<any>(`/admin/vendors?${params}`);
+        },
         verifyVendor: (id: string, status: boolean) => fetcher<any>(`/admin/vendor/${id}/verify?status=${status}`, {
             method: 'POST',
         }),
+        getSettings: () => fetcher<Record<string, string>>('/admin/settings'),
+        updateSettings: (settings: Record<string, string>) => fetcher<Record<string, string>>('/admin/settings', {
+            method: 'PATCH',
+            body: JSON.stringify(settings),
+        }),
+        plans: {
+            getAll: () => fetcher<any[]>('/subscriptions/plans/admin'),
+            getById: (id: string) => fetcher<any>(`/subscriptions/plans/${id}`),
+            create: (data: any) => fetcher<any>('/subscriptions/plans', {
+                method: 'POST',
+                body: JSON.stringify(data),
+            }),
+            update: (id: string, data: any) => fetcher<any>(`/subscriptions/plans/${id}`, {
+                method: 'PATCH',
+                body: JSON.stringify(data),
+            }),
+            delete: (id: string) => fetcher<any>(`/subscriptions/plans/${id}`, {
+                method: 'DELETE',
+            }),
+        },
     },
     notifications: {
         getAll: () => fetcher<any>('/notifications'),
@@ -265,4 +339,46 @@ export const api = {
             body: JSON.stringify({ message }),
         }),
     },
+    offers: {
+        create: (data: any) => fetcher<any>('/vendor/offers', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+        getMy: (page = 1, limit = 10) =>
+            fetcher<{ data: any[]; meta: any }>(`/vendor/offers?page=${page}&limit=${limit}`),
+        update: (id: string, data: any) => fetcher<any>(`/vendor/offers/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        }),
+        remove: (id: string) => fetcher<void>(`/vendor/offers/${id}`, {
+            method: 'DELETE',
+        }),
+        getByBusiness: (businessId: string) =>
+            fetcher<any[]>(`/business/${businessId}/offers`),
+    },
+    comments: {
+        create: (data: any) => fetcher<any>('/comments', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+        getByBusiness: (businessId: string, page = 1, limit = 10) =>
+            fetcher<{ data: any[]; meta: any }>(`/business/${businessId}/comments?page=${page}&limit=${limit}`),
+        getVendorComments: (page = 1, limit = 10) =>
+            fetcher<{ data: any[]; meta: any }>(`/vendor/comments?page=${page}&limit=${limit}`),
+        reply: (commentId: string, data: any) =>
+            fetcher<any>(`/vendor/comments/${commentId}/reply`, {
+                method: 'POST',
+                body: JSON.stringify(data),
+            }),
+        updateReply: (replyId: string, data: any) =>
+            fetcher<any>(`/vendor/comments/reply/${replyId}`, {
+                method: 'PATCH',
+                body: JSON.stringify(data),
+            }),
+        deleteReply: (replyId: string) =>
+            fetcher<void>(`/vendor/comments/reply/${replyId}`, {
+                method: 'DELETE',
+            }),
+    },
 };
+

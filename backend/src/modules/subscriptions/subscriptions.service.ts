@@ -11,7 +11,7 @@ import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
 import { Transaction, PaymentStatus } from '../../entities/transaction.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { User } from '../../entities/user.entity';
-import { CreatePlanDto, CheckoutDto } from './dto/subscription.dto';
+import { CreatePlanDto, UpdatePlanDto, CheckoutDto } from './dto/subscription.dto';
 
 import { ConfigService } from '@nestjs/config';
 
@@ -30,10 +30,26 @@ export class SubscriptionsService {
     ) { }
 
     /**
-     * Get all available subscription plans
+     * Get all available subscription plans (Client)
      */
     async getPlans(): Promise<SubscriptionPlan[]> {
         return this.planRepository.find({ where: { isActive: true }, order: { price: 'ASC' } });
+    }
+
+    /**
+     * ADMIN: Get all plans including inactive ones
+     */
+    async getPlansForAdmin(): Promise<SubscriptionPlan[]> {
+        return this.planRepository.find({ order: { price: 'ASC' } });
+    }
+
+    /**
+     * ADMIN: Get plan by ID
+     */
+    async getPlanById(id: string): Promise<SubscriptionPlan> {
+        const plan = await this.planRepository.findOne({ where: { id } });
+        if (!plan) throw new NotFoundException('Plan not found');
+        return plan;
     }
 
     /**
@@ -42,6 +58,32 @@ export class SubscriptionsService {
     async createPlan(createPlanDto: CreatePlanDto): Promise<SubscriptionPlan> {
         const plan = this.planRepository.create(createPlanDto);
         return this.planRepository.save(plan);
+    }
+
+    /**
+     * ADMIN: Update a plan
+     */
+    async updatePlan(id: string, updatePlanDto: UpdatePlanDto): Promise<SubscriptionPlan> {
+        const plan = await this.getPlanById(id);
+        Object.assign(plan, updatePlanDto);
+        return this.planRepository.save(plan);
+    }
+
+    /**
+     * ADMIN: Delete a plan
+     */
+    async deletePlan(id: string): Promise<void> {
+        const plan = await this.getPlanById(id);
+        // Check if there are active subscriptions before deleting
+        const activeSubCount = await this.subscriptionRepository.count({
+            where: { planId: id, status: SubscriptionStatus.ACTIVE }
+        });
+
+        if (activeSubCount > 0) {
+            throw new BadRequestException('Cannot delete plan with active subscribers. Deactivate it instead.');
+        }
+
+        await this.planRepository.remove(plan);
     }
 
     /**

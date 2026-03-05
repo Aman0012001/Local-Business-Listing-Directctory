@@ -21,6 +21,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { ParseUuidPipe } from '../../common/pipes/parse-uuid.pipe';
 import { UserRole } from '../../entities/user.entity';
+import { CategoryStatus } from '../../entities/category.entity';
 
 @ApiTags('categories')
 @Controller('categories')
@@ -28,8 +29,10 @@ import { UserRole } from '../../entities/user.entity';
 export class CategoriesController {
     constructor(private readonly categoriesService: CategoriesService) { }
 
-    @Post()
-    @Roles(UserRole.ADMIN)
+    // --- Admin Endpoints ---
+
+    @Post('admin')
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Create a new category (Admin only)' })
     @ApiResponse({ status: 201, description: 'Category created successfully' })
@@ -38,34 +41,82 @@ export class CategoriesController {
         return this.categoriesService.create(createCategoryDto);
     }
 
+    @Get('admin')
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Get all categories for admin (all statuses)' })
+    @ApiResponse({ status: 200, description: 'Categories retrieved successfully' })
+    findAllAdmin() {
+        return this.categoriesService.findAllAdmin();
+    }
+
+    @Patch('admin/:id')
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Update category (Admin only)' })
+    @ApiResponse({ status: 200, description: 'Category updated successfully' })
+    @ApiResponse({ status: 404, description: 'Category not found' })
+    update(
+        @Param('id', ParseUuidPipe) id: string,
+        @Body() updateCategoryDto: UpdateCategoryDto,
+    ) {
+        return this.categoriesService.update(id, updateCategoryDto);
+    }
+
+    @Patch('admin/:id/status')
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Update category status (Admin only)' })
+    @ApiResponse({ status: 200, description: 'Category status updated successfully' })
+    updateStatus(
+        @Param('id', ParseUuidPipe) id: string,
+        @Body('status') status: CategoryStatus,
+    ) {
+        return this.categoriesService.updateStatus(id, status);
+    }
+
+    @Delete('admin/:id')
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiBearerAuth()
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @ApiOperation({ summary: 'Delete category (Admin only)' })
+    @ApiResponse({ status: 204, description: 'Category deleted successfully' })
+    @ApiResponse({ status: 400, description: 'Cannot delete category with subcategories or businesses' })
+    @ApiResponse({ status: 404, description: 'Category not found' })
+    remove(@Param('id', ParseUuidPipe) id: string) {
+        return this.categoriesService.remove(id);
+    }
+
+    // --- Public Endpoints ---
+
     @Public()
     @Get()
-    @ApiOperation({ summary: 'Get all categories' })
+    @ApiOperation({ summary: 'Get all active categories' })
     @ApiQuery({ name: 'includeSubcategories', required: false, type: Boolean })
     @ApiResponse({ status: 200, description: 'Categories retrieved successfully' })
     findAll(@Query('includeSubcategories') includeSubcategories?: boolean) {
-        return this.categoriesService.findAll(includeSubcategories);
+        return this.categoriesService.findAllActive(includeSubcategories);
     }
 
     @Public()
     @Get('tree')
-    @ApiOperation({ summary: 'Get category tree (hierarchical structure)' })
+    @ApiOperation({ summary: 'Get category tree (hierarchical structure - active only)' })
     @ApiResponse({ status: 200, description: 'Category tree retrieved successfully' })
     getCategoryTree() {
-        return this.categoriesService.getCategoryTree();
+        return this.categoriesService.getCategoryTree(true);
     }
 
     @Public()
     @Get('root')
-    @ApiOperation({ summary: 'Get root categories (no parent)' })
+    @ApiOperation({ summary: 'Get root categories (no parent - active only)' })
     @ApiResponse({ status: 200, description: 'Root categories retrieved successfully' })
     findRootCategories() {
-        return this.categoriesService.findRootCategories();
+        return this.categoriesService.findRootCategories(true);
     }
 
     @Public()
     @Get('popular')
-    @ApiOperation({ summary: 'Get popular categories by business count' })
+    @ApiOperation({ summary: 'Get popular categories by business count (active only)' })
     @ApiQuery({ name: 'limit', required: false, type: Number })
     @ApiResponse({ status: 200, description: 'Popular categories retrieved successfully' })
     getPopularCategories(@Query('limit') limit?: number) {
@@ -74,7 +125,7 @@ export class CategoriesController {
 
     @Public()
     @Get('slug/:slug')
-    @ApiOperation({ summary: 'Get category by slug' })
+    @ApiOperation({ summary: 'Get active category by slug' })
     @ApiResponse({ status: 200, description: 'Category found' })
     @ApiResponse({ status: 404, description: 'Category not found' })
     findBySlug(@Param('slug') slug: string) {
@@ -88,39 +139,5 @@ export class CategoriesController {
     @ApiResponse({ status: 404, description: 'Category not found' })
     findOne(@Param('id', ParseUuidPipe) id: string) {
         return this.categoriesService.findOne(id);
-    }
-
-    @Public()
-    @Get(':id/subcategories')
-    @ApiOperation({ summary: 'Get subcategories of a category' })
-    @ApiResponse({ status: 200, description: 'Subcategories retrieved successfully' })
-    @ApiResponse({ status: 404, description: 'Parent category not found' })
-    getSubcategories(@Param('id', ParseUuidPipe) id: string) {
-        return this.categoriesService.getSubcategories(id);
-    }
-
-    @Patch(':id')
-    @Roles(UserRole.ADMIN)
-    @ApiBearerAuth()
-    @ApiOperation({ summary: 'Update category (Admin only)' })
-    @ApiResponse({ status: 200, description: 'Category updated successfully' })
-    @ApiResponse({ status: 404, description: 'Category not found' })
-    update(
-        @Param('id', ParseUuidPipe) id: string,
-        @Body() updateCategoryDto: UpdateCategoryDto,
-    ) {
-        return this.categoriesService.update(id, updateCategoryDto);
-    }
-
-    @Delete(':id')
-    @Roles(UserRole.ADMIN)
-    @ApiBearerAuth()
-    @HttpCode(HttpStatus.NO_CONTENT)
-    @ApiOperation({ summary: 'Delete category (Admin only)' })
-    @ApiResponse({ status: 204, description: 'Category deleted successfully' })
-    @ApiResponse({ status: 400, description: 'Cannot delete category with subcategories or businesses' })
-    @ApiResponse({ status: 404, description: 'Category not found' })
-    remove(@Param('id', ParseUuidPipe) id: string) {
-        return this.categoriesService.remove(id);
     }
 }

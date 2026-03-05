@@ -9,13 +9,13 @@ import { getImageUrl } from '../lib/api';
 const StatusBadge = ({ status }: { status?: string }) => {
     if (!status || status === 'approved') {
         return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 border border-emerald-200">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 border border-emerald-200">
                 <CheckCircle2 className="w-3 h-3" /> Approved
             </span>
         );
     }
     return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-700 border border-amber-200">
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 border border-amber-200">
             <Clock className="w-3 h-3" /> Pending
         </span>
     );
@@ -70,7 +70,7 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
                             <div>
                                 <div className="flex items-center gap-3 mb-1">
-                                    <h3 className="text-2xl font-black text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+                                    <h3 className="text-2xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
                                         {business.title}
                                     </h3>
                                     {business.isVerified && (
@@ -133,7 +133,7 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                         </div>
                     )}
                     {business.isVerified && (
-                        <div className="absolute top-4 right-4 px-3 py-1 bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg">
+                        <div className="absolute top-4 right-4 px-3 py-1 bg-amber-500 text-white text-[10px] font-bold uppercase tracking-widest rounded-full shadow-lg">
                             Verified
                         </div>
                     )}
@@ -142,7 +142,7 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                 {/* Content */}
                 <div className="p-7 flex flex-col flex-grow">
                     <div className="flex items-start justify-between mb-1">
-                        <h3 className="text-xl font-black text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+                        <h3 className="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
                             {business.title}
                         </h3>
                         <div className="flex items-center gap-1 text-amber-500 font-bold">

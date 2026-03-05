@@ -6,6 +6,7 @@ import { api, getImageUrl } from '../../lib/api';
 
 import { Category, Business, City } from '../../types/api';
 import { motion, AnimatePresence } from 'framer-motion';
+import CategorySearchSelect from '../CategorySearchSelect';
 
 interface AddBusinessModalProps {
     isOpen: boolean;
@@ -286,24 +287,12 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                                         <Layers className="w-3.5 h-3.5 text-orange-500" />
                                         Business Category
                                     </label>
-                                    <div className="relative">
-                                        <select
-                                            required
-                                            name="categoryId"
-                                            value={formData.categoryId}
-                                            onChange={handleChange}
-                                            className="input-premium appearance-none font-bold cursor-pointer pr-12"
-                                        >
-                                            {categories.map(cat => (
-                                                <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                            ))}
-                                        </select>
-                                        <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        </div>
-                                    </div>
+                                    <CategorySearchSelect
+                                        categories={categories}
+                                        value={formData.categoryId}
+                                        onChange={(val) => setFormData(prev => ({ ...prev, categoryId: val }))}
+                                        loading={false}
+                                    />
                                 </div>
                             </div>
 

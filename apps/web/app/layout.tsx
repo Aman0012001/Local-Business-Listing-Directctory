@@ -1,17 +1,12 @@
 import "./globals.css";
 import { AuthProvider } from '../context/AuthContext';
-import { Inter, Outfit } from 'next/font/google';
+import { Inter } from 'next/font/google';
 
 const inter = Inter({
     subsets: ['latin'],
     variable: '--font-inter',
     display: 'swap',
-});
-
-const outfit = Outfit({
-    subsets: ['latin'],
-    variable: '--font-outfit',
-    display: 'swap',
+    weight: ['300', '400', '500', '600', '700'],
 });
 
 export const metadata = {
@@ -25,7 +20,7 @@ export default function RootLayout({
     children: React.ReactNode;
 }) {
     return (
-        <html lang="en" className={`${inter.variable} ${outfit.variable}`} suppressHydrationWarning>
+        <html lang="en" className={`${inter.variable}`} suppressHydrationWarning>
             <body className="bg-white text-slate-900 min-h-screen antialiased font-sans" suppressHydrationWarning>
                 <AuthProvider>
                     {children}

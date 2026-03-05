@@ -17,6 +17,7 @@ import { BusinessAmenity } from './business-amenity.entity';
 import { Review } from './review.entity';
 import { Lead } from './lead.entity';
 import { SavedListing } from './favorite.entity';
+import { Comment } from './comment.entity';
 
 export enum BusinessStatus {
     PENDING = 'pending',
@@ -234,4 +235,7 @@ export class Listing {
 
     @OneToMany(() => SavedListing, (savedListing) => savedListing.business)
     savedListings: SavedListing[];
+
+    @OneToMany(() => Comment, (comment) => comment.business)
+    comments: Comment[];
 }

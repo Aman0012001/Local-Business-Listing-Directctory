@@ -14,8 +14,10 @@ import {
     Settings,
     LogOut,
     ChevronDown,
-    ShieldCheck,
-    Phone
+    Shield,
+    Phone,
+    Megaphone,
+    MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getImageUrl, api } from '../../lib/api';
@@ -40,6 +42,8 @@ export default function Sidebar() {
         { name: 'My Listings', icon: ListTree, href: '/vendor/listings', badge: null },
         { name: 'Add Listing', icon: Plus, href: '/vendor/add-listing', badge: null },
         { name: 'Leads', icon: Phone, href: '/vendor/leads', badge: null },
+        { name: 'Offers & Events', icon: Megaphone, href: '/vendor/offers', badge: null },
+        { name: 'Comments', icon: MessageSquare, href: '/vendor/comments', badge: null },
         { name: 'Saved', icon: Heart, href: '/vendor/saved', badge: null },
         { name: 'Reviews', icon: Star, href: '/vendor/reviews', badge: null },
         { name: 'Enquiries', icon: Send, href: '/vendor/messages', badge: newEnquiryCount > 0 ? String(newEnquiryCount) : null },
@@ -54,14 +58,14 @@ export default function Sidebar() {
                 <div className="relative mb-4 group cursor-pointer">
                     <div className="w-24 h-24 rounded-[32px] overflow-hidden border-4 border-white shadow-2xl transition-transform duration-500 group-hover:scale-105">
                         <img
-                            src={getImageUrl(user?.avatarUrl) || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200"}
+                            src={getImageUrl(user?.avatarUrl) || "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
                             alt="Profile"
                             className="w-full h-full object-cover"
                             key={user?.avatarUrl}
                         />
                     </div>
                     <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-600 rounded-xl border-4 border-[#F8FAFC] flex items-center justify-center text-white shadow-lg">
-                        <ShieldCheck className="w-4 h-4" />
+                        <Shield className="w-4 h-4" />
                     </div>
                 </div>
 
