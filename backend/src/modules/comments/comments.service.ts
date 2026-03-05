@@ -31,7 +31,12 @@ export class CommentsService {
             userId,
         });
 
-        return this.commentRepo.save(comment);
+        const saved = await this.commentRepo.save(comment);
+
+        // Update business rating
+        await this.updateBusinessRating(dto.businessId);
+
+        return saved;
     }
 
     async findPublicByBusiness(businessId: string, page = 1, limit = 10) {
@@ -140,12 +145,45 @@ export class CommentsService {
         const comment = await this.commentRepo.findOne({ where: { id: commentId } });
         if (!comment) throw new NotFoundException('Comment not found');
         comment.status = status;
-        return this.commentRepo.save(comment);
+        const saved = await this.commentRepo.save(comment);
+
+        // Update business rating
+        await this.updateBusinessRating(comment.businessId);
+
+        return saved;
     }
 
     async remove(commentId: string) {
         const comment = await this.commentRepo.findOne({ where: { id: commentId } });
         if (!comment) throw new NotFoundException('Comment not found');
-        return this.commentRepo.remove(comment);
+        const businessId = comment.businessId;
+        const removed = await this.commentRepo.remove(comment);
+
+        // Update business rating
+        await this.updateBusinessRating(businessId);
+
+        return removed;
+    }
+
+    /**
+     * Update business average rating and total reviews from comments
+     */
+    private async updateBusinessRating(businessId: string): Promise<void> {
+        const result = await this.commentRepo
+            .createQueryBuilder('comment')
+            .select('AVG(comment.rating)', 'averageRating')
+            .addSelect('COUNT(*)', 'totalReviews')
+            .where('comment.businessId = :businessId', { businessId })
+            .andWhere('comment.status = :status', { status: CommentStatus.VISIBLE })
+            .andWhere('comment.rating IS NOT NULL')
+            .getRawOne();
+
+        const averageRating = parseFloat(result.averageRating) || 0;
+        const totalReviews = parseInt(result.totalReviews) || 0;
+
+        await this.listingRepo.update(businessId, {
+            averageRating: Math.round(averageRating * 100) / 100, // Round to 2 decimals
+            totalReviews,
+        });
     }
 }
