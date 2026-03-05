@@ -22,7 +22,7 @@ export class CategoriesService {
      * Create a new category
      */
     async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
-        const { name, parentId, slug: providedSlug } = createCategoryDto;
+        const { name, slug: providedSlug } = createCategoryDto;
 
         // Use provided slug or generate from name
         const slug = providedSlug || generateSlug(name);
@@ -34,17 +34,6 @@ export class CategoriesService {
 
         if (existingCategory) {
             throw new ConflictException('Category with this name or slug already exists');
-        }
-
-        // Verify parent category exists if parentId provided
-        if (parentId) {
-            const parentCategory = await this.categoryRepository.findOne({
-                where: { id: parentId },
-            });
-
-            if (!parentCategory) {
-                throw new NotFoundException('Parent category not found');
-            }
         }
 
         // Create category
@@ -61,7 +50,6 @@ export class CategoriesService {
      */
     async findAllAdmin(): Promise<Category[]> {
         return this.categoryRepository.find({
-            relations: ['parent'],
             order: {
                 displayOrder: 'ASC',
                 name: 'ASC',
@@ -72,87 +60,14 @@ export class CategoriesService {
     /**
      * Get active categories (Public)
      */
-    async findAllActive(includeSubcategories = false): Promise<Category[]> {
-        const queryBuilder = this.categoryRepository
-            .createQueryBuilder('category')
-            .where('category.status = :status', { status: CategoryStatus.ACTIVE })
-            .orderBy('category.displayOrder', 'ASC')
-            .addOrderBy('category.name', 'ASC');
-
-        if (includeSubcategories) {
-            queryBuilder.leftJoinAndSelect('category.subcategories', 'subcategories', 'subcategories.status = :active', { active: CategoryStatus.ACTIVE });
-        }
-
-        return queryBuilder.getMany();
-    }
-
-    /**
-     * Get root categories (no parent) - ACTIVE ONLY
-     */
-    async findRootCategories(activeOnly = true): Promise<Category[]> {
-        const where: any = { parentId: IsNull() };
-        if (activeOnly) {
-            where.status = CategoryStatus.ACTIVE;
-        }
-
+    async findAllActive(): Promise<Category[]> {
         return this.categoryRepository.find({
-            where,
-            relations: ['subcategories'],
+            where: { status: CategoryStatus.ACTIVE },
             order: {
                 displayOrder: 'ASC',
                 name: 'ASC',
             },
         });
-    }
-
-    /**
-     * Get category tree (hierarchical structure) - ACTIVE ONLY
-     */
-    async getCategoryTree(activeOnly = true): Promise<Category[]> {
-        const where: any = { parentId: IsNull() };
-        if (activeOnly) {
-            where.status = CategoryStatus.ACTIVE;
-        }
-
-        const rootCategories = await this.categoryRepository.find({
-            where,
-            order: {
-                displayOrder: 'ASC',
-                name: 'ASC',
-            },
-        });
-
-        // Load subcategories recursively
-        for (const category of rootCategories) {
-            await this.loadSubcategories(category, activeOnly);
-        }
-
-        return rootCategories;
-    }
-
-    /**
-     * Load subcategories recursively
-     */
-    private async loadSubcategories(category: Category, activeOnly: boolean): Promise<void> {
-        const where: any = { parentId: category.id };
-        if (activeOnly) {
-            where.status = CategoryStatus.ACTIVE;
-        }
-
-        const subcategories = await this.categoryRepository.find({
-            where,
-            order: {
-                displayOrder: 'ASC',
-                name: 'ASC',
-            },
-        });
-
-        category.subcategories = subcategories;
-
-        // Recursively load subcategories for each subcategory
-        for (const subcategory of subcategories) {
-            await this.loadSubcategories(subcategory, activeOnly);
-        }
     }
 
     /**
@@ -161,7 +76,7 @@ export class CategoriesService {
     async findOne(id: string): Promise<Category> {
         const category = await this.categoryRepository.findOne({
             where: { id },
-            relations: ['parent', 'subcategories', 'businesses'],
+            relations: ['businesses'],
         });
 
         if (!category) {
@@ -180,7 +95,7 @@ export class CategoriesService {
                 slug: ILike(slug.trim()),
                 status: CategoryStatus.ACTIVE
             },
-            relations: ['parent', 'subcategories', 'businesses'],
+            relations: ['businesses'],
         });
 
         if (!category) {
@@ -225,30 +140,6 @@ export class CategoriesService {
             }
         }
 
-        // Verify parent category exists if parentId changed
-        if (updateCategoryDto.parentId) {
-            // Prevent circular reference
-            if (updateCategoryDto.parentId === id) {
-                throw new BadRequestException('Category cannot be its own parent');
-            }
-
-            const parentCategory = await this.categoryRepository.findOne({
-                where: { id: updateCategoryDto.parentId },
-            });
-
-            if (!parentCategory) {
-                throw new NotFoundException('Parent category not found');
-            }
-
-            // Check if new parent is a descendant of current category
-            const isDescendant = await this.isDescendant(id, updateCategoryDto.parentId);
-            if (isDescendant) {
-                throw new BadRequestException(
-                    'Cannot set a descendant category as parent (circular reference)',
-                );
-            }
-        }
-
         await this.categoryRepository.update(id, updateCategoryDto);
 
         return this.findOne(id);
@@ -264,42 +155,16 @@ export class CategoriesService {
     }
 
     /**
-     * Check if a category is a descendant of another
-     */
-    private async isDescendant(ancestorId: string, categoryId: string): Promise<boolean> {
-        const category = await this.categoryRepository.findOne({
-            where: { id: categoryId },
-        });
-
-        if (!category || !category.parentId) {
-            return false;
-        }
-
-        if (category.parentId === ancestorId) {
-            return true;
-        }
-
-        return this.isDescendant(ancestorId, category.parentId);
-    }
-
-    /**
      * Delete category
      */
     async remove(id: string): Promise<void> {
         const category = await this.categoryRepository.findOne({
             where: { id },
-            relations: ['subcategories', 'businesses'],
+            relations: ['businesses'],
         });
 
         if (!category) {
             throw new NotFoundException('Category not found');
-        }
-
-        // Check if category has subcategories
-        if (category.subcategories && category.subcategories.length > 0) {
-            throw new BadRequestException(
-                'Cannot delete category with subcategories. Delete subcategories first.',
-            );
         }
 
         // Check if category has businesses

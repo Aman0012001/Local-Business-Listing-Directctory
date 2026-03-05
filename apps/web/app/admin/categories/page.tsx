@@ -29,7 +29,6 @@ export default function AdminCategoriesPage() {
         icon: '',
         imageUrl: '',
         description: '',
-        parentId: '',
         displayOrder: 0,
         status: 'active' as 'active' | 'disabled'
     });
@@ -117,7 +116,7 @@ export default function AdminCategoriesPage() {
             setIsDeleteModalOpen(false);
             setSelectedCategory(null);
         } catch (err: any) {
-            alert(err.message || 'Failed to delete category. Make sure it has no subcategories or listings.');
+            alert(err.message || 'Failed to delete category. Make sure it has no active listings.');
         } finally {
             setActionLoading(null);
         }
@@ -131,7 +130,6 @@ export default function AdminCategoriesPage() {
             icon: category.icon || '',
             imageUrl: category.imageUrl || '',
             description: category.description || '',
-            parentId: category.parentId || '',
             displayOrder: category.displayOrder || 0,
             status: category.status
         });
@@ -145,7 +143,6 @@ export default function AdminCategoriesPage() {
             icon: '',
             imageUrl: '',
             description: '',
-            parentId: '',
             displayOrder: 0,
             status: 'active'
         });

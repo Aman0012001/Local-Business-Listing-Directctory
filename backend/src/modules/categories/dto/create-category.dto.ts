@@ -39,10 +39,6 @@ export class CreateCategoryDto {
     @IsUrl()
     imageUrl?: string;
 
-    @ApiPropertyOptional({ description: 'Parent category UUID for subcategories' })
-    @IsOptional()
-    @IsUUID()
-    parentId?: string;
 
     @ApiPropertyOptional({ example: 1, description: 'Display order (lower = first)' })
     @IsOptional()
