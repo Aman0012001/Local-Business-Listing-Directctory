@@ -11,7 +11,6 @@ import {
 import { api, getImageUrl } from '../../../lib/api';
 import { Category, City } from '../../../types/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import CategorySearchSelect from '../../../components/CategorySearchSelect';
 
 const steps = [
     { id: 1, label: 'Business Info', icon: Building2 },
@@ -445,12 +444,35 @@ export default function AddListingPage() {
                                         <Tag className="w-3 h-3 inline mr-1.5 text-orange-500" />
                                         Category <span className="text-orange-500">*</span>
                                     </label>
-                                    <CategorySearchSelect
-                                        categories={categories}
-                                        value={formData.categoryId}
-                                        onChange={(val) => setFormData(prev => ({ ...prev, categoryId: val }))}
-                                        loading={catsLoading}
-                                    />
+                                    <div className="relative">
+                                        {catsLoading ? (
+                                            <div className="flex items-center gap-2 px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-400 text-sm">
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                Loading categories...
+                                            </div>
+                                        ) : catsError ? (
+                                            <div className="px-4 py-3.5 bg-red-50 border border-red-200 rounded-xl text-red-500 text-sm font-semibold">
+                                                ⚠ {catsError}
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <select
+                                                    required
+                                                    name="categoryId"
+                                                    value={formData.categoryId}
+                                                    onChange={handleChange}
+                                                    className={selectClass}
+                                                >
+                                                    <option value="" disabled>-- Select Category --</option>
+                                                    {categories.map(cat => (
+                                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                                    ))}
+                                                    <option value="other">Other</option>
+                                                </select>
+                                                <Layers className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div>
