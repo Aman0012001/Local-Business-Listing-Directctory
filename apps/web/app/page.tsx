@@ -9,7 +9,7 @@ import BusinessCard from '../components/BusinessCard';
 import { api, getImageUrl } from '../lib/api';
 import Link from 'next/link';
 import { Category, Business, City, Review } from '../types/api';
-
+import Slider from "react-slick";
 export default function HomePage() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [featuredBusinesses, setFeaturedBusinesses] = useState<Business[]>([]);
@@ -28,7 +28,23 @@ export default function HomePage() {
 
     const [loading, setLoading] = useState(true);
     const [statsReviews, setStatsReviews] = useState<Review[]>([]);
-
+const heroImages = [
+  "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4",
+  "https://images.unsplash.com/photo-1504674900247-0877df9cc836",
+  "https://images.unsplash.com/photo-1528605248644-14dd04022da1",
+  "https://images.unsplash.com/photo-1552566626-52f8b828add9",
+  "https://images.unsplash.com/photo-1498654896293-37aacf113fd9"
+];
+const sliderSettings = {
+  dots: false,
+  infinite: true,
+  autoplay: true,
+  autoplaySpeed: 4000,
+  speed: 1000,
+  fade: true,
+  arrows: false,
+  pauseOnHover: false
+};
     useEffect(() => {
         const loadInitialData = async () => {
             try {
@@ -108,20 +124,31 @@ export default function HomePage() {
     ).slice(0, 5);
 
     return (
-        <div className="min-h-screen bg-white font-sans text-slate-900 overflow-x-hidden">
+        <div className=" bg-white font-sans text-slate-900 overflow-x-hidden">
             <Navbar />
 
             {/* Hero Section */}
-            <section className="relative pt-32 pb-44 px-4 overflow-visible z-[60]">
-                <div
-                    className="absolute inset-0 z-0 scale-105"
-                    style={{
-                        backgroundImage: 'url("https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=2000")',
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                        filter: 'blur(3px) brightness(0.45)'
-                    }}
-                />
+            <section className="relative pt-32 pb-44 px-4 overflow-visible" style={{height: "90vh"}}>
+               <div className="absolute inset-0 z-0">
+
+  <Slider {...sliderSettings}>
+    {heroImages.map((img, index) => (
+      <div key={index}>
+        <div
+          className="h-[750px] w-full"
+          style={{
+            backgroundImage: `url(${img})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center"
+          }}
+        >
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
+        </div>
+      </div>
+    ))}
+  </Slider>
+
+</div>
 
                 <div className="max-w-7xl mx-auto relative z-10 text-center text-white">
                     <motion.div

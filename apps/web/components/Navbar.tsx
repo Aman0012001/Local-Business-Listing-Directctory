@@ -137,7 +137,7 @@ export default function Navbar() {
                                 </button>
 
                                 {activeDropdown === 'categories' && (
-                                    <div className="absolute top-full left-0 pt-2 w-64 animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <div className="absolute top-full left-0 pt-2 w-64 animate-in fade-in slide-in-from-top-2 duration-200 " style={{zIndex: "1000"}}>
                                         <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-2">
                                             <div className="grid grid-cols-1 gap-1">
                                                 {categories.map((cat) => (

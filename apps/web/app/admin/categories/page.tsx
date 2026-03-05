@@ -15,6 +15,7 @@ export default function AdminCategoriesPage() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [imageUploading, setImageUploading] = useState(false);
     const [search, setSearch] = useState('');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -48,6 +49,20 @@ export default function AdminCategoriesPage() {
     useEffect(() => {
         fetchCategories();
     }, [fetchCategories]);
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setImageUploading(true);
+        try {
+            const result = await api.cloudinary.uploadToCloudinary(file, 'categories');
+            setFormData(prev => ({ ...prev, imageUrl: result.secure_url }));
+        } catch (err: any) {
+            alert(err.message || 'Image upload failed');
+        } finally {
+            setImageUploading(false);
+        }
+    };
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -246,8 +261,8 @@ export default function AdminCategoriesPage() {
                                                     onClick={() => handleToggleStatus(c)}
                                                     disabled={actionLoading === c.id}
                                                     className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all ${c.status === 'active'
-                                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100'
-                                                            : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
+                                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100'
+                                                        : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
                                                         }`}
                                                 >
                                                     {actionLoading === c.id ? (
@@ -307,8 +322,9 @@ export default function AdminCategoriesPage() {
                             </div>
 
                             <form onSubmit={isEditModalOpen ? handleUpdate : handleCreate} className="space-y-5">
+                                {/* Category Name */}
                                 <div className="space-y-2">
-                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Category Name</label>
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Category Name *</label>
                                     <input
                                         required
                                         type="text"
@@ -319,52 +335,43 @@ export default function AdminCategoriesPage() {
                                     />
                                 </div>
 
+                                {/* Image Upload */}
                                 <div className="space-y-2">
-                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Custom Slug (Optional)</label>
-                                    <input
-                                        type="text"
-                                        placeholder="e.g., beauty-salon"
-                                        value={formData.slug}
-                                        onChange={e => setFormData({ ...formData, slug: e.target.value })}
-                                        className="w-full h-14 px-5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-slate-100 font-bold transition-all"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Icon (Emoji or Icon Name)</label>
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Category Image</label>
+                                    <label className={`flex flex-col items-center justify-center w-full h-40 rounded-2xl border-2 border-dashed cursor-pointer transition-all ${imageUploading ? 'border-slate-300 bg-slate-50' : 'border-slate-200 bg-slate-50 hover:border-slate-400 hover:bg-slate-100'
+                                        }`}>
+                                        {imageUploading ? (
+                                            <div className="flex flex-col items-center gap-2 text-slate-400">
+                                                <Loader2 className="w-8 h-8 animate-spin" />
+                                                <span className="text-sm font-bold">Uploading...</span>
+                                            </div>
+                                        ) : formData.imageUrl ? (
+                                            <div className="relative w-full h-full">
+                                                <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover rounded-2xl" />
+                                                <div className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                                                    <span className="text-white font-bold text-sm">Click to change</span>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-center gap-2 text-slate-400">
+                                                <ImageIcon className="w-8 h-8" />
+                                                <span className="text-sm font-bold">Click to upload image</span>
+                                                <span className="text-xs">PNG, JPG, WEBP up to 10MB</span>
+                                            </div>
+                                        )}
                                         <input
-                                            type="text"
-                                            placeholder="e.g., 💇‍♀️ or Sparkles"
-                                            value={formData.icon}
-                                            onChange={e => setFormData({ ...formData, icon: e.target.value })}
-                                            className="w-full h-14 px-5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-slate-100 font-bold transition-all text-center"
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={handleImageUpload}
+                                            disabled={imageUploading}
                                         />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Display Order</label>
-                                        <input
-                                            type="number"
-                                            value={formData.displayOrder}
-                                            onChange={e => setFormData({ ...formData, displayOrder: parseInt(e.target.value) })}
-                                            className="w-full h-14 px-5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-slate-100 font-bold transition-all text-center"
-                                        />
-                                    </div>
+                                    </label>
                                 </div>
 
+                                {/* Short Description */}
                                 <div className="space-y-2">
-                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Image URL (Optional)</label>
-                                    <input
-                                        type="url"
-                                        placeholder="https://..."
-                                        value={formData.imageUrl}
-                                        onChange={e => setFormData({ ...formData, imageUrl: e.target.value })}
-                                        className="w-full h-14 px-5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-slate-100 font-bold transition-all"
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Description</label>
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Short Description</label>
                                     <textarea
                                         rows={3}
                                         placeholder="Brief description of this category..."
