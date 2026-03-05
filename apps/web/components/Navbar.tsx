@@ -113,7 +113,7 @@ export default function Navbar() {
                                 <MapPin className="w-6 h-6 text-white fill-white" />
                                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-[#FF7A30] rounded-full border-2 border-[#112D4E] group-hover:bg-white group-hover:border-[#FF7A30] transition-colors duration-300" />
                             </div>
-                            <span className="text-2xl font-black text-[#2D3E50] tracking-tight group-hover:text-[#112D4E] transition-colors">
+                            <span className="text-2xl font-bold text-[#2D3E50] tracking-tight group-hover:text-[#112D4E] transition-colors">
                                 LocalFind
                             </span>
                         </Link>
@@ -152,7 +152,7 @@ export default function Navbar() {
                                                         <span className="text-sm font-bold text-slate-600 group-hover/item:text-slate-900">{cat.name}</span>
                                                     </Link>
                                                 ))}
-                                                <Link href="/categories" className="mt-2 text-center py-2 text-xs font-black uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920] border-t border-slate-50 pt-3">
+                                                <Link href="/categories" className="mt-2 text-center py-2 text-xs font-bold uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920] border-t border-slate-50 pt-3">
                                                     View All Categories
                                                 </Link>
                                             </div>
@@ -193,7 +193,7 @@ export default function Navbar() {
                                                         <span className="text-[10px] text-slate-400 font-medium italic">Fresh arrivals this week</span>
                                                     </div>
                                                 </Link>
-                                                <Link href="/search" className="mt-2 text-center py-2 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 border-t border-slate-50 pt-3">
+                                                <Link href="/search" className="mt-2 text-center py-2 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-900 border-t border-slate-50 pt-3">
                                                     Advanced Search
                                                 </Link>
                                             </div>
@@ -228,7 +228,7 @@ export default function Navbar() {
                                                         <span className="text-sm font-bold text-slate-600 group-hover/item:text-slate-900">{city.name}</span>
                                                     </Link>
                                                 ))}
-                                                <Link href="/cities" className="mt-2 text-center py-2 text-xs font-black uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920] border-t border-slate-50 pt-3">
+                                                <Link href="/cities" className="mt-2 text-center py-2 text-xs font-bold uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920] border-t border-slate-50 pt-3">
                                                     Browse All Cities
                                                 </Link>
                                             </div>
@@ -258,8 +258,8 @@ export default function Navbar() {
                                         )}
                                     </div>
                                     <div className="flex flex-col">
-                                        <span className="text-xs font-black text-[#112D4E] leading-tight max-w-[80px] truncate">{user.fullName || user.email}</span>
-                                        <span className="text-[8px] text-orange-600 font-black uppercase tracking-widest">
+                                        <span className="text-xs font-bold text-[#112D4E] leading-tight max-w-[80px] truncate">{user.fullName || user.email}</span>
+                                        <span className="text-[8px] text-orange-600 font-bold uppercase tracking-widest">
                                             {user.role === 'admin' || user.role === 'superadmin' ? 'Admin Dash' : 'Dashboard'}
                                         </span>
                                     </div>
@@ -274,7 +274,7 @@ export default function Navbar() {
                                     >
                                         <Bell className="w-5 h-5" />
                                         {unreadCount > 0 && (
-                                            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-[#FF7A30] text-white text-[10px] font-black rounded-full flex items-center justify-center leading-none">
+                                            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-[#FF7A30] text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
                                                 {unreadCount > 9 ? '9+' : unreadCount}
                                             </span>
                                         )}
@@ -284,11 +284,11 @@ export default function Navbar() {
                                         <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden">
                                             {/* Header */}
                                             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-                                                <span className="font-black text-slate-900 text-sm">Notifications</span>
+                                                <span className="font-bold text-slate-900 text-sm">Notifications</span>
                                                 {unreadCount > 0 && (
                                                     <button
                                                         onClick={handleMarkAllRead}
-                                                        className="text-[11px] font-black text-[#FF7A30] hover:text-[#E86920] flex items-center gap-1 transition-colors"
+                                                        className="text-[11px] font-bold text-[#FF7A30] hover:text-[#E86920] flex items-center gap-1 transition-colors"
                                                     >
                                                         <Check className="w-3 h-3" /> Mark all read
                                                     </button>
@@ -315,13 +315,13 @@ export default function Navbar() {
                                                                 }`} />
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="flex items-center gap-2 mb-0.5">
-                                                                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${typeColor[n.type] || typeColor.info
+                                                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${typeColor[n.type] || typeColor.info
                                                                         }`}>
                                                                         {n.type?.replace(/_/g, ' ')}
                                                                     </span>
                                                                     <span className="text-[10px] text-slate-400 font-medium ml-auto">{timeAgo(n.createdAt)}</span>
                                                                 </div>
-                                                                <p className="text-xs font-black text-slate-900 leading-snug">{n.title}</p>
+                                                                <p className="text-xs font-bold text-slate-900 leading-snug">{n.title}</p>
                                                                 <p className="text-[11px] text-slate-500 font-medium mt-0.5 line-clamp-2">{n.message}</p>
                                                             </div>
                                                             <button
@@ -340,7 +340,7 @@ export default function Navbar() {
                                                 <Link
                                                     href="/vendor/notifications"
                                                     onClick={() => setShowBell(false)}
-                                                    className="text-[11px] font-black text-[#FF7A30] hover:text-[#E86920] transition-colors"
+                                                    className="text-[11px] font-bold text-[#FF7A30] hover:text-[#E86920] transition-colors"
                                                 >
                                                     View all notifications →
                                                 </Link>
@@ -395,7 +395,7 @@ export default function Navbar() {
                         </div>
 
                         <div className="space-y-4">
-                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-2">Browse Deeply</h3>
+                            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 px-2">Browse Deeply</h3>
                             <div className="space-y-2">
                                 <Link href="/categories" className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold text-slate-700">
                                     Categories <ChevronDown className="w-4 h-4 opacity-40" />

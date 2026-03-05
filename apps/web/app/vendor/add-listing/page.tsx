@@ -6,11 +6,12 @@ import {
     Loader2, Store, MapPin, Phone, TextQuote, Layers,
     ArrowLeft, CheckCircle, ImagePlus, Building2, Tag,
     FileText, Navigation, Sparkles, X, Images, Check, Plus,
-    ChevronLeft, ChevronRight, Hash
+    ChevronLeft, ChevronRight, Hash, Share2, Globe
 } from 'lucide-react';
 import { api, getImageUrl } from '../../../lib/api';
 import { Category, City } from '../../../types/api';
 import { motion, AnimatePresence } from 'framer-motion';
+import CategorySearchSelect from '../../../components/CategorySearchSelect';
 
 const steps = [
     { id: 1, label: 'Business Info', icon: Building2 },
@@ -25,6 +26,16 @@ const selectClass =
     "w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all appearance-none cursor-pointer pr-10";
 
 const labelClass = "block text-xs font-black uppercase tracking-widest text-slate-400 mb-2";
+
+const SOCIAL_PLATFORMS = [
+    { key: 'facebook', label: 'Facebook', emoji: '📘', color: '#1877F2', placeholder: 'https://facebook.com/yourbusiness' },
+    { key: 'instagram', label: 'Instagram', emoji: '📸', color: '#E1306C', placeholder: 'https://instagram.com/yourbusiness' },
+    { key: 'twitter', label: 'Twitter / X', emoji: '🐦', color: '#1DA1F2', placeholder: 'https://twitter.com/yourbusiness' },
+    { key: 'linkedin', label: 'LinkedIn', emoji: '💼', color: '#0A66C2', placeholder: 'https://linkedin.com/company/yourbusiness' },
+    { key: 'youtube', label: 'YouTube', emoji: '▶️', color: '#FF0000', placeholder: 'https://youtube.com/@yourbusiness' },
+    { key: 'whatsapp', label: 'WhatsApp', emoji: '💬', color: '#25D366', placeholder: 'https://wa.me/923001234567' },
+    { key: 'website', label: 'Website', emoji: '🌐', color: '#FF7A30', placeholder: 'https://yourbusiness.com' },
+];
 
 export default function AddListingPage() {
     const router = useRouter();
@@ -46,6 +57,23 @@ export default function AddListingPage() {
     const [showAddAmenity, setShowAddAmenity] = useState(false);
     const [newAmenityName, setNewAmenityName] = useState('');
     const [creatingAmenity, setCreatingAmenity] = useState(false);
+
+    // ── Social Links ─────────────────────────────────────────────────
+    const [socialLinks, setSocialLinks] = useState<{ platform: string; url: string }[]>([]);
+
+    const addSocialLink = (platform: string) => {
+        if (!socialLinks.find(s => s.platform === platform)) {
+            setSocialLinks(prev => [...prev, { platform, url: '' }]);
+        }
+    };
+
+    const removeSocialLink = (platform: string) => {
+        setSocialLinks(prev => prev.filter(s => s.platform !== platform));
+    };
+
+    const updateSocialUrl = (platform: string, url: string) => {
+        setSocialLinks(prev => prev.map(s => s.platform === platform ? { ...s, url } : s));
+    };
 
     // ── Keywords ────────────────────────────────────────────────────
     const [keywords, setKeywords] = useState<string[]>([]);
@@ -143,6 +171,11 @@ export default function AddListingPage() {
         setError(null);
         try {
             await api.listings.create(formData);
+            // Save social links to vendor profile if any were added
+            const linksToSave = socialLinks.filter(s => s.url.trim());
+            if (linksToSave.length > 0) {
+                await api.vendors.updateProfile({ socialLinks: linksToSave });
+            }
             setSuccess(true);
             setTimeout(() => router.push('/vendor/listings'), 2000);
         } catch (err: any) {
@@ -412,35 +445,12 @@ export default function AddListingPage() {
                                         <Tag className="w-3 h-3 inline mr-1.5 text-orange-500" />
                                         Category <span className="text-orange-500">*</span>
                                     </label>
-                                    <div className="relative">
-                                        {catsLoading ? (
-                                            <div className="flex items-center gap-2 px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-400 text-sm">
-                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                                Loading categories...
-                                            </div>
-                                        ) : catsError ? (
-                                            <div className="px-4 py-3.5 bg-red-50 border border-red-200 rounded-xl text-red-500 text-sm font-semibold">
-                                                ⚠ {catsError}
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <select
-                                                    required
-                                                    name="categoryId"
-                                                    value={formData.categoryId}
-                                                    onChange={handleChange}
-                                                    className={selectClass}
-                                                >
-                                                    <option value="" disabled>-- Select Category --</option>
-                                                    {categories.map(cat => (
-                                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                                    ))}
-                                                    <option value="other">Other</option>
-                                                </select>
-                                                <Layers className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                                            </>
-                                        )}
-                                    </div>
+                                    <CategorySearchSelect
+                                        categories={categories}
+                                        value={formData.categoryId}
+                                        onChange={(val) => setFormData(prev => ({ ...prev, categoryId: val }))}
+                                        loading={catsLoading}
+                                    />
                                 </div>
 
                                 <div>
@@ -1165,6 +1175,85 @@ export default function AddListingPage() {
                                     <p className="text-sm font-bold">Toggle on to add a special offer or promo banner</p>
                                 </div>
                             )}
+                        </div>
+
+                        {/* ── Social Media Links ───────────────────────────── */}
+                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                            <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-pink-50 flex items-center justify-center">
+                                    <Share2 className="w-4 h-4 text-pink-500" />
+                                </div>
+                                <div>
+                                    <h3 className="font-black text-slate-900">Social Media Links</h3>
+                                    <p className="text-[11px] text-slate-400 font-medium">Connect your social profiles · optional</p>
+                                </div>
+                            </div>
+                            <div className="p-6">
+                                {/* Platform picker */}
+                                <p className={labelClass}>Select platforms</p>
+                                <div className="flex flex-wrap gap-2 mb-5">
+                                    {SOCIAL_PLATFORMS.map(p => {
+                                        const isSelected = !!socialLinks.find(s => s.platform === p.key);
+                                        return (
+                                            <button
+                                                key={p.key}
+                                                type="button"
+                                                onClick={() => isSelected ? removeSocialLink(p.key) : addSocialLink(p.key)}
+                                                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black border transition-all ${isSelected
+                                                    ? 'text-white border-transparent shadow-sm'
+                                                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300'
+                                                    }`}
+                                                style={isSelected ? { backgroundColor: p.color, borderColor: p.color } : {}}
+                                            >
+                                                <span className="text-sm">{p.emoji}</span>
+                                                {p.label}
+                                                {isSelected && <X className="w-3 h-3 ml-0.5 opacity-80" />}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* URL inputs for selected platforms */}
+                                {socialLinks.length > 0 && (
+                                    <div className="space-y-3">
+                                        <p className={labelClass}>Enter your profile URLs</p>
+                                        {socialLinks.map(link => {
+                                            const platform = SOCIAL_PLATFORMS.find(p => p.key === link.platform)!;
+                                            return (
+                                                <div key={link.platform} className="flex items-center gap-3">
+                                                    <div
+                                                        className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-base shadow-sm"
+                                                        style={{ backgroundColor: platform.color + '18', border: `1.5px solid ${platform.color}30` }}
+                                                    >
+                                                        {platform.emoji}
+                                                    </div>
+                                                    <input
+                                                        type="url"
+                                                        value={link.url}
+                                                        onChange={e => updateSocialUrl(link.platform, e.target.value)}
+                                                        placeholder={platform.placeholder}
+                                                        className={`${inputClass} flex-1`}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeSocialLink(link.platform)}
+                                                        className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-400 flex items-center justify-center transition-colors flex-shrink-0"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+
+                                {socialLinks.length === 0 && (
+                                    <div className="flex flex-col items-center gap-2 py-6 text-slate-400">
+                                        <Globe className="w-8 h-8 opacity-20" />
+                                        <p className="text-xs font-bold">Click a platform above to add your social links</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {/* ── Search Keywords ──────────────────────────────── */}

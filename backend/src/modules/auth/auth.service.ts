@@ -2,20 +2,26 @@ import {
     Injectable,
     UnauthorizedException,
     ConflictException,
+    BadRequestException,
+    Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { OAuth2Client } from 'google-auth-library';
 import { User, UserRole } from '../../entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { GoogleAuthDto } from './dto/google-auth.dto';
 import { JwtPayload, JwtTokens } from '../../common/interfaces/jwt-payload.interface';
 import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AuthService {
+    private readonly logger = new Logger(AuthService.name);
+
     constructor(
         @InjectRepository(User)
         private userRepository: Repository<User>,
@@ -105,6 +111,109 @@ export class AuthService {
         // Update last login
         user.lastLoginAt = new Date();
         await this.userRepository.save(user);
+
+        // Generate tokens
+        const tokens = await this.generateTokens(user);
+
+        // Remove sensitive data
+        delete user.password;
+
+        return { user, tokens };
+    }
+
+    /**
+     * Login with Google OAuth ID token
+     */
+    async googleLogin(dto: GoogleAuthDto): Promise<{ user: User; tokens: JwtTokens }> {
+        const { credential } = dto;
+
+        if (!credential) {
+            throw new BadRequestException('Google credential token is required');
+        }
+
+        const clientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
+        if (!clientId) {
+            this.logger.error('[GoogleAuth] GOOGLE_CLIENT_ID is not configured');
+            throw new UnauthorizedException('Google authentication is not configured');
+        }
+
+        // Verify token with Google
+        const client = new OAuth2Client(clientId);
+        let payload: any;
+        try {
+            // Try as ID Token first (Standard button)
+            const ticket = await client.verifyIdToken({
+                idToken: credential,
+                audience: clientId,
+            });
+            payload = ticket.getPayload();
+        } catch (error) {
+            // Try as Access Token (Custom button/Implicit flow)
+            try {
+                this.logger.log(`[GoogleAuth] Falling back to userinfo check for access token (prefix: ${credential.substring(0, 5)}...)`);
+                const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: {
+                        Authorization: `Bearer ${credential}`,
+                    },
+                });
+
+                if (!userInfoResponse.ok) {
+                    const errorText = await userInfoResponse.text();
+                    throw new Error(`Google UserInfo API responded with ${userInfoResponse.status}: ${errorText}`);
+                }
+
+                payload = await userInfoResponse.json();
+            } catch (fallbackError) {
+                this.logger.error(`[GoogleAuth] Token verification failed. ID Token Error: ${error.message}. Access Token Error: ${fallbackError.message}`);
+                throw new UnauthorizedException('Invalid or expired Google token');
+            }
+        }
+
+        if (!payload || (!payload.email && !payload.email_verified)) {
+            throw new UnauthorizedException('Invalid Google token payload');
+        }
+
+        const { email, name, picture, sub: googleId } = payload;
+        this.logger.log(`[GoogleAuth] Verified Google user: ${email}`);
+
+        // Find or create user
+        let user = await this.userRepository
+            .createQueryBuilder('user')
+            .leftJoinAndSelect('user.vendor', 'vendor')
+            .where('user.email = :email', { email })
+            .getOne();
+
+        if (user) {
+            // Link Google account if not already linked
+            if (!user.googleId) {
+                user.googleId = googleId;
+                user.provider = user.provider === 'local' ? 'local' : 'google';
+                if (!user.avatarUrl && picture) {
+                    user.avatarUrl = picture;
+                }
+                user.lastLoginAt = new Date();
+                await this.userRepository.save(user);
+                this.logger.log(`[GoogleAuth] Linked Google account to existing user: ${email}`);
+            } else {
+                user.lastLoginAt = new Date();
+                await this.userRepository.save(user);
+            }
+        } else {
+            // Create new user from Google profile
+            const newUser = this.userRepository.create({
+                email,
+                fullName: name || email.split('@')[0],
+                avatarUrl: picture || null,
+                googleId,
+                provider: 'google',
+                role: (dto.role as UserRole) || UserRole.USER,
+                isEmailVerified: true,
+                isActive: true,
+                lastLoginAt: new Date(),
+            });
+            user = await this.userRepository.save(newUser);
+            this.logger.log(`[GoogleAuth] Created new user from Google: ${email}`);
+        }
 
         // Generate tokens
         const tokens = await this.generateTokens(user);

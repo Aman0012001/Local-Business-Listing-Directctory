@@ -7,26 +7,37 @@ import {
     ManyToOne,
     OneToMany,
     JoinColumn,
+    Index,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { Listing } from './business.entity';
+
+export enum CategoryStatus {
+    ACTIVE = 'active',
+    DISABLED = 'disabled',
+}
 
 @Entity('categories')
 export class Category {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ length: 100 })
+    @Column({ unique: true, length: 100 })
+    @Index()
     name: string;
 
     @Column({ unique: true, length: 100 })
+    @Index()
     slug: string;
 
     @Column({ nullable: true, type: 'text' })
     description: string;
 
-    @Column({ name: 'icon_url', nullable: true, type: 'text' })
-    iconUrl: string;
+    @Column({ name: 'icon', nullable: true, type: 'text' })
+    icon: string;
+
+    @Column({ name: 'image_url', nullable: true, type: 'text' })
+    imageUrl: string;
 
     @Column({ name: 'parent_id', nullable: true, type: 'uuid' })
     parentId: string;
@@ -34,8 +45,13 @@ export class Category {
     @Column({ name: 'display_order', default: 0 })
     displayOrder: number;
 
-    @Column({ name: 'is_active', default: true })
-    isActive: boolean;
+    @Column({
+        type: 'enum',
+        enum: CategoryStatus,
+        default: CategoryStatus.ACTIVE,
+    })
+    @Index()
+    status: CategoryStatus;
 
     @Column({ name: 'meta_title', nullable: true })
     metaTitle: string;

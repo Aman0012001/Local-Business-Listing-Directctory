@@ -2,13 +2,15 @@ import {
     Controller,
     Get,
     Post,
+    Patch,
+    Delete,
     Body,
     UseGuards,
     Param,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { SubscriptionsService } from './subscriptions.service';
-import { CreatePlanDto, CheckoutDto } from './dto/subscription.dto';
+import { CreatePlanDto, UpdatePlanDto, CheckoutDto } from './dto/subscription.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -31,12 +33,44 @@ export class SubscriptionsController {
         return this.subService.getPlans();
     }
 
+    @Get('plans/admin')
+    @Roles(UserRole.ADMIN)
+    @ApiOperation({ summary: 'List all plans including inactive ones (Admin only)' })
+    @ApiResponse({ status: 200, description: 'Plans retrieved' })
+    getPlansForAdmin() {
+        return this.subService.getPlansForAdmin();
+    }
+
+    @Get('plans/:id')
+    @Roles(UserRole.ADMIN)
+    @ApiOperation({ summary: 'Get plan details by ID (Admin only)' })
+    @ApiResponse({ status: 200, description: 'Plan retrieved' })
+    getPlanById(@Param('id') id: string) {
+        return this.subService.getPlanById(id);
+    }
+
     @Post('plans')
     @Roles(UserRole.ADMIN)
     @ApiOperation({ summary: 'Create a new plan (Admin only)' })
     @ApiResponse({ status: 201, description: 'Plan created' })
     createPlan(@Body() createPlanDto: CreatePlanDto) {
         return this.subService.createPlan(createPlanDto);
+    }
+
+    @Patch('plans/:id')
+    @Roles(UserRole.ADMIN)
+    @ApiOperation({ summary: 'Update a plan (Admin only)' })
+    @ApiResponse({ status: 200, description: 'Plan updated' })
+    updatePlan(@Param('id') id: string, @Body() updatePlanDto: UpdatePlanDto) {
+        return this.subService.updatePlan(id, updatePlanDto);
+    }
+
+    @Delete('plans/:id')
+    @Roles(UserRole.ADMIN)
+    @ApiOperation({ summary: 'Delete a plan (Admin only)' })
+    @ApiResponse({ status: 204, description: 'Plan deleted' })
+    deletePlan(@Param('id') id: string) {
+        return this.subService.deletePlan(id);
     }
 
     @Post('checkout')

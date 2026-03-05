@@ -5,6 +5,7 @@ import {
     IsOptional,
     IsNumber,
     IsArray,
+    IsBoolean,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SubscriptionPlanType } from '../../../entities/subscription-plan.entity';
@@ -37,12 +38,56 @@ export class CreatePlanDto {
 
     @ApiProperty({ default: false })
     @IsOptional()
-    isFeatured?: boolean = false;
-
-    @ApiProperty({ default: false })
-    @IsOptional()
+    @IsBoolean()
     isSponsored?: boolean = false;
+}
 
+export class UpdatePlanDto {
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    name?: string;
+
+    @ApiPropertyOptional({ enum: SubscriptionPlanType })
+    @IsOptional()
+    @IsEnum(SubscriptionPlanType)
+    planType?: SubscriptionPlanType;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsNumber()
+    price?: number;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    billingCycle?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    features?: string[];
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsNumber()
+    maxListings?: number;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsBoolean()
+    isFeatured?: boolean;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsBoolean()
+    isSponsored?: boolean;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsBoolean()
+    isActive?: boolean;
 }
 
 export class CheckoutDto {

@@ -3,11 +3,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../lib/api';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+
+const GOOGLE_CLIENT_ID = '696583631101-3td2apbr7d2tlbne4o6tmc0crg84u1nv.apps.googleusercontent.com';
 
 interface AuthContextType {
     user: any | null;
     loading: boolean;
     login: (credentials: any) => Promise<void>;
+    googleLogin: (credential: string, role?: string) => Promise<void>;
     register: (userData: any) => Promise<void>;
     logout: () => void;
     updateUser: (userData: any) => void;
@@ -82,6 +86,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         redirectUser(response.user);
     };
 
+    const googleLogin = async (credential: string, role?: string) => {
+        const response = await api.auth.googleLogin({ credential, role });
+        localStorage.setItem('token', response.tokens.accessToken);
+        localStorage.setItem('user', JSON.stringify(response.user));
+        setUser(response.user);
+        redirectUser(response.user);
+    };
+
     const register = async (userData: any) => {
         const response = await api.auth.register(userData);
         localStorage.setItem('token', response.tokens.accessToken);
@@ -104,9 +116,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser }}>
-            {children}
-        </AuthContext.Provider>
+        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+            <AuthContext.Provider value={{ user, loading, login, googleLogin, register, logout, updateUser }}>
+                {children}
+            </AuthContext.Provider>
+        </GoogleOAuthProvider>
     );
 }
 

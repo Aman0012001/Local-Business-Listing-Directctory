@@ -13,38 +13,41 @@ import { Category, Business, City, Review } from '../types/api';
 export default function HomePage() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [featuredBusinesses, setFeaturedBusinesses] = useState<Business[]>([]);
+    const [paginationMetadata, setPaginationMetadata] = useState({
+        total: 0,
+        page: 1,
+        limit: 12,
+        totalPages: 0,
+        hasMore: false
+    });
     const [popularCities, setPopularCities] = useState<City[]>([]);
     const [categoriesList, setCategoriesList] = useState<Category[]>([]);
     const [citiesList, setCitiesList] = useState<City[]>([]);
-    const [selectedCategory, setSelectedCategory] = useState<string>('');
-    const [selectedCity, setSelectedCity] = useState<string>('');
-    const [isCatOpen, setIsCatOpen] = useState(false);
-    const [isCityOpen, setIsCityOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
+
     const [loading, setLoading] = useState(true);
     const [statsReviews, setStatsReviews] = useState<Review[]>([]);
 
     useEffect(() => {
         const loadInitialData = async () => {
             try {
-                console.log('Fetching homepage data...');
-                // Use Promise.allSettled to prevent one hang/error from blocking the entire page
+                setLoading(true);
+                console.log(`Fetching homepage data for page ${paginationMetadata.page}...`);
                 const results = await Promise.allSettled([
                     api.categories.getPopular(8),
-                    api.listings.getFeatured(),
+                    api.listings.getFeatured(paginationMetadata.page, 12),
                     api.cities.getPopular(),
                     api.categories.getAll(),
                     api.cities.getAll(),
                     api.reviews.getPopular(3)
                 ]);
 
-                console.log('Homepage data settling...');
-
-                // Helper to extract value or fallback
                 const getValue = (result: PromiseSettledResult<any>, fallback: any) =>
                     result.status === 'fulfilled' ? result.value : fallback;
 
                 const cats = getValue(results[0], []);
-                const featured = getValue(results[1], { data: [] });
+                const featured = getValue(results[1], { data: [], meta: {} });
                 const cities = getValue(results[2], []);
                 const allCats = getValue(results[3], []);
                 const allCities = getValue(results[4], []);
@@ -52,6 +55,9 @@ export default function HomePage() {
 
                 setCategories(cats || []);
                 setFeaturedBusinesses(featured?.data || []);
+                if (featured?.meta) {
+                    setPaginationMetadata(prev => ({ ...prev, ...featured.meta }));
+                }
                 setPopularCities(cities || []);
                 setCategoriesList(allCats || []);
                 setCitiesList(allCities || []);
@@ -64,15 +70,13 @@ export default function HomePage() {
             }
         };
         loadInitialData();
-    }, []);
+    }, [paginationMetadata.page]);
 
-    // Close dropdowns when clicking outside the search bar
     const searchRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
         const handler = (e: MouseEvent) => {
             if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-                setIsCatOpen(false);
-                setIsCityOpen(false);
+                setIsSuggestionsOpen(false);
             }
         };
         document.addEventListener('mousedown', handler);
@@ -80,10 +84,8 @@ export default function HomePage() {
     }, []);
 
     const handleSearch = () => {
-        const params = new URLSearchParams();
-        if (selectedCategory) params.append('category', selectedCategory);
-        if (selectedCity) params.append('city', selectedCity);
-        window.location.href = `/search?${params.toString()}`;
+        if (!searchQuery.trim()) return;
+        window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
     };
 
     if (loading) {
@@ -91,18 +93,26 @@ export default function HomePage() {
             <div className="min-h-screen flex items-center justify-center bg-white">
                 <div className="flex flex-col items-center gap-4">
                     <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#FF7A30]" />
-                    <p className="text-slate-500 font-bold animate-pulse">Loading Trusted </p>
+                    <p className="text-slate-500 font-bold animate-pulse">Loading Trusted</p>
                 </div>
             </div>
         );
     }
+
+    const filteredCategories = categoriesList.filter(cat =>
+        cat.name.toLowerCase().includes(searchQuery.toLowerCase())
+    ).slice(0, 5);
+
+    const filteredCities = citiesList.filter(city =>
+        city.name.toLowerCase().includes(searchQuery.toLowerCase())
+    ).slice(0, 5);
 
     return (
         <div className="min-h-screen bg-white font-sans text-slate-900 overflow-x-hidden">
             <Navbar />
 
             {/* Hero Section */}
-            <section className="relative h-[800px] flex items-center justify-center overflow-x-hidden">
+            <section className="relative pt-32 pb-44 px-4 overflow-visible z-[60]">
                 <div
                     className="absolute inset-0 z-0 scale-105"
                     style={{
@@ -113,7 +123,7 @@ export default function HomePage() {
                     }}
                 />
 
-                <div className="max-w-7xl mx-auto px-4 relative z-10 text-center text-white pb-36">
+                <div className="max-w-7xl mx-auto relative z-10 text-center text-white">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -133,99 +143,102 @@ export default function HomePage() {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.2, duration: 0.5 }}
-                        className="relative z-10 max-w-5xl mx-auto bg-white/10 backdrop-blur-md p-1.5 rounded-2xl md:rounded-full shadow-2xl border border-white/20 flex flex-col md:flex-row items-stretch"
+                        className="relative z-[70] max-w-4xl mx-auto bg-white/10 backdrop-blur-md p-2 rounded-2xl md:rounded-full shadow-2xl border border-white/20 flex flex-col md:flex-row items-stretch gap-2"
                     >
-                        {/* Category Dropdown */}
-                        <div className="flex-1 relative z-[60] group">
-                            <button
-                                onClick={() => { setIsCatOpen(!isCatOpen); setIsCityOpen(false); }}
-                                className="w-full flex items-center justify-between px-8 py-5 bg-white rounded-t-2xl md:rounded-l-full md:rounded-r-none border-b md:border-b-0 md:border-r border-slate-100 text-left"
-                            >
-                                <span className={`text-lg font-semibold ${selectedCategory ? 'text-slate-900' : 'text-slate-400'}`}>
-                                    {selectedCategory ? categoriesList.find(c => c.slug === selectedCategory)?.name : 'What are you looking for?'}
-                                </span>
-                                <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${isCatOpen ? 'rotate-180' : ''}`} />
-                            </button>
+                        <div className="flex-1 relative z-50">
+                            <div className="relative h-full">
+                                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-400 z-10" />
+                                <input
+                                    type="text"
+                                    placeholder="Search categories, cities, or businesses..."
+                                    value={searchQuery}
+                                    onChange={(e) => {
+                                        setSearchQuery(e.target.value);
+                                        setIsSuggestionsOpen(true);
+                                    }}
+                                    onFocus={() => setIsSuggestionsOpen(true)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                                    className="w-full pl-16 pr-8 py-6 bg-white text-slate-900 placeholder-slate-400 rounded-2xl md:rounded-full border-0 focus:ring-2 focus:ring-[#FF7A30] text-xl font-semibold outline-none transition-all shadow-inner"
+                                />
+                            </div>
 
-                            {isCatOpen && (
+                            {isSuggestionsOpen && (filteredCategories.length > 0 || filteredCities.length > 0) && (
                                 <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-black py-2 z-[999] max-h-64 overflow-y-auto"
+                                    className="absolute top-full left-0 right-0 mt-3 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100 py-4 z-[100] max-h-[500px] overflow-y-auto"
                                 >
-                                    {categoriesList.map(cat => (
-                                        <button
-                                            key={cat.id}
-                                            onClick={() => { setSelectedCategory(cat.slug); setIsCatOpen(false); }}
-                                            className="w-full px-6 py-3 text-left hover:bg-slate-50 text-slate-700 font-bold transition-colors flex items-center gap-3"
-                                        >
-                                            <TrendingUp className="w-4 h-4 text-slate-300" />
-                                            {cat.name}
-                                        </button>
-                                    ))}
-                                </motion.div>
-                            )}
-                        </div>
+                                    {filteredCategories.length > 0 && (
+                                        <div className="px-6 py-2">
+                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Categories</p>
+                                            {filteredCategories.map(cat => (
+                                                <button
+                                                    key={cat.id}
+                                                    onClick={() => {
+                                                        setSearchQuery(cat.name);
+                                                        setIsSuggestionsOpen(false);
+                                                        window.location.href = `/search?category=${cat.slug}`;
+                                                    }}
+                                                    className="w-full px-4 py-3 text-left hover:bg-blue-50/50 rounded-xl text-slate-700 font-bold transition-all flex items-center justify-between group"
+                                                >
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-[#FF7A30] group-hover:scale-110 transition-transform">
+                                                            <TrendingUp className="w-5 h-5" />
+                                                        </div>
+                                                        <span className="group-hover:text-[#FF7A30] transition-colors">{cat.name}</span>
+                                                    </div>
+                                                    <ChevronDown className="w-4 h-4 opacity-0 group-hover:opacity-100 -rotate-90 transition-all" />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
 
-                        {/* City Dropdown */}
-                        <div className="w-full md:w-80 relative z-[60]">
-                            <button
-                                onClick={() => { setIsCityOpen(!isCityOpen); setIsCatOpen(false); }}
-                                className="w-full flex items-center justify-between px-8 py-5 bg-white md:rounded-none text-left"
-                            >
-                                <span className={`text-lg font-semibold ${selectedCity ? 'text-slate-900' : 'text-slate-400'}`}>
-                                    {selectedCity || 'Enter City or Area'}
-                                </span>
-                                <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${isCityOpen ? 'rotate-180' : ''}`} />
-                            </button>
-
-                            {isCityOpen && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-black py-2 z-[999] max-h-64 overflow-y-auto"
-                                >
-                                    {citiesList.map(city => (
-                                        <button
-                                            key={city.id}
-                                            onClick={() => { setSelectedCity(city.name); setIsCityOpen(false); }}
-                                            className="w-full px-6 py-3 text-left hover:bg-slate-50 text-slate-700 font-bold transition-colors flex items-center gap-3"
-                                        >
-                                            <MapPin className="w-4 h-4 text-slate-300" />
-                                            {city.name}
-                                        </button>
-                                    ))}
+                                    {filteredCities.length > 0 && (
+                                        <div className="px-6 py-2 border-t border-slate-50 mt-2">
+                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 mt-2">Locations</p>
+                                            {filteredCities.map(city => (
+                                                <button
+                                                    key={city.id}
+                                                    onClick={() => {
+                                                        setSearchQuery(city.name);
+                                                        setIsSuggestionsOpen(false);
+                                                        window.location.href = `/search?city=${encodeURIComponent(city.name)}`;
+                                                    }}
+                                                    className="w-full px-4 py-3 text-left hover:bg-blue-50/50 rounded-xl text-slate-700 font-bold transition-all flex items-center justify-between group"
+                                                >
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+                                                            <MapPin className="w-5 h-5" />
+                                                        </div>
+                                                        <span className="group-hover:text-blue-600 transition-colors">{city.name}</span>
+                                                    </div>
+                                                    <ChevronDown className="w-4 h-4 opacity-0 group-hover:opacity-100 -rotate-90 transition-all" />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                 </motion.div>
                             )}
                         </div>
 
                         <button
                             onClick={handleSearch}
-                            className="bg-[#FF7A30] hover:bg-[#E86920] text-white px-16 py-5 rounded-b-2xl md:rounded-r-full md:rounded-l-none font-black text-xl transition-all shadow-xl active:scale-95 flex items-center justify-center"
+                            className="bg-[#FF7A30] hover:bg-[#E86920] text-white px-12 py-5 rounded-2xl md:rounded-full font-black text-xl transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3 group shrink-0"
                         >
+                            <Search className="w-6 h-6 group-hover:scale-110 transition-transform" />
                             Search
                         </button>
                     </motion.div>
 
-                    {/* Quick Category Icons */}
-                    <div className="mt-12 flex flex-wrap justify-center gap-6 md:gap-12 text-white/95">
-                        <Link href="/search?category=doctors" className="flex items-center gap-3 hover:text-white transition-all transform hover:-translate-y-1 group">
-                            <div className="p-2.5 bg-white/10 rounded-xl group-hover:bg-white/20 transition-all backdrop-blur-sm"><Stethoscope className="w-5 h-5" /></div>
-                            <span className="text-base font-bold tracking-wide">Doctors</span>
-                        </Link>
-                        <Link href="/search?category=restaurants-food" className="flex items-center gap-3 hover:text-white transition-all transform hover:-translate-y-1 group">
-                            <div className="p-2.5 bg-white/10 rounded-xl group-hover:bg-white/20 transition-all backdrop-blur-sm"><ChefHat className="w-5 h-5" /></div>
-                            <span className="text-base font-bold tracking-wide">Restaurants</span>
-                        </Link>
-                        <Link href="/search?category=beauty-spa" className="flex items-center gap-3 hover:text-white transition-all transform hover:-translate-y-1 group">
-                            <div className="p-2.5 bg-white/10 rounded-xl group-hover:bg-white/20 transition-all backdrop-blur-sm"><Sparkles className="w-5 h-5" /></div>
-                            <span className="text-base font-bold tracking-wide">Salon & Spa</span>
-                        </Link>
-                        <Link href="/search?category=home-services-maintenance" className="flex items-center gap-3 hover:text-white transition-all transform hover:-translate-y-1 group">
-                            <div className="p-2.5 bg-white/10 rounded-xl group-hover:bg-white/20 transition-all backdrop-blur-sm"><Wrench className="w-5 h-5" /></div>
-                            <span className="text-base font-bold tracking-wide">Repair Services</span>
-                        </Link>
+                    <div className="mt-12 flex flex-wrap justify-center gap-4 md:gap-8 text-white/95">
+                        {categories.slice(0, 4).map(cat => (
+                            <Link key={cat.id} href={`/search?category=${cat.slug}`} className="flex items-center gap-3 px-4 py-2 bg-white/10 rounded-xl hover:bg-white/20 transition-all backdrop-blur-sm border border-white/10 group">
+                                <span className="text-xl">{cat.icon || '📁'}</span>
+                                <span className="text-base font-bold tracking-wide">{cat.name}</span>
+                            </Link>
+                        ))}
                     </div>
+
                 </div>
             </section>
 
@@ -239,41 +252,29 @@ export default function HomePage() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                        {categories.map((cat, idx) => {
-                            const iconMap: Record<string, React.ReactNode> = {
-                                'restaurants-food': <ChefHat className="w-8 h-8 text-[#FF7A30]" />,
-                                'doctors': <Stethoscope className="w-8 h-8 text-blue-600" />,
-                                'beauty-spa': <Sparkles className="w-8 h-8 text-pink-500" />,
-                                'real-estate': <Compass className="w-8 h-8 text-green-600" />,
-                                'education': <Star className="w-8 h-8 text-indigo-600" />,
-                                'home-services-maintenance': <Wrench className="w-8 h-8 text-amber-600" />,
-                                'automobile': <Compass className="w-8 h-8 text-blue-400" />,
-                                'it-repair-maintenance': <Sliders className="w-8 h-8 text-slate-700" />
-                            };
-                            return (
-                                <motion.div
-                                    key={cat.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ delay: idx * 0.05 }}
-                                >
-                                    <Link href={`/categories/${cat.slug}`} className="group block">
-                                        <div className="bg-slate-50 p-8 rounded-2xl border border-black flex items-center gap-6 hover:bg-white hover:shadow-2xl hover:shadow-blue-500/5 hover:-translate-y-1 transition-all duration-500">
-                                            <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center group-hover:border-blue-200 group-hover:bg-blue-50/30 transition-all">
-                                                {iconMap[cat.slug] || <TrendingUp className="w-8 h-8 text-blue-600" />}
-                                            </div>
-                                            <div>
-                                                <h3 className="font-bold text-xl text-slate-900 mb-1 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{cat.name}</h3>
-                                                <p className="text-sm text-slate-500 font-bold uppercase tracking-widest opacity-80">
-                                                    {cat.businessCount || 150}+ Listings
-                                                </p>
-                                            </div>
+                        {categories.map((cat, idx) => (
+                            <motion.div
+                                key={cat.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: idx * 0.05 }}
+                            >
+                                <Link href={`/search?category=${cat.slug}`} className="group block">
+                                    <div className="bg-slate-50 p-8 rounded-2xl border border-black flex items-center gap-6 hover:bg-white hover:shadow-2xl hover:shadow-blue-500/5 hover:-translate-y-1 transition-all duration-500">
+                                        <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center group-hover:border-blue-200 group-hover:bg-blue-50/30 transition-all">
+                                            <span className="text-3xl">{cat.icon || '📁'}</span>
                                         </div>
-                                    </Link>
-                                </motion.div>
-                            );
-                        })}
+                                        <div>
+                                            <h3 className="font-bold text-xl text-slate-900 mb-1 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{cat.name}</h3>
+                                            <p className="text-sm text-slate-500 font-bold uppercase tracking-widest opacity-80">
+                                                {cat.businessCount || 0}+ Listings
+                                            </p>
+                                        </div>
+                                    </div>
+                                </Link>
+                            </motion.div>
+                        ))}
                     </div>
                 </div>
             </section>
@@ -288,25 +289,61 @@ export default function HomePage() {
                     </div>
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        {featuredBusinesses.length > 0 ? featuredBusinesses.slice(0, 4).map((biz, idx) => (
+                        {featuredBusinesses.length > 0 ? featuredBusinesses.map((biz, idx) => (
                             <motion.div
                                 key={biz.id}
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 whileInView={{ opacity: 1, scale: 1 }}
                                 viewport={{ once: true }}
-                                transition={{ delay: idx * 0.1 }}
+                                transition={{ delay: (idx % 4) * 0.1 }}
                             >
                                 <BusinessCard
                                     business={biz}
-                                    variant={idx === 0 ? 'green' : idx === 1 ? 'blue' : idx === 2 ? 'white' : 'dark'}
+                                    variant={idx % 4 === 0 ? 'green' : idx % 4 === 1 ? 'blue' : idx % 4 === 2 ? 'white' : 'dark'}
                                 />
                             </motion.div>
                         )) : (
-                            Array(4).fill(0).map((_, i) => (
+                            Array(12).fill(0).map((_, i) => (
                                 <div key={i} className="bg-white h-[400px] rounded-3xl shadow-sm animate-pulse border border-slate-100" />
                             ))
                         )}
                     </div>
+
+                    {/* Pagination Bar */}
+                    {paginationMetadata.totalPages > 1 && (
+                        <div className="mt-16 flex justify-center items-center gap-4">
+                            <button
+                                onClick={() => setPaginationMetadata(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+                                disabled={paginationMetadata.page === 1}
+                                className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center hover:bg-white hover:shadow-lg transition-all disabled:opacity-30 disabled:hover:shadow-none"
+                            >
+                                <ChevronDown className="w-6 h-6 rotate-90" />
+                            </button>
+
+                            <div className="flex items-center gap-2">
+                                {[...Array(paginationMetadata.totalPages)].map((_, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => setPaginationMetadata(prev => ({ ...prev, page: i + 1 }))}
+                                        className={`w-12 h-12 rounded-full font-black transition-all ${paginationMetadata.page === i + 1
+                                            ? 'bg-[#FF7A30] text-white shadow-lg'
+                                            : 'hover:bg-white hover:shadow-md text-slate-600'
+                                            }`}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <button
+                                onClick={() => setPaginationMetadata(prev => ({ ...prev, page: Math.min(prev.totalPages, prev.page + 1) }))}
+                                disabled={paginationMetadata.page === paginationMetadata.totalPages}
+                                className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center hover:bg-white hover:shadow-lg transition-all disabled:opacity-30 disabled:hover:shadow-none"
+                            >
+                                <ChevronDown className="w-6 h-6 -rotate-90" />
+                            </button>
+                        </div>
+                    )}
                 </div>
             </section>
 
@@ -397,7 +434,6 @@ export default function HomePage() {
                     </div>
                 </div>
 
-                {/* Build cards list */}
                 {(() => {
                     const fallbackReviews = [
                         { id: 'f1', name: 'Ahmed S.', location: 'Karachi', text: 'Found a great plumber in Karachi in minutes. Highly recommend!', rating: 5, img: 'https://i.pravatar.cc/150?u=ahmed' },
@@ -419,7 +455,6 @@ export default function HomePage() {
                         }))
                         : fallbackReviews;
 
-                    // Duplicate cards for seamless loop
                     const row1 = [...cards, ...cards, ...cards];
                     const row2 = [...cards, ...cards, ...cards];
 
@@ -435,7 +470,7 @@ export default function HomePage() {
                                 }
                             </div>
                             <div className="min-w-0">
-                                <h4 className="font-black text-slate-900 text-sm mb-0.5 truncate">
+                                <h4 className="font-bold text-slate-900 text-sm mb-0.5 truncate">
                                     {card.name}{card.location ? `, ${card.location}` : ''}
                                 </h4>
                                 <div className="flex gap-0.5 mb-1.5">
@@ -451,7 +486,6 @@ export default function HomePage() {
                     return (
                         <div className="max-w-7xl mx-auto px-4 overflow-hidden">
                             <div className="space-y-4">
-                                {/* Row 1: Right to Left */}
                                 <div className="relative">
                                     <div
                                         className="flex"
@@ -466,7 +500,6 @@ export default function HomePage() {
                                     </div>
                                 </div>
 
-                                {/* Row 2: Left to Right */}
                                 <div className="relative">
                                     <div
                                         className="flex"
@@ -485,7 +518,6 @@ export default function HomePage() {
                     );
                 })()}
 
-                {/* Keyframe styles */}
                 <style>{`
                     @keyframes marquee-rtl {
                         0%   { transform: translateX(0); }
@@ -502,7 +534,6 @@ export default function HomePage() {
             <section className="py-20 bg-white">
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="bg-gradient-to-r from-[#0B2244] to-[#0D2E61] rounded-xl p-8 md:px-12 md:py-10 relative overflow-hidden shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8 border border-white/5">
-                        {/* Subtle Mesh Pattern */}
                         <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/carbon-fibre.png")', opacity: 0.1 }} />
                         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent pointer-events-none" />
 
@@ -523,7 +554,6 @@ export default function HomePage() {
                     </div>
                 </div>
             </section>
-
 
             <Footer />
         </div>

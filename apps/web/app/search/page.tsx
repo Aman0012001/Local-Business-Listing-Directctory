@@ -68,14 +68,22 @@ function SearchResults() {
                                 <h4 className="text-sm font-bold text-slate-900 uppercase tracking-widest mb-4">Categories</h4>
                                 <div className="space-y-2">
                                     {categories.map(cat => (
-                                        <label key={cat.id} className="flex items-center group cursor-pointer">
+                                        <label key={cat.id} className="flex items-center group cursor-pointer py-1">
                                             <input
                                                 type="checkbox"
-                                                className="rounded-md border-slate-200 text-blue-600 focus:ring-blue-500 w-4 h-4 mr-3"
+                                                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 mr-3 transition-all cursor-pointer"
                                                 checked={categorySlug === cat.slug}
-                                                onChange={() => router.push(`/search?category=${cat.slug}`)}
+                                                onChange={() => {
+                                                    const params = new URLSearchParams(searchParams.toString());
+                                                    if (categorySlug === cat.slug) {
+                                                        params.delete('category');
+                                                    } else {
+                                                        params.set('category', cat.slug);
+                                                    }
+                                                    router.push(`/search?${params.toString()}`);
+                                                }}
                                             />
-                                            <span className="text-sm text-slate-600 group-hover:text-blue-600 transition-colors">{cat.name}</span>
+                                            <span className={`text-sm font-bold transition-all ${categorySlug === cat.slug ? 'text-blue-600' : 'text-slate-500 group-hover:text-slate-900'}`}>{cat.name}</span>
                                         </label>
                                     ))}
                                 </div>
@@ -118,30 +126,33 @@ function SearchResults() {
                                         <span className="text-xs font-bold text-orange-500">{city}</span>
                                     </div>
                                 )}
-                                <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                                <h1 className="text-3xl font-black text-slate-900 flex items-center gap-3 tracking-tight">
                                     {city ? (
                                         <>
-                                            <MapPin className="w-6 h-6 text-orange-500 flex-shrink-0" />
-                                            Businesses in <span className="text-orange-500 ml-1">{city}</span>
+                                            <MapPin className="w-8 h-8 text-orange-500 flex-shrink-0" />
+                                            Businesses in <span className="text-orange-500">{city}</span>
                                         </>
                                     ) : query ? (
                                         `Results for "${query}"`
                                     ) : categorySlug ? (
-                                        `Category: ${categorySlug}`
+                                        <>
+                                            <Filter className="w-8 h-8 text-blue-600" />
+                                            {categories.find(c => c.slug === categorySlug)?.name || categorySlug}
+                                        </>
                                     ) : (
                                         'All Businesses'
                                     )}
                                 </h1>
-                                <p className="text-slate-500 text-sm mt-1">
+                                <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mt-2">
                                     {results.length} {results.length === 1 ? 'business' : 'businesses'} found
                                     {city ? ` in ${city}` : ''}
                                 </p>
                             </div>
                             <button
                                 onClick={() => setShowFilters(true)}
-                                className="md:hidden flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold"
+                                className="md:hidden flex items-center gap-2 px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-black shadow-sm active:scale-95"
                             >
-                                <Filter className="w-4 h-4" /> Filters
+                                <Filter className="w-4 h-4 text-blue-600" /> Filters
                             </button>
                         </div>
 

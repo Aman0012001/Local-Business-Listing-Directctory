@@ -12,6 +12,7 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { GoogleAuthDto } from './dto/google-auth.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -51,6 +52,17 @@ export class AuthController {
     @ApiResponse({ status: 401, description: 'Invalid refresh token' })
     async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
         return this.authService.refreshToken(refreshTokenDto.refreshToken);
+    }
+
+    @Public()
+    @Post('google')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Login or register with Google OAuth' })
+    @ApiResponse({ status: 200, description: 'Google login successful' })
+    @ApiResponse({ status: 400, description: 'Missing or invalid credential' })
+    @ApiResponse({ status: 401, description: 'Invalid Google token' })
+    async googleLogin(@Body() googleAuthDto: GoogleAuthDto) {
+        return this.authService.googleLogin(googleAuthDto);
     }
 
     @Get('me')

@@ -13,6 +13,7 @@ import { Review } from './review.entity';
 import { Lead } from './lead.entity';
 import { SavedListing } from './favorite.entity';
 import { Notification } from './notification.entity';
+import { Comment } from './comment.entity';
 
 export enum UserRole {
     USER = 'user',
@@ -66,6 +67,12 @@ export class User {
     @Column({ nullable: true, length: 100, default: 'Pakistan' })
     country: string;
 
+    @Column({ name: 'google_id', nullable: true, unique: true })
+    googleId: string;
+
+    @Column({ name: 'provider', nullable: true, default: 'local' })
+    provider: string;
+
     @Column({ name: 'last_login_at', nullable: true, type: 'timestamp' })
     lastLoginAt: Date;
 
@@ -94,4 +101,7 @@ export class User {
     @Exclude()
     @OneToMany(() => Notification, (notification) => notification.user)
     notifications: Notification[];
+
+    @OneToMany(() => Comment, (comment) => comment.user)
+    comments: Comment[];
 }

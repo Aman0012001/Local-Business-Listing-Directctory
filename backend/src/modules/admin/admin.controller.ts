@@ -3,6 +3,7 @@ import {
     Get,
     Post,
     Patch,
+    Delete,
     Body,
     Param,
     UseGuards,
@@ -52,9 +53,81 @@ export class AdminController {
         return this.adminService.moderateReview(id, dto);
     }
 
+
+    @Get('users')
+    @ApiOperation({ summary: 'Get all user records' })
+    @ApiResponse({ status: 200, description: 'Full user list retrieved' })
+    getUsers(@Query('page') page?: number, @Query('limit') limit?: number) {
+        return this.adminService.getAllUsers(page, limit);
+    }
+
+    @Patch('users/:id/role')
+    @Roles(UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Update a user role' })
+    @ApiResponse({ status: 200, description: 'Role updated' })
+    updateUserRole(
+        @Param('id', ParseUuidPipe) id: string,
+        @Body('role') role: string,
+    ) {
+        return this.adminService.updateUserRole(id, role as any);
+    }
+
+    @Patch('users/:id/status')
+    @Roles(UserRole.ADMIN)
+    @ApiOperation({ summary: 'Toggle user active status' })
+    @ApiResponse({ status: 200, description: 'Status updated' })
+    toggleUserStatus(
+        @Param('id', ParseUuidPipe) id: string,
+        @Body('isActive') isActive: boolean,
+    ) {
+        return this.adminService.toggleUserStatus(id, isActive);
+    }
+
+    @Delete('users/:id')
+    @Roles(UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Delete a user and all related data' })
+    @ApiResponse({ status: 200, description: 'User deleted' })
+    deleteUser(@Param('id', ParseUuidPipe) id: string) {
+        return this.adminService.deleteUser(id);
+    }
+
+    @Get('businesses')
+    @ApiOperation({ summary: 'Get all businesses with filters' })
+    @ApiResponse({ status: 200, description: 'Business list retrieved' })
+    getBusinesses(
+        @Query('page') page?: number,
+        @Query('limit') limit?: number,
+        @Query('status') status?: string,
+        @Query('search') search?: string,
+    ) {
+        return this.adminService.getAllBusinesses(page, limit, status as any, search);
+    }
+
+    @Delete('businesses/:id')
+    @Roles(UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Delete a business listing' })
+    @ApiResponse({ status: 200, description: 'Business deleted' })
+    deleteBusiness(@Param('id', ParseUuidPipe) id: string) {
+        return this.adminService.deleteBusiness(id);
+    }
+
+    @Get('vendors')
+    @ApiOperation({ summary: 'Get all vendors with filters' })
+    @ApiResponse({ status: 200, description: 'Vendor list retrieved' })
+    getVendors(
+        @Query('page') page?: number,
+        @Query('limit') limit?: number,
+        @Query('isVerified') isVerified?: string,
+        @Query('search') search?: string,
+    ) {
+        const verified = isVerified === 'true' ? true : isVerified === 'false' ? false : undefined;
+        return this.adminService.getAllVendors(page, limit, verified, search);
+    }
+
     @Post('vendor/:id/verify')
+    @Roles(UserRole.SUPERADMIN)
     @ApiOperation({ summary: 'Verify or unverify a vendor' })
-    @ApiResponse({ status: 200, description: 'Vendor verification updated' })
+    @ApiResponse({ status: 200, description: 'Vendor verification status updated' })
     verifyVendor(
         @Param('id', ParseUuidPipe) id: string,
         @Query('status') status: string,
@@ -62,10 +135,19 @@ export class AdminController {
         return this.adminService.verifyVendor(id, status === 'true');
     }
 
-    @Get('users')
-    @ApiOperation({ summary: 'Get all user records' })
-    @ApiResponse({ status: 200, description: 'Full user list retrieved' })
-    getUsers(@Query('page') page?: number, @Query('limit') limit?: number) {
-        return this.adminService.getAllUsers(page, limit);
+    @Get('settings')
+    @Roles(UserRole.ADMIN)
+    @ApiOperation({ summary: 'Get all system settings' })
+    @ApiResponse({ status: 200, description: 'Settings retrieved' })
+    getSettings() {
+        return this.adminService.getSettings();
+    }
+
+    @Patch('settings')
+    @Roles(UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Update system settings' })
+    @ApiResponse({ status: 200, description: 'Settings updated' })
+    updateSettings(@Body() settings: Record<string, string>) {
+        return this.adminService.updateSettings(settings);
     }
 }

@@ -24,6 +24,9 @@ const config: Config = {
                     500: '#764ba2', // Main accent color
                 }
             },
+            fontFamily: {
+                sans: ["var(--font-inter)", "system-ui", "-apple-system", "BlinkMacSystemFont", '"Segoe UI"', "Roboto", "Helvetica", "Arial", "sans-serif"],
+            },
             backgroundImage: {
                 "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
                 "gradient-conic":

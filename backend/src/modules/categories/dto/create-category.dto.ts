@@ -2,13 +2,14 @@ import {
     IsString,
     IsOptional,
     IsUUID,
-    IsBoolean,
+    IsEnum,
     IsInt,
     IsUrl,
     MinLength,
     MaxLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { CategoryStatus } from '../../../entities/category.entity';
 
 export class CreateCategoryDto {
     @ApiProperty({ example: 'Restaurants' })
@@ -17,15 +18,26 @@ export class CreateCategoryDto {
     @MaxLength(100)
     name: string;
 
+    @ApiPropertyOptional({ example: 'restaurants', description: 'Auto-generated from name if empty' })
+    @IsOptional()
+    @IsString()
+    @MaxLength(100)
+    slug?: string;
+
     @ApiPropertyOptional({ example: 'Find the best restaurants in your area' })
     @IsOptional()
     @IsString()
     description?: string;
 
-    @ApiPropertyOptional({ example: 'https://example.com/icons/restaurant.svg' })
+    @ApiPropertyOptional({ example: 'utensils' })
+    @IsOptional()
+    @IsString()
+    icon?: string;
+
+    @ApiPropertyOptional({ example: 'https://example.com/images/restaurants.jpg' })
     @IsOptional()
     @IsUrl()
-    iconUrl?: string;
+    imageUrl?: string;
 
     @ApiPropertyOptional({ description: 'Parent category UUID for subcategories' })
     @IsOptional()
@@ -37,10 +49,10 @@ export class CreateCategoryDto {
     @IsInt()
     displayOrder?: number = 0;
 
-    @ApiPropertyOptional({ default: true })
+    @ApiPropertyOptional({ enum: CategoryStatus, default: CategoryStatus.ACTIVE })
     @IsOptional()
-    @IsBoolean()
-    isActive?: boolean = true;
+    @IsEnum(CategoryStatus)
+    status?: CategoryStatus = CategoryStatus.ACTIVE;
 
     @ApiPropertyOptional({ example: 'Best Restaurants - Find Top Dining' })
     @IsOptional()

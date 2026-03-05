@@ -6,12 +6,12 @@ import {
     ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, Not } from 'typeorm';
+import { Repository, In, Not, Brackets } from 'typeorm';
 import { Listing, BusinessStatus } from '../../entities/business.entity';
 import { BusinessHours, DayOfWeek } from '../../entities/business-hours.entity';
 import { BusinessAmenity } from '../../entities/business-amenity.entity';
 import { Amenity } from '../../entities/amenity.entity';
-import { Category } from '../../entities/category.entity';
+import { Category, CategoryStatus } from '../../entities/category.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { User, UserRole } from '../../entities/user.entity';
 import { CreateBusinessDto } from './dto/create-business.dto';
@@ -76,6 +76,10 @@ export class BusinessesService {
 
         if (!category) {
             throw new NotFoundException('Category not found');
+        }
+
+        if (category.status !== CategoryStatus.ACTIVE) {
+            throw new BadRequestException('Invalid category: selected category is disabled');
         }
 
         // Generate unique slug
@@ -161,7 +165,7 @@ export class BusinessesService {
         // Text search — matches title, description and vendor-added search keywords
         if (searchDto.query) {
             queryBuilder.andWhere(
-                '(listing.title ILIKE :query OR listing.description ILIKE :query OR listing.metaKeywords ILIKE :query)',
+                '(listing.title ILIKE :query OR listing.description ILIKE :query OR listing.metaKeywords ILIKE :query OR vendor.businessName ILIKE :query)',
                 { query: `%${searchDto.query}%` },
             );
         }
@@ -233,10 +237,9 @@ export class BusinessesService {
         // 1) Keyword boost: if the query matches a vendor's metaKeywords, rank that listing first
         if (searchDto.query) {
             queryBuilder.addOrderBy(
-                `CASE WHEN listing.metaKeywords ILIKE :kwQuery THEN 0 ELSE 1 END`,
+                `CASE WHEN listing.metaKeywords ILIKE :query THEN 0 ELSE 1 END`,
                 'ASC',
             );
-            queryBuilder.setParameter('kwQuery', `%${searchDto.query}%`);
         }
 
         // 2) Secondary sort (user-selected or default relevance)
@@ -365,6 +368,21 @@ export class BusinessesService {
         // Update slug if title changed
         if (updateBusinessDto.title && updateBusinessDto.title !== listing.title) {
             updateBusinessDto['slug'] = generateUniqueSlug(updateBusinessDto.title);
+        }
+
+        // Verify category if changed
+        if (updateBusinessDto.categoryId && updateBusinessDto.categoryId !== listing.categoryId) {
+            const category = await this.categoryRepository.findOne({
+                where: { id: updateBusinessDto.categoryId },
+            });
+
+            if (!category) {
+                throw new NotFoundException('Category not found');
+            }
+
+            if (category.status !== CategoryStatus.ACTIVE) {
+                throw new BadRequestException('Invalid category: selected category is disabled');
+            }
         }
 
         // Update business hours if provided
