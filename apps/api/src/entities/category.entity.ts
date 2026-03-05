@@ -24,9 +24,6 @@ export class Category {
     @Column({ name: 'icon_url', type: 'text', nullable: true })
     iconUrl: string;
 
-    @Column({ name: 'parent_id', type: 'uuid', nullable: true })
-    parentId: string;
-
     @Column({ name: 'display_order', default: 0 })
     displayOrder: number;
 

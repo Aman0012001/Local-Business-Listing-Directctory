@@ -51,7 +51,6 @@ CREATE TABLE IF NOT EXISTS categories (
     slug VARCHAR(100) UNIQUE NOT NULL,
     description TEXT,
     icon_url TEXT,
-    parent_id UUID REFERENCES categories(id) ON DELETE SET NULL,
     display_order INTEGER DEFAULT 0,
     is_active BOOLEAN DEFAULT true,
     meta_title VARCHAR(255),
