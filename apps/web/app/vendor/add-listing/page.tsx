@@ -301,10 +301,29 @@ export default function AddListingPage() {
         setError(null);
 
         // Use the latest ref value to avoid stale closures
-        const submissionData = {
-            ...formDataRef.current,
+        const rawData = formDataRef.current;
+        const submissionData: any = {
+            ...rawData,
             phone: countryCode + phoneNumber
         };
+
+        // Clean up empty strings for optional URL/Email fields that might fail validation
+        // class-validator @IsUrl() fails on empty strings even if @IsOptional()
+        const fieldsToPrune = ['coverImageUrl', 'logoUrl', 'website', 'email', 'offerBannerUrl'];
+        fieldsToPrune.forEach(field => {
+            if (submissionData[field] === '') {
+                delete submissionData[field];
+            }
+        });
+
+        // Omit offer fields if no offer is enabled
+        if (!submissionData.hasOffer) {
+            delete submissionData.offerTitle;
+            delete submissionData.offerDescription;
+            delete submissionData.offerBadge;
+            delete submissionData.offerExpiresAt;
+            delete submissionData.offerBannerUrl;
+        }
 
         console.log('[AddListing] Submitting listing data:', submissionData);
 
