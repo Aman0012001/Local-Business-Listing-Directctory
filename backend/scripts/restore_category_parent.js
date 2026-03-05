@@ -8,19 +8,49 @@ async function updateSchema() {
     try {
         await client.connect();
 
-        // Add parent_id column if it doesn't exist
+        // 1. Add parent_id column
         await client.query(`
             ALTER TABLE categories 
             ADD COLUMN IF NOT EXISTS parent_id UUID REFERENCES categories(id) ON DELETE SET NULL;
         `);
 
-        // Add icon column if it doesn't exist
+        // 2. Add icon column
         await client.query(`
             ALTER TABLE categories 
             ADD COLUMN IF NOT EXISTS icon TEXT;
         `);
 
-        console.log('Successfully restored parent_id and icon columns');
+        // 3. Add image_url column
+        await client.query(`
+            ALTER TABLE categories 
+            ADD COLUMN IF NOT EXISTS image_url TEXT;
+        `);
+
+        // 4. Add display_order column
+        await client.query(`
+            ALTER TABLE categories 
+            ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0;
+        `);
+
+        // 5. Add status column (using TEXT for robustness against enum issues)
+        await client.query(`
+            ALTER TABLE categories 
+            ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
+        `);
+
+        // 6. Add meta_title column
+        await client.query(`
+            ALTER TABLE categories 
+            ADD COLUMN IF NOT EXISTS meta_title TEXT;
+        `);
+
+        // 7. Add meta_description column
+        await client.query(`
+            ALTER TABLE categories 
+            ADD COLUMN IF NOT EXISTS meta_description TEXT;
+        `);
+
+        console.log('Successfully synchronized ALL category columns to production');
     } catch (err) {
         console.error('Error restoring schema:', err);
     } finally {
