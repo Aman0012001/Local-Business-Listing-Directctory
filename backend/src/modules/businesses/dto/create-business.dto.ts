@@ -46,9 +46,16 @@ export class CreateBusinessDto {
     @MaxLength(255)
     title: string;
 
-    @ApiProperty({ description: 'Category UUID' })
+    @ApiPropertyOptional({ description: 'Category UUID (Optional if suggestedCategoryName is provided)' })
+    @IsOptional()
     @IsUUID()
-    categoryId: string;
+    categoryId?: string;
+
+    @ApiPropertyOptional({ description: 'New category suggested by vendor' })
+    @IsOptional()
+    @IsString()
+    @MaxLength(100)
+    suggestedCategoryName?: string;
 
     @ApiProperty({ example: 'A wonderful dining experience...' })
     @IsString()
@@ -79,7 +86,7 @@ export class CreateBusinessDto {
 
     @ApiPropertyOptional({ example: 'https://restaurant.com' })
     @IsOptional()
-    @IsUrl()
+    @IsUrl({ require_protocol: false, require_tld: false })
     website?: string;
 
     @ApiProperty({ example: '123 Main Street, Downtown' })

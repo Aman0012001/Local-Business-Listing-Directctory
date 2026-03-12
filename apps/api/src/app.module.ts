@@ -8,6 +8,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { BusinessesModule } from './modules/businesses/businesses.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CitiesModule } from './modules/cities/cities.module';
+import { DemandModule } from './modules/demand/demand.module';
 import { NotificationsGateway } from './gateways/notifications.gateway';
 
 @Module({
@@ -57,6 +58,7 @@ import { NotificationsGateway } from './gateways/notifications.gateway';
     BusinessesModule,
     AuthModule,
     CitiesModule,
+    DemandModule,
   ],
   controllers: [AppController],
   providers: [AppService, NotificationsGateway],

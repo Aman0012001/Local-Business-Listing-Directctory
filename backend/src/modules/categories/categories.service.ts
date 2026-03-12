@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, ILike } from 'typeorm';
-import { Category, CategoryStatus } from '../../entities/category.entity';
+import { Category, CategoryStatus, CategorySource } from '../../entities/category.entity';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { generateSlug } from '../../common/utils/slug.util';
@@ -19,10 +19,170 @@ export class CategoriesService {
     ) { }
 
     /**
+     * Ensure a Google category exists (auto-sync)
+     */
+    async ensureGoogleCategory(name: string): Promise<Category> {
+        const slug = generateSlug(name);
+
+        // Check for existing category by slug or name (case-insensitive)
+        let category = await this.categoryRepository.findOne({
+            where: [{ slug: slug }, { name: ILike(name) }],
+        });
+
+        if (!category) {
+            // Create new Google category
+            category = this.categoryRepository.create({
+                name: name.charAt(0).toUpperCase() + name.slice(1).replace(/_/g, ' '),
+                slug,
+                source: CategorySource.GOOGLE,
+                status: CategoryStatus.ACTIVE,
+                icon: this.mapGoogleTypeToIcon(slug),
+            });
+            category = await this.categoryRepository.save(category);
+        }
+
+        return category;
+    }
+
+    /**
+     * Map common Google place types to icons
+     */
+    private mapGoogleTypeToIcon(slug: string): string {
+        const mapping: Record<string, string> = {
+            // Food & Drink
+            'restaurant': 'ChefHat',
+            'food': 'ChefHat',
+            'cafe': 'Coffee',
+            'bar': 'Beer',
+            'bakery': 'Croissant',
+            'liquor_store': 'Wine',
+            'meal_delivery': 'Truck',
+            'meal_takeaway': 'ShoppingBag',
+
+            // Health & Wellness
+            'hospital': 'Stethoscope',
+            'health': 'Stethoscope',
+            'doctor': 'UserRound',
+            'dentist': 'Smile',
+            'pharmacy': 'Pill',
+            'drugstore': 'Pill',
+            'gym': 'Activity',
+            'fitness_center': 'Activity',
+            'spa': 'Sparkles',
+            'beauty_salon': 'Sparkles',
+            'hair_care': 'Scissors',
+
+            // Lodging & Travel
+            'hotel': 'Building',
+            'lodging': 'Building',
+            'airport': 'Plane',
+            'bus_station': 'Bus',
+            'train_station': 'Train',
+            'subway_station': 'TramFront',
+            'transit_station': 'Milestone',
+            'travel_agency': 'Globe',
+
+            // Shopping
+            'shopping_mall': 'ShoppingBag',
+            'store': 'Store',
+            'clothing_store': 'Shirt',
+            'department_store': 'Building2',
+            'electronics_store': 'Cpu',
+            'furniture_store': 'Armchair',
+            'jewelry_store': 'Gem',
+            'supermarket': 'ShoppingCart',
+            'convenience_store': 'ShoppingBasket',
+            'grocery_or_supermarket': 'ShoppingCart',
+            'shoe_store': 'Footprints',
+            'home_goods_store': 'Home',
+
+            // Services
+            'bank': 'Landmark',
+            'atm': 'CreditCard',
+            'insurance_agency': 'ShieldCheck',
+            'real_estate_agency': 'Home',
+            'car_dealer': 'CarFront',
+            'car_rental': 'Key',
+            'car_repair': 'Wrench',
+            'car_wash': 'CloudRain',
+            'gas_station': 'Fuel',
+            'laundry': 'Waves',
+            'locksmith': 'Lock',
+            'moving_company': 'Truck',
+            'painter': 'Palette',
+            'plumber': 'Droplets',
+            'electrician': 'Zap',
+            'post_office': 'Mail',
+            'veterinary_care': 'PawPrint',
+
+            // Education & Public
+            'school': 'GraduationCap',
+            'education': 'GraduationCap',
+            'university': 'University',
+            'library': 'Library',
+            'museum': 'Museum',
+            'art_gallery': 'Image',
+            'park': 'Trees',
+            'zoo': 'Bird',
+            'aquarium': 'Fish',
+            'amusement_park': 'Tickets',
+            'stadium': 'Trophy',
+            'police': 'ShieldAlert',
+            'fire_station': 'Flame',
+            'courthouse': 'Gavel',
+            'city_hall': 'Building',
+            'embassy': 'Flag',
+            'local_government_office': 'Briefcase',
+
+            // Religion
+            'church': 'Church',
+            'mosque': 'MoonStar',
+            'hindu_temple': 'Flower',
+            'synagogue': 'Star',
+
+            // Entertainment
+            'movie_theater': 'Film',
+            'night_club': 'Music',
+            'casino': 'Coins',
+            'bowling_alley': 'Circle',
+        };
+
+        return mapping[slug] || 'Tag';
+    }
+
+    /**
+     * Bulk import Google categories
+     */
+    async bulkImportGoogleCategories(): Promise<{ count: number }> {
+        const types = [
+            'restaurant', 'food', 'cafe', 'bar', 'bakery', 'liquor_store', 'meal_delivery', 'meal_takeaway',
+            'hospital', 'health', 'doctor', 'dentist', 'pharmacy', 'drugstore', 'gym', 'fitness_center', 'spa', 'beauty_salon', 'hair_care',
+            'hotel', 'lodging', 'airport', 'bus_station', 'train_station', 'subway_station', 'transit_station', 'travel_agency',
+            'shopping_mall', 'store', 'clothing_store', 'department_store', 'electronics_store', 'furniture_store', 'jewelry_store', 'supermarket', 'convenience_store', 'grocery_or_supermarket', 'shoe_store', 'home_goods_store',
+            'bank', 'atm', 'insurance_agency', 'real_estate_agency', 'car_dealer', 'car_rental', 'car_repair', 'car_wash', 'gas_station', 'laundry', 'locksmith', 'moving_company', 'painter', 'plumber', 'electrician', 'post_office', 'veterinary_care',
+            'school', 'education', 'university', 'library', 'museum', 'art_gallery', 'park', 'zoo', 'aquarium', 'amusement_park', 'stadium', 'police', 'fire_station', 'courthouse', 'city_hall', 'embassy', 'local_government_office',
+            'church', 'mosque', 'hindu_temple', 'synagogue',
+            'movie_theater', 'night_club', 'casino', 'bowling_alley'
+        ];
+
+        let count = 0;
+        for (const type of types) {
+            try {
+                await this.ensureGoogleCategory(type);
+                count++;
+            } catch (err) {
+                console.error(`Failed to import category: ${type}`, err);
+            }
+        }
+
+        return { count };
+    }
+
+    /**
      * Create a new category
      */
     async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
-        const { name, parentId, slug: providedSlug } = createCategoryDto;
+        const { name, parentId, slug: providedSlug, source } = createCategoryDto;
 
         // Use provided slug or generate from name
         const slug = providedSlug || generateSlug(name);
@@ -51,22 +211,35 @@ export class CategoriesService {
         const category = this.categoryRepository.create({
             ...createCategoryDto,
             slug,
+            source: source || CategorySource.ADMIN,
         });
 
         return this.categoryRepository.save(category);
     }
 
     /**
-     * Get all categories (Admin)
+     * Get all categories with pagination and search (Admin)
      */
-    async findAllAdmin(): Promise<Category[]> {
-        return this.categoryRepository.find({
-            relations: ['parent'],
-            order: {
-                displayOrder: 'ASC',
-                name: 'ASC',
-            },
-        });
+    async findAllAdmin(page = 1, limit = 10, search = ''): Promise<{ data: Category[], total: number }> {
+        const queryBuilder = this.categoryRepository
+            .createQueryBuilder('category')
+            .leftJoinAndSelect('category.parent', 'parent')
+            .orderBy('category.displayOrder', 'ASC')
+            .addOrderBy('category.name', 'ASC');
+
+        if (search) {
+            queryBuilder.where(
+                'category.name ILike :search OR category.slug ILike :search',
+                { search: `%${search}%` }
+            );
+        }
+
+        const [data, total] = await queryBuilder
+            .skip((page - 1) * limit)
+            .take(limit)
+            .getManyAndCount();
+
+        return { data, total };
     }
 
     /**

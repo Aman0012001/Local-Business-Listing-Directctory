@@ -255,7 +255,7 @@ export default function VendorLeadsPage() {
 
     const handleDownload = async () => {
         try {
-            const all = await api.leads.getForVendor({ limit: 1000, ...(filterStatus && { status: filterStatus }), ...(filterType && { type: filterType }) });
+            const all = await api.leads.getForVendor({ limit: 500, ...(filterStatus && { status: filterStatus }), ...(filterType && { type: filterType }) });
             exportToCSV(all.data || []);
         } catch (e) { console.error('Download failed:', e); }
     };

@@ -17,10 +17,14 @@ export default function AdminCategoriesPage() {
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [imageUploading, setImageUploading] = useState(false);
     const [search, setSearch] = useState('');
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const [limit] = useState(10);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+    const [isImporting, setIsImporting] = useState(false);
 
     // Form states
     const [formData, setFormData] = useState({
@@ -37,14 +41,22 @@ export default function AdminCategoriesPage() {
     const fetchCategories = useCallback(async () => {
         setLoading(true);
         try {
-            const data = await api.categories.adminGetAll();
-            setCategories(data);
+            const response = await api.categories.adminGetAll(page, limit, search) as any;
+            if (Array.isArray(response)) {
+                // Handle legacy array response
+                setCategories(response);
+                setTotal(response.length);
+            } else {
+                // Handle new paginated response
+                setCategories(response.data || []);
+                setTotal(response.total || 0);
+            }
         } catch (err) {
             console.error('Failed to fetch categories', err);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [page, limit, search]);
 
     useEffect(() => {
         fetchCategories();
@@ -139,6 +151,20 @@ export default function AdminCategoriesPage() {
         }
     };
 
+    const handleBulkImport = async () => {
+        if (!confirm('This will import over 80 common Google Place categories. Continue?')) return;
+        setIsImporting(true);
+        try {
+            const result = await api.categories.bulkImportGoogle() as { count: number };
+            alert(`Successfully imported/synced ${result.count} categories!`);
+            await fetchCategories();
+        } catch (err: any) {
+            alert(err.message || 'Bulk import failed');
+        } finally {
+            setIsImporting(false);
+        }
+    };
+
     const openEditModal = (category: Category) => {
         setSelectedCategory(category);
         setFormData({
@@ -168,10 +194,10 @@ export default function AdminCategoriesPage() {
         setSelectedCategory(null);
     };
 
-    const filteredCategories = categories.filter(c =>
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        c.slug.toLowerCase().includes(search.toLowerCase())
-    );
+    // We no longer need client-side filtering as it's handled server-side
+    const filteredCategories = categories;
+
+    const totalPages = Math.ceil(total / limit);
 
     return (
         <div className="space-y-8 pb-20">
@@ -187,8 +213,17 @@ export default function AdminCategoriesPage() {
                     <button
                         onClick={fetchCategories}
                         className="flex items-center justify-center p-3 bg-slate-100 hover:bg-slate-200 rounded-2xl text-slate-600 transition-all"
+                        title="Refresh categories"
                     >
                         <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                    </button>
+                    <button
+                        onClick={handleBulkImport}
+                        disabled={isImporting}
+                        className="flex items-center gap-2 px-6 py-3 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-2xl font-bold transition-all disabled:opacity-50"
+                    >
+                        {isImporting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
+                        Google Import
                     </button>
                     <button
                         onClick={() => { resetForm(); setIsCreateModalOpen(true); }}
@@ -219,10 +254,11 @@ export default function AdminCategoriesPage() {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-50/50 border-b border-slate-100">
-                                <th className="px-8 py-6 text-[11px] font-black uppercase tracking-widest text-slate-400">Category</th>
-                                <th className="px-8 py-6 text-[11px] font-black uppercase tracking-widest text-slate-400">Slug</th>
-                                <th className="px-8 py-6 text-[11px] font-black uppercase tracking-widest text-slate-400">Status</th>
-                                <th className="px-8 py-6 text-[11px] font-black uppercase tracking-widest text-slate-400">Created At</th>
+                                <th className="px-8 py-6 text-[11px] font-black uppercase tracking-widest text-slate-400 text-left">Category</th>
+                                <th className="px-8 py-6 text-[11px] font-black uppercase tracking-widest text-slate-400 text-left">Slug</th>
+                                <th className="px-8 py-6 text-[11px] font-black uppercase tracking-widest text-slate-400 text-left">Source</th>
+                                <th className="px-8 py-6 text-[11px] font-black uppercase tracking-widest text-slate-400 text-left">Status</th>
+                                <th className="px-8 py-6 text-[11px] font-black uppercase tracking-widest text-slate-400 text-left">Created At</th>
                                 <th className="px-8 py-6 text-[11px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
                             </tr>
                         </thead>
@@ -290,6 +326,15 @@ export default function AdminCategoriesPage() {
                                                     <code className="px-2 py-1 bg-slate-100 rounded-lg text-xs font-bold text-slate-600">{c.slug}</code>
                                                 </td>
                                                 <td className="px-8 py-6">
+                                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border ${c.source === 'google'
+                                                        ? 'bg-blue-50 text-blue-600 border-blue-100'
+                                                        : 'bg-purple-50 text-purple-600 border-purple-100'
+                                                        }`}>
+                                                        {c.source === 'google' ? <Search className="w-3 h-3" /> : <PlusCircle className="w-3 h-3" />}
+                                                        {c.source}
+                                                    </span>
+                                                </td>
+                                                <td className="px-8 py-6">
                                                     <button
                                                         onClick={() => handleToggleStatus(c)}
                                                         disabled={actionLoading === c.id}
@@ -335,6 +380,51 @@ export default function AdminCategoriesPage() {
                         </tbody>
                     </table>
                 </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                    <div className="px-8 py-6 bg-slate-50/30 border-t border-slate-100 flex items-center justify-between">
+                        <p className="text-sm text-slate-500 font-medium">
+                            Showing <span className="text-slate-900 font-bold">{(page - 1) * limit + 1}</span> to <span className="text-slate-900 font-bold">{Math.min(page * limit, total)}</span> of <span className="text-slate-900 font-bold">{total}</span> categories
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setPage(p => Math.max(1, p - 1))}
+                                disabled={page === 1}
+                                className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-all font-sans"
+                            >
+                                Previous
+                            </button>
+                            <div className="flex items-center gap-1">
+                                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                    .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                                    .map((p, i, arr) => (
+                                        <React.Fragment key={p}>
+                                            {i > 0 && arr[i - 1] !== p - 1 && (
+                                                <span className="text-slate-400">...</span>
+                                            )}
+                                            <button
+                                                onClick={() => setPage(p)}
+                                                className={`w-10 h-10 rounded-xl text-sm font-bold transition-all font-sans ${page === p
+                                                    ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20'
+                                                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                                                    }`}
+                                            >
+                                                {p}
+                                            </button>
+                                        </React.Fragment>
+                                    ))}
+                            </div>
+                            <button
+                                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                disabled={page === totalPages}
+                                className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-all font-sans"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Create/Edit Modal */}

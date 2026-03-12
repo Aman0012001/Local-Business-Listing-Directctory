@@ -11,7 +11,7 @@ import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
 import { Transaction, PaymentStatus } from '../../entities/transaction.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { User } from '../../entities/user.entity';
-import { CreatePlanDto, UpdatePlanDto, CheckoutDto } from './dto/subscription.dto';
+import { CreatePlanDto, UpdatePlanDto, CheckoutDto, AssignPlanDto } from './dto/subscription.dto';
 
 import { ConfigService } from '@nestjs/config';
 
@@ -26,6 +26,8 @@ export class SubscriptionsService {
         private transactionRepository: Repository<Transaction>,
         @InjectRepository(Vendor)
         private vendorRepository: Repository<Vendor>,
+        @InjectRepository(User)
+        private userRepository: Repository<User>,
         private configService: ConfigService,
     ) { }
 
@@ -74,7 +76,6 @@ export class SubscriptionsService {
      */
     async deletePlan(id: string): Promise<void> {
         const plan = await this.getPlanById(id);
-        // Check if there are active subscriptions before deleting
         const activeSubCount = await this.subscriptionRepository.count({
             where: { planId: id, status: SubscriptionStatus.ACTIVE }
         });
@@ -84,6 +85,97 @@ export class SubscriptionsService {
         }
 
         await this.planRepository.remove(plan);
+    }
+
+    /**
+     * ADMIN: Get all subscriptions (paginated)
+     */
+    async getAllSubscriptionsForAdmin(page = 1, limit = 20): Promise<{ data: Subscription[]; total: number }> {
+        const [data, total] = await this.subscriptionRepository.findAndCount({
+            relations: ['plan', 'vendor', 'vendor.user'],
+            order: { createdAt: 'DESC' },
+            skip: (page - 1) * limit,
+            take: limit,
+        });
+        return { data, total };
+    }
+
+    /**
+     * ADMIN: Get all transactions (paginated)
+     */
+    async getAllTransactionsForAdmin(page = 1, limit = 20): Promise<{ data: Transaction[]; total: number }> {
+        const [data, total] = await this.transactionRepository.findAndCount({
+            relations: ['vendor', 'vendor.user', 'subscription', 'subscription.plan'],
+            order: { createdAt: 'DESC' },
+            skip: (page - 1) * limit,
+            take: limit,
+        });
+        return { data, total };
+    }
+
+    /**
+     * ADMIN: Assign a plan to a vendor manually
+     */
+    async assignPlanToVendor(dto: AssignPlanDto): Promise<Subscription> {
+        const plan = await this.planRepository.findOne({ where: { id: dto.planId } });
+        if (!plan) throw new NotFoundException('Plan not found');
+
+        const vendor = await this.vendorRepository.findOne({ where: { id: dto.vendorId } });
+        if (!vendor) throw new NotFoundException('Vendor not found');
+
+        // Cancel existing active subscription
+        await this.subscriptionRepository.update(
+            { vendorId: dto.vendorId, status: SubscriptionStatus.ACTIVE },
+            { status: SubscriptionStatus.CANCELLED, cancelledAt: new Date() }
+        );
+
+        const now = new Date();
+        const durationDays = dto.durationDays || 30;
+        const endDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
+
+        const subscription = this.subscriptionRepository.create({
+            vendorId: dto.vendorId,
+            planId: dto.planId,
+            status: SubscriptionStatus.ACTIVE,
+            startDate: now,
+            endDate,
+            amount: plan.price,
+            autoRenew: false,
+        });
+
+        const savedSub = await this.subscriptionRepository.save(subscription);
+
+        // Generate invoice number
+        const invoiceNumber = `INV-ADMIN-${Date.now()}`;
+
+        // Record transaction
+        const transaction = this.transactionRepository.create({
+            subscriptionId: savedSub.id,
+            vendorId: dto.vendorId,
+            amount: plan.price,
+            status: PaymentStatus.COMPLETED,
+            paidAt: now,
+            gatewayTransactionId: `ADMIN-ASSIGN-${Date.now()}`,
+            paymentGateway: 'Admin',
+            invoiceNumber,
+        });
+
+        await this.transactionRepository.save(transaction);
+
+        return savedSub;
+    }
+
+    /**
+     * ADMIN: Cancel a subscription
+     */
+    async cancelSubscriptionAdmin(subscriptionId: string): Promise<Subscription> {
+        const sub = await this.subscriptionRepository.findOne({ where: { id: subscriptionId } });
+        if (!sub) throw new NotFoundException('Subscription not found');
+
+        sub.status = SubscriptionStatus.CANCELLED;
+        sub.cancelledAt = new Date();
+        sub.cancellationReason = 'Cancelled by admin';
+        return this.subscriptionRepository.save(sub);
     }
 
     /**
@@ -101,27 +193,30 @@ export class SubscriptionsService {
 
         const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
 
-        // Local Mode: Return mock success URL
         return {
             sessionId: 'MOCK-SESSION-' + Date.now(),
             checkoutUrl: `${frontendUrl}/vendor/subscription/success?session_id=MOCK-SESSION-${Date.now()}&mock_plan_id=${plan.id}`,
         };
     }
 
-
     /**
      * Handle Mock Subscription Success
+     * Accepts either a vendorId or a userId (will attempt to find vendor by userId as fallback)
      */
-    async handleMockSubscriptionSuccess(vendorId: string, planId: string, mockSessionId: string) {
+    async handleMockSubscriptionSuccess(vendorIdOrUserId: string, planId: string, mockSessionId: string) {
         const plan = await this.planRepository.findOne({ where: { id: planId } });
         if (!plan) throw new NotFoundException('Plan not found');
 
-        const vendor = await this.vendorRepository.findOne({ where: { id: vendorId } });
+        // Try to find vendor directly, then by userId as fallback
+        let vendor = await this.vendorRepository.findOne({ where: { id: vendorIdOrUserId } });
+        if (!vendor) {
+            vendor = await this.vendorRepository.findOne({ where: { userId: vendorIdOrUserId } });
+        }
         if (!vendor) throw new NotFoundException('Vendor not found');
 
         // Cancel old subscription if exists
         await this.subscriptionRepository.update(
-            { vendorId, status: SubscriptionStatus.ACTIVE },
+            { vendorId: vendor.id, status: SubscriptionStatus.ACTIVE },
             { status: SubscriptionStatus.CANCELLED, cancelledAt: new Date() }
         );
 
@@ -129,7 +224,7 @@ export class SubscriptionsService {
         const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
         const subscription = this.subscriptionRepository.create({
-            vendorId,
+            vendorId: vendor.id,
             planId,
             status: SubscriptionStatus.ACTIVE,
             startDate: now,
@@ -143,13 +238,13 @@ export class SubscriptionsService {
         // Record transaction
         const transaction = this.transactionRepository.create({
             subscriptionId: savedSub.id,
-            vendorId,
+            vendorId: vendor.id,
             amount: plan.price,
             status: PaymentStatus.COMPLETED,
             paidAt: now,
             gatewayTransactionId: mockSessionId,
             paymentGateway: 'Mock',
-            invoiceNumber: `INV-MOCK-${Date.now()}`,
+            invoiceNumber: `INV-${Date.now()}`,
         });
 
         await this.transactionRepository.save(transaction);
@@ -171,7 +266,7 @@ export class SubscriptionsService {
     }
 
     /**
-     * Get transaction history for vendor
+     * Get transaction history for vendor (invoices)
      */
     async getTransactions(userId: string) {
         const vendor = await this.vendorRepository.findOne({ where: { userId } });
@@ -179,7 +274,109 @@ export class SubscriptionsService {
 
         return this.transactionRepository.find({
             where: { vendorId: vendor.id },
+            relations: ['subscription', 'subscription.plan'],
             order: { createdAt: 'DESC' },
         });
     }
+
+    /**
+     * Get single invoice/transaction detail for vendor
+     */
+    async getInvoiceDetail(transactionId: string, userId: string) {
+        const vendor = await this.vendorRepository.findOne({
+            where: { userId },
+            relations: ['user'],
+        });
+        if (!vendor) throw new ForbiddenException('Vendor not found');
+
+        const transaction = await this.transactionRepository.findOne({
+            where: { id: transactionId, vendorId: vendor.id },
+            relations: ['subscription', 'subscription.plan'],
+        });
+        if (!transaction) throw new NotFoundException('Invoice not found');
+
+        return {
+            transaction,
+            vendor: {
+                businessName: vendor.businessName,
+                businessEmail: vendor.businessEmail,
+                businessPhone: vendor.businessPhone,
+                ntnNumber: vendor.ntnNumber,
+                gstNumber: vendor.gstNumber,
+            },
+            user: {
+                fullName: vendor.user?.fullName,
+                email: vendor.user?.email,
+                phone: vendor.user?.phone,
+            },
+        };
+    }
+
+    /**
+     * Vendor: Change (Upgrade/Downgrade) Subscription Plan
+     */
+    async changeSubscription(userId: string, planId: string) {
+        const vendor = await this.vendorRepository.findOne({
+            where: { userId },
+            relations: ['user']
+        });
+        if (!vendor) throw new ForbiddenException('Only vendors can change plans');
+
+        const newPlan = await this.planRepository.findOne({ where: { id: planId } });
+        if (!newPlan) throw new NotFoundException('New plan not found');
+
+        // Check if there's an active subscription
+        const activeSub = await this.subscriptionRepository.findOne({
+            where: { vendorId: vendor.id, status: SubscriptionStatus.ACTIVE },
+            relations: ['plan']
+        });
+
+        if (activeSub && activeSub.planId === planId) {
+            throw new BadRequestException('You are already on this plan');
+        }
+
+        // In a real system, you'd calculate prorated amounts here.
+        // For this mock implementation, we just cancel the old one and start new.
+        if (activeSub) {
+            activeSub.status = SubscriptionStatus.CANCELLED;
+            activeSub.cancelledAt = new Date();
+            activeSub.cancellationReason = `Switched to ${newPlan.name}`;
+            await this.subscriptionRepository.save(activeSub);
+        }
+
+        const now = new Date();
+        const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
+
+        const subscription = this.subscriptionRepository.create({
+            vendorId: vendor.id,
+            planId: newPlan.id,
+            status: SubscriptionStatus.ACTIVE,
+            startDate: now,
+            endDate,
+            amount: newPlan.price,
+            autoRenew: true,
+        });
+
+        const savedSub = await this.subscriptionRepository.save(subscription);
+
+        // Record transaction
+        const transaction = this.transactionRepository.create({
+            subscriptionId: savedSub.id,
+            vendorId: vendor.id,
+            amount: newPlan.price,
+            status: PaymentStatus.COMPLETED,
+            paidAt: now,
+            gatewayTransactionId: `PLAN-CHANGE-${Date.now()}`,
+            paymentGateway: 'Mock',
+            invoiceNumber: `INV-MOD-${Date.now()}`,
+        });
+
+        await this.transactionRepository.save(transaction);
+
+        return {
+            message: 'Plan changed successfully',
+            subscription: savedSub
+        };
+    }
 }
+

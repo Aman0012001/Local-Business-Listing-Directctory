@@ -19,6 +19,7 @@ export async function generateStaticParams() {
     }
 }
 
-export default function BusinessPage({ params }: { params: { slug: string } }) {
-    return <BusinessDetailClient slug={params.slug} />;
+export default async function BusinessPage({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params;
+    return <BusinessDetailClient slug={slug} />;
 }

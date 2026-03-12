@@ -1,7 +1,6 @@
 import { Business, Category, City, SearchResponse, Review } from '../types/api';
 
-// const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://local-business-listing-directctory-production.up.railway.app/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 const API_ROOT = API_BASE_URL.split('/api')[0];
 
 export const getImageUrl = (path: string | null | undefined) => {
@@ -9,16 +8,18 @@ export const getImageUrl = (path: string | null | undefined) => {
     if (path.startsWith('data:')) return path; // Base64 preview
     if (path.startsWith('http')) return path; // Cloudinary or full URL
 
-    // If it's a relative path (old local upload), we don't serve it anymore
-    // This prevents 404s to localhost:3000/uploads/...
-    if (path.includes('/') || path.includes('\\')) {
-        return null;
-    }
-
-    return path;
+    // For relative paths, prepend API_ROOT (e.g., http://127.0.0.1:3001)
+    // Trim leading slash if present
+    const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    return `${API_ROOT}/${cleanPath}`;
 };
 
-async function fetcher<T>(endpoint: string, options?: RequestInit): Promise<T> {
+interface FetcherOptions extends RequestInit {
+    silent?: boolean;
+    timeout?: number;
+}
+
+async function fetcher<T>(endpoint: string, options?: FetcherOptions): Promise<T> {
     const headers = new Headers(options?.headers);
 
     if (!headers.has('Content-Type')) {
@@ -33,7 +34,8 @@ async function fetcher<T>(endpoint: string, options?: RequestInit): Promise<T> {
     console.log(`[api.ts] Fetching: ${API_BASE_URL}${endpoint}`);
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    const timeout = options?.timeout || 60000;
+    const timeoutId = setTimeout(() => controller.abort(), timeout); // Use custom or 60s default
 
     try {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -45,8 +47,15 @@ async function fetcher<T>(endpoint: string, options?: RequestInit): Promise<T> {
         clearTimeout(timeoutId);
 
         if (!response.ok) {
+            if (response.status !== 401) {
+                console.error(`[api.ts] API Error on ${endpoint}:`, response.status, response.statusText);
+            }
+            if (options?.silent && response.status === 404) {
+                console.warn(`[api.ts] Silent 404 on ${endpoint}`);
+                return [] as any;
+            }
             const error = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
-            throw new Error(error.message || 'API request failed');
+            throw new Error(`[${endpoint}] ${error.message || 'API request failed'}`);
         }
 
         // Check if the response has content before parsing as JSON
@@ -54,8 +63,34 @@ async function fetcher<T>(endpoint: string, options?: RequestInit): Promise<T> {
         return text ? JSON.parse(text) : (undefined as any);
     } catch (error: any) {
         clearTimeout(timeoutId);
+
+        // Comprehensive Network Error Logging (Chrome: "Failed to fetch", Firefox: "NetworkError when attempting to fetch resource")
+        const isNetworkError = (error instanceof TypeError && (
+            error.message.includes('fetch') ||
+            error.message.includes('NetworkError') ||
+            error.message.includes('Network Request Failed')
+        ));
+
+        if (isNetworkError) {
+            console.error('[api.ts] Network Error Details:', {
+                message: error.message,
+                name: error.name,
+                url: `${API_BASE_URL}${endpoint}`,
+                stack: error.stack,
+                apiUrlSet: API_BASE_URL,
+            });
+            // Try to log the keys of the error object just in case
+            console.error('[api.ts] Network Error Object Keys:', Object.getOwnPropertyNames(error));
+
+            throw new Error(`Connection Failed: Unable to reach the backend at ${API_BASE_URL}. Ensure the server is running and CORS is allowed. Error: ${error.message}`);
+        }
+
         if (error.name === 'AbortError') {
             throw new Error('Request timed out. Please check your connection.');
+        }
+        if (options?.silent) {
+            console.warn(`[api.ts] Silent error on ${endpoint}`, error.message);
+            return [] as any;
         }
         throw error;
     }
@@ -68,7 +103,14 @@ export const api = {
         getTree: () => fetcher<Category[]>('/categories/tree'),
         getBySlug: (slug: string) => fetcher<Category>(`/categories/slug/${slug}`),
         // Admin endpoints
-        adminGetAll: () => fetcher<Category[]>('/categories/admin'),
+        adminGetAll: (page = 1, limit = 10, search = '') => {
+            const query = new URLSearchParams({
+                page: String(page),
+                limit: String(limit),
+                search
+            }).toString();
+            return fetcher<{ data: Category[], total: number }>(`/categories/admin?${query}`);
+        },
         adminCreate: (data: any) => fetcher<Category>('/categories/admin', {
             method: 'POST',
             body: JSON.stringify(data),
@@ -83,6 +125,14 @@ export const api = {
         }),
         adminDelete: (id: string) => fetcher<void>(`/categories/admin/${id}`, {
             method: 'DELETE',
+        }),
+        syncGoogle: (name: string) => fetcher<Category>('/categories/sync-google', {
+            method: 'POST',
+            body: JSON.stringify({ name }),
+        }),
+        bulkImportGoogle: () => fetcher(`/categories/admin/bulk-import-google`, {
+            method: 'POST',
+            timeout: 300000, // 5 minute timeout for bulk import
         }),
     },
     listings: {
@@ -264,6 +314,8 @@ export const api = {
             method: 'POST',
             body: JSON.stringify(data),
         }),
+        logout: () => fetcher<void>('/auth/logout', { method: 'POST', silent: true }),
+        ping: () => fetcher<{ online: boolean }>('/auth/ping', { method: 'POST', silent: true }),
     },
     admin: {
         getStats: () => fetcher<any>('/admin/stats'),
@@ -294,6 +346,14 @@ export const api = {
         }),
         deleteBusiness: (id: string) => fetcher<any>(`/admin/businesses/${id}`, {
             method: 'DELETE',
+        }),
+        toggleFeatured: (id: string, isFeatured: boolean) => fetcher<any>(`/admin/business/${id}/featured`, {
+            method: 'PATCH',
+            body: JSON.stringify({ isFeatured }),
+        }),
+        toggleVerifiedListing: (id: string, isVerified: boolean) => fetcher<any>(`/admin/business/${id}/verify-listing`, {
+            method: 'PATCH',
+            body: JSON.stringify({ isVerified }),
         }),
         getVendors: (page = 1, limit = 20, isVerified?: boolean, search?: string) => {
             const params = new URLSearchParams({
@@ -334,6 +394,22 @@ export const api = {
         markAllRead: () => fetcher<any>('/notifications/read-all', { method: 'PATCH' }),
         delete: (id: string) => fetcher<any>(`/notifications/${id}`, { method: 'DELETE' }),
     },
+    subscriptions: {
+        getPlans: () => fetcher<any[]>('/subscriptions/plans'),
+        getActive: () => fetcher<any>('/subscriptions/active'),
+        getMyInvoices: () => fetcher<any[]>('/subscriptions/my-invoices'),
+        getInvoice: (id: string) => fetcher<any>(`/subscriptions/invoice/${id}`),
+        mockCheckout: (planId: string) => fetcher<any>(`/subscriptions/mock-success/${planId}`, { method: 'POST' }),
+        changePlan: (planId: string) => fetcher<any>('/subscriptions/change', { method: 'POST', body: JSON.stringify({ planId }) }),
+
+        // Admin
+        adminGetAll: (page = 1, limit = 20) => fetcher<any>(`/subscriptions/admin/all?page=${page}&limit=${limit}`),
+        adminGetTransactions: (page = 1, limit = 20) => fetcher<any>(`/subscriptions/admin/transactions?page=${page}&limit=${limit}`),
+        adminAssign: (data: { vendorId: string; planId: string; durationDays?: number }) =>
+            fetcher<any>('/subscriptions/admin/assign', { method: 'POST', body: JSON.stringify(data) }),
+        adminCancel: (subId: string) => fetcher<any>(`/subscriptions/admin/${subId}/cancel`, { method: 'PATCH' }),
+        adminTriggerExpiryCheck: () => fetcher<any>('/subscriptions/admin/trigger-expiry-check', { method: 'POST' }),
+    },
     enquiries: {
         reply: (leadId: string, message: string) => fetcher<any>(`/leads/${leadId}/reply`, {
             method: 'PATCH',
@@ -362,6 +438,8 @@ export const api = {
             method: 'POST',
             body: JSON.stringify(data),
         }),
+        getPublic: (page = 1, limit = 10) =>
+            fetcher<{ data: any[]; meta: any }>(`/comments/public?page=${page}&limit=${limit}`),
         getByBusiness: (businessId: string, page = 1, limit = 10) =>
             fetcher<{ data: any[]; meta: any }>(`/business/${businessId}/comments?page=${page}&limit=${limit}`),
         getVendorComments: (page = 1, limit = 10) =>
@@ -380,6 +458,12 @@ export const api = {
             fetcher<void>(`/vendor/comments/reply/${replyId}`, {
                 method: 'DELETE',
             }),
+    },
+    demand: {
+        getInsights: (city?: string) => fetcher<any[]>(`/demand/insights${city ? `?city=${city}` : ''}`, { silent: true }),
+        getNearby: (lat: number, lng: number) => fetcher<any[]>(`/demand/nearby?lat=${lat}&lng=${lng}`, { silent: true }),
+        getHeatmap: (keyword?: string) => fetcher<any[]>(`/demand/heatmap${keyword ? `?keyword=${keyword}` : ''}`, { silent: true }),
+        logSearch: (data: any) => fetcher('/demand/log', { method: 'POST', body: JSON.stringify(data), silent: true }),
     },
 };
 

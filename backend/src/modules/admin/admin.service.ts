@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Brackets } from 'typeorm';
 import { User, UserRole } from '../../entities/user.entity';
 import { Listing, BusinessStatus } from '../../entities/business.entity';
 import { Review } from '../../entities/review.entity';
@@ -8,6 +8,14 @@ import { Vendor } from '../../entities/vendor.entity';
 import { Transaction } from '../../entities/transaction.entity';
 import { SystemSetting } from '../../entities/system-setting.entity';
 import { ModerateBusinessDto, ModerateReviewDto } from './dto/moderate.dto';
+import { BusinessHours } from '../../entities/business-hours.entity';
+import { BusinessAmenity } from '../../entities/business-amenity.entity';
+import { Lead } from '../../entities/lead.entity';
+import { SavedListing } from '../../entities/favorite.entity';
+import { Comment as BusinessComment } from '../../entities/comment.entity';
+import { Notification } from '../../entities/notification.entity';
+import { Subscription } from '../../entities/subscription.entity';
+import { CommentReply } from '../../entities/comment-reply.entity';
 import {
     createPaginatedResponse,
     calculateSkip,
@@ -28,6 +36,22 @@ export class AdminService {
         private transactionRepository: Repository<Transaction>,
         @InjectRepository(SystemSetting)
         private settingsRepository: Repository<SystemSetting>,
+        @InjectRepository(BusinessHours)
+        private businessHoursRepository: Repository<BusinessHours>,
+        @InjectRepository(BusinessAmenity)
+        private businessAmenityRepository: Repository<BusinessAmenity>,
+        @InjectRepository(Lead)
+        private leadRepository: Repository<Lead>,
+        @InjectRepository(SavedListing)
+        private favoriteRepository: Repository<SavedListing>,
+        @InjectRepository(BusinessComment)
+        private commentRepository: Repository<BusinessComment>,
+        @InjectRepository(Notification)
+        private notificationRepository: Repository<Notification>,
+        @InjectRepository(Subscription)
+        private subscriptionRepository: Repository<Subscription>,
+        @InjectRepository(CommentReply)
+        private commentReplyRepository: Repository<CommentReply>,
     ) { }
 
     /**
@@ -127,6 +151,28 @@ export class AdminService {
     }
 
     /**
+     * Toggle a business featured status
+     */
+    async toggleFeatured(id: string, isFeatured: boolean) {
+        const business = await this.businessRepository.findOne({ where: { id } });
+        if (!business) throw new NotFoundException('Business not found');
+
+        business.isFeatured = isFeatured;
+        return this.businessRepository.save(business);
+    }
+
+    /**
+     * Toggle a business verification status
+     */
+    async toggleVerifiedListing(id: string, isVerified: boolean) {
+        const business = await this.businessRepository.findOne({ where: { id } });
+        if (!business) throw new NotFoundException('Business not found');
+
+        business.isVerified = isVerified;
+        return this.businessRepository.save(business);
+    }
+
+    /**
      * Get all users for admin management
      */
     async getAllUsers(page = 1, limit = 20) {
@@ -172,22 +218,99 @@ export class AdminService {
      * Delete a user and all related data
      */
     async deleteUser(userId: string) {
-        const user = await this.userRepository.findOne({
-            where: { id: userId },
-            relations: ['vendor', 'vendor.businesses'],
-        });
+        const log = (msg: string) => {
+            const fs = require('fs');
+            const path = require('path');
+            const logFile = path.join(process.cwd(), 'debug_logs.txt');
+            fs.appendFileSync(logFile, `[${new Date().toISOString()}] [AdminService] deleteUser: ${msg}\n`);
+        };
 
-        if (!user) throw new NotFoundException('User not found');
+        log(`Attempting to delete user: ${userId}`);
+        try {
+            const user = await this.userRepository.findOne({
+                where: { id: userId },
+                relations: [
+                    'vendor',
+                    'vendor.businesses',
+                    'notifications',
+                    'reviews',
+                    'leads',
+                    'savedListings',
+                    'comments'
+                ],
+            });
 
-        // Manual cleanup to satisfy foreign keys
-        if (user.vendor) {
-            if (user.vendor.businesses && user.vendor.businesses.length > 0) {
-                await this.businessRepository.remove(user.vendor.businesses);
+            if (!user) {
+                log(`User ${userId} NOT FOUND`);
+                throw new NotFoundException('User not found');
             }
-            await this.vendorRepository.remove(user.vendor);
-        }
 
-        return this.userRepository.remove(user);
+            log(`Found user: ${user.email}. Role: ${user.role}. Starting manual cleanup...`);
+
+            // 1. Delete user-specific relations
+            if (user.notifications?.length > 0) {
+                log(`Deleting ${user.notifications.length} notifications`);
+                await this.notificationRepository.remove(user.notifications);
+            }
+            if (user.reviews?.length > 0) {
+                log(`Deleting ${user.reviews.length} written reviews`);
+                await this.reviewRepository.remove(user.reviews);
+            }
+            if (user.leads?.length > 0) {
+                log(`Deleting ${user.leads.length} user leads`);
+                await this.leadRepository.remove(user.leads);
+            }
+            if (user.savedListings?.length > 0) {
+                log(`Deleting ${user.savedListings.length} favorite entries`);
+                await this.favoriteRepository.remove(user.savedListings);
+            }
+            if (user.comments?.length > 0) {
+                log(`Deleting ${user.comments.length} user comments`);
+                await this.commentRepository.remove(user.comments as any);
+            }
+
+            // 2. If vendor, delete all their businesses properly
+            if (user.vendor) {
+                log(`User has a vendor profile. Cleaning up vendor data...`);
+
+                // 2a. Recursive cleanup for businesses
+                if (user.vendor.businesses?.length > 0) {
+                    log(`Recursive cleanup for ${user.vendor.businesses.length} businesses...`);
+                    const bizIds = user.vendor.businesses.map(b => b.id);
+                    for (const bizId of bizIds) {
+                        try {
+                            await this.deleteBusiness(bizId);
+                        } catch (e) {
+                            log(`Warning: Failed to delete nested business ${bizId}: ${e.message}`);
+                        }
+                    }
+                }
+
+                // 2b. Cleanup Transactions (many-to-one with Vendor)
+                log(`Cleaning up transactions...`);
+                await this.transactionRepository.delete({ vendorId: user.vendor.id });
+
+                // 2c. Cleanup Subscriptions (many-to-one with Vendor)
+                log(`Cleaning up subscriptions...`);
+                await this.subscriptionRepository.delete({ vendorId: user.vendor.id });
+
+                // 2d. Cleanup Comment Replies (many-to-one with Vendor)
+                log(`Cleaning up vendor replies...`);
+                await this.commentReplyRepository.delete({ vendorId: user.vendor.id });
+
+                log(`Removing vendor record...`);
+                await this.vendorRepository.remove(user.vendor);
+            }
+
+            log(`Final user record removal...`);
+            const result = await this.userRepository.remove(user);
+            log(`Successfully removed user: ${userId}`);
+            return result;
+
+        } catch (error: any) {
+            log(`ERROR deleting user ${userId}: ${error.message}\n${error.stack}`);
+            throw error;
+        }
     }
 
     /**
@@ -208,8 +331,11 @@ export class AdminService {
 
         if (search) {
             query.andWhere(
-                '(business.title ILIKE :search OR business.address ILIKE :search OR business.city ILIKE :search)',
-                { search: `%${search}%` },
+                new Brackets((qb) => {
+                    qb.where('business.title ILIKE :search', { search: `%${search}%` })
+                        .orWhere('business.address ILIKE :search', { search: `%${search}%` })
+                        .orWhere('business.city ILIKE :search', { search: `%${search}%` });
+                }),
             );
         }
 
@@ -221,17 +347,61 @@ export class AdminService {
      * Delete a business and related records
      */
     async deleteBusiness(id: string) {
-        const business = await this.businessRepository.findOne({
-            where: { id },
-            relations: ['businessHours', 'businessAmenities', 'reviews', 'leads', 'savedListings'],
-        });
+        const log = (msg: string) => {
+            const fs = require('fs');
+            const path = require('path');
+            const logFile = path.join(process.cwd(), 'debug_logs.txt');
+            fs.appendFileSync(logFile, `[${new Date().toISOString()}] [AdminService] deleteBusiness: ${msg}\n`);
+        };
 
-        if (!business) throw new NotFoundException('Business not found');
+        log(`Attempting to delete business: ${id}`);
+        try {
+            const business = await this.businessRepository.findOne({
+                where: { id },
+                relations: ['businessHours', 'businessAmenities', 'reviews', 'leads', 'savedListings', 'comments'],
+            });
 
-        // Delete related records manually if not cascading
-        // Note: Many of these usually have onDelete: 'CASCADE' in a well-defined schema,
-        // but we'll be safe here.
-        return this.businessRepository.remove(business);
+            if (!business) {
+                log(`Business ${id} NOT FOUND`);
+                throw new NotFoundException('Business not found');
+            }
+
+            log(`Found business: ${business.title}. Starting manual cleanup...`);
+
+            // Manual cleanup of relations to avoid foreign key violations
+            if (business.businessHours?.length > 0) {
+                log(`Deleting ${business.businessHours.length} business hours`);
+                await this.businessHoursRepository.remove(business.businessHours);
+            }
+            if (business.businessAmenities?.length > 0) {
+                log(`Deleting ${business.businessAmenities.length} business amenities`);
+                await this.businessAmenityRepository.remove(business.businessAmenities);
+            }
+            if (business.reviews?.length > 0) {
+                log(`Deleting ${business.reviews.length} reviews`);
+                await this.reviewRepository.remove(business.reviews);
+            }
+            if (business.leads?.length > 0) {
+                log(`Deleting ${business.leads.length} leads`);
+                await this.leadRepository.remove(business.leads);
+            }
+            if (business.savedListings?.length > 0) {
+                log(`Deleting ${business.savedListings.length} favorite entries`);
+                await this.favoriteRepository.remove(business.savedListings);
+            }
+            if (business.comments?.length > 0) {
+                log(`Deleting ${business.comments.length} comments`);
+                await this.commentRepository.remove(business.comments as any);
+            }
+
+            log(`Main record removal...`);
+            const result = await this.businessRepository.remove(business);
+            log(`Successfully removed business: ${id}`);
+            return result;
+        } catch (error: any) {
+            log(`ERROR deleting business ${id}: ${error.message}\n${error.stack}`);
+            throw error;
+        }
     }
 
     /**

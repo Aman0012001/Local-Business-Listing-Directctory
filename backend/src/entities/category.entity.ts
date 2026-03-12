@@ -17,6 +17,11 @@ export enum CategoryStatus {
     DISABLED = 'disabled',
 }
 
+export enum CategorySource {
+    GOOGLE = 'google',
+    ADMIN = 'admin',
+}
+
 @Entity('categories')
 export class Category {
     @PrimaryGeneratedColumn('uuid')
@@ -52,6 +57,14 @@ export class Category {
     })
     @Index()
     status: CategoryStatus;
+
+    @Column({
+        type: 'enum',
+        enum: CategorySource,
+        default: CategorySource.ADMIN,
+    })
+    @Index()
+    source: CategorySource;
 
     @Column({ name: 'meta_title', nullable: true })
     metaTitle: string;

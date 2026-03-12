@@ -6,10 +6,13 @@ import { Search, MapPin, ArrowRight, TrendingUp, Compass, Sliders, Users, Heart,
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import BusinessCard from '../components/BusinessCard';
+import DynamicIcon from '../components/DynamicIcon';
 import { api, getImageUrl } from '../lib/api';
 import Link from 'next/link';
-import { Category, Business, City, Review } from '../types/api';
+import { Category, Business, City } from '../types/api';
 import Slider from "react-slick";
+import CitySearchSelect from '../components/CitySearchSelect';
+import Script from 'next/script';
 export default function HomePage() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [featuredBusinesses, setFeaturedBusinesses] = useState<Business[]>([]);
@@ -24,27 +27,29 @@ export default function HomePage() {
     const [categoriesList, setCategoriesList] = useState<Category[]>([]);
     const [citiesList, setCitiesList] = useState<City[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedCity, setSelectedCity] = useState('');
     const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
+    const [mapLoaded, setMapLoaded] = useState(false);
 
     const [loading, setLoading] = useState(true);
-    const [statsReviews, setStatsReviews] = useState<Review[]>([]);
-const heroImages = [
-  "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4",
-  "https://images.unsplash.com/photo-1504674900247-0877df9cc836",
-  "https://images.unsplash.com/photo-1528605248644-14dd04022da1",
-  "https://images.unsplash.com/photo-1552566626-52f8b828add9",
-  "https://images.unsplash.com/photo-1498654896293-37aacf113fd9"
-];
-const sliderSettings = {
-  dots: false,
-  infinite: true,
-  autoplay: true,
-  autoplaySpeed: 4000,
-  speed: 1000,
-  fade: true,
-  arrows: false,
-  pauseOnHover: false
-};
+    const [statsComments, setStatsComments] = useState<any[]>([]);
+    const heroImages = [
+        "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4",
+        "https://images.unsplash.com/photo-1504674900247-0877df9cc836",
+        "https://images.unsplash.com/photo-1528605248644-14dd04022da1",
+        "https://images.unsplash.com/photo-1552566626-52f8b828add9",
+        "https://images.unsplash.com/photo-1498654896293-37aacf113fd9"
+    ];
+    const sliderSettings = {
+        dots: false,
+        infinite: true,
+        autoplay: true,
+        autoplaySpeed: 4000,
+        speed: 1000,
+        fade: true,
+        arrows: false,
+        pauseOnHover: false
+    };
     useEffect(() => {
         const loadInitialData = async () => {
             try {
@@ -56,7 +61,7 @@ const sliderSettings = {
                     api.cities.getPopular(),
                     api.categories.getAll(),
                     api.cities.getAll(),
-                    api.reviews.getPopular(3)
+                    api.comments.getPublic(1, 15)
                 ]);
 
                 const getValue = (result: PromiseSettledResult<any>, fallback: any) =>
@@ -67,7 +72,7 @@ const sliderSettings = {
                 const cities = getValue(results[2], []);
                 const allCats = getValue(results[3], []);
                 const allCities = getValue(results[4], []);
-                const reviewsData = getValue(results[5], { data: [] });
+                const commentsData = getValue(results[5], { data: [] });
 
                 setCategories(cats || []);
                 setFeaturedBusinesses(featured?.data || []);
@@ -77,7 +82,7 @@ const sliderSettings = {
                 setPopularCities(cities || []);
                 setCategoriesList(allCats || []);
                 setCitiesList(allCities || []);
-                setStatsReviews(reviewsData?.data || []);
+                setStatsComments(commentsData?.data || []);
 
             } catch (err) {
                 console.error('CRITICAL: Unexpected error in loadInitialData:', err);
@@ -100,9 +105,38 @@ const sliderSettings = {
     }, []);
 
     const handleSearch = () => {
-        if (!searchQuery.trim()) return;
-        window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
+        if (!searchQuery.trim() && !selectedCity) return;
+        const params = new URLSearchParams();
+        if (searchQuery.trim()) params.append('q', searchQuery);
+        if (selectedCity) params.append('city', selectedCity);
+        window.location.href = `/search?${params.toString()}`;
     };
+
+    // Auto-detect location on load
+    useEffect(() => {
+        if (mapLoaded && !selectedCity && navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    if ((window as any).google && (window as any).google.maps) {
+                        const geocoder = new (window as any).google.maps.Geocoder();
+                        geocoder.geocode({ location: { lat: latitude, lng: longitude } }, (results: any, status: any) => {
+                            if (status === "OK" && results[0]) {
+                                let detectedCity = '';
+                                results[0].address_components?.forEach((component: any) => {
+                                    if (component.types.includes("locality")) detectedCity = component.long_name;
+                                    else if (component.types.includes("administrative_area_level_2") && !detectedCity) detectedCity = component.long_name;
+                                });
+                                if (detectedCity) setSelectedCity(detectedCity);
+                            }
+                        });
+                    }
+                },
+                (err) => console.log('Geolocation prompt rejected or failed:', err),
+                { timeout: 5000 }
+            );
+        }
+    }, [mapLoaded]);
 
     if (loading) {
         return (
@@ -126,29 +160,33 @@ const sliderSettings = {
     return (
         <div className=" bg-white font-sans text-slate-900 overflow-x-hidden">
             <Navbar />
+            <Script
+                src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`}
+                onLoad={() => setMapLoaded(true)}
+            />
 
             {/* Hero Section */}
-            <section className="relative pt-32 pb-44 px-4 overflow-visible" style={{height: "100vh"}}>
-               <div className="absolute inset-0 z-0">
+            <section className="relative pt-32 pb-44 px-4 overflow-visible" style={{ height: "100vh" }}>
+                <div className="absolute inset-0 z-0">
 
-  <Slider {...sliderSettings}>
-    {heroImages.map((img, index) => (
-      <div key={index}>
-        <div
-          className="h-[750px] w-full"
-          style={{
-            backgroundImage: `url(${img})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center"
-          }}
-        >
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
-        </div>
-      </div>
-    ))}
-  </Slider>
+                    <Slider {...sliderSettings}>
+                        {heroImages.map((img, index) => (
+                            <div key={index}>
+                                <div
+                                    className="h-[750px] w-full"
+                                    style={{
+                                        backgroundImage: `url(${img})`,
+                                        backgroundSize: "cover",
+                                        backgroundPosition: "center"
+                                    }}
+                                >
+                                    <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
+                                </div>
+                            </div>
+                        ))}
+                    </Slider>
 
-</div>
+                </div>
 
                 <div className="max-w-7xl mx-auto relative z-10 text-center text-white">
                     <motion.div
@@ -170,14 +208,22 @@ const sliderSettings = {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.2, duration: 0.5 }}
-                        className="relative z-[70] max-w-4xl mx-auto bg-white/10 backdrop-blur-md   p-2 border border-white/20 flex flex-col md:flex-row items-stretch gap-2" style={{borderRadius: "10px"}}
+                        className="relative z-[70] max-w-4xl mx-auto bg-white/10 backdrop-blur-md   p-2 border border-white/20 flex flex-col md:flex-row items-stretch gap-2" style={{ borderRadius: "10px" }}
                     >
                         <div className="flex-1 relative z-50">
+                            <CitySearchSelect
+                                cities={citiesList}
+                                value={selectedCity}
+                                onChange={setSelectedCity}
+                            />
+                        </div>
+
+                        <div className="flex-[1.5] relative z-50">
                             <div className="relative h-full">
                                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-400 z-10" />
                                 <input
                                     type="text"
-                                    placeholder="Search categories, cities, or businesses..."
+                                    placeholder="Search categories or businesses..."
                                     value={searchQuery}
                                     onChange={(e) => {
                                         setSearchQuery(e.target.value);
@@ -185,7 +231,7 @@ const sliderSettings = {
                                     }}
                                     onFocus={() => setIsSuggestionsOpen(true)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                    className="w-full pl-16 pr-8 py-6 bg-white text-slate-900 placeholder-slate-400  border-0 focus:ring-2 focus:ring-[#FF7A30] text-xl font-semibold outline-none transition-all shadow-inner" style={{borderRadius: "10px"}}
+                                    className="w-full pl-16 pr-8 py-6 bg-white text-slate-900 placeholder-slate-400  border-0 focus:ring-2 focus:ring-[#FF7A30] text-xl font-semibold outline-none transition-all shadow-inner" style={{ borderRadius: "10px" }}
                                 />
                             </div>
 
@@ -193,7 +239,7 @@ const sliderSettings = {
                                 <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="absolute top-full left-0 right-0 mt-3 bg-white  border border-slate-100 py-4 z-[100] max-h-[500px] overflow-y-auto" style={{borderRadius: "10px"}}
+                                    className="absolute top-full left-0 right-0 mt-3 bg-white  border border-slate-100 py-4 z-[100] max-h-[500px] overflow-y-auto" style={{ borderRadius: "10px" }}
                                 >
                                     {filteredCategories.length > 0 && (
                                         <div className="px-6 py-2">
@@ -250,7 +296,7 @@ const sliderSettings = {
 
                         <button
                             onClick={handleSearch}
-                            className="bg-[#FF7A30] hover:bg-[#E86920] text-white px-12 py-5  font-black text-xl transition-all  active:scale-95 flex items-center justify-center  group shrink-0" style={{borderRadius: "10px"}}
+                            className="bg-[#FF7A30] hover:bg-[#E86920] text-white px-12 py-5  font-black text-xl transition-all  active:scale-95 flex items-center justify-center  group shrink-0" style={{ borderRadius: "10px" }}
                         >
                             <Search className="w-6 h-6 me-3 group-hover:scale-110 transition-transform" />
                             Search
@@ -260,7 +306,7 @@ const sliderSettings = {
                     <div className="mt-12 flex flex-wrap justify-center gap-4 md:gap-8 text-white/95">
                         {categories.slice(0, 4).map(cat => (
                             <Link key={cat.id} href={`/search?category=${cat.slug}`} className="flex items-center gap-3 px-4 py-2 bg-white/10 rounded-xl hover:bg-white/20 transition-all backdrop-blur-sm border border-white/10 group">
-                                <span className="text-xl">{cat.icon || '📁'}</span>
+                                <DynamicIcon name={cat.icon} className="w-6 h-6" />
                                 <span className="text-base font-bold tracking-wide">{cat.name}</span>
                             </Link>
                         ))}
@@ -289,8 +335,8 @@ const sliderSettings = {
                             >
                                 <Link href={`/search?category=${cat.slug}`} className="group block">
                                     <div className="bg-slate-50 p-5 rounded-2xl border  flex items-center gap-6 hover:bg-white  hover:-translate-y-1 transition-all duration-500">
-                                        <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center group-hover:border-blue-200 group-hover:bg-blue-50/30 transition-all">
-                                            <span className="text-3xl">{cat.icon || '📁'}</span>
+                                        <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center group-hover:border-blue-200 group-hover:bg-blue-50/30 transition-all text-blue-600">
+                                            <DynamicIcon name={cat.icon} className="w-8 h-8" />
                                         </div>
                                         <div>
                                             <h3 className="font-bold text-sm text-slate-900 mb-1 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{cat.name}</h3>
@@ -471,12 +517,12 @@ const sliderSettings = {
                         { id: 'f6', name: 'Hina N.', location: 'Multan', text: 'Very user-friendly! Found a top doctor in my area within seconds.', rating: 5, img: 'https://i.pravatar.cc/150?u=hina' },
                     ];
 
-                    const cards = statsReviews.length > 0
-                        ? statsReviews.map(rev => ({
+                    const cards = statsComments.length > 0
+                        ? statsComments.map(rev => ({
                             id: rev.id,
                             name: rev.user?.fullName || 'Anonymous',
-                            location: '',
-                            text: rev.comment,
+                            location: rev.business?.city || '',
+                            text: rev.content || rev.comment,
                             rating: rev.rating,
                             img: rev.user?.avatarUrl ? getImageUrl(rev.user.avatarUrl) as string : null,
                         }))

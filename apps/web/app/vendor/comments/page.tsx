@@ -105,7 +105,7 @@ export default function VendorCommentsPage() {
     return (
         <div className="max-w-6xl mx-auto pb-16">
             {/* Header */}
-            <div className="relative mb-8 rounded-[40px] overflow-hidden bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#334155] p-10 shadow-2xl">
+            <div className="relative mb-8 rounded-[20px] overflow-hidden bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#334155] p-10 shadow-2xl">
                 <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
                 <div className="relative flex items-center justify-between">
                     <div className="flex items-center gap-6">
@@ -131,7 +131,7 @@ export default function VendorCommentsPage() {
             </AnimatePresence>
 
             {/* Comments Table */}
-            <div className="bg-white rounded-[32px] border border-slate-100  shadow-slate-200/50 overflow-hidden">
+            <div className="bg-white rounded-[20px] border border-slate-100  shadow-slate-200/50 overflow-hidden">
                 <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                     <div>
                         <h2 className="font-black text-slate-900 text-lg">Recent Feedbacks</h2>
@@ -218,8 +218,8 @@ export default function VendorCommentsPage() {
                                             </td>
                                             <td className="px-8 py-6">
                                                 <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${comment.reply
-                                                        ? 'bg-green-50 text-green-600 border border-green-100'
-                                                        : 'bg-amber-50 text-amber-600 border border-amber-100'
+                                                    ? 'bg-green-50 text-green-600 border border-green-100'
+                                                    : 'bg-amber-50 text-amber-600 border border-amber-100'
                                                     }`}>
                                                     <div className={`w-1 h-1 rounded-full ${comment.reply ? 'bg-green-600' : 'bg-amber-600'}`} />
                                                     {comment.reply ? 'Replied' : 'Pending'}
@@ -308,7 +308,7 @@ export default function VendorCommentsPage() {
 
                             <form onSubmit={handleReplySubmit} className="p-8 space-y-6">
                                 {/* Customer Quote */}
-                                <div className="p-6 bg-slate-50 rounded-[32px] border border-slate-100 relative">
+                                <div className="p-6 bg-slate-50 rounded-[20px] border border-slate-100 relative">
                                     <div className="absolute -top-3 left-6 px-3 py-1 bg-white border border-slate-100 rounded-lg shadow-sm">
                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Customer Said</span>
                                     </div>
@@ -356,7 +356,7 @@ export default function VendorCommentsPage() {
                         className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4">
                         <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
                             className="bg-white rounded-[40px] shadow-2xl w-full max-w-sm p-10 text-center">
-                            <div className="w-20 h-20 bg-rose-50 rounded-[32px] flex items-center justify-center mx-auto mb-6">
+                            <div className="w-20 h-20 bg-rose-50 rounded-[20px] flex items-center justify-center mx-auto mb-6">
                                 <Trash2 className="w-10 h-10 text-rose-500" />
                             </div>
                             <h3 className="font-black text-slate-900 text-2xl mb-2">Remove Reply?</h3>

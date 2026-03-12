@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { api, getImageUrl } from '../../../lib/api';
 import { Business, Review } from '../../../types/api';
 import { motion, AnimatePresence } from 'framer-motion';
+import VendorHotDemandWidget from '../../components/vendor/VendorHotDemandWidget';
 
 export default function GenericDashboard() {
     const { user, updateUser } = useAuth();
@@ -21,6 +22,7 @@ export default function GenericDashboard() {
     const [leads, setLeads] = useState<any[]>([]);
     const [newLeadsCount, setNewLeadsCount] = useState(0);
     const [enquiries, setEnquiries] = useState<any[]>([]);
+    const [demandInsights, setDemandInsights] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     const isVendor = user?.role === 'vendor';
@@ -59,6 +61,9 @@ export default function GenericDashboard() {
                         setNewLeadsCount(leadsData.meta?.total || 0);
                         setEnquiries(enquiriesData.data || []);
                     }
+
+                    const demandData = await api.demand.getNearby();
+                    setDemandInsights(demandData || []);
                 } else {
                     // Regular User specific data
                     const [reviewsData, notifsData] = await Promise.all([
@@ -298,6 +303,10 @@ export default function GenericDashboard() {
                         loading={loading}
                         title={isVendor || isAdmin ? "Recent Reviews" : "My Recent Reviews"}
                     />
+
+                    {isVendor && (
+                        <VendorHotDemandWidget insights={demandInsights} loading={loading} />
+                    )}
 
                     {isVendor && (
                         <section className="bg-white rounded-[16px] p-8 border border-black  shadow-slate-200/20">

@@ -24,6 +24,8 @@ export * from './favorite.entity';
 export * from './subscription-plan.entity';
 export * from './subscription.entity';
 export * from './transaction.entity';
+export * from './search-log.entity';
+export * from './notification-log.entity';
 
 // Notifications
 export * from './notification.entity';

@@ -5,6 +5,51 @@ import Link from 'next/link';
 import { Star, MapPin, ShieldCheck, Clock, CheckCircle2 } from 'lucide-react';
 import { Business } from '../types/api';
 import { getImageUrl } from '../lib/api';
+import { getBusinessOpenStatus } from '../lib/business-status';
+// Simple Online/Offline badge — green when vendor is logged in, red when not
+const VendorOnlineBadge = ({ isOnline }: { isOnline?: boolean }) => {
+    if (isOnline) {
+        return (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Online
+            </span>
+        );
+    }
+    return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-50 text-red-600 border border-red-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+            Offline
+        </span>
+    );
+};
+
+// Open / Closed badge based on business hours
+// Falls back to vendor.businessHours (Record) if listing.businessHours (Array) is empty
+const BusinessOpenBadge = ({ business }: { business: Business }) => {
+    const hoursData = (business.businessHours && business.businessHours.length > 0)
+        ? business.businessHours
+        : business.vendor?.businessHours;
+
+    const { status, label, todayHours } = getBusinessOpenStatus(hoursData);
+    if (status === 'UNKNOWN') return null;
+
+    const isOpen = status === 'OPEN';
+    return (
+        <span
+            title={todayHours ? `Today: ${todayHours}` : undefined}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                isOpen
+                    ? 'bg-green-50 text-green-700 border-green-200'
+                    : 'bg-slate-100 text-slate-500 border-slate-200'
+            }`}
+        >
+            <Clock className="w-3 h-3" />
+            {label}
+            {todayHours && <span className="hidden sm:inline font-normal normal-case">&middot; {todayHours}</span>}
+        </span>
+    );
+};
 
 const StatusBadge = ({ status }: { status?: string }) => {
     if (!status || status === 'approved') {
@@ -23,7 +68,7 @@ const StatusBadge = ({ status }: { status?: string }) => {
 
 interface BusinessCardProps {
     business: Business;
-    variant?: 'green' | 'blue' | 'white' | 'dark';
+    variant?: 'green' | 'blue' | 'white' | 'dark' | 'minimal';
     layout?: 'grid' | 'list';
 }
 
@@ -38,6 +83,8 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                 return 'bg-white border-2 border-slate-200 text-slate-600 hover:bg-slate-50';
             case 'dark':
                 return 'bg-[#112D4E] hover:bg-black text-white';
+            case 'minimal':
+                return 'bg-slate-900 hover:bg-blue-600 text-white';
             default:
                 return 'bg-[#3C82F6] hover:bg-[#2563EB] text-white';
         }
@@ -46,6 +93,56 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
     const getButtonText = () => {
         return variant === 'green' ? 'Call Now' : 'View Details';
     };
+
+    if (variant === 'minimal') {
+        const isList = layout === 'list';
+        return (
+            <Link href={`/business/${business.slug}`} className={`group block ${isList ? 'w-full' : ''}`}>
+                <div className={`flex ${isList ? 'flex-row gap-8 items-center' : 'flex-col gap-6'} transition-all duration-700`}>
+                    {/* Minimalist Image container */}
+                    <div className={`relative overflow-hidden rounded-[20px] bg-slate-50 border border-slate-100/50 ${isList ? 'w-64 h-48 shrink-0' : 'aspect-[4/3] w-full'}`}>
+                        <img
+                            src={getImageUrl(business.coverImageUrl) || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=800'}
+                            alt={business.title}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1.5s] grayscale-[0.2] group-hover:grayscale-0"
+                        />
+                        {business.isVerified && (
+                            <div className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-md rounded-full shadow-sm text-blue-600 border border-white">
+                                <ShieldCheck className="w-4 h-4 fill-blue-600/10" />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Minimalist Content */}
+                    <div className="flex-grow">
+                        <div className="flex items-center gap-3 mb-2">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">
+                                {business.category?.name || 'Selection'}
+                            </span>
+                            <div className="h-px w-4 bg-slate-200" />
+                            <div className="flex items-center gap-1.5 font-black text-slate-900 text-xs">
+                                <Star className="w-3.5 h-3.5 fill-slate-900" />
+                                {business.averageRating || '4.5'}
+                            </div>
+                        </div>
+
+                        <h3 className="text-2xl font-black text-slate-900 group-hover:text-blue-600 transition-colors mb-2 tracking-tight">
+                            {business.title}.
+                        </h3>
+
+                        <p className="text-slate-400 text-sm font-bold leading-relaxed mb-6 line-clamp-2 max-w-lg">
+                            {business.shortDescription || business.description || 'Premium listing with exceptional service quality and local commitment.'}
+                        </p>
+
+                        <div className="flex items-center gap-4 text-xs font-black text-slate-900 uppercase tracking-widest group-hover:gap-6 transition-all">
+                            Explore Details
+                            <div className="w-8 h-[2px] bg-slate-100 group-hover:bg-blue-600 group-hover:w-16 transition-all duration-500" />
+                        </div>
+                    </div>
+                </div>
+            </Link>
+        );
+    }
 
     if (layout === 'list') {
         return (
@@ -99,13 +196,12 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                         </p>
 
                         <div className="mt-auto flex items-center justify-between gap-6">
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 flex-wrap">
                                 <div className="px-3 py-1 bg-slate-50 text-slate-500 rounded-lg text-xs font-bold border border-slate-100 uppercase tracking-widest">
                                     {business.category?.name || 'Service'}
                                 </div>
-                                <div className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-xs font-bold border border-emerald-100 uppercase tracking-widest">
-                                    Open Now
-                                </div>
+                                <VendorOnlineBadge isOnline={business.vendor?.user?.isOnline} />
+                                <BusinessOpenBadge business={business} />
                             </div>
                             <div className={`px-8 py-3 rounded-xl font-bold transition-all shadow-lg active:scale-95 text-sm ${getButtonStyles()}`}>
                                 {getButtonText()}
@@ -127,11 +223,6 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                         alt={business.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     />
-                    {/* {business.isFeatured && (
-                        <div className="absolute top-4 left-4 px-3 py-1 bg-blue-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-lg">
-                            Featured
-                        </div>
-                    )} */}
                     {business.isVerified && (
                         <div className="absolute top-4 right-4 px-3 py-1 bg-amber-500 text-white text-[10px] font-bold uppercase tracking-widest rounded-full shadow-lg">
                             Verified
@@ -150,8 +241,10 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                             <span>{business.averageRating || '4.5'}</span>
                         </div>
                     </div>
-                    <div className="mb-3">
+                    <div className="flex flex-wrap items-center gap-2 mb-3">
                         <StatusBadge status={(business as any).status} />
+                        <VendorOnlineBadge isOnline={business.vendor?.user?.isOnline} />
+                        <BusinessOpenBadge business={business} />
                     </div>
                     <div className="flex items-center gap-2 mb-6 text-slate-500">
                         <div className="flex text-amber-500">
@@ -162,7 +255,7 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                     </div>
 
                     <div className="mt-auto">
-                        <div className={`block w-full text-center py-2  font-bold transition-all s active:scale-95`} style={{backgroundColor: "#eff6ff", borderRadius: "10px"}}>
+                        <div className={`block w-full text-center py-2  font-bold transition-all s active:scale-95`} style={{ backgroundColor: "#eff6ff", borderRadius: "10px" }}>
                             {/* {getButtonText()} */} View Details
                         </div>
                     </div>

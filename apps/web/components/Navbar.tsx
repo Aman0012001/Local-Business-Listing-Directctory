@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { Menu, ChevronDown, MapPin, User as UserIcon, LogOut, X, Search, Building2, Globe, Bell, Check, Trash2 } from 'lucide-react';
+import { Menu, ChevronDown, MapPin, User as UserIcon, LogOut, X, Search, Building2, Globe, Bell, Check, Trash2, BellRing } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api, getImageUrl } from '../lib/api';
 import { Category, City } from '../types/api';
+import { usePushNotifications } from '../lib/usePushNotifications';
 
 export default function Navbar() {
     const { user, logout } = useAuth();
@@ -11,6 +12,9 @@ export default function Navbar() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [cities, setCities] = useState<City[]>([]);
     const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+
+    // ── Web Push Notifications ───────────────────────────────────────
+    const { supported: pushSupported, permission: pushPermission, isSubscribed: pushSubscribed, subscribe: enablePush, loading: pushLoading } = usePushNotifications(user?.id);
 
     // ── Notifications ───────────────────────────────────────────────
     const [notifications, setNotifications] = useState<any[]>([]);
@@ -107,15 +111,15 @@ export default function Navbar() {
                 <div className="flex justify-between items-center h-20 relative">
 
                     {/* Logo - Fixed Width Area */}
-                    <div className="flex-shrink-0 w-48">
-                        <Link href="/" className="flex items-center gap-2 group">
-                            <div className="w-10 h-10 bg-[#112D4E] rounded-xl flex items-center justify-center relative  group-hover:bg-[#FF7A30] transition-all duration-300 group-hover:rotate-6">
-                                <MapPin className="w-6 h-6 text-white fill-white" />
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-[#FF7A30] rounded-full border-2 border-[#112D4E] group-hover:bg-white group-hover:border-[#FF7A30] transition-colors duration-300" />
+                    <div className="flex-shrink-0 w-48 flex items-center">
+                        <Link href="/" className="flex items-center group overflow-hidden h-20">
+                            <div className="h-28 w-48 relative transition-all duration-300 group-hover:scale-105">
+                                <img
+                                    src="/logo.png"
+                                    alt="naampata logo"
+                                    className="absolute inset-0 w-full h-full object-contain scale-[2.2]"
+                                />
                             </div>
-                            <span className="text-2xl font-bold text-[#2D3E50] tracking-tight group-hover:text-[#112D4E] transition-colors">
-                                LocalFind
-                            </span>
                         </Link>
                     </div>
 
@@ -137,7 +141,7 @@ export default function Navbar() {
                                 </button>
 
                                 {activeDropdown === 'categories' && (
-                                    <div className="absolute top-full left-0  w-64 animate-in fade-in slide-in-from-top-2 duration-200 " style={{ zIndex: "1000"}}>
+                                    <div className="absolute top-full left-0  w-64 animate-in fade-in slide-in-from-top-2 duration-200 " style={{ zIndex: "1000" }}>
 
                                         <div className="grid grid-cols-4 gap-6 p-4">
                                             {activeDropdown === 'categories' && (
@@ -196,38 +200,38 @@ export default function Navbar() {
                                 <button className="flex items-center gap-1 text-[#2D3E50]/70 font-bold text-[15px] px-4 py-2 rounded-xl hover:bg-slate-50 hover:text-[#2D3E50] transition-all group">
                                     Businesses <ChevronDown className={`w-4 h-4 opacity-40 group-hover:opacity-100 transition-all ${activeDropdown === 'businesses' ? 'rotate-180' : ''}`} />
                                 </button>
- <div className="absolute top-full left-0  w-64 animate-in fade-in slide-in-from-top-2 duration-200 " style={{ zIndex: "1000"}}>
+                                <div className="absolute top-full left-0  w-64 animate-in fade-in slide-in-from-top-2 duration-200 " style={{ zIndex: "1000" }}>
 
-                                        <div className="grid grid-cols-4 gap-6 p-4"></div>
-                                {activeDropdown === 'businesses' && (
-                                    <div className="absolute  top-full left-1/2 -translate-x-1/2 pt-2 w-64 animate-in fade-in slide-in-from-top-2 duration-200" >
-                                        <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-2">
-                                            <div className="grid grid-cols-1 gap-6 ">
-                                                <Link href="/search?filter=featured" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
-                                                    <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-[#FF7A30]">
-                                                        <Building2 className="w-4 h-4" />
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-sm font-bold text-slate-900">Featured</span>
-                                                        <span className="text-[10px] text-slate-400 font-medium italic">Hand-picked best locals</span>
-                                                    </div>
-                                                </Link>
-                                                <Link href="/search?filter=new" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
-                                                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
-                                                        <Search className="w-4 h-4" />
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-sm font-bold text-slate-900">Newly Added</span>
-                                                        <span className="text-[10px] text-slate-400 font-medium italic">Fresh arrivals this week</span>
-                                                    </div>
-                                                </Link>
-                                                <Link href="/search" className="mt-2 text-center py-2 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-900 border-t border-slate-50 pt-3">
-                                                    Advanced Search
-                                                </Link>
+                                    <div className="grid grid-cols-4 gap-6 p-4"></div>
+                                    {activeDropdown === 'businesses' && (
+                                        <div className="absolute  top-full left-1/2 -translate-x-1/2 pt-2 w-64 animate-in fade-in slide-in-from-top-2 duration-200" >
+                                            <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-2">
+                                                <div className="grid grid-cols-1 gap-6 ">
+                                                    <Link href="/search?filter=featured" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
+                                                        <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-[#FF7A30]">
+                                                            <Building2 className="w-4 h-4" />
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-bold text-slate-900">Featured</span>
+                                                            <span className="text-[10px] text-slate-400 font-medium italic">Hand-picked best locals</span>
+                                                        </div>
+                                                    </Link>
+                                                    <Link href="/search?filter=new" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
+                                                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
+                                                            <Search className="w-4 h-4" />
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-bold text-slate-900">Newly Added</span>
+                                                            <span className="text-[10px] text-slate-400 font-medium italic">Fresh arrivals this week</span>
+                                                        </div>
+                                                    </Link>
+                                                    <Link href="/search" className="mt-2 text-center py-2 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-900 border-t border-slate-50 pt-3">
+                                                        Advanced Search
+                                                    </Link>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
                                 </div>
                             </div>
 
@@ -240,49 +244,49 @@ export default function Navbar() {
                                 <button className="flex items-center gap-1 text-[#2D3E50]/70 font-bold text-[15px] px-4 py-2 rounded-xl hover:bg-slate-50 hover:text-[#2D3E50] transition-all group">
                                     Cities <ChevronDown className={`w-4 h-4 opacity-40 group-hover:opacity-100 transition-all ${activeDropdown === 'cities' ? 'rotate-180' : ''}`} />
                                 </button>
- <div className="absolute top-full left-0  w-64 animate-in fade-in slide-in-from-top-2 duration-200 " style={{ zIndex: "1000"}}>
+                                <div className="absolute top-full left-0  w-64 animate-in fade-in slide-in-from-top-2 duration-200 " style={{ zIndex: "1000" }}>
 
-                                        <div className="grid grid-cols-4 gap-6 p-4"></div>
-                            {activeDropdown === 'cities' && (
-  <div className="absolute top-full left-1/2 -translate-x-1/2 pt-3 w-[700px] animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <div className="grid grid-cols-4 gap-6 p-4"></div>
+                                    {activeDropdown === 'cities' && (
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 pt-3 w-[700px] animate-in fade-in slide-in-from-top-2 duration-200">
 
-    <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-6">
+                                            <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-6">
 
-      <div className="grid grid-cols-4 gap-8">
+                                                <div className="grid grid-cols-4 gap-8">
 
-        {cities.map((city) => (
-          <Link
-            key={city.id}
-            href={`/cities/${encodeURIComponent(city.name.toLowerCase())}`}
-            className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group"
-          >
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500">
-              <Globe className="w-4 h-4"/>
-            </div>
+                                                    {cities.map((city) => (
+                                                        <Link
+                                                            key={city.id}
+                                                            href={`/cities/${encodeURIComponent(city.name.toLowerCase())}`}
+                                                            className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group"
+                                                        >
+                                                            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500">
+                                                                <Globe className="w-4 h-4" />
+                                                            </div>
 
-            <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900">
-              {city.name}
-            </span>
-          </Link>
-        ))}
+                                                            <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900">
+                                                                {city.name}
+                                                            </span>
+                                                        </Link>
+                                                    ))}
 
-      </div>
+                                                </div>
 
-      <div className="border-t border-slate-100 mt-4 pt-3 text-center">
-        <Link
-          href="/cities"
-          className="text-xs font-bold uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920]"
-        >
-          Browse All Cities
-        </Link>
-      </div>
+                                                <div className="border-t border-slate-100 mt-4 pt-3 text-center">
+                                                    <Link
+                                                        href="/cities"
+                                                        className="text-xs font-bold uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920]"
+                                                    >
+                                                        Browse All Cities
+                                                    </Link>
+                                                </div>
 
-    </div>
+                                            </div>
 
-  </div>
-)}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-</div>
                         </div>
                     </div>
 
@@ -310,6 +314,19 @@ export default function Navbar() {
                                         </span>
                                     </div>
                                 </Link>
+
+                                {/* 🔕 Enable Push Notifications button – only shown if not yet granted */}
+                                {pushSupported && !pushSubscribed && pushPermission === 'default' && (
+                                    <button
+                                        onClick={enablePush}
+                                        disabled={pushLoading}
+                                        title="Enable push notifications"
+                                        className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 transition-all active:scale-95 disabled:opacity-60"
+                                    >
+                                        <BellRing className={`w-3.5 h-3.5 ${pushLoading ? 'animate-bounce' : ''}`} />
+                                        {pushLoading ? 'Enabling…' : 'Enable Push'}
+                                    </button>
+                                )}
 
                                 {/* 🔔 Notification Bell */}
                                 <div ref={bellRef} className="relative">

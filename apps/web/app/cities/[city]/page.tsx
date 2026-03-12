@@ -19,6 +19,7 @@ export async function generateStaticParams() {
     }
 }
 
-export default function CityVendorsPage({ params }: { params: { city: string } }) {
-    return <CityVendorsClient city={params.city} />;
+export default async function CityVendorsPage({ params }: { params: Promise<{ city: string }> }) {
+    const { city } = await params;
+    return <CityVendorsClient city={city} />;
 }

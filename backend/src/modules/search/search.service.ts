@@ -1,12 +1,14 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Listing } from '../../entities/business.entity';
+import { Listing, BusinessStatus } from '../../entities/business.entity';
 
 @Injectable()
 export class SearchService implements OnModuleInit {
     private readonly INDEX_NAME = 'businesses';
+    private isElasticAvailable = false;
+    private readonly logger = new Logger(SearchService.name);
 
     constructor(
         private readonly elasticsearchService: ElasticsearchService,
@@ -16,9 +18,14 @@ export class SearchService implements OnModuleInit {
 
     async onModuleInit() {
         try {
+            await this.elasticsearchService.ping();
+            this.isElasticAvailable = true;
+            this.logger.log('✅ Elasticsearch is available. Creating index if needed...');
             await this.createIndex();
+            this.logger.log('✅ Elasticsearch index ready.');
         } catch (error) {
-            console.warn('⚠️ Elasticsearch is not available. Search features will be limited.');
+            this.isElasticAvailable = false;
+            this.logger.warn('⚠️ Elasticsearch is not available. Search will use database fallback.');
         }
     }
 
@@ -57,6 +64,7 @@ export class SearchService implements OnModuleInit {
      * Index a single business
      */
     async indexBusiness(business: Listing) {
+        if (!this.isElasticAvailable) return;
         return this.elasticsearchService.index({
             index: this.INDEX_NAME,
             id: business.id,
@@ -79,9 +87,64 @@ export class SearchService implements OnModuleInit {
     }
 
     /**
-     * Search businesses with Elasticsearch
+     * Database-based fallback search using TypeORM
+     */
+    private async dbSearch(query: string, city?: string, category?: string): Promise<any[]> {
+        this.logger.log(`[DB Fallback] Searching for: "${query}", city: ${city}, category: ${category}`);
+
+        const qb = this.businessRepository
+            .createQueryBuilder('b')
+            .leftJoinAndSelect('b.category', 'category')
+            .where('b.status = :status', { status: BusinessStatus.APPROVED });
+
+        if (query) {
+            qb.andWhere(
+                `(LOWER(b.name) LIKE :q OR LOWER(b.description) LIKE :q OR LOWER(b.city) LIKE :q)`,
+                { q: `%${query.toLowerCase()}%` },
+            );
+        }
+
+        if (city) {
+            qb.andWhere('LOWER(b.city) = :city', { city: city.toLowerCase() });
+        }
+
+        if (category) {
+            qb.andWhere('LOWER(category.name) LIKE :cat', { cat: `%${category.toLowerCase()}%` });
+        }
+
+        qb.orderBy('b.isFeatured', 'DESC')
+            .addOrderBy('b.averageRating', 'DESC')
+            .take(50);
+
+        const results = await qb.getMany();
+
+        return results.map((b) => ({
+            id: b.id,
+            title: b.title,
+            description: b.description,
+            category: b.category?.name,
+            city: b.city,
+            location: { lat: b.latitude, lon: b.longitude },
+            rating: b.averageRating,
+            isFeatured: b.isFeatured,
+            isVerified: b.isVerified,
+            status: b.status,
+            slug: b.slug,
+            logoUrl: b.logoUrl,
+            coverImageUrl: b.coverImageUrl,
+            phone: b.phone,
+            address: b.address,
+        }));
+    }
+
+    /**
+     * Search businesses — uses Elasticsearch if available, DB fallback otherwise
      */
     async search(query: string, city?: string, category?: string) {
+        if (!this.isElasticAvailable) {
+            return this.dbSearch(query, city, category);
+        }
+
         const filters: any[] = [{ term: { status: 'approved' } }];
 
         if (city) {
@@ -114,6 +177,11 @@ export class SearchService implements OnModuleInit {
      * Bulk re-index (Sync DB to ES)
      */
     async reindexAll() {
+        if (!this.isElasticAvailable) {
+            this.logger.warn('[reindexAll] Elasticsearch not available. Skipping re-index.');
+            return { indexed: 0, message: 'Elasticsearch is not available.' };
+        }
+
         const businesses = await this.businessRepository.find({
             relations: ['category'],
         });
@@ -129,6 +197,7 @@ export class SearchService implements OnModuleInit {
      * Remove from index
      */
     async remove(businessId: string) {
+        if (!this.isElasticAvailable) return;
         await this.elasticsearchService.delete({
             index: this.INDEX_NAME,
             id: businessId,

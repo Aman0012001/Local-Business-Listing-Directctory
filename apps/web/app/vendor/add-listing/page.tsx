@@ -6,7 +6,7 @@ import {
     Loader2, Store, MapPin, Phone, TextQuote, Layers,
     ArrowLeft, CheckCircle, ImagePlus, Building2, Tag,
     FileText, Navigation, Sparkles, X, Images, Check, Plus,
-    ChevronLeft, ChevronRight, Hash, Share2, Globe
+    ChevronLeft, ChevronRight, Hash, Share2, Globe, Search, ChevronDown
 } from 'lucide-react';
 import { api, getImageUrl } from '../../../lib/api';
 import { Category, City } from '../../../types/api';
@@ -33,8 +33,6 @@ const SOCIAL_PLATFORMS = [
     { key: 'twitter', label: 'Twitter / X', emoji: '🐦', color: '#1DA1F2', placeholder: 'https://twitter.com/yourbusiness' },
     { key: 'linkedin', label: 'LinkedIn', emoji: '💼', color: '#0A66C2', placeholder: 'https://linkedin.com/company/yourbusiness' },
     { key: 'youtube', label: 'YouTube', emoji: '▶️', color: '#FF0000', placeholder: 'https://youtube.com/@yourbusiness' },
-    { key: 'whatsapp', label: 'WhatsApp', emoji: '💬', color: '#25D366', placeholder: 'https://wa.me/923001234567' },
-    { key: 'website', label: 'Website', emoji: '🌐', color: '#FF7A30', placeholder: 'https://yourbusiness.com' },
 ];
 
 export default function AddListingPage() {
@@ -57,6 +55,19 @@ export default function AddListingPage() {
     const [showAddAmenity, setShowAddAmenity] = useState(false);
     const [newAmenityName, setNewAmenityName] = useState('');
     const [creatingAmenity, setCreatingAmenity] = useState(false);
+    const [mapError, setMapError] = useState(false);
+    const [mapLoaded, setMapLoaded] = useState(false);
+
+    // Handle Google Maps Authentication Failure (Invalid API Key)
+    useEffect(() => {
+        (window as any).gm_authFailure = () => {
+            console.error('Google Maps authentication failed - check API Key.');
+            setMapError(true);
+        };
+        return () => {
+            delete (window as any).gm_authFailure;
+        };
+    }, []);
 
     // ── Social Links ─────────────────────────────────────────────────
     const [socialLinks, setSocialLinks] = useState<{ platform: string; url: string }[]>([]);
@@ -131,6 +142,9 @@ export default function AddListingPage() {
         country: 'Pakistan',
         amenityIds: [] as string[],
         metaKeywords: '',
+        whatsapp: '',
+        website: '',
+        suggestedCategoryName: '',
     });
 
     const autoCompleteRef = useRef<any>(null);
@@ -164,6 +178,11 @@ export default function AddListingPage() {
                     else if (types.includes("postal_code")) pincode = component.long_name;
                 });
 
+                // Auto-sync category from Google types
+                if (place.types && place.types.length > 0) {
+                    handlePlaceTypes(place.types);
+                }
+
                 // Clean up address: try to remove city, state, country and pincode from the formatted address
                 // to get just the "Area / Street" part.
                 let cleanAddress = address;
@@ -189,8 +208,33 @@ export default function AddListingPage() {
         });
     };
 
+    const handlePlaceTypes = async (types: string[]) => {
+        // Filter out generic types like 'establishment', 'point_of_interest'
+        const excludedTypes = ['establishment', 'point_of_interest', 'political', 'street_address', 'premise'];
+        const validTypes = types.filter(t => !excludedTypes.includes(t));
+
+        if (validTypes.length === 0) return;
+
+        const googleType = validTypes[0]; // e.g. "restaurant"
+
+        try {
+            const syncedCategory = await api.categories.syncGoogle(googleType);
+
+            // Add to categories list if not already there
+            setCategories(prev => {
+                if (prev.find(c => c.id === syncedCategory.id)) return prev;
+                return [...prev, syncedCategory];
+            });
+
+            // Auto-select the category
+            setFormData(prev => ({ ...prev, categoryId: syncedCategory.id }));
+        } catch (err) {
+            console.error('Failed to sync Google category:', err);
+        }
+    };
+
     const initAutocomplete = () => {
-        if (!(window as any).google || !addressInputRef.current || !mapContainerRef.current) return;
+        if (!mapLoaded || !(window as any).google || !addressInputRef.current || !mapContainerRef.current) return;
 
         const defaultCenter = { lat: formData.latitude, lng: formData.longitude };
 
@@ -208,6 +252,14 @@ export default function AddListingPage() {
                 map: mapRef.current,
                 draggable: true,
                 animation: (window as any).google.maps.Animation.DROP,
+                icon: {
+                    path: (window as any).google.maps.SymbolPath.CIRCLE,
+                    fillColor: '#f97316',
+                    fillOpacity: 1,
+                    strokeWeight: 4,
+                    strokeColor: '#ffffff',
+                    scale: 10
+                }
             });
 
             markerRef.current.addListener("dragend", () => {
@@ -228,64 +280,97 @@ export default function AddListingPage() {
                 addressInputRef.current,
                 {
                     componentRestrictions: { country: "pk" },
-                    fields: ["address_components", "geometry", "formatted_address"],
+                    fields: ["address_components", "geometry", "formatted_address", "types"],
                 }
             );
 
             autoCompleteRef.current.addListener("place_changed", () => {
-                const place = autoCompleteRef.current.getPlace();
-                if (!place.geometry) return;
+                try {
+                    const place = autoCompleteRef.current.getPlace();
+                    if (!place.geometry) return;
 
-                const lat = place.geometry.location.lat();
-                const lng = place.geometry.location.lng();
+                    const lat = place.geometry.location.lat();
+                    const lng = place.geometry.location.lng();
 
-                mapRef.current.setCenter({ lat, lng });
-                mapRef.current.setZoom(17);
-                markerRef.current.setPosition({ lat, lng });
+                    mapRef.current.setCenter({ lat, lng });
+                    mapRef.current.setZoom(17);
+                    markerRef.current.setPosition({ lat, lng });
 
-                let city = '';
-                let state = '';
-                let pincode = '';
-                let address = place.formatted_address || '';
+                    let city = '';
+                    let state = '';
+                    let pincode = '';
+                    let address = place.formatted_address || '';
 
-                place.address_components?.forEach((component: any) => {
-                    const types = component.types;
-                    if (types.includes("locality")) city = component.long_name;
-                    else if (types.includes("administrative_area_level_2") && !city) city = component.long_name;
-                    else if (types.includes("administrative_area_level_1")) state = component.long_name;
-                    else if (types.includes("postal_code")) pincode = component.long_name;
-                });
+                    place.address_components?.forEach((component: any) => {
+                        const types = component.types;
+                        if (types.includes("locality")) city = component.long_name;
+                        else if (types.includes("administrative_area_level_2") && !city) city = component.long_name;
+                        else if (types.includes("administrative_area_level_1")) state = component.long_name;
+                        else if (types.includes("postal_code")) pincode = component.long_name;
+                    });
 
-                // Clean up address: try to remove city, state, country and pincode from the formatted address
-                // to get just the "Area / Street" part.
-                let cleanAddress = address;
-                [city, state, "Pakistan", pincode].forEach(term => {
-                    if (term) {
-                        const regex = new RegExp(`,?\\s*${term}\\s*,?`, 'gi');
-                        cleanAddress = cleanAddress.replace(regex, '').trim();
+                    // Auto-sync category from Google types
+                    if (place.types && place.types.length > 0) {
+                        handlePlaceTypes(place.types);
                     }
-                });
-                // Remove trailing commas
-                cleanAddress = cleanAddress.replace(/,$/, '').trim();
 
-                setFormData(prev => ({
-                    ...prev,
-                    address: cleanAddress || address || prev.address,
-                    city: city || prev.city,
-                    state: state || prev.state,
-                    pincode: pincode || prev.pincode,
-                    latitude: lat,
-                    longitude: lng,
-                }));
+                    // Clean up address
+                    let cleanAddress = address;
+                    [city, state, "Pakistan", pincode].forEach(term => {
+                        if (term) {
+                            const regex = new RegExp(`,?\\s*${term}\\s*,?`, 'gi');
+                            cleanAddress = cleanAddress.replace(regex, '').trim();
+                        }
+                    });
+                    cleanAddress = cleanAddress.replace(/,$/, '').trim();
+
+                    setFormData(prev => ({
+                        ...prev,
+                        address: cleanAddress || address || prev.address,
+                        city: city || prev.city,
+                        state: state || prev.state,
+                        pincode: pincode || prev.pincode,
+                        latitude: lat,
+                        longitude: lng,
+                    }));
+                } catch (err) {
+                    console.error("Error in place_changed handler:", err);
+                    setMapError(true);
+                }
             });
         }
     };
 
+    const handleGetCurrentLocation = () => {
+        if (!navigator.geolocation) {
+            alert("Geolocation is not supported by your browser");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                if (mapRef.current && markerRef.current) {
+                    const pos = { lat: latitude, lng: longitude };
+                    mapRef.current.setCenter(pos);
+                    mapRef.current.setZoom(17);
+                    markerRef.current.setPosition(pos);
+                    updateLocationFromCoords(latitude, longitude);
+                }
+            },
+            (error) => {
+                console.error("Error getting location:", error);
+                alert("Could not get your current location. Please check your browser permissions.");
+            },
+            { enableHighAccuracy: true }
+        );
+    };
+
     useEffect(() => {
-        if (activeStep === 2 && (window as any).google) {
+        if (activeStep === 2 && mapLoaded) {
             setTimeout(initAutocomplete, 100);
         }
-    }, [activeStep]);
+    }, [activeStep, mapLoaded]);
 
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -319,6 +404,22 @@ export default function AddListingPage() {
         fetchInitialData();
     }, []);
 
+    const validateStep1 = () => {
+        if (!formData.title.trim() || formData.title.length < 2) return 'Business Title requires at least 2 characters';
+        if (!formData.categoryId && !formData.suggestedCategoryName) return 'Please select a Business Category';
+        if (formData.categoryId === 'other' && !formData.suggestedCategoryName.trim()) return 'Please enter the suggested category name';
+        if (!phoneNumber || phoneNumber.length < 5) return 'A valid Phone Number is required';
+        return null;
+    };
+
+    const validateStep2 = () => {
+        if (!formData.state || formData.state === 'Other') return 'Please select a valid State';
+        if (!formData.city || formData.city === 'Other') return 'Please select a valid City';
+        if (!formData.address.trim() || formData.address.length < 5) return 'A detailed Area/Street address is required';
+        if (!formData.pincode.trim()) return 'Pincode is required';
+        return null;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -331,9 +432,16 @@ export default function AddListingPage() {
             phone: countryCode + phoneNumber
         };
 
+        // Handle category suggestion
+        if (submissionData.categoryId === 'other') {
+            submissionData.categoryId = undefined;
+        } else {
+            submissionData.suggestedCategoryName = undefined;
+        }
+
         // Clean up empty strings for optional URL/Email fields that might fail validation
         // class-validator @IsUrl() fails on empty strings even if @IsOptional()
-        const fieldsToPrune = ['coverImageUrl', 'logoUrl', 'website', 'email', 'offerBannerUrl'];
+        const fieldsToPrune = ['coverImageUrl', 'logoUrl', 'website', 'email', 'offerBannerUrl', 'whatsapp'];
         fieldsToPrune.forEach(field => {
             if (submissionData[field] === '') {
                 delete submissionData[field];
@@ -353,11 +461,9 @@ export default function AddListingPage() {
 
         try {
             await api.listings.create(submissionData);
-            // Save social links to vendor profile if any were added
+            // Save social links to vendor profile
             const linksToSave = socialLinks.filter(s => s.url.trim());
-            if (linksToSave.length > 0) {
-                await api.vendors.updateProfile({ socialLinks: linksToSave });
-            }
+            await api.vendors.updateProfile({ socialLinks: linksToSave });
             setSuccess(true);
             setTimeout(() => router.push('/vendor/listings'), 2000);
         } catch (err: any) {
@@ -394,26 +500,50 @@ export default function AddListingPage() {
     const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         if (!files.length) return;
-        const remaining = 8 - galleryPreviews.length;
+
+        const remaining = 24 - galleryPreviews.length;
         const toUpload = files.slice(0, remaining);
+
+        if (toUpload.length === 0) return;
+
         setGalleryUploading(true);
         setError(null);
+
         try {
-            const localPreviews = toUpload.map(f => URL.createObjectURL(f));
-            setGalleryPreviews(prev => [...prev, ...localPreviews]);
-            const uploaded: string[] = [];
-            for (const file of toUpload) {
-                const res = await api.listings.uploadImage(file);
-                uploaded.push(res.url);
-            }
-            setFormData(prev => ({ ...prev, images: [...prev.images, ...uploaded] }));
-            // Replace local previews with real URLs
+            // Create local previews with temporary IDs to track them
+            const newUploads = toUpload.map(file => ({
+                id: Math.random().toString(36).substring(7),
+                file,
+                preview: URL.createObjectURL(file)
+            }));
+
+            // Add previews immediately
+            setGalleryPreviews(prev => [...prev, ...newUploads.map(u => u.preview)]);
+
+            // Sequential upload but parallelized using Promise.all for the batch
+            const uploadPromises = newUploads.map(async (upload) => {
+                const res = await api.listings.uploadImage(upload.file);
+                return { preview: upload.preview, url: res.url };
+            });
+
+            const results = await Promise.all(uploadPromises);
+            const uploadedUrls = results.map(r => r.url);
+
+            setFormData(prev => ({ ...prev, images: [...prev.images, ...uploadedUrls] }));
+
+            // Replace local previews with real URLs safely
             setGalleryPreviews(prev => {
-                const without = prev.filter(p => !p.startsWith('blob:'));
-                return [...without, ...uploaded];
+                const updated = [...prev];
+                results.forEach(res => {
+                    const idx = updated.indexOf(res.preview);
+                    if (idx !== -1) {
+                        updated[idx] = res.url;
+                    }
+                });
+                return updated;
             });
         } catch (err: any) {
-            setError(err.message || 'Failed to upload gallery image');
+            setError(err.message || 'Failed to upload gallery images');
         } finally {
             setGalleryUploading(false);
         }
@@ -658,6 +788,28 @@ export default function AddListingPage() {
                                     </div>
                                 </div>
 
+                                {formData.categoryId === 'other' && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                    >
+                                        <label className={labelClass}>
+                                            <Sparkles className="w-3 h-3 inline mr-1.5 text-orange-500" />
+                                            Suggested Category Name <span className="text-orange-500">*</span>
+                                        </label>
+                                        <input
+                                            name="suggestedCategoryName"
+                                            value={formData.suggestedCategoryName}
+                                            onChange={handleChange}
+                                            placeholder="e.g. Pet Grooming, Yoga Studio"
+                                            className={inputClass}
+                                        />
+                                        <p className="mt-2 text-[10px] text-slate-400 font-bold uppercase tracking-tight">
+                                            Admin will review and create this category if appropriate.
+                                        </p>
+                                    </motion.div>
+                                )}
+
                                 <div>
                                     <label className={labelClass}>
                                         <Phone className="w-3 h-3 inline mr-1.5 text-orange-500" />
@@ -797,6 +949,37 @@ export default function AddListingPage() {
                                         {phoneNumber.length}/10 digits &nbsp;·&nbsp; Full number: <span className="text-slate-600 font-bold">{countryCode}{phoneNumber || '—'}</span>
                                     </p>
                                 </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div>
+                                        <label className={labelClass}>
+                                            <Globe className="w-3 h-3 inline mr-1.5 text-orange-500" />
+                                            WhatsApp Number
+                                        </label>
+                                        <input
+                                            type="tel"
+                                            name="whatsapp"
+                                            value={formData.whatsapp}
+                                            onChange={handleChange}
+                                            placeholder="e.g. +60123456789"
+                                            className={inputClass}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className={labelClass}>
+                                            <Globe className="w-3 h-3 inline mr-1.5 text-orange-500" />
+                                            Business Website
+                                        </label>
+                                        <input
+                                            type="url"
+                                            name="website"
+                                            value={formData.website}
+                                            onChange={handleChange}
+                                            placeholder="https://..."
+                                            className={inputClass}
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -809,10 +992,10 @@ export default function AddListingPage() {
                                     </div>
                                     <div>
                                         <h3 className="font-black text-slate-900">Media Gallery</h3>
-                                        <p className="text-[11px] text-slate-400 font-medium">Up to 8 photos · PNG, JPG</p>
+                                        <p className="text-[11px] text-slate-400 font-medium">Up to 24 photos · PNG, JPG</p>
                                     </div>
                                 </div>
-                                <span className="text-xs font-black text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full">{galleryPreviews.length}/8</span>
+                                <span className="text-xs font-black text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full">{galleryPreviews.length}/24</span>
                             </div>
                             <div className="p-6">
                                 {/* Preview Grid */}
@@ -845,7 +1028,7 @@ export default function AddListingPage() {
                                             </div>
                                         ))}
                                         {/* Add More slot */}
-                                        {galleryPreviews.length < 8 && (
+                                        {galleryPreviews.length < 24 && (
                                             <label className="cursor-pointer rounded-xl border-2 border-dashed border-slate-200 hover:border-purple-300 hover:bg-purple-50/30 transition-all flex flex-col items-center justify-center aspect-square gap-1">
                                                 <input type="file" accept="image/*" multiple onChange={handleGalleryUpload} className="hidden" />
                                                 <ImagePlus className="w-5 h-5 text-slate-300" />
@@ -869,7 +1052,7 @@ export default function AddListingPage() {
                                                 </div>
                                                 <div className="text-center">
                                                     <p className="font-black text-sm">Click to upload gallery photos</p>
-                                                    <p className="text-xs mt-1 text-slate-400">Select multiple images at once · Max 8</p>
+                                                    <p className="text-xs mt-1 text-slate-400">Select multiple images at once · Max 24</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -887,7 +1070,16 @@ export default function AddListingPage() {
 
                         <button
                             type="button"
-                            onClick={() => setActiveStep(2)}
+                            onClick={() => {
+                                const err = validateStep1();
+                                if (err) {
+                                    setError(err);
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    return;
+                                }
+                                setError(null);
+                                setActiveStep(2);
+                            }}
                             className="w-full py-4 bg-gradient-to-r from-[#0B2244] to-[#0D2E61] text-white rounded-2xl font-black text-base  hover:shadow-blue-900/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                         >
                             Continue to Location
@@ -904,103 +1096,115 @@ export default function AddListingPage() {
                         animate={{ opacity: 1, x: 0 }}
                         className="space-y-6"
                     >
+                        {/* Location Details */}
                         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                            <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
-                                    <MapPin className="w-4 h-4 text-green-500" />
+                            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
+                                        <MapPin className="w-4 h-4 text-orange-500" />
+                                    </div>
+                                    <h3 className="font-black text-slate-900">Location Details</h3>
                                 </div>
-                                <h3 className="font-black text-slate-900">Location Details</h3>
+                                {mapError && (
+                                    <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                                        ⚠ Map Limited
+                                    </div>
+                                )}
                             </div>
-
-                            <div className="grid grid-cols-1 lg:grid-cols-2">
-                                {/* LEFT: FORM FIELDS */}
-                                <div className="p-6 space-y-5 border-b lg:border-b-0 lg:border-r border-slate-100">
-                                    {/* SEARCH ADDRESS (GOOGLE PLACES) */}
-                                    <div>
-                                        <label className={labelClass}>Search Address (Google Maps) <span className="text-orange-500">*</span></label>
-                                        <div className="relative">
-                                            <input
-                                                ref={addressInputRef}
-                                                type="text"
-                                                placeholder="Start typing your address..."
-                                                className={inputClass}
-                                            />
-                                            <MapPin className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-500 pointer-events-none" />
+                            <div className="p-6">
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    {/* Left: Form Fields */}
+                                    <div className="space-y-5">
+                                        {/* Address Search */}
+                                        <div>
+                                            <div className="flex items-center justify-between mb-2">
+                                                <label className={labelClass + " mb-0"}>
+                                                    <Navigation className="w-3 h-3 inline mr-1.5 text-orange-500" />
+                                                    Search Address (Google Maps) <span className="text-orange-500">*</span>
+                                                </label>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleGetCurrentLocation}
+                                                    className="flex items-center gap-1.5 text-[10px] font-black text-orange-600 uppercase tracking-widest hover:text-orange-700 transition-colors"
+                                                >
+                                                    <MapPin className="w-3 h-3" /> Get Current Location
+                                                </button>
+                                            </div>
+                                            <div className="relative">
+                                                <input
+                                                    ref={addressInputRef}
+                                                    type="text"
+                                                    placeholder="Start typing your address..."
+                                                    className={inputClass}
+                                                />
+                                                <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                            </div>
+                                            <p className="text-[10px] text-slate-400 mt-1 font-medium italic">
+                                                Select from suggestions to move map
+                                            </p>
                                         </div>
-                                        <p className="text-[10px] text-slate-400 mt-1 font-medium italic">
-                                            Select from suggestions to auto-fill fields & move map
-                                        </p>
-                                    </div>
 
-                                    <div className="h-px bg-slate-100 my-2" />
-
-                                    {/* COUNTRY */}
-                                    <div>
-                                        <label className={labelClass}>Country <span className="text-orange-500">*</span></label>
-                                        <div className="relative">
-                                            <select
-                                                disabled // Locked to Pakistan
-                                                required
-                                                name="country"
-                                                value="Pakistan"
-                                                className={`${selectClass} bg-slate-100 cursor-not-allowed`}
-                                            >
-                                                <option value="Pakistan">🇵🇰 Pakistan</option>
-                                            </select>
-                                            <MapPin className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                        {/* State Selection */}
+                                        <div>
+                                            <label className={labelClass}>State / Province <span className="text-orange-500">*</span></label>
+                                            <div className="relative">
+                                                <select
+                                                    required
+                                                    name="state"
+                                                    value={formData.state}
+                                                    onChange={e => setFormData(prev => ({ ...prev, state: e.target.value, city: '', address: '' }))}
+                                                    className={selectClass}
+                                                >
+                                                    <option value="">-- Select State --</option>
+                                                    {cities.length > 0 ? (
+                                                        Array.from(new Set(cities.filter(c => c.state).map(c => c.state)))
+                                                            .sort()
+                                                            .map(s => <option key={s} value={s!}>{s}</option>)
+                                                    ) : (
+                                                        <>
+                                                            <option value="Punjab">Punjab</option>
+                                                            <option value="Sindh">Sindh</option>
+                                                            <option value="KPK">KPK</option>
+                                                            <option value="Balochistan">Balochistan</option>
+                                                            <option value="Islamabad">Islamabad</option>
+                                                        </>
+                                                    )}
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                                    <ChevronDown className="w-4 h-4 text-slate-400" />
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    {/* STATE / PROVINCE */}
-                                    <div>
-                                        <label className={labelClass}>State / Province <span className="text-orange-500">*</span></label>
-                                        <div className="relative">
-                                            <select
-                                                required
-                                                name="state"
-                                                value={formData.state}
-                                                onChange={e => setFormData(prev => ({ ...prev, state: e.target.value, city: '', address: '' }))}
-                                                className={selectClass}
-                                            >
-                                                <option value="">-- Select State / Province --</option>
-                                                {cities.length > 0 ? (
-                                                    Array.from(new Set(cities.filter(c => c.state).map(c => c.state)))
-                                                        .sort()
-                                                        .map(s => <option key={s} value={s!}>{s}</option>)
-                                                ) : <option value="Punjab">Punjab</option>}
-                                                <option value="Other">Other</option>
-                                            </select>
-                                            <MapPin className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                        {/* City Selection */}
+                                        <div>
+                                            <label className={labelClass}>City <span className="text-orange-500">*</span></label>
+                                            <div className="relative">
+                                                <select
+                                                    required
+                                                    name="city"
+                                                    value={formData.city}
+                                                    onChange={e => setFormData(prev => ({ ...prev, city: e.target.value, address: '' }))}
+                                                    className={selectClass}
+                                                >
+                                                    <option value="">-- Select City --</option>
+                                                    {cities
+                                                        .filter(c => !formData.state || c.state === formData.state)
+                                                        .sort((a, b) => a.name.localeCompare(b.name))
+                                                        .map(c => <option key={c.id} value={c.name}>{c.name}</option>)
+                                                    }
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                                    <ChevronDown className="w-4 h-4 text-slate-400" />
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    {/* CITY */}
-                                    <div>
-                                        <label className={labelClass}>City <span className="text-orange-500">*</span></label>
-                                        <div className="relative">
-                                            <select
-                                                required
-                                                name="city"
-                                                value={formData.city}
-                                                onChange={e => setFormData(prev => ({ ...prev, city: e.target.value, address: '' }))}
-                                                className={selectClass}
-                                            >
-                                                <option value="">-- Select City --</option>
-                                                {cities
-                                                    .filter(c => !formData.state || c.state === formData.state)
-                                                    .sort((a, b) => a.name.localeCompare(b.name))
-                                                    .map(c => <option key={c.id} value={c.name}>{c.name}</option>)
-                                                }
-                                                <option value="Other">Other</option>
-                                            </select>
-                                            <MapPin className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                                        </div>
-                                    </div>
-
-                                    {/* AREA / STREET */}
-                                    <div>
-                                        <label className={labelClass}>Area / Street <span className="text-orange-500">*</span></label>
-                                        <div className="relative">
+                                        {/* Area / Street */}
+                                        <div>
+                                            <label className={labelClass}>Area / Street <span className="text-orange-500">*</span></label>
                                             <input
                                                 required
                                                 name="address"
@@ -1009,57 +1213,81 @@ export default function AddListingPage() {
                                                 placeholder="e.g. 123 Street name, Area"
                                                 className={inputClass}
                                             />
-                                            <MapPin className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                                         </div>
-                                    </div>
 
-                                    {/* PINCODE */}
-                                    <div className="grid grid-cols-1 gap-4">
-                                        <div>
-                                            <label className={labelClass}>Pincode <span className="text-orange-500">*</span></label>
-                                            <input
-                                                required
-                                                name="pincode"
-                                                value={formData.pincode}
-                                                onChange={handleChange}
-                                                placeholder="e.g. 54000"
-                                                className={inputClass}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className={labelClass}>Latitude / Longitude</label>
-                                            <div className="flex gap-2">
+                                        {/* Pincode & Coordinates */}
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className={labelClass}>Pincode <span className="text-orange-500">*</span></label>
                                                 <input
-                                                    type="number"
-                                                    step="any"
-                                                    name="latitude"
-                                                    value={formData.latitude}
+                                                    required
+                                                    name="pincode"
+                                                    value={formData.pincode}
                                                     onChange={handleChange}
-                                                    placeholder="Lat"
-                                                    className={inputClass}
-                                                />
-                                                <input
-                                                    type="number"
-                                                    step="any"
-                                                    name="longitude"
-                                                    value={formData.longitude}
-                                                    onChange={handleChange}
-                                                    placeholder="Long"
+                                                    placeholder="e.g. 54000"
                                                     className={inputClass}
                                                 />
                                             </div>
+                                            <div>
+                                                <label className={labelClass}>Coordinates {mapError && <span className="text-amber-500 font-bold ml-1">(Manual Entry)</span>}</label>
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        name="latitude"
+                                                        type={mapError ? "number" : "text"}
+                                                        step="any"
+                                                        readOnly={!mapError}
+                                                        value={mapError ? formData.latitude : (formData.latitude ? formData.latitude.toFixed(4) : '')}
+                                                        onChange={handleChange}
+                                                        placeholder="Lat"
+                                                        className={`${inputClass} ${mapError ? 'bg-white ring-1 ring-amber-100' : 'bg-slate-50'} text-[10px] px-2`}
+                                                    />
+                                                    <input
+                                                        name="longitude"
+                                                        type={mapError ? "number" : "text"}
+                                                        step="any"
+                                                        readOnly={!mapError}
+                                                        value={mapError ? formData.longitude : (formData.longitude ? formData.longitude.toFixed(4) : '')}
+                                                        onChange={handleChange}
+                                                        placeholder="Long"
+                                                        className={`${inputClass} ${mapError ? 'bg-white ring-1 ring-amber-100' : 'bg-slate-50'} text-[10px] px-2`}
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* RIGHT: INTERACTIVE MAP */}
-                                <div className="relative bg-slate-50 min-h-[400px] lg:min-h-full">
-                                    <div ref={mapContainerRef} className="absolute inset-0 w-full h-full" />
-                                    <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
-                                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-tighter flex items-center gap-1.5">
-                                            <Navigation className="w-3 h-3 text-orange-500" />
-                                            Drag marker or click map to adjust location
-                                        </p>
+                                    {/* Right: Map Preview */}
+                                    <div className="relative min-h-[350px] lg:min-h-full rounded-2xl overflow-hidden border border-slate-100 bg-slate-50">
+                                        <div ref={mapContainerRef} className={`absolute inset-0 w-full h-full ${mapError ? 'opacity-20 blur-sm grayscale pointer-events-none' : ''}`} />
+
+                                        {mapError && (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-white/40 backdrop-blur-[2px]">
+                                                <div className="w-12 h-12 bg-white rounded-2xl shadow-lg flex items-center justify-center mb-3">
+                                                    <MapPin className="w-6 h-6 text-amber-500" />
+                                                </div>
+                                                <h4 className="text-sm font-black text-slate-900 mb-1">Interactive Map Preview Restricted</h4>
+                                                <p className="text-[10px] text-slate-500 font-medium max-w-[200px] mb-4">
+                                                    API configuration issue prevents the map from loading. You can still enter your address manually.
+                                                </p>
+                                                <a
+                                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${formData.address} ${formData.city} ${formData.state}`.trim() || 'Pakistan')}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="px-4 py-2 bg-slate-900 text-white rounded-xl font-bold text-[10px] flex items-center gap-2 hover:bg-slate-800 transition-all shadow-md"
+                                                >
+                                                    <Globe className="w-3 h-3" /> View On Maps
+                                                </a>
+                                            </div>
+                                        )}
+
+                                        {!mapError && (
+                                            <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+                                                <p className="text-[10px] font-black text-slate-600 uppercase tracking-tighter flex items-center gap-1.5">
+                                                    <Navigation className="w-3 h-3 text-orange-500" />
+                                                    Drag marker to adjust location
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -1069,14 +1297,23 @@ export default function AddListingPage() {
                             <button
                                 type="button"
                                 onClick={() => setActiveStep(1)}
-                                className="flex-1 py-4 bg-slate-100 text-slate-700 rounded-2xl font-black text-base hover:bg-slate-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                                className="flex-1 py-4 bg-slate-100 text-slate-700 rounded-2xl font-black text-base hover:bg-slate-200 transition-all flex items-center justify-center gap-2"
                             >
                                 <ArrowLeft className="w-4 h-4" /> Back
                             </button>
                             <button
                                 type="button"
-                                onClick={() => setActiveStep(3)}
-                                className="flex-[2] py-4 bg-gradient-to-r from-[#0B2244] to-[#0D2E61] text-white rounded-2xl font-black text-base  transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                                onClick={() => {
+                                    const err = validateStep2();
+                                    if (err) {
+                                        setError(err);
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                        return;
+                                    }
+                                    setError(null);
+                                    setActiveStep(3);
+                                }}
+                                className="flex-[2] py-4 bg-gradient-to-r from-[#0B2244] to-[#0D2E61] text-white rounded-2xl font-black text-base transition-all flex items-center justify-center gap-2"
                             >
                                 Continue to Details <FileText className="w-4 h-4" />
                             </button>
@@ -1513,12 +1750,16 @@ export default function AddListingPage() {
                                 <ArrowLeft className="w-4 h-4" /> Back
                             </button>
                             <button
-                                disabled={loading}
+                                disabled={loading || galleryUploading}
                                 type="submit"
                                 className="flex-[2] py-4 bg-gradient-to-r from-[#FF7A30] to-[#FF9050] text-white rounded-2xl font-black text-base  shadow-orange-500/20 hover:from-[#E86920] hover:to-[#FF7A30] transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
                             >
                                 {loading ? (
                                     <Loader2 className="w-5 h-5 animate-spin" />
+                                ) : galleryUploading ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 animate-spin" /> Uploading Gallery...
+                                    </>
                                 ) : (
                                     <>
                                         <Store className="w-5 h-5" /> Publish Listing
@@ -1565,7 +1806,7 @@ export default function AddListingPage() {
                                 animate={{ opacity: 1, scale: 1, x: 0 }}
                                 exit={{ opacity: 0, scale: 0.95, x: -20 }}
                                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                                className="w-full h-full rounded-[32px] overflow-hidden border border-white/10 shadow-2xl"
+                                className="w-full h-full rounded-[20px] overflow-hidden border border-white/10 shadow-2xl"
                             >
                                 <img
                                     src={galleryPreviews[currentImageIndex]}
@@ -1597,10 +1838,17 @@ export default function AddListingPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
-
+            {/* Google Maps Script Loading */}
             <Script
                 src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`}
-                onLoad={initAutocomplete}
+                onLoad={() => {
+                    console.log('[AddListing] Google Maps Script Loaded');
+                    setMapLoaded(true);
+                }}
+                onError={() => {
+                    console.error('[AddListing] Google Maps Script Failed to Load');
+                    setMapError(true);
+                }}
             />
         </div>
     );

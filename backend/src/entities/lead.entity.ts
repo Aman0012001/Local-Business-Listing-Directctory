@@ -112,6 +112,7 @@ export class Lead {
     @JoinColumn({ name: 'business_id' })
     business: Listing;
 
+    @Exclude()
     @ManyToOne(() => User, (user) => user.leads)
     @JoinColumn({ name: 'user_id' })
     user: User;

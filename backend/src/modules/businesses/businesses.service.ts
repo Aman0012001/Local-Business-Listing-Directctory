@@ -63,23 +63,28 @@ export class BusinessesService {
             vendor = this.vendorRepository.create({
                 userId: user.id,
                 businessName: `${user.fullName}'s Business`,
-                businessPhone: user.phone || '0000000000',
+                businessPhone: user.phone,
                 isVerified: true,
             });
             vendor = await this.vendorRepository.save(vendor);
         }
 
-        // Verify category exists
-        const category = await this.categoryRepository.findOne({
-            where: { id: createBusinessDto.categoryId },
-        });
+        // Verify category exists or handle suggestion
+        let category = null;
+        if (createBusinessDto.categoryId) {
+            category = await this.categoryRepository.findOne({
+                where: { id: createBusinessDto.categoryId },
+            });
 
-        if (!category) {
-            throw new NotFoundException('Category not found');
-        }
+            if (!category) {
+                throw new NotFoundException('Category not found');
+            }
 
-        if (category.status !== CategoryStatus.ACTIVE) {
-            throw new BadRequestException('Invalid category: selected category is disabled');
+            if (category.status !== CategoryStatus.ACTIVE) {
+                throw new BadRequestException('Invalid category: selected category is disabled');
+            }
+        } else if (!createBusinessDto.suggestedCategoryName) {
+            throw new BadRequestException('Either categoryId or suggestedCategoryName must be provided');
         }
 
         // Generate unique slug
@@ -118,7 +123,7 @@ export class BusinessesService {
         }
 
         // Return fully populated listing
-        const result = await this.findOne(savedListing.id);
+        const result = await this.findOne(savedListing.id, user);
 
         // Broadcast to all users: new listing is live
         this.notificationsService.broadcast({
@@ -127,6 +132,16 @@ export class BusinessesService {
             type: 'new_listing',
             data: { businessId: result.id, slug: result.slug },
         }).catch(() => {/* non-blocking */ });
+
+        // Notify Admin if there's a suggested category
+        if (createBusinessDto.suggestedCategoryName) {
+            this.notificationsService.notifyAdmin({
+                title: '🆕 New Category Suggestion',
+                message: `Vendor "${vendor.businessName}" suggested a new category: "${createBusinessDto.suggestedCategoryName}" for their listing "${result.title}".`,
+                type: 'system',
+                data: { businessId: result.id, suggestedCategory: createBusinessDto.suggestedCategoryName },
+            }).catch(() => {/* non-blocking */ });
+        }
 
         return result;
     }
@@ -157,6 +172,7 @@ export class BusinessesService {
             .createQueryBuilder('listing')
             .leftJoinAndSelect('listing.category', 'category')
             .leftJoinAndSelect('listing.vendor', 'vendor')
+            .leftJoinAndSelect('vendor.user', 'user')
             .leftJoinAndSelect('listing.businessHours', 'businessHours')
             .leftJoinAndSelect('listing.businessAmenities', 'businessAmenities')
             .leftJoinAndSelect('businessAmenities.amenity', 'amenity')
@@ -236,10 +252,11 @@ export class BusinessesService {
         // Sorting
         // 1) Keyword boost: if the query matches a vendor's metaKeywords, rank that listing first
         if (searchDto.query) {
-            queryBuilder.addOrderBy(
-                `CASE WHEN listing.metaKeywords ILIKE :query THEN 0 ELSE 1 END`,
-                'ASC',
+            queryBuilder.addSelect(
+                'CASE WHEN listing.metaKeywords ILIKE :query THEN 0 ELSE 1 END',
+                'boost',
             );
+            queryBuilder.addOrderBy('boost', 'ASC');
         }
 
         // 2) Secondary sort (user-selected or default relevance)
@@ -263,26 +280,33 @@ export class BusinessesService {
                     .addOrderBy('listing.averageRating', 'DESC');
         }
 
-        // Get total count
-        const total = await queryBuilder.getCount();
+        try {
+            // Get total count
+            const total = await queryBuilder.getCount();
 
-        // Get paginated results
-        const listings = await queryBuilder.skip(skip).take(limit).getRawAndEntities();
+            // Get paginated results
+            const listings = await queryBuilder.skip(skip).take(limit).getRawAndEntities();
 
-        // Map and format results
-        const results = listings.entities.map((listing, index) => {
-            const result: any = listing;
-            // Add distance calculation if needed
-            return result;
-        });
+            // Map and format results
+            const results = listings.entities.map((listing, index) => {
+                const result: any = listing;
+                // Add distance calculation if needed
+                return result;
+            });
 
-        return createPaginatedResponse(results, page, limit, total);
+            return createPaginatedResponse(results, page, limit, total);
+        } catch (error: any) {
+            const fs = require('fs');
+            const path = require('path');
+            fs.appendFileSync(path.join(process.cwd(), 'permanent_error_log.txt'), `[Search ERROR] ${new Date().toISOString()}: ${error.message}\nStack: ${error.stack}\nDetails: ${JSON.stringify(error)}\n\n`);
+            throw error;
+        }
     }
 
     /**
      * Get listing by ID
      */
-    async findOne(id: string, viewerUserId?: string): Promise<Listing> {
+    async findOne(id: string, user?: User): Promise<Listing> {
         const listing = await this.listingRepository.findOne({
             where: { id },
             relations: [
@@ -301,8 +325,19 @@ export class BusinessesService {
             throw new NotFoundException('Listing not found');
         }
 
+        // Only allow public viewing of APPROVED listings
+        // Owners and Admins can view regardless of status
+        if (listing.status !== BusinessStatus.APPROVED) {
+            const isOwner = user && listing.vendor && listing.vendor.userId === user.id;
+            const isAdmin = user && (user.role === UserRole.ADMIN || user.role === UserRole.SUPERADMIN);
+
+            if (!isOwner && !isAdmin) {
+                throw new NotFoundException('Listing not found');
+            }
+        }
+
         // Only count views from non-owners (skip vendor self-views)
-        const isOwner = viewerUserId && listing.vendor?.user?.id === viewerUserId;
+        const isOwner = user && listing.vendor?.user?.id === user.id;
         if (!isOwner) {
             await this.listingRepository.increment({ id }, 'totalViews', 1);
             listing.totalViews = (listing.totalViews || 0) + 1;
@@ -314,33 +349,62 @@ export class BusinessesService {
     /**
      * Get listing by slug
      */
-    async findBySlug(slug: string, viewerUserId?: string): Promise<Listing> {
-        const listing = await this.listingRepository.findOne({
-            where: { slug },
-            relations: [
-                'category',
-                'vendor',
-                'vendor.user',
-                'businessHours',
-                'businessAmenities',
-                'businessAmenities.amenity',
-                'reviews',
-                'reviews.user',
-            ],
-        });
+    async findBySlug(slug: string, user?: User): Promise<Listing> {
+        const log = (msg: string) => {
+            const fs = require('fs');
+            const path = require('path');
+            const logFile = path.join(process.cwd(), 'debug_logs.txt');
+            fs.appendFileSync(logFile, `[${new Date().toISOString()}] ${msg}\n`);
+        };
 
-        if (!listing) {
-            throw new NotFoundException('Listing not found');
+        log(`findBySlug: ${slug} (User: ${user?.email || 'Public'})`);
+
+        try {
+            const listing = await this.listingRepository.findOne({
+                where: { slug },
+                relations: [
+                    'category',
+                    'vendor',
+                    'vendor.user',
+                    'businessHours',
+                    'businessAmenities',
+                    'businessAmenities.amenity',
+                    'reviews',
+                    'reviews.user',
+                ],
+            });
+
+            if (!listing) {
+                log(`findBySlug: ${slug} - NOT FOUND IN DB`);
+                throw new NotFoundException('Listing not found');
+            }
+
+            log(`findBySlug: ${slug} - Found in DB. Status: ${listing.status}`);
+
+            const isPubliclyVisible = [BusinessStatus.APPROVED, BusinessStatus.PENDING].includes(listing.status);
+            if (!isPubliclyVisible) {
+                const isOwner = user && listing.vendor && listing.vendor.userId === user.id;
+                const isAdmin = user && (user.role === UserRole.ADMIN || user.role === UserRole.SUPERADMIN);
+
+                if (!isOwner && !isAdmin) {
+                    log(`findBySlug: ${slug} - HIDDEN (Status: ${listing.status}, IsOwner: ${!!isOwner}, IsAdmin: ${!!isAdmin})`);
+                    throw new NotFoundException('Listing not found');
+                }
+            }
+
+            // Only count views from non-owners
+            const isOwner = user && listing.vendor?.user?.id === user.id;
+            if (!isOwner) {
+                await this.listingRepository.increment({ id: listing.id }, 'totalViews', 1);
+                listing.totalViews = (listing.totalViews || 0) + 1;
+            }
+
+            log(`findBySlug: ${slug} - SUCCESS`);
+            return listing;
+        } catch (error: any) {
+            log(`findBySlug: ${slug} - ERROR: ${error.message}\n${error.stack}`);
+            throw error;
         }
-
-        // Only count views from non-owners (skip vendor self-views)
-        const isOwner = viewerUserId && listing.vendor?.user?.id === viewerUserId;
-        if (!isOwner) {
-            await this.listingRepository.increment({ id: listing.id }, 'totalViews', 1);
-            listing.totalViews = (listing.totalViews || 0) + 1;
-        }
-
-        return listing;
     }
 
     /**
@@ -417,7 +481,7 @@ export class BusinessesService {
 
         await this.listingRepository.save(listing);
 
-        return this.findOne(id);
+        return this.findOne(id, user);
     }
 
     /**

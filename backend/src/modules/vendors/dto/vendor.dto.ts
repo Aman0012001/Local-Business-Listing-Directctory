@@ -5,8 +5,11 @@ import {
     IsPhoneNumber,
     MaxLength,
     MinLength,
+    IsUrl,
+    IsArray,
+    ValidateNested,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 // Helper: treat empty strings the same as undefined so @IsEmail() etc. are skipped
@@ -93,5 +96,16 @@ export class UpdateVendorDto {
 
     @ApiPropertyOptional({ example: [{ platform: 'facebook', url: 'https://facebook.com/mybusiness' }] })
     @IsOptional()
-    socialLinks?: { platform: string, url: string }[];
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => SocialLinkDto)
+    socialLinks?: SocialLinkDto[];
+}
+
+export class SocialLinkDto {
+    @IsString()
+    platform: string;
+
+    @IsUrl({ require_protocol: false, require_tld: false })
+    url: string;
 }

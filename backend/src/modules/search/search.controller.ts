@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Query, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { SearchService } from './search.service';
+import { BroadcastService } from '../notifications/broadcast.service';
 import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -11,7 +12,10 @@ import { UserRole } from '../../entities/user.entity';
 @Controller('search')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class SearchController {
-    constructor(private readonly searchService: SearchService) { }
+    constructor(
+        private readonly searchService: SearchService,
+        private readonly broadcastService: BroadcastService
+    ) { }
 
     @Public()
     @Get()
@@ -21,7 +25,13 @@ export class SearchController {
         @Query('q') query: string,
         @Query('city') city?: string,
         @Query('category') category?: string,
+        @Req() req?: any
     ) {
+        // Trigger broadcast notification (async, don't await to keep search fast)
+        this.broadcastService.handleSearch(query, req?.user?.id, city).catch(err => {
+            console.error('Broadcast handleSearch error:', err);
+        });
+
         return this.searchService.search(query, city, category);
     }
 

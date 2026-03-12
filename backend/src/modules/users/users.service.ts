@@ -43,6 +43,10 @@ export class UsersService {
             throw new NotFoundException('User not found');
         }
 
+        user.isOnline = true;
+        user.lastActiveAt = new Date();
+        await this.userRepository.save(user);
+
         return user;
     }
 

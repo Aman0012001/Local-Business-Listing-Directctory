@@ -9,7 +9,7 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
-import { Expose } from 'class-transformer';
+import { Expose, Exclude } from 'class-transformer';
 import { Vendor } from './vendor.entity';
 import { Category } from './category.entity';
 import { BusinessHours } from './business-hours.entity';
@@ -35,8 +35,12 @@ export class Listing {
     @Column({ name: 'vendor_id', type: 'uuid' })
     vendorId: string;
 
-    @Column({ name: 'category_id', type: 'uuid' })
+    @Column({ name: 'category_id', type: 'uuid', nullable: true })
+    @Index()
     categoryId: string;
+
+    @Column({ name: 'suggested_category_name', nullable: true, type: 'text' })
+    suggestedCategoryName: string;
 
     // Basic Info
     @Column({ name: 'name' })
@@ -224,18 +228,23 @@ export class Listing {
     @OneToMany(() => BusinessHours, (hours) => hours.business)
     businessHours: BusinessHours[];
 
+    @Exclude()
     @OneToMany(() => BusinessAmenity, (amenity) => amenity.business)
     businessAmenities: BusinessAmenity[];
 
+    @Exclude()
     @OneToMany(() => Review, (review) => review.business)
     reviews: Review[];
 
+    @Exclude()
     @OneToMany(() => Lead, (lead) => lead.business)
     leads: Lead[];
 
+    @Exclude()
     @OneToMany(() => SavedListing, (savedListing) => savedListing.business)
     savedListings: SavedListing[];
 
+    @Exclude()
     @OneToMany(() => Comment, (comment) => comment.business)
     comments: Comment[];
 }

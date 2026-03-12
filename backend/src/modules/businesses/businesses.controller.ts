@@ -42,6 +42,10 @@ export class BusinessesController {
         @Body() createBusinessDto: CreateBusinessDto,
         @CurrentUser() user: User,
     ) {
+        console.log(`[BusinessesController] Creating listing: "${createBusinessDto.title}". Images:`, createBusinessDto.images?.length || 0);
+        if (createBusinessDto.images) {
+            console.log(`[BusinessesController] Image URLs:`, createBusinessDto.images);
+        }
         return this.businessesService.create(createBusinessDto, user);
     }
 
@@ -78,22 +82,28 @@ export class BusinessesController {
         return this.businessesService.search(searchDto);
     }
 
+    @Public()
     @UseGuards(OptionalJwtAuthGuard)
     @Get('slug/:slug')
     @ApiOperation({ summary: 'Get listing by slug' })
     @ApiResponse({ status: 200, description: 'Listing found' })
     @ApiResponse({ status: 404, description: 'Listing not found' })
     findBySlug(@Param('slug') slug: string, @CurrentUser() user?: User) {
-        return this.businessesService.findBySlug(slug, user?.id);
+        const fs = require('fs');
+        const path = require('path');
+        const logFile = path.join(process.cwd(), 'debug_logs.txt');
+        fs.appendFileSync(logFile, `[${new Date().toISOString()}] [BusinessesController] findBySlug: ${slug} (User: ${user?.email || 'Public'})\n`);
+        return this.businessesService.findBySlug(slug, user);
     }
 
+    @Public()
     @UseGuards(OptionalJwtAuthGuard)
     @Get(':id')
     @ApiOperation({ summary: 'Get listing by ID' })
     @ApiResponse({ status: 200, description: 'Listing found' })
     @ApiResponse({ status: 404, description: 'Listing not found' })
     findOne(@Param('id', ParseUuidPipe) id: string, @CurrentUser() user?: User) {
-        return this.businessesService.findOne(id, user?.id);
+        return this.businessesService.findOne(id, user);
     }
 
     @Patch(':id')

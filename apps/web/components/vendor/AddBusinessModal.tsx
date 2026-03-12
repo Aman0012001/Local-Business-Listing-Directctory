@@ -1,12 +1,20 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Loader2, Store, MapPin, Phone, TextQuote, Layers, Sparkles, Plus, Check, Hash } from 'lucide-react';
+import { X, Loader2, Store, MapPin, Phone, TextQuote, Layers, Sparkles, Plus, Check, Hash, Share2, Globe, MessageSquare, Navigation, ChevronDown } from 'lucide-react';
 import { api, getImageUrl } from '../../lib/api';
-
+import Script from 'next/script';
 import { Category, Business, City } from '../../types/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import CategorySearchSelect from '../CategorySearchSelect';
+
+const SOCIAL_PLATFORMS = [
+    { key: 'facebook', label: 'Facebook', emoji: '📘', color: '#1877F2', placeholder: 'https://facebook.com/yourbusiness' },
+    { key: 'instagram', label: 'Instagram', emoji: '📸', color: '#E1306C', placeholder: 'https://instagram.com/yourbusiness' },
+    { key: 'twitter', label: 'Twitter / X', emoji: '🐦', color: '#1DA1F2', placeholder: 'https://twitter.com/yourbusiness' },
+    { key: 'linkedin', label: 'LinkedIn', emoji: '💼', color: '#0A66C2', placeholder: 'https://linkedin.com/company/yourbusiness' },
+    { key: 'youtube', label: 'YouTube', emoji: '▶️', color: '#FF0000', placeholder: 'https://youtube.com/@yourbusiness' },
+];
 
 interface AddBusinessModalProps {
     isOpen: boolean;
@@ -15,17 +23,27 @@ interface AddBusinessModalProps {
     business?: Business | null;
 }
 
+const TABS = [
+    { id: 'general', label: 'General', icon: Store },
+    { id: 'location', label: 'Location', icon: MapPin },
+    { id: 'media', label: 'Media & Amenities', icon: Sparkles },
+    { id: 'social', label: 'Contact & Social', icon: Share2 },
+];
+
 export default function AddBusinessModal({ isOpen, onClose, onSuccess, business }: AddBusinessModalProps) {
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState<Category[]>([]);
     const [cities, setCities] = useState<City[]>([]);
     const [error, setError] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState('general');
 
     const [formData, setFormData] = useState({
         title: '',
         categoryId: '',
         description: '',
         phone: '',
+        whatsapp: '',
+        website: '',
         address: '',
         city: '',
         state: '',
@@ -33,9 +51,13 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
         latitude: 40.7128,
         longitude: -74.0060,
         coverImageUrl: '',
+        images: [] as string[],
         amenityIds: [] as string[],
         metaKeywords: ''
     });
+
+    const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
+    const [galleryUploading, setGalleryUploading] = useState(false);
 
     // Keywords tag state
     const [keywords, setKeywords] = useState<string[]>([]);
@@ -67,23 +89,242 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
         }
     };
 
+    const [socialLinks, setSocialLinks] = useState<{ platform: string; url: string }[]>([]);
+
+    const addSocialLink = (platform: string) => {
+        if (!socialLinks.find(s => s.platform === platform)) {
+            setSocialLinks(prev => [...prev, { platform, url: '' }]);
+        }
+    };
+
+    const removeSocialLink = (platform: string) => {
+        setSocialLinks(prev => prev.filter(s => s.platform !== platform));
+    };
+
+    const updateSocialUrl = (platform: string, url: string) => {
+        setSocialLinks(prev => prev.map(s => s.platform === platform ? { ...s, url } : s));
+    };
+
     const [amenities, setAmenities] = useState<any[]>([]);
     const [amenitiesLoading, setAmenitiesLoading] = useState(false);
     const [showAddAmenity, setShowAddAmenity] = useState(false);
     const [newAmenityName, setNewAmenityName] = useState('');
     const [creatingAmenity, setCreatingAmenity] = useState(false);
 
+    // Google Maps State & Refs
+    const [mapError, setMapError] = useState(false);
+    const [mapLoaded, setMapLoaded] = useState(false);
+    const autoCompleteRef = useRef<any>(null);
+    const addressInputRef = useRef<HTMLInputElement>(null);
+    const mapRef = useRef<any>(null);
+    const markerRef = useRef<any>(null);
+    const mapContainerRef = useRef<HTMLDivElement>(null);
+    const formDataRef = useRef(formData);
+
+    useEffect(() => {
+        formDataRef.current = formData;
+    }, [formData]);
+
+    useEffect(() => {
+        (window as any).gm_authFailure = () => {
+            console.error('Google Maps authentication failed - check API Key.');
+            setMapError(true);
+        };
+        return () => {
+            delete (window as any).gm_authFailure;
+        };
+    }, []);
+
+    const updateLocationFromCoords = (lat: number, lng: number) => {
+        if (!(window as any).google) return;
+        const geocoder = new (window as any).google.maps.Geocoder();
+        geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
+            if (status === "OK" && results[0]) {
+                const place = results[0];
+                let city = '';
+                let state = '';
+                let pincode = '';
+                let address = place.formatted_address || '';
+
+                place.address_components?.forEach((component: any) => {
+                    const types = component.types;
+                    if (types.includes("locality")) city = component.long_name;
+                    else if (types.includes("administrative_area_level_2") && !city) city = component.long_name;
+                    else if (types.includes("administrative_area_level_1")) state = component.long_name;
+                    else if (types.includes("postal_code")) pincode = component.long_name;
+                });
+
+                let cleanAddress = address;
+                [city, state, "Pakistan", pincode].forEach(term => {
+                    if (term) {
+                        const regex = new RegExp(`,?\\s*${term}\\s*,?`, 'gi');
+                        cleanAddress = cleanAddress.replace(regex, '').trim();
+                    }
+                });
+                cleanAddress = cleanAddress.replace(/,$/, '').trim();
+
+                setFormData(prev => ({
+                    ...prev,
+                    address: cleanAddress || address,
+                    city: city || prev.city,
+                    state: state || prev.state,
+                    pincode: pincode || prev.pincode,
+                    latitude: lat,
+                    longitude: lng,
+                }));
+            }
+        });
+    };
+
+    const initAutocomplete = () => {
+        if (!mapLoaded || !(window as any).google || !addressInputRef.current || !mapContainerRef.current) return;
+
+        const defaultCenter = { lat: formData.latitude, lng: formData.longitude };
+
+        if (!mapRef.current) {
+            mapRef.current = new (window as any).google.maps.Map(mapContainerRef.current, {
+                center: defaultCenter,
+                zoom: 15,
+                mapTypeControl: false,
+                streetViewControl: false,
+                fullscreenControl: false,
+            });
+
+            markerRef.current = new (window as any).google.maps.Marker({
+                position: defaultCenter,
+                map: mapRef.current,
+                draggable: true,
+                animation: (window as any).google.maps.Animation.DROP,
+                icon: {
+                    path: (window as any).google.maps.SymbolPath.CIRCLE,
+                    fillColor: '#f97316',
+                    fillOpacity: 1,
+                    strokeWeight: 4,
+                    strokeColor: '#ffffff',
+                    scale: 10
+                }
+            });
+
+            markerRef.current.addListener("dragend", () => {
+                const pos = markerRef.current.getPosition();
+                updateLocationFromCoords(pos.lat(), pos.lng());
+            });
+
+            mapRef.current.addListener("click", (e: any) => {
+                if (e.latLng) {
+                    markerRef.current.setPosition(e.latLng);
+                    updateLocationFromCoords(e.latLng.lat(), e.latLng.lng());
+                }
+            });
+        }
+
+        if (!autoCompleteRef.current) {
+            autoCompleteRef.current = new (window as any).google.maps.places.Autocomplete(
+                addressInputRef.current,
+                {
+                    componentRestrictions: { country: "pk" },
+                    fields: ["address_components", "geometry", "formatted_address"],
+                }
+            );
+
+            autoCompleteRef.current.addListener("place_changed", () => {
+                try {
+                    const place = autoCompleteRef.current.getPlace();
+                    if (!place.geometry) return;
+
+                    const lat = place.geometry.location.lat();
+                    const lng = place.geometry.location.lng();
+
+                    mapRef.current.setCenter({ lat, lng });
+                    mapRef.current.setZoom(17);
+                    markerRef.current.setPosition({ lat, lng });
+
+                    let city = '';
+                    let state = '';
+                    let pincode = '';
+                    let address = place.formatted_address || '';
+
+                    place.address_components?.forEach((component: any) => {
+                        const types = component.types;
+                        if (types.includes("locality")) city = component.long_name;
+                        else if (types.includes("administrative_area_level_2") && !city) city = component.long_name;
+                        else if (types.includes("administrative_area_level_1")) state = component.long_name;
+                        else if (types.includes("postal_code")) pincode = component.long_name;
+                    });
+
+                    let cleanAddress = address;
+                    [city, state, "Pakistan", pincode].forEach(term => {
+                        if (term) {
+                            const regex = new RegExp(`,?\\s*${term}\\s*,?`, 'gi');
+                            cleanAddress = cleanAddress.replace(regex, '').trim();
+                        }
+                    });
+                    cleanAddress = cleanAddress.replace(/,$/, '').trim();
+
+                    setFormData(prev => ({
+                        ...prev,
+                        address: cleanAddress || address || prev.address,
+                        city: city || prev.city,
+                        state: state || prev.state,
+                        pincode: pincode || prev.pincode,
+                        latitude: lat,
+                        longitude: lng,
+                    }));
+                } catch (err) {
+                    console.error("Error in place_changed handler:", err);
+                    setMapError(true);
+                }
+            });
+        }
+    };
+
+    const handleGetCurrentLocation = () => {
+        if (!navigator.geolocation) {
+            alert("Geolocation is not supported by your browser");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                if (mapRef.current && markerRef.current) {
+                    const pos = { lat: latitude, lng: longitude };
+                    mapRef.current.setCenter(pos);
+                    mapRef.current.setZoom(17);
+                    markerRef.current.setPosition(pos);
+                    updateLocationFromCoords(latitude, longitude);
+                }
+            },
+            (error) => {
+                console.error("Error getting location:", error);
+                alert("Could not get your current location. Please check your browser permissions.");
+            },
+            { enableHighAccuracy: true }
+        );
+    };
+
+    useEffect(() => {
+        if (activeTab === 'location' && mapLoaded) {
+            setTimeout(initAutocomplete, 100);
+        }
+    }, [activeTab, mapLoaded]);
+
     useEffect(() => {
         const fetchInitialData = async () => {
             try {
-                const [cats, cityList, amenityList] = await Promise.all([
+                const [cats, cityList, amenityList, vendorProfile] = await Promise.all([
                     api.categories.getAll(),
                     api.cities.getAll(),
-                    api.listings.getAmenities()
+                    api.listings.getAmenities(),
+                    api.vendors.getProfile().catch(() => null)
                 ]);
                 setCategories(cats);
                 setCities(cityList);
                 setAmenities(amenityList || []);
+
+                if (vendorProfile?.socialLinks) {
+                    setSocialLinks(vendorProfile.socialLinks);
+                }
 
                 if (!business) {
                     setFormData(prev => ({
@@ -106,6 +347,8 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                 categoryId: business.category?.id || '',
                 description: business.description || '',
                 phone: business.phone || '',
+                whatsapp: business.whatsapp || '',
+                website: business.website || '',
                 address: business.address || '',
                 city: business.city || '',
                 state: business.state || '',
@@ -113,12 +356,20 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                 latitude: Number(business.latitude) || 40.7128,
                 longitude: Number(business.longitude) || -74.0060,
                 coverImageUrl: business.coverImageUrl || '',
+                images: business.images || [],
                 amenityIds: business.businessAmenities?.map(ba => ba.amenity.id) || [],
                 metaKeywords: (business as any).metaKeywords || ''
             });
+            // Pre-fill gallery previews
+            setGalleryPreviews(business.images || []);
             // Pre-fill keyword pills from saved metaKeywords
             const saved = ((business as any).metaKeywords || '').split(',').map((k: string) => k.trim()).filter(Boolean);
             setKeywords(saved);
+
+            // Pre-fill social links from vendor profile if available (fallback, usually fetchInitialData handles it)
+            if (business.vendor?.socialLinks) {
+                setSocialLinks(business.vendor.socialLinks);
+            }
         } else if (!business && isOpen && cities.length > 0 && categories.length > 0) {
             setFormData(prev => ({
                 ...prev,
@@ -134,11 +385,30 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
         setLoading(true);
         setError(null);
         try {
+            // Handle empty strings for optional URL/Email fields (send null to clear them in backend)
+            const submissionData = { ...formData };
+            const fieldsToPrune: string[] = ['coverImageUrl', 'website', 'metaKeywords', 'whatsapp'];
+            fieldsToPrune.forEach(field => {
+                if ((submissionData as any)[field] === '') {
+                    (submissionData as any)[field] = null;
+                }
+            });
+
             if (business) {
-                await api.listings.update(business.id, formData);
+                await api.listings.update(business.id, submissionData);
             } else {
-                await api.listings.create(formData);
+                await api.listings.create(submissionData);
             }
+
+            // Save social links to vendor profile
+            const linksToSave = socialLinks.filter(s => s.url?.trim());
+            try {
+                await api.vendors.updateProfile({ socialLinks: linksToSave });
+            } catch (socialErr) {
+                console.error('Failed to update social links:', socialErr);
+                // Don't block the main flow if social links fail
+            }
+
             onSuccess();
             onClose();
         } catch (err: any) {
@@ -153,6 +423,65 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
         setFormData(prev => ({
             ...prev,
             [name]: name === 'latitude' || name === 'longitude' ? parseFloat(value) : value
+        }));
+    };
+
+    const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+
+        const remaining = 24 - galleryPreviews.length;
+        const toUpload = files.slice(0, remaining);
+
+        if (toUpload.length === 0) return;
+
+        setGalleryUploading(true);
+        setError(null);
+        try {
+            // Create local previews with temporary IDs to track them
+            const newUploads = toUpload.map(file => ({
+                id: Math.random().toString(36).substring(7),
+                file,
+                preview: URL.createObjectURL(file)
+            }));
+
+            // Add previews immediately
+            setGalleryPreviews(prev => [...prev, ...newUploads.map(u => u.preview)]);
+
+            // Parallelized upload using Promise.all
+            const uploadPromises = newUploads.map(async (upload) => {
+                const res = await api.listings.uploadImage(upload.file);
+                return { preview: upload.preview, url: res.url };
+            });
+
+            const results = await Promise.all(uploadPromises);
+            const uploadedUrls = results.map(r => r.url);
+
+            setFormData(prev => ({ ...prev, images: [...prev.images, ...uploadedUrls] }));
+
+            // Replace local previews with real URLs safely
+            setGalleryPreviews(prev => {
+                const updated = [...prev];
+                results.forEach(res => {
+                    const idx = updated.indexOf(res.preview);
+                    if (idx !== -1) {
+                        updated[idx] = res.url;
+                    }
+                });
+                return updated;
+            });
+        } catch (err: any) {
+            setError(err.message || 'Failed to upload gallery images');
+        } finally {
+            setGalleryUploading(false);
+        }
+    };
+
+    const removeGalleryImage = (index: number) => {
+        setGalleryPreviews(prev => prev.filter((_, i) => i !== index));
+        setFormData(prev => ({
+            ...prev,
+            images: prev.images.filter((_, i) => i !== index)
         }));
     };
 
@@ -199,381 +528,393 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
     };
 
     return (
-        <AnimatePresence>
-            {isOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={onClose}
-                        className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
-                    />
+        <>
+            <AnimatePresence>
+                {isOpen && (
+                    <div key="add-business-modal" className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={onClose}
+                            className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+                        />
 
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                        className="bg-white rounded-[48px] w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-premium relative flex flex-col border border-white/20"
-                    >
-                        {/* Header */}
-                        <div className="p-10 pb-6 flex items-center justify-between relative overflow-hidden">
-                            <div className="relative z-10">
-                                <h2 className="text-3xl font-black text-slate-900 mb-2">{business ? 'Edit' : 'Add New'} Listing</h2>
-                                <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">{(business as any)?.title || 'Fill in the details below'}</p>
-                                <p className="text-slate-400 font-bold text-sm uppercase tracking-widest flex items-center gap-2">
-                                    <span className="w-8 h-[2px] bg-orange-500 rounded-full" />
-                                    Property details & Location
-                                </p>
-                            </div>
-                            <button
-                                onClick={onClose}
-                                className="relative z-10 p-3 hover:bg-slate-50 rounded-2xl transition-all group active:scale-95"
-                            >
-                                <X className="w-6 h-6 text-slate-400 group-hover:text-slate-900 transition-colors" />
-                            </button>
-
-                            {/* Decorative Background Element */}
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/5 rounded-full blur-3xl -mr-32 -mt-32" />
-                        </div>
-
-                        {/* Form Body */}
-                        <form onSubmit={handleSubmit} className="p-10 pt-4 overflow-y-auto space-y-8 custom-scrollbar">
-                            {error && (
-                                <motion.div
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    className="p-5 bg-red-50 border border-red-100 rounded-3xl text-red-600 text-sm font-black flex items-center gap-3 shadow-sm"
-                                >
-                                    <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                                        <X className="w-4 h-4" />
-                                    </div>
-                                    {error}
-                                </motion.div>
-                            )}
-
-                            <div className="grid md:grid-cols-2 gap-8">
-                                <div className="space-y-3">
-                                    <label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                                        <Store className="w-3.5 h-3.5 text-orange-500" />
-                                        Business Title
-                                    </label>
-                                    <input
-                                        required
-                                        name="title"
-                                        value={formData.title}
-                                        onChange={handleChange}
-                                        placeholder="e.g. The Artisanal Coffee"
-                                        className="input-premium font-bold"
-                                    />
-                                </div>
-                                <div className="space-y-3">
-                                    <label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                                        Cover Image
-                                    </label>
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleImageUpload}
-                                        className="input-premium font-bold file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
-                                    />
-                                    {formData.coverImageUrl && (
-                                        <img src={getImageUrl(formData.coverImageUrl) || ""} alt="Cover Preview" className="w-full h-32 object-cover rounded-xl mt-2" />
-                                    )}
-                                </div>
-                                <div className="space-y-3">
-                                    <label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                                        <Layers className="w-3.5 h-3.5 text-orange-500" />
-                                        Business Category
-                                    </label>
-                                    <CategorySearchSelect
-                                        categories={categories}
-                                        value={formData.categoryId}
-                                        onChange={(val) => setFormData(prev => ({ ...prev, categoryId: val }))}
-                                        loading={false}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-3">
-                                <label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                                    <TextQuote className="w-3.5 h-3.5 text-orange-500" />
-                                    Short Description
-                                </label>
-                                <textarea
-                                    required
-                                    name="description"
-                                    value={formData.description}
-                                    onChange={handleChange}
-                                    rows={4}
-                                    placeholder="Briefly describe what makes your business unique..."
-                                    className="input-premium resize-none font-medium leading-relaxed"
-                                />
-                            </div>
-
-                            <div className="grid md:grid-cols-2 gap-8">
-                                <div className="space-y-3">
-                                    <label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                                        <Phone className="w-3.5 h-3.5 text-orange-500" />
-                                        Contact Number
-                                    </label>
-                                    <input
-                                        required
-                                        name="phone"
-                                        value={formData.phone}
-                                        onChange={handleChange}
-                                        placeholder="+60..."
-                                        className="input-premium font-bold"
-                                    />
-                                </div>
-                                <div className="space-y-3">
-                                    <label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                                        <MapPin className="w-3.5 h-3.5 text-orange-500" />
-                                        Pincode & Coordinates
-                                    </label>
-                                    <div className="flex gap-2">
-                                        <input
-                                            required
-                                            name="pincode"
-                                            value={formData.pincode}
-                                            onChange={handleChange}
-                                            placeholder="50000"
-                                            className="input-premium font-bold flex-[2]"
-                                        />
-                                        <input
-                                            type="number"
-                                            step="any"
-                                            name="latitude"
-                                            value={formData.latitude}
-                                            onChange={handleChange}
-                                            placeholder="Lat"
-                                            className="input-premium font-bold flex-1"
-                                        />
-                                        <input
-                                            type="number"
-                                            step="any"
-                                            name="longitude"
-                                            value={formData.longitude}
-                                            onChange={handleChange}
-                                            placeholder="Long"
-                                            className="input-premium font-bold flex-1"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-3">
-                                <label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                                    <MapPin className="w-3.5 h-3.5 text-orange-500" />
-                                    Street Address / Area
-                                </label>
-                                <div className="relative">
-                                    <select
-                                        required
-                                        name="address"
-                                        value={formData.address}
-                                        onChange={handleChange}
-                                        className="input-premium appearance-none font-bold cursor-pointer pr-12"
-                                    >
-                                        <option value="">Select Area</option>
-                                        <option value="DHA Phase 6">DHA Phase 6</option>
-                                        <option value="DHA Phase 5">DHA Phase 5</option>
-                                        <option value="Gulberg III">Gulberg III</option>
-                                        <option value="Gulberg II">Gulberg II</option>
-                                        <option value="Model Town">Model Town</option>
-                                        <option value="Johar Town">Johar Town</option>
-                                        <option value="Bahria Town">Bahria Town</option>
-                                        <option value="Clifton Block 5">Clifton Block 5</option>
-                                        <option value="F-6 Markaz">F-6 Markaz</option>
-                                        <option value="F-7 Markaz">F-7 Markaz</option>
-                                        <option value="Blue Area">Blue Area</option>
-                                        <option value="Main Street">Main Street</option>
-                                        <option value="Downtown District">Downtown District</option>
-                                        <option value="Others">Others</option>
-                                    </select>
-                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-8">
-                                <div className="space-y-3">
-                                    <label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">City</label>
-                                    <div className="relative">
-                                        <select
-                                            required
-                                            name="city"
-                                            value={formData.city}
-                                            onChange={handleChange}
-                                            className="input-premium appearance-none font-bold cursor-pointer pr-12"
-                                        >
-                                            {cities.map(city => (
-                                                <option key={city.id} value={city.name}>{city.name}</option>
-                                            ))}
-                                        </select>
-                                        <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
-                                            </svg>
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                            className="bg-white rounded-[16px] w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-premium relative flex flex-col border border-white/20"
+                        >
+                            {/* Header */}
+                            <div className="p-8 pb-4 border-b border-slate-100 flex items-center justify-between relative overflow-hidden bg-slate-50/50">
+                                <div className="relative z-10">
+                                    <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/20">
+                                            <Store className="w-5 h-5" />
                                         </div>
-                                    </div>
+                                        {business ? 'Edit Business' : 'Add New Listing'}
+                                    </h2>
+                                    {business && <p className="text-slate-500 font-bold text-xs mt-1 ml-13 flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                                        {business.title}
+                                    </p>}
                                 </div>
-                                <div className="space-y-3">
-                                    <label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">State</label>
-                                    <input
-                                        required
-                                        name="state"
-                                        value={formData.state}
-                                        onChange={handleChange}
-                                        className="input-premium font-bold"
-                                    />
-                                </div>
+                                <button
+                                    onClick={onClose}
+                                    className="relative z-10 p-2 hover:bg-white rounded-xl transition-all group active:scale-95 shadow-sm border border-transparent hover:border-slate-200"
+                                >
+                                    <X className="w-5 h-5 text-slate-400 group-hover:text-slate-900 transition-colors" />
+                                </button>
                             </div>
 
-                            {/* Business Amenities Section */}
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                                        <Sparkles className="w-3.5 h-3.5 text-orange-500" />
-                                        Business Amenities
-                                    </label>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowAddAmenity(!showAddAmenity)}
-                                        className="text-[10px] font-black uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920] transition-colors flex items-center gap-1"
-                                    >
-                                        <Plus className="w-2.5 h-2.5" /> Add Option
+                            {/* Tabs Navigation */}
+                            <div className="flex items-center gap-1 px-8 py-3 bg-white border-b border-slate-100 overflow-x-auto no-scrollbar">
+                                {TABS.map(tab => {
+                                    const Icon = tab.icon;
+                                    const isActive = activeTab === tab.id;
+                                    return (
+                                        <button
+                                            key={tab.id}
+                                            type="button"
+                                            onClick={() => setActiveTab(tab.id)}
+                                            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all whitespace-nowrap ${isActive
+                                                ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20 active:scale-95'
+                                                : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                                                }`}
+                                        >
+                                            <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                                            {tab.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Form Body */}
+                            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar flex flex-col">
+                                <div className="p-8 space-y-8 flex-1">
+                                    {error && (
+                                        <motion.div
+                                            initial={{ opacity: 0, scale: 0.95 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            className="p-4 bg-rose-50 border border-rose-100 rounded-2xl text-rose-600 text-xs font-black flex items-center gap-3 shadow-sm"
+                                        >
+                                            <div className="w-7 h-7 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
+                                                <X className="w-3.5 h-3.5" />
+                                            </div>
+                                            {error}
+                                        </motion.div>
+                                    )}
+
+                                    <AnimatePresence mode="wait">
+                                        {activeTab === 'general' && (
+                                            <motion.div
+                                                key="general"
+                                                initial={{ opacity: 0, x: 10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, x: -10 }}
+                                                className="space-y-6"
+                                            >
+                                                <div className="space-y-4">
+                                                    <div className="space-y-2.5">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Business Title</label>
+                                                        <div className="relative group">
+                                                            <Store className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
+                                                            <input
+                                                                required
+                                                                name="title"
+                                                                value={formData.title}
+                                                                onChange={handleChange}
+                                                                placeholder="Enter business name..."
+                                                                className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:bg-white transition-all shadow-sm"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-2.5">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Category</label>
+                                                        <CategorySearchSelect
+                                                            categories={categories}
+                                                            value={formData.categoryId}
+                                                            onChange={(val) => setFormData(prev => ({ ...prev, categoryId: val }))}
+                                                            loading={false}
+                                                        />
+                                                    </div>
+
+                                                    <div className="space-y-2.5">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Short Description</label>
+                                                        <div className="relative group">
+                                                            <TextQuote className="absolute left-4 top-5 w-4 h-4 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
+                                                            <textarea
+                                                                required
+                                                                name="description"
+                                                                value={formData.description}
+                                                                onChange={handleChange}
+                                                                rows={6}
+                                                                placeholder="Tell us about your business..."
+                                                                className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-3xl text-slate-900 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:bg-white transition-all shadow-sm resize-none leading-relaxed"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-2.5">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 flex items-center justify-between">
+                                                            Cover Image
+                                                            <span className="text-[9px] text-slate-300 normal-case tracking-normal">Best for first impressions</span>
+                                                        </label>
+                                                        <div className="flex gap-4 items-start">
+                                                            {formData.coverImageUrl && (
+                                                                <div className="relative w-32 h-32 rounded-2xl overflow-hidden border-2 border-slate-100 flex-shrink-0 group">
+                                                                    <img src={getImageUrl(formData.coverImageUrl) || ""} className="w-full h-full object-cover" />
+                                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                                        <label className="cursor-pointer">
+                                                                            <Sparkles className="w-5 h-5 text-white" />
+                                                                            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                                                                        </label>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            <label className={`flex-1 flex flex-col items-center justify-center h-32 border-2 border-dashed rounded-2xl transition-all cursor-pointer ${formData.coverImageUrl ? 'bg-slate-50/50 border-slate-200' : 'bg-orange-50/30 border-orange-200 hover:bg-orange-50/50'}`}>
+                                                                <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                                                                <div className="flex flex-col items-center gap-2 text-slate-400 group">
+                                                                    <div className="p-3 rounded-xl bg-white border border-slate-100 text-orange-500 shadow-sm group-hover:scale-110 transition-transform">
+                                                                        <Sparkles className="w-4 h-4" />
+                                                                    </div>
+                                                                    <p className="text-[10px] font-black uppercase text-slate-500 mt-1">
+                                                                        {formData.coverImageUrl ? 'Change Cover' : 'Upload Cover Photo'}
+                                                                    </p>
+                                                                </div>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                        {activeTab === 'location' && (
+                                            <motion.div key="location" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-6">
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-2.5">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">City</label>
+                                                        <div className="relative group">
+                                                            <select required name="city" value={formData.city} onChange={handleChange} className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:bg-white transition-all appearance-none cursor-pointer pr-10 shadow-sm">
+                                                                {cities.map(city => (<option key={city.id} value={city.name}>{city.name}</option>))}
+                                                            </select>
+                                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" /></svg></div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-2.5">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">State</label>
+                                                        <input required name="state" value={formData.state} onChange={handleChange} placeholder="State" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:bg-white transition-all shadow-sm" />
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-2.5">
+                                                    <div className="flex items-center justify-between">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Street Address / Area</label>
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleGetCurrentLocation}
+                                                            className="flex items-center gap-1.5 text-[9px] font-black text-orange-600 uppercase tracking-widest hover:text-orange-700 transition-colors"
+                                                        >
+                                                            <MapPin className="w-3 h-3" /> Get Current Location
+                                                        </button>
+                                                    </div>
+                                                    <div className="relative group">
+                                                        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
+                                                        <input required ref={addressInputRef} name="address" value={formData.address} onChange={handleChange} placeholder="Search area or drag marker..." className="w-full pl-11 pr-10 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:bg-white transition-all shadow-sm" />
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-2.5">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Pincode</label>
+                                                        <input required name="pincode" value={formData.pincode} onChange={handleChange} placeholder="50000" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:bg-white transition-all shadow-sm" />
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        <div className="space-y-2.5">
+                                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Lat</label>
+                                                            <input type="number" step="any" name="latitude" value={formData.latitude} onChange={handleChange} className="w-full px-3 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:bg-white transition-all shadow-sm" />
+                                                        </div>
+                                                        <div className="space-y-2.5">
+                                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Long</label>
+                                                            <input type="number" step="any" name="longitude" value={formData.longitude} onChange={handleChange} className="w-full px-3 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:bg-white transition-all shadow-sm" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="h-48 rounded-2xl border-2 border-slate-200 overflow-hidden relative shadow-sm">
+                                                    {mapError ? (
+                                                        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-red-50 text-red-500">
+                                                            <p className="text-sm font-bold">Google Maps failed to load.</p>
+                                                            <p className="text-xs mt-1">Please check your API key geometry tracking.</p>
+                                                        </div>
+                                                    ) : !mapLoaded ? (
+                                                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50">
+                                                            <Loader2 className="w-6 h-6 animate-spin text-orange-500 mb-2" />
+                                                            <p className="text-xs font-bold text-slate-500">Loading Map...</p>
+                                                        </div>
+                                                    ) : null}
+                                                    <div ref={mapContainerRef} className="w-full h-full bg-slate-100" />
+                                                </div>
+                                            </motion.div>
+                                        )}
+
+                                        {activeTab === 'media' && (
+                                            <motion.div key="media" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-8">
+                                                <div className="space-y-3">
+                                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 flex items-center justify-between">Gallery Images<span className="text-[9px] text-slate-300 normal-case tracking-normal">Showcase your business</span></label>
+                                                    <div className="grid grid-cols-4 gap-3">
+                                                        {galleryPreviews.map((url, idx) => (
+                                                            <div key={idx} className="relative group aspect-square rounded-2xl overflow-hidden border-2 border-slate-100">
+                                                                <img src={getImageUrl(url) || ""} className={`w-full h-full object-cover ${url.startsWith('blob:') ? 'opacity-50 grayscale' : ''}`} />
+                                                                <button type="button" onClick={() => removeGalleryImage(idx)} className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:scale-110"><X className="w-3.5 h-3.5" /></button>
+                                                            </div>
+                                                        ))}
+                                                        <label className="aspect-square border-2 border-dashed bg-orange-50/30 border-orange-200 hover:bg-orange-50/50 rounded-2xl transition-all cursor-pointer flex flex-col items-center justify-center gap-2 text-slate-400 group">
+                                                            <input type="file" multiple accept="image/*" onChange={handleGalleryUpload} className="hidden" />
+                                                            <div className="p-2 rounded-xl bg-white border border-slate-100 text-orange-500 shadow-sm group-hover:scale-110 transition-transform"><Plus className="w-4 h-4" /></div>
+                                                            <span className="text-[9px] font-black uppercase text-slate-500">Add Photos</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Business Amenities</label>
+                                                        <button type="button" onClick={() => setShowAddAmenity(!showAddAmenity)} className="text-[10px] font-black uppercase tracking-widest text-orange-500 hover:text-orange-600 transition-colors flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-lg"><Plus className="w-3 h-3" /> Add New</button>
+                                                    </div>
+                                                    {showAddAmenity && (
+                                                        <div className="flex gap-2">
+                                                            <input type="text" placeholder="e.g. Free WiFi" value={newAmenityName} onChange={(e) => setNewAmenityName(e.target.value)} className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold" onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddAmenity())} />
+                                                            <button type="button" onClick={handleAddAmenity} disabled={creatingAmenity || !newAmenityName.trim()} className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold">{creatingAmenity ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}</button>
+                                                        </div>
+                                                    )}
+                                                    <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                                                        {amenities.map((amenity) => {
+                                                            const isSelected = formData.amenityIds.includes(amenity.id);
+                                                            return (
+                                                                <button key={amenity.id} type="button" onClick={() => toggleAmenity(amenity.id)} className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left group ${isSelected ? 'bg-orange-50 border-orange-200 text-orange-700' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>
+                                                                    <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${isSelected ? 'bg-orange-500 text-white' : 'bg-white border'}`}>{isSelected && <Check className="w-3.5 h-3.5" />}</div>
+                                                                    <span className="text-xs font-bold truncate">{amenity.name}</span>
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-3">
+                                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 flex items-center justify-between">
+                                                        Search Keywords
+                                                        <span className="text-[9px] text-slate-300 normal-case tracking-normal">max 20 tags</span>
+                                                    </label>
+                                                    <div
+                                                        onClick={() => keywordInputRef.current?.focus()}
+                                                        className="min-h-[52px] flex flex-wrap gap-2 cursor-text p-3 bg-slate-50 border border-slate-200 rounded-2xl transition-all focus-within:ring-2 focus-within:ring-orange-400 focus-within:bg-white"
+                                                    >
+                                                        {keywords.map(kw => (
+                                                            <span
+                                                                key={kw}
+                                                                className="inline-flex items-center gap-1.5 px-3 py-1 bg-white text-slate-700 border border-slate-200 shadow-sm rounded-lg text-xs font-bold transition-all hover:pr-1 group"
+                                                            >
+                                                                #{kw}
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => { e.stopPropagation(); removeKeyword(kw); }}
+                                                                    className="w-0 overflow-hidden group-hover:w-4 transition-all flex items-center justify-center text-slate-400 hover:text-red-500"
+                                                                >
+                                                                    <X className="w-3 h-3" />
+                                                                </button>
+                                                            </span>
+                                                        ))}
+                                                        <input
+                                                            ref={keywordInputRef}
+                                                            type="text"
+                                                            value={keywordInput}
+                                                            onChange={e => setKeywordInput(e.target.value)}
+                                                            onKeyDown={handleKeywordKeyDown}
+                                                            onBlur={() => { if (keywordInput.trim()) addKeyword(keywordInput); }}
+                                                            placeholder={keywords.length === 0 ? 'Type a keyword, press Enter…' : ''}
+                                                            className="flex-1 min-w-[140px] bg-transparent outline-none text-sm font-semibold text-slate-700 placeholder:text-slate-400"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        )}
+
+                                        {activeTab === 'social' && (
+                                            <motion.div key="social" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-8">
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-2.5">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Phone Number (*)</label>
+                                                        <div className="relative group">
+                                                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
+                                                            <input required name="phone" value={formData.phone} onChange={handleChange} placeholder="+60..." className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:bg-white transition-all shadow-sm" />
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-2.5">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">WhatsApp Number</label>
+                                                        <div className="relative group">
+                                                            <MessageSquare className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#25D366] transition-colors" />
+                                                            <input name="whatsapp" value={formData.whatsapp} onChange={handleChange} placeholder="+60..." className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-[#25D366] focus:bg-white transition-all shadow-sm" />
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-2.5 col-span-2">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Business Website</label>
+                                                        <div className="relative group">
+                                                            <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                                                            <input name="website" value={formData.website} onChange={handleChange} placeholder="https://..." className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:bg-white transition-all shadow-sm" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-4 pt-4 border-t border-slate-100">
+                                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Social Media Profiles</label>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {SOCIAL_PLATFORMS.map(p => {
+                                                            const isSelected = !!socialLinks.find(s => s.platform === p.key);
+                                                            return (
+                                                                <button key={p.key} type="button" onClick={() => isSelected ? removeSocialLink(p.key) : addSocialLink(p.key)} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black transition-all ${isSelected ? 'text-white' : 'bg-slate-50 text-slate-500'}`} style={isSelected ? { backgroundColor: p.color } : {}}>
+                                                                    <span className="text-[10px]">{isSelected ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3" />}</span> {p.label}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+
+                                                    <div className="space-y-3 pt-2">
+                                                        {socialLinks.map(link => {
+                                                            const platform = SOCIAL_PLATFORMS.find(p => p.key === link.platform);
+                                                            if (!platform) return null;
+                                                            return (
+                                                                <div key={link.platform} className="flex items-center gap-2 group/link">
+                                                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white" style={{ backgroundColor: platform.color }}>{platform.emoji}</div>
+                                                                    <input type="url" value={link.url} onChange={e => updateSocialUrl(link.platform, e.target.value)} placeholder={platform.placeholder} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
+                                                                    <button type="button" onClick={() => removeSocialLink(link.platform)} className="w-10 h-10 rounded-xl bg-slate-50 hover:bg-red-50 text-slate-400 flex items-center justify-center"><X className="w-4 h-4" /></button>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+
+                                <div className="p-6 border-t border-slate-100 bg-white/80 backdrop-blur-md">
+                                    <button disabled={loading || galleryUploading} type="submit" className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-sm hover:bg-orange-500 flex items-center justify-center gap-2">
+                                        {loading || galleryUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Store className="w-4 h-4" />{business ? 'Save Changes' : 'Publish Listing'}</>}
                                     </button>
                                 </div>
-
-                                {showAddAmenity && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: -10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className="p-4 bg-orange-50/50 rounded-3xl border border-orange-100 flex gap-2"
-                                    >
-                                        <input
-                                            type="text"
-                                            placeholder="New amenity name..."
-                                            value={newAmenityName}
-                                            onChange={(e) => setNewAmenityName(e.target.value)}
-                                            className="flex-1 px-4 py-2 bg-white border border-orange-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
-                                            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddAmenity())}
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={handleAddAmenity}
-                                            disabled={creatingAmenity || !newAmenityName.trim()}
-                                            className="px-4 py-2 bg-[#FF7A30] text-white rounded-2xl text-xs font-bold disabled:opacity-50 flex items-center gap-2"
-                                        >
-                                            {creatingAmenity ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Add'}
-                                        </button>
-                                    </motion.div>
-                                )}
-
-                                <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                                    {amenities.map((amenity) => {
-                                        const isSelected = formData.amenityIds.includes(amenity.id);
-                                        return (
-                                            <button
-                                                key={amenity.id}
-                                                type="button"
-                                                onClick={() => toggleAmenity(amenity.id)}
-                                                className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-all text-left ${isSelected
-                                                    ? 'bg-orange-50 border-orange-200 text-orange-700'
-                                                    : 'bg-slate-50 border-slate-100 text-slate-600 hover:border-slate-200'
-                                                    }`}
-                                            >
-                                                <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-colors ${isSelected ? 'bg-orange-500 text-white' : 'bg-white text-slate-400'
-                                                    }`}>
-                                                    {isSelected ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
-                                                </div>
-                                                <span className="text-xs font-bold truncate">{amenity.name}</span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-
-                            {/* ── Search Keywords ─────────────────────────────────── */}
-                            <div className="space-y-3">
-                                <label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                                    <Hash className="w-3.5 h-3.5 text-orange-500" />
-                                    Search Keywords
-                                    <span className="ml-auto text-[9px] font-bold text-slate-300 normal-case tracking-normal">
-                                        Boosts your listing in search · max 20
-                                    </span>
-                                </label>
-
-                                {/* Tag input wrapper */}
-                                <div
-                                    onClick={() => keywordInputRef.current?.focus()}
-                                    className="input-premium min-h-[52px] flex flex-wrap gap-2 cursor-text p-3"
-                                >
-                                    {keywords.map(kw => (
-                                        <span
-                                            key={kw}
-                                            className="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-50 text-orange-700 border border-orange-200 rounded-full text-xs font-black"
-                                        >
-                                            #{kw}
-                                            <button
-                                                type="button"
-                                                onClick={(e) => { e.stopPropagation(); removeKeyword(kw); }}
-                                                className="w-3.5 h-3.5 rounded-full bg-orange-200 hover:bg-orange-400 flex items-center justify-center transition-colors"
-                                            >
-                                                <X className="w-2 h-2" />
-                                            </button>
-                                        </span>
-                                    ))}
-                                    <input
-                                        ref={keywordInputRef}
-                                        type="text"
-                                        value={keywordInput}
-                                        onChange={e => setKeywordInput(e.target.value)}
-                                        onKeyDown={handleKeywordKeyDown}
-                                        onBlur={() => { if (keywordInput.trim()) addKeyword(keywordInput); }}
-                                        placeholder={keywords.length === 0 ? 'Type a keyword, press Enter or comma…' : ''}
-                                        className="flex-1 min-w-[140px] bg-transparent outline-none text-sm font-bold text-slate-700 placeholder:text-slate-300"
-                                    />
-                                </div>
-                                <p className="text-[10px] text-slate-400 font-medium">
-                                    e.g. <span className="italic">haircut, bridal, kuala lumpur salon, home service</span>
-                                </p>
-                            </div>
-
-                            <div className="pt-8 mb-4">
-                                <button
-                                    disabled={loading}
-                                    type="submit"
-                                    className="w-full py-5 bg-slate-900 text-white rounded-[28px] font-black text-lg shadow-2xl hover:bg-orange-600 transition-all duration-500 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3 group"
-                                >
-                                    {loading ? (
-                                        <Loader2 className="w-6 h-6 animate-spin text-white" />
-                                    ) : (
-                                        <>
-                                            Publish Business Listing
-                                            <motion.span
-                                                animate={{ x: [0, 5, 0] }}
-                                                transition={{ repeat: Infinity, duration: 1.5 }}
-                                            >
-                                                <Store className="w-5 h-5 group-hover:text-white" />
-                                            </motion.span>
-                                        </>
-                                    )}
-                                </button>
-                                <p className="text-center text-slate-400 text-[10px] font-bold mt-4 uppercase tracking-[0.2em]">
-                                    By listing, you agree to our <span className="text-slate-900 underline cursor-pointer">Terms of Service</span>
-                                </p>
-                            </div>
-                        </form>
-                    </motion.div>
-                </div>
-            )}
-        </AnimatePresence>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+            <Script
+                src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`}
+                onLoad={() => setMapLoaded(true)}
+                onError={() => setMapError(true)}
+            />
+        </>
     );
 }
-

@@ -77,7 +77,7 @@ export default function VendorSaved() {
                     ))}
                 </div>
             ) : (
-                <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[48px] border border-dashed border-slate-200 text-center px-4">
+                <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[16px] border border-dashed border-slate-200 text-center px-4">
                     <div className="w-20 h-20 bg-rose-50 rounded-3xl flex items-center justify-center mb-6">
                         <Heart className="w-10 h-10 text-rose-200" />
                     </div>

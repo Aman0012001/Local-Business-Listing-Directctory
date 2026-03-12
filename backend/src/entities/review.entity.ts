@@ -64,10 +64,12 @@ export class Review {
     updatedAt: Date;
 
     // Relations
+    @Exclude()
     @ManyToOne(() => Listing, (listing) => listing.reviews)
     @JoinColumn({ name: 'business_id' })
     business: Listing;
 
+    @Exclude()
     @ManyToOne(() => User, (user) => user.reviews)
     @JoinColumn({ name: 'user_id' })
     user: User;

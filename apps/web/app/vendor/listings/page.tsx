@@ -108,7 +108,7 @@ export default function VendorListings() {
             />
 
             {/* Filters Bar */}
-            <div className="bg-white p-4 rounded-[32px] border border-slate-100 shadow-sm space-y-3">
+            <div className="bg-white p-4 rounded-[20px] border border-slate-100 shadow-sm space-y-3">
                 <div className="flex flex-col md:flex-row gap-4">
                     {/* Search */}
                     <div className="flex-grow relative">
@@ -243,7 +243,7 @@ export default function VendorListings() {
                         </div>
                     ))
                 ) : (
-                    <div className="col-span-full text-center py-20 bg-slate-50 rounded-[32px] border-2 border-dashed border-slate-200">
+                    <div className="col-span-full text-center py-20 bg-slate-50 rounded-[20px] border-2 border-dashed border-slate-200">
                         <p className="text-slate-400 font-bold italic text-lg">
                             {searchQuery || statusFilter !== 'all' ? 'No listings match your search.' : "You haven't added any listings yet."}
                         </p>

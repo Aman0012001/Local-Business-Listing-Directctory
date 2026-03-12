@@ -7,6 +7,26 @@ import {
     Facebook, Instagram, Twitter, Globe, Linkedin, Youtube,
 } from 'lucide-react';
 import { getImageUrl } from '../lib/api';
+import { getBusinessStatus } from '../lib/business-status';
+
+const BusinessStatusBadge = ({ hours }: { hours?: any[] }) => {
+    const { status, message, color } = getBusinessStatus(hours);
+    
+    let colorClasses = "";
+    switch(color) {
+        case 'emerald': colorClasses = "bg-emerald-50 text-emerald-600 border-emerald-100"; break;
+        case 'amber': colorClasses = "bg-amber-50 text-amber-600 border-amber-100"; break;
+        case 'rose': colorClasses = "bg-rose-50 text-rose-600 border-rose-100"; break;
+        default: colorClasses = "bg-slate-50 text-slate-600 border-slate-100";
+    }
+
+    return (
+        <div className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border flex items-center gap-1.5 ${colorClasses}`}>
+            {status === 'ONLINE' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+            {message}
+        </div>
+    );
+};
 
 interface SocialLink { platform: string; url: string; }
 
@@ -25,6 +45,7 @@ interface VendorProfile {
     avgRating: number;
     totalViews: number;
     categories: string[];
+    businessHours?: any[];
     sampleListings: { id: string; title: string; slug: string; images?: string[] }[];
 }
 
@@ -100,12 +121,15 @@ export default function VendorProfileCard({ vendor, city }: Props) {
                 )}
 
                 {/* Categories pill */}
-                {vendor.categories.length > 0 && (
-                    <p className="text-[11px] font-bold text-orange-500 text-center mb-3">
-                        {vendor.categories.slice(0, 2).join(' · ')}
-                        {vendor.categories.length > 2 && ` +${vendor.categories.length - 2}`}
-                    </p>
-                )}
+                <div className="flex flex-col items-center gap-2 mb-3">
+                    {vendor.categories.length > 0 && (
+                        <p className="text-[11px] font-bold text-orange-500 text-center">
+                            {vendor.categories.slice(0, 2).join(' · ')}
+                            {vendor.categories.length > 2 && ` +${vendor.categories.length - 2}`}
+                        </p>
+                    )}
+                    <BusinessStatusBadge hours={vendor.businessHours} />
+                </div>
 
                 {/* ── Stats row ── */}
                 <div className="flex items-center gap-5 mb-4">

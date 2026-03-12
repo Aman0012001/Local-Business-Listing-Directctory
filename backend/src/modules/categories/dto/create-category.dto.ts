@@ -10,7 +10,7 @@ import {
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { CategoryStatus } from '../../../entities/category.entity';
+import { CategoryStatus, CategorySource } from '../../../entities/category.entity';
 
 export class CreateCategoryDto {
     @ApiProperty({ example: 'Restaurants' })
@@ -56,6 +56,11 @@ export class CreateCategoryDto {
     @IsOptional()
     @IsEnum(CategoryStatus)
     status?: CategoryStatus = CategoryStatus.ACTIVE;
+
+    @ApiPropertyOptional({ enum: CategorySource, default: CategorySource.ADMIN })
+    @IsOptional()
+    @IsEnum(CategorySource)
+    source?: CategorySource = CategorySource.ADMIN;
 
     @ApiPropertyOptional({ example: 'Best Restaurants - Find Top Dining' })
     @IsOptional()

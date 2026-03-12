@@ -1,11 +1,14 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../lib/api';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
 const GOOGLE_CLIENT_ID = '696583631101-3td2apbr7d2tlbne4o6tmc0crg84u1nv.apps.googleusercontent.com';
+
+// Ping interval: mark user as online every 90 seconds
+const PING_INTERVAL_MS = 90_000;
 
 interface AuthContextType {
     user: any | null;
@@ -23,6 +26,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
+    const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    // --- Heartbeat: mark user as online in DB ---
+    const startPing = () => {
+        // Fire immediately
+        api.auth.ping().catch(() => {});
+
+        // Then fire every PING_INTERVAL_MS
+        if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+        pingIntervalRef.current = setInterval(() => {
+            api.auth.ping().catch(() => {});
+        }, PING_INTERVAL_MS);
+    };
+
+    const stopPing = () => {
+        if (pingIntervalRef.current) {
+            clearInterval(pingIntervalRef.current);
+            pingIntervalRef.current = null;
+        }
+    };
 
     useEffect(() => {
         const initAuth = async () => {
@@ -37,6 +60,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
                         // Sync profile with backend to get latest data (including vendor relation)
                         await syncProfile();
+
+                        // Start heartbeat: mark user as online
+                        startPing();
                     } catch (e) {
                         console.error('Failed to parse stored user:', e);
                         localStorage.removeItem('user');
@@ -51,7 +77,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
 
         initAuth();
+
+        // Stop heartbeat on unmount
+        return () => stopPing();
     }, []);
+
+    const logout = async () => {
+        stopPing();
+        try {
+            await api.auth.logout();
+        } catch (err) {
+            console.warn('[AuthContext] Backend logout failed:', err);
+        }
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+        router.push('/login');
+    };
 
     const syncProfile = async () => {
         try {
@@ -64,9 +106,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 localStorage.setItem('user', JSON.stringify(response));
                 console.log('[AuthContext] Profile synced successfully');
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('[AuthContext] Profile sync failed:', err);
-            // If it's a 401, we might want to logout, but fetcher handles non-ok responses
+            // If the token is invalid or expired, clear the local state
+            if (err.message?.toLowerCase().includes('token') || err.message?.toLowerCase().includes('unauthorized')) {
+                logout();
+            }
         }
     };
 
@@ -83,6 +128,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('token', response.tokens.accessToken);
         localStorage.setItem('user', JSON.stringify(response.user));
         setUser(response.user);
+        // Immediately mark online in DB
+        api.auth.ping().catch(() => {});
+        startPing();
         redirectUser(response.user);
     };
 
@@ -91,6 +139,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('token', response.tokens.accessToken);
         localStorage.setItem('user', JSON.stringify(response.user));
         setUser(response.user);
+        // Immediately mark online in DB
+        api.auth.ping().catch(() => {});
+        startPing();
         redirectUser(response.user);
     };
 
@@ -99,14 +150,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('token', response.tokens.accessToken);
         localStorage.setItem('user', JSON.stringify(response.user));
         setUser(response.user);
+        startPing();
         redirectUser(response.user);
-    };
-
-    const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setUser(null);
-        router.push('/login');
     };
 
     const updateUser = (userData: any) => {

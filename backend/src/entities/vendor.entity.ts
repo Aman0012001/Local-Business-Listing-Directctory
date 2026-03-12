@@ -65,7 +65,6 @@ export class Vendor {
     @JoinColumn({ name: 'user_id' })
     user: User;
 
-    @Exclude()
     @OneToMany(() => Listing, (listing) => listing.vendor)
     businesses: Listing[];
 

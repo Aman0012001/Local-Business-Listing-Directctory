@@ -39,6 +39,33 @@ export class CommentsService {
         return saved;
     }
 
+    async findAllPublic(page = 1, limit = 10) {
+        try {
+            const [data, total] = await this.commentRepo.findAndCount({
+                where: { status: CommentStatus.VISIBLE },
+                relations: ['user', 'business'],
+                order: { createdAt: 'DESC' },
+                take: limit,
+                skip: (page - 1) * limit,
+            });
+
+            return {
+                data,
+                meta: {
+                    total,
+                    page,
+                    limit,
+                    totalPages: Math.ceil(total / limit),
+                },
+            };
+        } catch (error) {
+            const fs = require('fs');
+            const path = require('path');
+            fs.appendFileSync(path.join(process.cwd(), 'permanent_error_log.txt'), `[Comments ERROR] ${new Date().toISOString()}: ${error.message}\nStack: ${error.stack}\nDetails: ${JSON.stringify(error)}\n\n`);
+            throw error;
+        }
+    }
+
     async findPublicByBusiness(businessId: string, page = 1, limit = 10) {
         const [data, total] = await this.commentRepo.findAndCount({
             where: { businessId, status: CommentStatus.VISIBLE },

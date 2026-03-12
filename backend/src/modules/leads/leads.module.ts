@@ -5,10 +5,12 @@ import { LeadsService } from './leads.service';
 import { Lead } from '../../entities/lead.entity';
 import { Listing } from '../../entities/business.entity';
 import { Vendor } from '../../entities/vendor.entity';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Lead, Listing, Vendor]),
+        NotificationsModule,
     ],
     controllers: [LeadsController],
     providers: [LeadsService],
