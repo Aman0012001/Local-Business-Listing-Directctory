@@ -99,4 +99,9 @@ export class SearchBusinessDto extends PaginationDto {
     @IsOptional()
     @IsEnum(SearchSortBy)
     sortBy?: SearchSortBy = SearchSortBy.RELEVANCE;
+
+    @ApiPropertyOptional({ description: 'The ID of the user performing the search (internal use)' })
+    @IsOptional()
+    @IsUUID()
+    userId?: string;
 }

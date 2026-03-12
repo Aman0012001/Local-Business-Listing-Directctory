@@ -50,3 +50,9 @@ Details: {"query":"SELECT DISTINCT \"distinctAlias\".\"listing_id\" AS \"ids_lis
 [2026-03-12T19:09:13.312Z] NotificationsService Constructor Called
 [2026-03-12T19:09:20.073Z] NotificationsService Constructor Called
 [2026-03-12T19:09:33.934Z] NotificationsService Constructor Called
+[2026-03-12T19:25:06.746Z] NotificationsService Constructor Called
+[2026-03-12T19:25:27.273Z] NotificationsService Constructor Called
+[2026-03-12T19:25:39.692Z] NotificationsService Constructor Called
+[2026-03-12T19:31:55.662Z] NotificationsService Constructor Called
+[2026-03-12T19:32:56.791Z] NotificationsService Constructor Called
+[2026-03-12T19:34:17.989Z] NotificationsService Constructor Called

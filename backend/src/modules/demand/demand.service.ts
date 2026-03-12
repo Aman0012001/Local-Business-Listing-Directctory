@@ -35,13 +35,16 @@ export class DemandService {
     async logSearch(data: {
         keyword: string;
         city?: string;
+        categorySlug?: string;
         latitude?: number;
         longitude?: number;
         userId?: string;
+        userAgent?: string;
+        ipAddress?: string;
     }) {
         const log = this.searchLogRepository.create({
             ...data,
-            normalizedKeyword: data.keyword.toLowerCase().trim(),
+            normalizedKeyword: data.keyword?.toLowerCase().trim() || 'all',
         });
         return this.searchLogRepository.save(log);
     }
@@ -113,8 +116,10 @@ export class DemandService {
             .select('log.latitude', 'lat')
             .addSelect('log.longitude', 'lng')
             .addSelect('COUNT(*)', 'intensity')
+            .addSelect('MAX(log.city)', 'city')
+            .addSelect('MAX(log.keyword)', 'keyword')
             .where('log.latitude IS NOT NULL AND log.longitude IS NOT NULL')
-            .limit(100);
+            .limit(1000); // Increased limit for better heatmap visuals
 
         if (keyword) {
             qb.andWhere('log.normalizedKeyword LIKE :keyword', { keyword: `%${keyword.toLowerCase()}%` });

@@ -5,17 +5,19 @@ import {
     BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull, ILike } from 'typeorm';
+import { Repository, IsNull, ILike, Brackets } from 'typeorm';
 import { Category, CategoryStatus, CategorySource } from '../../entities/category.entity';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { generateSlug } from '../../common/utils/slug.util';
+import { SearchService } from '../search/search.service';
 
 @Injectable()
 export class CategoriesService {
     constructor(
         @InjectRepository(Category)
         private categoryRepository: Repository<Category>,
+        private readonly searchService: SearchService,
     ) { }
 
     /**
@@ -517,6 +519,74 @@ export class CategoriesService {
             imageUrl: res.category_image_url,
             description: res.category_description,
             businessCount: parseInt(res.businessCount || '0'),
+        }));
+    }
+
+    /**
+     * Smart Category Suggestion (AI-driven via Elasticsearch)
+     */
+    async suggestCategories(title: string, description: string): Promise<any[]> {
+        const query = `${title} ${description}`.trim();
+        if (!query) return [];
+
+        let suggestedIds: string[] = [];
+
+        // 1. Try to find similar businesses in ES to see what categories they use
+        if (this.searchService.isAvailable()) {
+            try {
+                const results = await this.searchService.search(query);
+                // Extract categories from similar businesses
+                const catNames = results
+                    .map((r: any) => r.category)
+                    .filter((c: any) => !!c);
+                
+                if (catNames.length > 0) {
+                    // Find those categories in DB
+                    const matchedCats = await this.categoryRepository.find({
+                        where: catNames.map((name: string) => ({ name: ILike(`%${name}%`) })),
+                        take: 5
+                    });
+                    suggestedIds = matchedCats.map(c => c.id);
+                }
+            } catch (err) {
+                console.error('[CategoriesService] ES Suggestion Error:', err);
+            }
+        }
+
+        // 2. Keyword matching against Category names and descriptions
+        const keywords = query.split(/\s+/).filter(k => k.length > 3);
+        const keywordMatches = await this.categoryRepository
+            .createQueryBuilder('category')
+            .where('category.status = :status', { status: CategoryStatus.ACTIVE })
+            .andWhere(
+                new Brackets(qb => {
+                    keywords.forEach((k, i) => {
+                        qb.orWhere(`category.name ILIKE :k${i}`, { [`k${i}`]: `%${k}%` });
+                        qb.orWhere(`category.description ILIKE :k${i}`, { [`k${i}`]: `%${k}%` });
+                    });
+                })
+            )
+            .limit(5)
+            .getMany();
+
+        const combinedSuggestions = [...keywordMatches];
+        
+        // Add ES matches if they are not already in the list
+        if (suggestedIds.length > 0) {
+            const existingIds = new Set(combinedSuggestions.map(c => c.id));
+            const esMatches = await this.categoryRepository.findByIds(suggestedIds);
+            for (const match of esMatches) {
+                if (!existingIds.has(match.id)) {
+                    combinedSuggestions.push(match);
+                }
+            }
+        }
+
+        return combinedSuggestions.slice(0, 5).map(c => ({
+            id: c.id,
+            name: c.name,
+            slug: c.slug,
+            icon: c.icon
         }));
     }
 }

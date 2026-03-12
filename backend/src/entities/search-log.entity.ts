@@ -31,13 +31,23 @@ export class SearchLog {
     searchedAt: Date;
 
     @Column({ nullable: true })
+    @Index()
     city: string;
+
+    @Column({ name: 'category_slug', nullable: true })
+    categorySlug: string;
 
     @Column({ type: 'decimal', precision: 10, scale: 8, nullable: true })
     latitude: number;
 
     @Column({ type: 'decimal', precision: 11, scale: 8, nullable: true })
     longitude: number;
+
+    @Column({ name: 'user_agent', nullable: true, type: 'text' })
+    userAgent: string;
+
+    @Column({ name: 'ip_address', nullable: true })
+    ipAddress: string;
 
     // Relations
     @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })

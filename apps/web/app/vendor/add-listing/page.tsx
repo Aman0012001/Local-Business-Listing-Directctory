@@ -57,6 +57,8 @@ export default function AddListingPage() {
     const [creatingAmenity, setCreatingAmenity] = useState(false);
     const [mapError, setMapError] = useState(false);
     const [mapLoaded, setMapLoaded] = useState(false);
+    const [suggestions, setSuggestions] = useState<Category[]>([]);
+    const [suggestionsLoading, setSuggestionsLoading] = useState(false);
 
     // Handle Google Maps Authentication Failure (Invalid API Key)
     useEffect(() => {
@@ -403,6 +405,25 @@ export default function AddListingPage() {
         };
         fetchInitialData();
     }, []);
+
+    const getAISuggestion = async () => {
+        if (!formData.title.trim()) {
+            setError("Please enter a business title first for AI suggestion");
+            return;
+        }
+        setSuggestionsLoading(true);
+        try {
+            const res = await api.categories.suggest(formData.title, formData.description);
+            setSuggestions(res);
+            if (res.length === 0) {
+                setError("No specific categories found. Try adding more details to the description.");
+            }
+        } catch (err: any) {
+            console.error('AI Suggestion failed:', err);
+        } finally {
+            setSuggestionsLoading(false);
+        }
+    };
 
     const validateStep1 = () => {
         if (!formData.title.trim() || formData.title.length < 2) return 'Business Title requires at least 2 characters';
@@ -786,6 +807,57 @@ export default function AddListingPage() {
                                             </>
                                         )}
                                     </div>
+
+                                    {/* AI Suggestions Display */}
+                                    <AnimatePresence>
+                                        {(suggestions.length > 0 || suggestionsLoading) && (
+                                            <motion.div
+                                                initial={{ opacity: 0, height: 0 }}
+                                                animate={{ opacity: 1, height: 'auto' }}
+                                                exit={{ opacity: 0, height: 0 }}
+                                                className="mt-3"
+                                            >
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <Sparkles className="w-3.5 h-3.5 text-orange-500" />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">AI Suggested Categories</span>
+                                                </div>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {suggestionsLoading ? (
+                                                        [1, 2, 3].map(i => (
+                                                            <div key={i} className="h-8 w-24 bg-slate-100 animate-pulse rounded-full" />
+                                                        ))
+                                                    ) : (
+                                                        suggestions.map(cat => (
+                                                            <button
+                                                                key={cat.id}
+                                                                type="button"
+                                                                onClick={() => setFormData(prev => ({ ...prev, categoryId: cat.id }))}
+                                                                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
+                                                                    formData.categoryId === cat.id
+                                                                        ? 'bg-orange-500 border-orange-500 text-white shadow-md shadow-orange-500/20'
+                                                                        : 'bg-white border-slate-200 text-slate-600 hover:border-orange-300 hover:text-orange-500'
+                                                                }`}
+                                                            >
+                                                                {cat.name}
+                                                            </button>
+                                                        ))
+                                                    )}
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+
+                                    <button
+                                        type="button"
+                                        onClick={getAISuggestion}
+                                        disabled={suggestionsLoading || !formData.title.trim()}
+                                        className="mt-3 flex items-center gap-2 text-xs font-bold text-orange-500 hover:text-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
+                                    >
+                                        <div className="w-6 h-6 rounded-lg bg-orange-50 flex items-center justify-center group-hover:bg-orange-100 transition-colors">
+                                            {suggestionsLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                                        </div>
+                                        {suggestionsLoading ? 'AI is thinking...' : 'Get AI Category Suggestions'}
+                                    </button>
                                 </div>
 
                                 {formData.categoryId === 'other' && (

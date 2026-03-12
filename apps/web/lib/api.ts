@@ -134,6 +134,10 @@ export const api = {
             method: 'POST',
             timeout: 300000, // 5 minute timeout for bulk import
         }),
+        suggest: (title: string, description?: string) => {
+            const query = new URLSearchParams({ title, description: description || '' }).toString();
+            return fetcher<Category[]>(`/categories/suggest?${query}`);
+        },
     },
     listings: {
         create: (listingData: any) => fetcher<Business>('/businesses', {

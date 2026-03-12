@@ -50,9 +50,10 @@ export class DemandController {
         return this.demandService.getNearbyDemand(lat, lng);
     }
 
-    @Public()
     @Get('heatmap')
-    @ApiOperation({ summary: 'Get demand heatmap data' })
+    @Roles(UserRole.SUPERADMIN)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Get demand heatmap data (Super Admin only)' })
     @ApiResponse({ status: 200, description: 'Heatmap data retrieved' })
     async getHeatmap(@Query('keyword') keyword?: string) {
         return this.demandService.getHeatmap(keyword);

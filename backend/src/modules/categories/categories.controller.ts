@@ -157,6 +157,19 @@ export class CategoriesController {
     }
 
     @Public()
+    @Get('suggest')
+    @ApiOperation({ summary: 'Smart suggest categories based on title and description' })
+    @ApiQuery({ name: 'title', required: true, type: String })
+    @ApiQuery({ name: 'description', required: false, type: String })
+    @ApiResponse({ status: 200, description: 'Suggested categories retrieved' })
+    suggest(
+        @Query('title') title: string,
+        @Query('description') description?: string,
+    ) {
+        return this.categoriesService.suggestCategories(title, description || '');
+    }
+
+    @Public()
     @Get(':id')
     @ApiOperation({ summary: 'Get category by ID' })
     @ApiResponse({ status: 200, description: 'Category found' })

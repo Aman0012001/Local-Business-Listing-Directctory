@@ -31,6 +31,7 @@ const menuItems = [
     { name: 'Plans', icon: CreditCard, href: '/admin/plans', badge: null },
     { name: 'Subscriptions', icon: Receipt, href: '/admin/subscriptions', badge: null },
     { name: 'Demand Insights', icon: Activity, href: '/admin/demand', badge: null },
+    { name: 'Search Heatmap', icon: ShieldCheck, href: '/admin/analytics', badge: 'New' },
     { name: 'Verifications', icon: CheckCircle, href: '/admin/verifications', badge: null },
     { name: 'Settings', icon: Settings, href: '/admin/settings', badge: null },
 ];

@@ -25,6 +25,7 @@ import { generateSlug, generateUniqueSlug } from '../../common/utils/slug.util';
 import { calculateDistance } from '../../common/utils/geolocation.util';
 import { NotificationsService } from '../notifications/notifications.service';
 import { SearchService } from '../search/search.service';
+import { DemandService } from '../demand/demand.service';
 
 @Injectable()
 export class BusinessesService {
@@ -43,6 +44,7 @@ export class BusinessesService {
         private vendorRepository: Repository<Vendor>,
         private notificationsService: NotificationsService,
         private searchService: SearchService,
+        private demandService: DemandService,
     ) { }
 
     /**
@@ -170,8 +172,21 @@ export class BusinessesService {
             verifiedOnly,
             openNow,
             sortBy,
+            userId,
         } = searchDto;
         const skip = calculateSkip(page, limit);
+
+        // Async Search Logging
+        if (latitude && longitude) {
+            this.demandService.logSearch({
+                keyword: searchDto.query || '',
+                city: searchDto.city,
+                categorySlug: searchDto.categorySlug,
+                latitude,
+                longitude,
+                userId,
+            }).catch(err => console.error('[BusinessesService] Analytics log error:', err));
+        }
 
         // Elasticsearch Integration: Get IDs for high-relevance results
         let esIds: string[] | null = null;

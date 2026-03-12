@@ -9,6 +9,8 @@ import { Amenity } from '../../entities/amenity.entity';
 import { Category } from '../../entities/category.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { SearchModule } from '../search/search.module';
+import { DemandModule } from '../demand/demand.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
     imports: [
@@ -21,6 +23,8 @@ import { SearchModule } from '../search/search.module';
             Vendor,
         ]),
         SearchModule,
+        DemandModule,
+        NotificationsModule,
     ],
     controllers: [BusinessesController],
     providers: [BusinessesService],
