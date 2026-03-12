@@ -8,6 +8,7 @@ import { BusinessAmenity } from '../../entities/business-amenity.entity';
 import { Amenity } from '../../entities/amenity.entity';
 import { Category } from '../../entities/category.entity';
 import { Vendor } from '../../entities/vendor.entity';
+import { SearchModule } from '../search/search.module';
 
 @Module({
     imports: [
@@ -19,6 +20,7 @@ import { Vendor } from '../../entities/vendor.entity';
             Category,
             Vendor,
         ]),
+        SearchModule,
     ],
     controllers: [BusinessesController],
     providers: [BusinessesService],

@@ -24,6 +24,7 @@ import {
 import { generateSlug, generateUniqueSlug } from '../../common/utils/slug.util';
 import { calculateDistance } from '../../common/utils/geolocation.util';
 import { NotificationsService } from '../notifications/notifications.service';
+import { SearchService } from '../search/search.service';
 
 @Injectable()
 export class BusinessesService {
@@ -41,6 +42,7 @@ export class BusinessesService {
         @InjectRepository(Vendor)
         private vendorRepository: Repository<Vendor>,
         private notificationsService: NotificationsService,
+        private searchService: SearchService,
     ) { }
 
     /**
@@ -143,6 +145,9 @@ export class BusinessesService {
             }).catch(() => {/* non-blocking */ });
         }
 
+        // Index in Elasticsearch (async, don't wait to complete to return response)
+        this.searchService.indexBusiness(result).catch(err => console.error('ES Index Error:', err));
+
         return result;
     }
 
@@ -168,6 +173,21 @@ export class BusinessesService {
         } = searchDto;
         const skip = calculateSkip(page, limit);
 
+        // Elasticsearch Integration: Get IDs for high-relevance results
+        let esIds: string[] | null = null;
+        if (searchDto.query && this.searchService.isAvailable()) {
+            try {
+                esIds = await this.searchService.searchIds(
+                    searchDto.query,
+                    searchDto.city,
+                    searchDto.categorySlug,
+                    100, // Fetch top 100 for filtering
+                );
+            } catch (err) {
+                console.error('[BusinessesService] Elasticsearch search error:', err);
+            }
+        }
+
         const queryBuilder = this.listingRepository
             .createQueryBuilder('listing')
             .leftJoinAndSelect('listing.category', 'category')
@@ -178,8 +198,15 @@ export class BusinessesService {
             .leftJoinAndSelect('businessAmenities.amenity', 'amenity')
             .where('listing.status IN (:...statuses)', { statuses: [BusinessStatus.PENDING, BusinessStatus.APPROVED] });
 
-        // Text search — matches title, description and vendor-added search keywords
-        if (searchDto.query) {
+        // Apply Search Results from Elasticsearch or fallback to ILIKE
+        if (esIds && esIds.length > 0) {
+            queryBuilder.andWhere('listing.id IN (:...esIds)', { esIds });
+            // If relevance sorting requested, use ES order
+            if (sortBy === SearchSortBy.RELEVANCE) {
+                queryBuilder.orderBy(`array_position(ARRAY['${esIds.join("','")}']::uuid[], listing.id)`, 'ASC');
+            }
+        } else if (searchDto.query) {
+            // Text search fallback — matches title, description and vendor-added search keywords
             queryBuilder.andWhere(
                 '(listing.title ILIKE :query OR listing.description ILIKE :query OR listing.metaKeywords ILIKE :query OR vendor.businessName ILIKE :query)',
                 { query: `%${searchDto.query}%` },
@@ -481,7 +508,12 @@ export class BusinessesService {
 
         await this.listingRepository.save(listing);
 
-        return this.findOne(id, user);
+        const updatedListing = await this.findOne(id, user);
+
+        // Update in Elasticsearch
+        this.searchService.indexBusiness(updatedListing).catch(err => console.error('ES Update Error:', err));
+
+        return updatedListing;
     }
 
     /**
@@ -503,6 +535,9 @@ export class BusinessesService {
         }
 
         await this.listingRepository.remove(listing);
+
+        // Remove from Elasticsearch
+        this.searchService.remove(id).catch(err => console.error('ES Remove Error:', err));
     }
 
     /**

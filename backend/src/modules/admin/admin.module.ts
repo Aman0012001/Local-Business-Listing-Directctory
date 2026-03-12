@@ -17,6 +17,7 @@ import { Comment } from '../../entities/comment.entity';
 import { Notification } from '../../entities/notification.entity';
 import { Subscription } from '../../entities/subscription.entity';
 import { CommentReply } from '../../entities/comment-reply.entity';
+import { SearchModule } from '../search/search.module';
 
 @Module({
     imports: [
@@ -36,6 +37,7 @@ import { CommentReply } from '../../entities/comment-reply.entity';
             Subscription,
             CommentReply,
         ]),
+        SearchModule,
     ],
     controllers: [AdminController],
     providers: [AdminService],

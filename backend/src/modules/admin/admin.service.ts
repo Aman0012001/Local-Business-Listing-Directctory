@@ -16,6 +16,7 @@ import { Comment as BusinessComment } from '../../entities/comment.entity';
 import { Notification } from '../../entities/notification.entity';
 import { Subscription } from '../../entities/subscription.entity';
 import { CommentReply } from '../../entities/comment-reply.entity';
+import { SearchService } from '../search/search.service';
 import {
     createPaginatedResponse,
     calculateSkip,
@@ -52,6 +53,7 @@ export class AdminService {
         private subscriptionRepository: Repository<Subscription>,
         @InjectRepository(CommentReply)
         private commentReplyRepository: Repository<CommentReply>,
+        private searchService: SearchService,
     ) { }
 
     /**
@@ -125,7 +127,12 @@ export class AdminService {
             business.rejectionReason = dto.reason;
         }
 
-        return this.businessRepository.save(business);
+        const moderated = await this.businessRepository.save(business);
+
+        // Update in Elasticsearch (approval status changed)
+        this.searchService.indexBusiness(moderated).catch(err => console.error('ES Approval Index Error:', err));
+
+        return moderated;
     }
 
     /**
@@ -147,7 +154,10 @@ export class AdminService {
         if (!vendor) throw new NotFoundException('Vendor not found');
 
         vendor.isVerified = isVerified;
-        return this.vendorRepository.save(vendor);
+        const updated = await this.vendorRepository.save(vendor);
+        // Note: For simplicity, we don't automatically re-index all vendor businesses here, 
+        // as businesses are usually indexed individually.
+        return updated;
     }
 
     /**
@@ -158,7 +168,12 @@ export class AdminService {
         if (!business) throw new NotFoundException('Business not found');
 
         business.isFeatured = isFeatured;
-        return this.businessRepository.save(business);
+        const updated = await this.businessRepository.save(business);
+
+        // Update in Elasticsearch
+        this.searchService.indexBusiness(updated).catch(err => console.error('ES Featured Index Error:', err));
+
+        return updated;
     }
 
     /**
@@ -169,7 +184,12 @@ export class AdminService {
         if (!business) throw new NotFoundException('Business not found');
 
         business.isVerified = isVerified;
-        return this.businessRepository.save(business);
+        const updated = await this.businessRepository.save(business);
+
+        // Update in Elasticsearch
+        this.searchService.indexBusiness(updated).catch(err => console.error('ES Verified Index Error:', err));
+
+        return updated;
     }
 
     /**
@@ -395,9 +415,13 @@ export class AdminService {
             }
 
             log(`Main record removal...`);
-            const result = await this.businessRepository.remove(business);
-            log(`Successfully removed business: ${id}`);
-            return result;
+        const result = await this.businessRepository.remove(business);
+
+        // Remove from Elasticsearch
+        this.searchService.remove(id).catch(err => console.error('ES Delete Index Error:', err));
+
+        log(`Successfully removed business: ${id}`);
+        return result;
         } catch (error: any) {
             log(`ERROR deleting business ${id}: ${error.message}\n${error.stack}`);
             throw error;

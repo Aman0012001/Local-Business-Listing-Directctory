@@ -30,6 +30,13 @@ export class SearchService implements OnModuleInit {
     }
 
     /**
+     * Check if Elasticsearch is available
+     */
+    isAvailable() {
+        return this.isElasticAvailable;
+    }
+
+    /**
      * Create index with appropriate mapping
      */
     private async createIndex() {
@@ -44,10 +51,14 @@ export class SearchService implements OnModuleInit {
                     mappings: {
                         properties: {
                             id: { type: 'keyword' },
-                            name: { type: 'text', analyzer: 'standard' },
+                            title: { type: 'text', analyzer: 'standard' },
+                            slug: { type: 'keyword' },
                             description: { type: 'text' },
                             category: { type: 'keyword' },
                             city: { type: 'keyword' },
+                            address: { type: 'text' },
+                            logoUrl: { type: 'keyword' },
+                            coverImageUrl: { type: 'keyword' },
                             location: { type: 'geo_point' },
                             rating: { type: 'float' },
                             isFeatured: { type: 'boolean' },
@@ -72,9 +83,13 @@ export class SearchService implements OnModuleInit {
             body: {
                 id: business.id,
                 title: business.title,
+                slug: business.slug,
                 description: business.description,
                 category: business.category?.name,
                 city: business.city,
+                address: business.address,
+                logoUrl: business.logoUrl,
+                coverImageUrl: business.coverImageUrl,
                 location: {
                     lat: business.latitude,
                     lon: business.longitude,
@@ -140,9 +155,6 @@ export class SearchService implements OnModuleInit {
         }));
     }
 
-    /**
-     * Search businesses — uses Elasticsearch if available, DB fallback otherwise
-     */
     async search(query: string, city?: string, category?: string) {
         if (!this.isElasticAvailable) {
             return this.dbSearch(query, city, category);
@@ -151,44 +163,85 @@ export class SearchService implements OnModuleInit {
         const filters: any[] = [{ term: { status: 'approved' } }];
 
         if (city) {
-            filters.push({ term: { city } });
+            filters.push({ term: { city: city.toLowerCase() } });
         }
 
         if (category) {
-            filters.push({ term: { category } });
+            filters.push({ term: { category: category.toLowerCase() } });
         }
 
         const response = await this.elasticsearchService.search({
             index: this.INDEX_NAME,
-            query: {
-                function_score: {
-                    query: {
-                        bool: {
-                            must: {
-                                multi_match: {
-                                    query,
-                                    fields: ['title^3', 'description', 'category'],
+            body: {
+                query: {
+                    function_score: {
+                        query: {
+                            bool: {
+                                must: {
+                                    multi_match: {
+                                        query,
+                                        fields: ['title^3', 'description', 'category', 'address'],
+                                    },
+                                },
+                                filter: filters,
+                            },
+                        },
+                        functions: [
+                            {
+                                field_value_factor: {
+                                    field: 'followersCount',
+                                    factor: 1.2,
+                                    modifier: 'log1p',
+                                    missing: 0,
                                 },
                             },
-                            filter: filters,
-                        },
+                        ],
+                        boost_mode: 'multiply',
                     },
-                    functions: [
-                        {
-                            field_value_factor: {
-                                field: 'followersCount',
-                                factor: 1.2,
-                                modifier: 'log1p',
-                                missing: 0,
-                            },
-                        },
-                    ],
-                    boost_mode: 'multiply',
                 },
             },
         });
 
-        return response.hits.hits.map((hit) => hit._source);
+        return response.hits.hits.map((hit: any) => ({
+            ...hit._source,
+            score: hit._score,
+        }));
+    }
+
+    /**
+     * Search only for IDs (useful for combining with TypeORM)
+     */
+    async searchIds(query: string, city?: string, category?: string, limit = 100): Promise<string[]> {
+        if (!this.isElasticAvailable) return [];
+
+        const filters: any[] = [{ term: { status: 'approved' } }];
+        if (city) filters.push({ term: { city: city.toLowerCase() } });
+        if (category) filters.push({ term: { category: category.toLowerCase() } });
+
+        const response = await this.elasticsearchService.search({
+            index: this.INDEX_NAME,
+            size: limit,
+            body: {
+                _source: false,
+                query: {
+                    function_score: {
+                        query: {
+                            bool: {
+                                must: {
+                                    multi_match: {
+                                        query,
+                                        fields: ['title^3', 'description', 'category', 'address'],
+                                    },
+                                },
+                                filter: filters,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        return response.hits.hits.map((hit: any) => hit._id);
     }
 
     /**
