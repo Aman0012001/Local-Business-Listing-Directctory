@@ -50,6 +50,20 @@ export class Review {
     @Index()
     isApproved: boolean;
 
+    @Column({ name: 'is_suspicious', default: false })
+    @Index()
+    isSuspicious: boolean;
+
+    @Column({ name: 'suspicion_score', type: 'float', default: 0 })
+    suspicionScore: number;
+
+    @Column({ name: 'suspicion_reason', nullable: true, type: 'text' })
+    suspicionReason: string;
+
+    @Column({ name: 'ip_address', nullable: true })
+    @Index()
+    ipAddress: string;
+
     @Column({ name: 'vendor_response', nullable: true, type: 'text' })
     vendorResponse: string;
 

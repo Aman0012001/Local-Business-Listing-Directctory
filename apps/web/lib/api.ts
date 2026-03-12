@@ -196,6 +196,15 @@ export const api = {
             method: 'POST',
             body: JSON.stringify({ response }),
         }),
+        // Admin endpoints
+        adminGetAll: (params: any = {}) => {
+            const query = new URLSearchParams(params).toString();
+            return fetcher<{ data: Review[], meta: any }>(`/reviews/admin/all?${query}`);
+        },
+        adminModerate: (id: string, data: { isApproved?: boolean; isSuspicious?: boolean }) => fetcher<Review>(`/reviews/admin/${id}/moderate`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        }),
     },
     cloudinary: {
         getSignature: () => fetcher<{ timestamp: number, signature: string, apiKey: string, cloudName: string }>('/cloudinary/sign', {

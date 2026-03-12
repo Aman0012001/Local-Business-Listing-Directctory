@@ -32,6 +32,7 @@ const menuItems = [
     { name: 'Subscriptions', icon: Receipt, href: '/admin/subscriptions', badge: null },
     { name: 'Demand Insights', icon: Activity, href: '/admin/demand', badge: null },
     { name: 'Search Heatmap', icon: ShieldCheck, href: '/admin/analytics', badge: 'New' },
+    { name: 'Review Moderation', icon: ShieldAlert, href: '/admin/reviews', badge: null },
     { name: 'Verifications', icon: CheckCircle, href: '/admin/verifications', badge: null },
     { name: 'Settings', icon: Settings, href: '/admin/settings', badge: null },
 ];

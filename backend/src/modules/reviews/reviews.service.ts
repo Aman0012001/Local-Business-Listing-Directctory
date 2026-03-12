@@ -19,6 +19,7 @@ import {
     createPaginatedResponse,
     calculateSkip,
 } from '../../common/utils/pagination.util';
+import { ReviewDetectionService } from './review-detection.service';
 
 @Injectable()
 export class ReviewsService {
@@ -29,13 +30,13 @@ export class ReviewsService {
         private reviewHelpfulVoteRepository: Repository<ReviewHelpfulVote>,
         @InjectRepository(Listing)
         private listingRepository: Repository<Listing>,
-        // Changed from Business to Listing
+        private reviewDetectionService: ReviewDetectionService,
     ) { }
 
     /**
      * Create a new review
      */
-    async create(createReviewDto: CreateReviewDto, user: User): Promise<Review> {
+    async create(createReviewDto: CreateReviewDto, user: User, ipAddress?: string): Promise<Review> {
         const { businessId } = createReviewDto;
 
         // Verify listing exists and load vendor relation
@@ -69,8 +70,20 @@ export class ReviewsService {
         const review = this.reviewRepository.create({
             ...createReviewDto,
             userId: user.id,
-            isApproved: true, // Auto-approve for now
+            ipAddress,
+            isApproved: true, // Initially approved, but detection might flag it
         });
+
+        // Run suspicion detection
+        const analysis = await this.reviewDetectionService.analyzeReview(review);
+        review.isSuspicious = analysis.isSuspicious;
+        review.suspicionScore = analysis.score;
+        review.suspicionReason = analysis.reason;
+
+        // If highly suspicious (score > 0.8), set as unapproved
+        if (review.suspicionScore > 0.8) {
+            review.isApproved = false;
+        }
 
         const savedReview = await this.reviewRepository.save(review);
 
@@ -387,5 +400,63 @@ export class ReviewsService {
             averageRating: Math.round(averageRating * 100) / 100, // Round to 2 decimals
             totalReviews,
         });
+    }
+
+    /**
+     * Get all reviews for admin with suspicion filter
+     */
+    async findAllForAdmin(query: any) {
+        const { page = 1, limit = 20, isSuspicious, isApproved, businessId } = query;
+        const skip = calculateSkip(page, limit);
+
+        const queryBuilder = this.reviewRepository
+            .createQueryBuilder('review')
+            .leftJoinAndSelect('review.user', 'user')
+            .leftJoinAndSelect('review.business', 'business');
+
+        if (isSuspicious !== undefined) {
+            queryBuilder.andWhere('review.isSuspicious = :isSuspicious', { 
+                isSuspicious: isSuspicious === 'true' || isSuspicious === true 
+            });
+        }
+
+        if (isApproved !== undefined) {
+            queryBuilder.andWhere('review.isApproved = :isApproved', { 
+                isApproved: isApproved === 'true' || isApproved === true 
+            });
+        }
+
+        if (businessId) {
+            queryBuilder.andWhere('review.businessId = :businessId', { businessId });
+        }
+
+        queryBuilder.orderBy('review.createdAt', 'DESC');
+
+        const total = await queryBuilder.getCount();
+        const reviews = await queryBuilder.skip(skip).take(limit).getMany();
+
+        return createPaginatedResponse(reviews, page, limit, total);
+    }
+
+    /**
+     * Moderate a review
+     */
+    async moderate(id: string, moderationDto: { isApproved?: boolean; isSuspicious?: boolean }) {
+        const review = await this.findOne(id);
+        
+        if (moderationDto.isApproved !== undefined) {
+            review.isApproved = moderationDto.isApproved;
+        }
+        
+        if (moderationDto.isSuspicious !== undefined) {
+            review.isSuspicious = moderationDto.isSuspicious;
+        }
+
+        await this.reviewRepository.save(review);
+        
+        // Update business rating if approval status changed
+        await this.updateBusinessRating(review.businessId);
+        
+        return review;
     }
 }
