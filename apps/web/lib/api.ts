@@ -461,7 +461,7 @@ export const api = {
     },
     demand: {
         getInsights: (city?: string) => fetcher<any[]>(`/demand/insights${city ? `?city=${city}` : ''}`, { silent: true }),
-        getNearby: (lat: number, lng: number) => fetcher<any[]>(`/demand/nearby?lat=${lat}&lng=${lng}`, { silent: true }),
+        getNearby: (lat?: number, lng?: number) => fetcher<any[]>(`/demand/nearby${lat !== undefined && lng !== undefined ? `?lat=${lat}&lng=${lng}` : ''}`, { silent: true }),
         getHeatmap: (keyword?: string) => fetcher<any[]>(`/demand/heatmap${keyword ? `?keyword=${keyword}` : ''}`, { silent: true }),
         logSearch: (data: any) => fetcher('/demand/log', { method: 'POST', body: JSON.stringify(data), silent: true }),
     },

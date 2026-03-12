@@ -44,8 +44,8 @@ export class DemandController {
     @ApiOperation({ summary: 'Get local demand trends for vendor' })
     @ApiResponse({ status: 200, description: 'Nearby demand retrieved' })
     async getNearbyDemand(
-        @Query('lat') lat: number,
-        @Query('lng') lng: number,
+        @Query('lat') lat?: number,
+        @Query('lng') lng?: number,
     ) {
         return this.demandService.getNearbyDemand(lat, lng);
     }

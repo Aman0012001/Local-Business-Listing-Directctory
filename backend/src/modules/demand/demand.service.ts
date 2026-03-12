@@ -103,7 +103,7 @@ export class DemandService {
         }).sort((a, b) => b.score - a.score).slice(0, 10);
     }
 
-    async getNearbyDemand(lat: number, lng: number) {
+    async getNearbyDemand(lat?: number, lng?: number) {
         // Simplified version for now, could use lat/lng radius in the future
         return this.getInsights();
     }
