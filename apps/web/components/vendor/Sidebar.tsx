@@ -49,6 +49,7 @@ export default function Sidebar() {
         { name: 'Comments', icon: MessageSquare, href: '/vendor/comments', badge: null },
         { name: 'Analytics', icon: BarChart, href: '/vendor/analytics', badge: null },
         { name: 'Saved', icon: Heart, href: '/vendor/saved', badge: null },
+        { name: 'Following', icon: Bell, href: '/vendor/following', badge: null },
         { name: 'Reviews', icon: Star, href: '/vendor/reviews', badge: null },
         { name: 'Enquiries', icon: Send, href: '/vendor/messages', badge: newEnquiryCount > 0 ? String(newEnquiryCount) : null },
         { name: 'Demand Insights', icon: TrendingUp, href: '/vendor/demand', badge: null },
@@ -95,7 +96,7 @@ export default function Sidebar() {
                     .filter(item => {
                         const isVendorOrAdmin = user?.role === 'vendor' || user?.role === 'admin' || user?.role === 'superadmin';
                         if (!isVendorOrAdmin) {
-                            return ['Dashboard', 'Saved', 'Notifications', 'Settings', 'Reviews'].includes(item.name);
+                            return ['Dashboard', 'Saved', 'Following', 'Notifications', 'Settings', 'Reviews'].includes(item.name);
                         }
                         return true;
                     })

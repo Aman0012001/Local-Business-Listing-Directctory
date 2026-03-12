@@ -19,6 +19,7 @@ export * from './review-helpful-vote.entity';
 // Leads & Favorites
 export * from './lead.entity';
 export * from './favorite.entity';
+export * from './follow.entity';
 
 // Subscriptions & Payments
 export * from './subscription-plan.entity';

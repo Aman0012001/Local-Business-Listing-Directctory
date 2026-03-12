@@ -15,6 +15,7 @@ import { Lead } from './lead.entity';
 import { SavedListing } from './favorite.entity';
 import { Notification } from './notification.entity';
 import { Comment } from './comment.entity';
+import { Follow } from './follow.entity';
 
 export enum UserRole {
     USER = 'user',
@@ -122,4 +123,8 @@ export class User {
     @Exclude()
     @OneToMany(() => Comment, (comment) => comment.user)
     comments: Comment[];
+
+    @Exclude()
+    @OneToMany(() => Follow, (follow) => follow.user)
+    follows: Follow[];
 }

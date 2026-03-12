@@ -23,6 +23,7 @@ import { HealthModule } from './modules/health/health.module';
 import { OffersModule } from './modules/offers/offers.module';
 import { CommentsModule } from './modules/comments/comments.module';
 import { DemandModule } from './modules/demand/demand.module';
+import { FollowsModule } from './modules/follows/follows.module';
 
 import { join } from 'path';
 
@@ -73,6 +74,7 @@ import { join } from 'path';
         OffersModule,
         CommentsModule,
         DemandModule,
+        FollowsModule,
     ],
     providers: [
         {
@@ -82,3 +84,4 @@ import { join } from 'path';
     ],
 })
 export class AppModule { }
+

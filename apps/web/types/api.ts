@@ -95,6 +95,8 @@ export interface Business {
     offerBadge?: string;
     offerExpiresAt?: string;
     offerBannerUrl?: string;
+    // Stats
+    followersCount?: number;
     status: 'pending' | 'approved' | 'rejected' | 'disabled';
 }
 

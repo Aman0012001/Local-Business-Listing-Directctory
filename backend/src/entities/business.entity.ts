@@ -18,6 +18,7 @@ import { Review } from './review.entity';
 import { Lead } from './lead.entity';
 import { SavedListing } from './favorite.entity';
 import { Comment } from './comment.entity';
+import { Follow } from './follow.entity';
 
 export enum BusinessStatus {
     PENDING = 'pending',
@@ -171,6 +172,9 @@ export class Listing {
     @Column({ name: 'total_leads', default: 0 })
     totalLeads: number;
 
+    @Column({ name: 'followers_count', default: 0 })
+    followersCount: number;
+
     // SEO
     @Column({ name: 'meta_title', nullable: true })
     metaTitle: string;
@@ -247,4 +251,7 @@ export class Listing {
     @Exclude()
     @OneToMany(() => Comment, (comment) => comment.business)
     comments: Comment[];
+
+    @OneToMany(() => Follow, (follow) => follow.business)
+    follows: Follow[];
 }

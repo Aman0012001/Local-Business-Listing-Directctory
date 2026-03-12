@@ -53,6 +53,7 @@ export class SearchService implements OnModuleInit {
                             isFeatured: { type: 'boolean' },
                             isVerified: { type: 'boolean' },
                             status: { type: 'keyword' },
+                            followersCount: { type: 'integer' },
                         },
                     },
                 },
@@ -82,6 +83,7 @@ export class SearchService implements OnModuleInit {
                 isFeatured: business.isFeatured,
                 isVerified: business.isVerified,
                 status: business.status,
+                followersCount: business.followersCount || 0,
             },
         });
     }
@@ -134,6 +136,7 @@ export class SearchService implements OnModuleInit {
             coverImageUrl: b.coverImageUrl,
             phone: b.phone,
             address: b.address,
+            followersCount: b.followersCount,
         }));
     }
 
@@ -158,14 +161,29 @@ export class SearchService implements OnModuleInit {
         const response = await this.elasticsearchService.search({
             index: this.INDEX_NAME,
             query: {
-                bool: {
-                    must: {
-                        multi_match: {
-                            query,
-                            fields: ['title^3', 'description', 'category'],
+                function_score: {
+                    query: {
+                        bool: {
+                            must: {
+                                multi_match: {
+                                    query,
+                                    fields: ['title^3', 'description', 'category'],
+                                },
+                            },
+                            filter: filters,
                         },
                     },
-                    filter: filters,
+                    functions: [
+                        {
+                            field_value_factor: {
+                                field: 'followersCount',
+                                factor: 1.2,
+                                modifier: 'log1p',
+                                missing: 0,
+                            },
+                        },
+                    ],
+                    boost_mode: 'multiply',
                 },
             },
         });

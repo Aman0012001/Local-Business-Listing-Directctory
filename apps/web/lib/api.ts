@@ -465,5 +465,17 @@ export const api = {
         getHeatmap: (keyword?: string) => fetcher<any[]>(`/demand/heatmap${keyword ? `?keyword=${keyword}` : ''}`, { silent: true }),
         logSearch: (data: any) => fetcher('/demand/log', { method: 'POST', body: JSON.stringify(data), silent: true }),
     },
+    follows: {
+        follow: (businessId: string) =>
+            fetcher<{ followersCount: number }>(`/follows/${businessId}`, { method: 'POST' }),
+        unfollow: (businessId: string) =>
+            fetcher<{ followersCount: number }>(`/follows/${businessId}`, { method: 'DELETE' }),
+        check: (businessId: string) =>
+            fetcher<{ isFollowing: boolean; followersCount: number }>(`/follows/${businessId}/check`, { silent: true }),
+        count: (businessId: string) =>
+            fetcher<{ followersCount: number }>(`/follows/${businessId}/count`, { silent: true }),
+        myFollows: (page = 1, limit = 20) =>
+            fetcher<{ data: Business[]; meta: any }>(`/follows/my?page=${page}&limit=${limit}`),
+    },
 };
 

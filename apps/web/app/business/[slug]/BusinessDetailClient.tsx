@@ -12,6 +12,7 @@ import Navbar from '../../../components/Navbar';
 import Footer from '../../../components/Footer';
 import Link from 'next/link';
 import Script from 'next/script';
+import FollowButton from '../../../components/FollowButton';
 import { api, getImageUrl } from '../../../lib/api';
 import { Business } from '../../../types/api';
 import { useAuth } from '../../../context/AuthContext';
@@ -501,6 +502,11 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                 >
                                     <Heart className={`w-5 h-5 ${isFavorite ? 'fill-rose-500' : ''}`} />
                                 </button>
+                                <FollowButton 
+                                    businessId={business.id} 
+                                    initialFollowersCount={business.followersCount}
+                                    variant="compact"
+                                />
                                 <button
                                     onClick={handleShare}
                                     className="p-3 border border-slate-200 rounded-2xl hover:bg-slate-50 transition-colors relative"
@@ -827,12 +833,19 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
 
                             {/* Actions/Contact Card */}
                             <div className="bg-slate-900 rounded-[16px] p-8 text-white shadow-2xl shadow-blue-500/20">
-                                <div className="flex items-center justify-between gap-3 mb-8 flex-wrap">
-                                    <div className="text-xs font-bold uppercase tracking-widest text-slate-400">Available Now</div>
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        <VendorOnlineBadge isOnline={business.vendor?.user?.isOnline} />
-                                        <BusinessOpenBadge business={business} />
+                                <div className="space-y-6 mb-8">
+                                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                                        <div className="text-xs font-bold uppercase tracking-widest text-slate-400">Available Now</div>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <VendorOnlineBadge isOnline={business.vendor?.user?.isOnline} />
+                                            <BusinessOpenBadge business={business} />
+                                        </div>
                                     </div>
+                                    <FollowButton 
+                                        businessId={business.id} 
+                                        initialFollowersCount={business.followersCount}
+                                        className="w-full"
+                                    />
                                 </div>
 
                                 <h4 className="text-xl font-bold mb-6">Connect with Business</h4>

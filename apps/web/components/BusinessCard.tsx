@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Star, MapPin, ShieldCheck, Clock, CheckCircle2 } from 'lucide-react';
+import { Star, MapPin, ShieldCheck, Clock, CheckCircle2, Users } from 'lucide-react';
 import { Business } from '../types/api';
 import { getImageUrl } from '../lib/api';
 import { getBusinessOpenStatus } from '../lib/business-status';
@@ -188,6 +188,12 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                                     <span>{business.averageRating || '4.5'}</span>
                                     <span className="text-xs text-amber-400 font-medium">({business.totalReviews || 0})</span>
                                 </div>
+                                {business.followersCount !== undefined && business.followersCount > 0 && (
+                                    <div className="flex items-center gap-1.5 bg-violet-50 px-3 py-1 rounded-full text-violet-600 font-bold border border-violet-100 mt-2">
+                                        <Users className="w-3.5 h-3.5" />
+                                        <span className="text-xs">{business.followersCount} followers</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -240,6 +246,12 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                             <Star className="w-4 h-4 fill-amber-400" />
                             <span>{business.averageRating || '4.5'}</span>
                         </div>
+                        {business.followersCount !== undefined && business.followersCount > 0 && (
+                            <div className="flex items-center gap-1 text-[10px] font-bold text-violet-500 bg-violet-50 px-2 py-0.5 rounded-full border border-violet-100">
+                                <Users className="w-3 h-3" />
+                                {business.followersCount}
+                            </div>
+                        )}
                     </div>
                     <div className="flex flex-wrap items-center gap-2 mb-3">
                         <StatusBadge status={(business as any).status} />
