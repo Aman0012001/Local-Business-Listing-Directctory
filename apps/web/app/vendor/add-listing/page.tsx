@@ -11,7 +11,6 @@ import {
 import { api, getImageUrl } from '../../../lib/api';
 import { Category, City } from '../../../types/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import Script from 'next/script';
 
 const steps = [
     { id: 1, label: 'Business Info', icon: Building2 },
@@ -1910,18 +1909,6 @@ export default function AddListingPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
-            {/* Google Maps Script Loading */}
-            <Script
-                src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`}
-                onLoad={() => {
-                    console.log('[AddListing] Google Maps Script Loaded');
-                    setMapLoaded(true);
-                }}
-                onError={() => {
-                    console.error('[AddListing] Google Maps Script Failed to Load');
-                    setMapError(true);
-                }}
-            />
         </div>
     );
 }

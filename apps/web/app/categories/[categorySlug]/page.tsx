@@ -3,7 +3,7 @@ import { api } from '@/lib/api';
 import CategoryDetailClient from './CategoryDetailClient';
 
 export const dynamic = 'force-static';
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 export async function generateStaticParams() {
     try {

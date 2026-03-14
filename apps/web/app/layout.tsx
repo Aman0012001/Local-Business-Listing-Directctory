@@ -2,8 +2,10 @@ import "./globals.css";
 import { AuthProvider } from '../context/AuthContext';
 import { SocketProvider } from '../context/SocketContext';
 import { Inter } from 'next/font/google';
+import Script from 'next/script';
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+
 const inter = Inter({
     subsets: ['latin'],
     variable: '--font-inter',
@@ -29,6 +31,10 @@ export default function RootLayout({
                         {children}
                     </SocketProvider>
                 </AuthProvider>
+                <Script
+                    src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places,visualization`}
+                    strategy="afterInteractive"
+                />
             </body>
         </html>
     );

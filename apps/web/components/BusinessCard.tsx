@@ -38,11 +38,10 @@ const BusinessOpenBadge = ({ business }: { business: Business }) => {
     return (
         <span
             title={todayHours ? `Today: ${todayHours}` : undefined}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
-                isOpen
-                    ? 'bg-green-50 text-green-700 border-green-200'
-                    : 'bg-slate-100 text-slate-500 border-slate-200'
-            }`}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${isOpen
+                ? 'bg-green-50 text-green-700 border-green-200'
+                : 'bg-slate-100 text-slate-500 border-slate-200'
+                }`}
         >
             <Clock className="w-3 h-3" />
             {label}
@@ -242,10 +241,7 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                         <h3 className="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
                             {business.title}
                         </h3>
-                        <div className="flex items-center gap-1 text-amber-500 font-bold">
-                            <Star className="w-4 h-4 fill-amber-400" />
-                            <span>{business.averageRating || '4.5'}</span>
-                        </div>
+
                         {business.followersCount !== undefined && business.followersCount > 0 && (
                             <div className="flex items-center gap-1 text-[10px] font-bold text-violet-500 bg-violet-50 px-2 py-0.5 rounded-full border border-violet-100">
                                 <Users className="w-3 h-3" />
@@ -258,7 +254,13 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                         <VendorOnlineBadge isOnline={business.vendor?.user?.isOnline} />
                         <BusinessOpenBadge business={business} />
                     </div>
+
                     <div className="flex items-center gap-2 mb-6 text-slate-500">
+
+                        <div className="flex items-center gap-1 text-amber-500 font-bold">
+                            <Star className="w-4 h-4 fill-amber-400" />
+                            <span>{business.averageRating || '4.5'}</span>
+                        </div>
                         <div className="flex text-amber-500">
                             {[...Array(5)].map((_, i) => (
                                 <Star key={i} className={`w-3.5 h-3.5 ${i < Math.floor(Number(business.averageRating || 4.5)) ? 'fill-amber-500' : 'text-slate-200'}`} />

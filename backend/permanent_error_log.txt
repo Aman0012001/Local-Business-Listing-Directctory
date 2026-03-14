@@ -60,3 +60,27 @@ Details: {"query":"SELECT DISTINCT \"distinctAlias\".\"listing_id\" AS \"ids_lis
 [2026-03-12T19:40:25.785Z] NotificationsService Constructor Called
 [2026-03-12T19:40:59.087Z] NotificationsService Constructor Called
 [2026-03-12T19:45:32.423Z] NotificationsService Constructor Called
+[2026-03-13T03:09:05.697Z] NotificationsService Constructor Called
+[2026-03-13T03:11:51.483Z] NotificationsService Constructor Called
+[2026-03-13T03:46:11.457Z] NotificationsService Constructor Called
+[2026-03-13T03:46:19.281Z] NotificationsService Constructor Called
+[2026-03-13T03:49:44.531Z] NotificationsService Constructor Called
+[Search ERROR] 2026-03-13T04:07:08.079Z: connect ENETUNREACH 66.33.22.240:45505
+Stack: Error: connect ENETUNREACH 66.33.22.240:45505
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+Details: {"errno":-4062,"code":"ENETUNREACH","syscall":"connect","address":"66.33.22.240","port":45505}
+
+[Search ERROR] 2026-03-13T04:07:10.110Z: connect ENETUNREACH 66.33.22.240:45505
+Stack: Error: connect ENETUNREACH 66.33.22.240:45505
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+Details: {"errno":-4062,"code":"ENETUNREACH","syscall":"connect","address":"66.33.22.240","port":45505}
+
+[2026-03-14T10:13:55.525Z] NotificationsService Constructor Called
+[2026-03-14T12:27:38.551Z] NotificationsService Constructor Called
+[2026-03-14T12:27:46.506Z] NotificationsService Constructor Called
+[2026-03-14T13:16:39.892Z] NotificationsService Constructor Called
+[2026-03-14T13:22:44.304Z] NotificationsService Constructor Called
+[2026-03-14T13:45:02.769Z] NotificationsService Constructor Called
+[2026-03-14T19:18:02.203Z] NotificationsService Constructor Called
+[2026-03-14T19:18:09.981Z] NotificationsService Constructor Called
+[2026-03-14T19:21:58.988Z] NotificationsService Constructor Called

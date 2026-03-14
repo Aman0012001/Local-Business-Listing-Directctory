@@ -2,12 +2,11 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { api } from '../../../lib/api';
-import Script from 'next/script';
-import { 
-    Search, 
-    TrendingUp, 
-    Map as MapIcon, 
-    Filter, 
+import {
+    Search,
+    TrendingUp,
+    Map as MapIcon,
+    Filter,
     RefreshCcw,
     MapPin,
     MousePointer2,
@@ -25,7 +24,7 @@ export default function SearchAnalyticsPage() {
         uniqueLocations: 0,
         topKeyword: 'N/A'
     });
-    
+
     const mapRef = useRef<HTMLDivElement>(null);
     const googleMapRef = useRef<google.maps.Map | null>(null);
     const heatmapLayerRef = useRef<google.maps.visualization.HeatmapLayer | null>(null);
@@ -35,11 +34,11 @@ export default function SearchAnalyticsPage() {
         try {
             const data = await api.demand.getHeatmap(keyword);
             setHeatmapData(data);
-            
+
             // Calculate some basic stats from the heatmap data
             const total = data.reduce((acc, curr) => acc + parseInt(curr.intensity), 0);
             const top = data.length > 0 ? data.sort((a,b) => parseInt(b.intensity) - parseInt(a.intensity))[0].keyword : 'N/A';
-            
+
             setStats({
                 totalSearches: total,
                 uniqueLocations: data.length,
@@ -51,6 +50,13 @@ export default function SearchAnalyticsPage() {
             setLoading(false);
         }
     };
+
+    // Check if Google Maps API is already loaded (e.g., by another component)
+    useEffect(() => {
+        if (typeof window !== 'undefined' && window.google && window.google.maps && window.google.maps.visualization) {
+            setMapLoaded(true);
+        }
+    }, []);
 
     useEffect(() => {
         fetchHeatmapData();
@@ -241,11 +247,11 @@ export default function SearchAnalyticsPage() {
 
             {/* Map Container */}
             <div className="relative">
-                <div 
-                    ref={mapRef} 
+                <div
+                    ref={mapRef}
                     className="w-full h-[600px] rounded-[3rem] overflow-hidden border-8 border-white shadow-2xl bg-slate-100"
                 />
-                
+
                 {loading && (
                     <div className="absolute inset-0 bg-white/40 backdrop-blur-sm flex items-center justify-center rounded-[3rem]">
                         <div className="flex flex-col items-center gap-4">
@@ -269,11 +275,6 @@ export default function SearchAnalyticsPage() {
                     </div>
                 </div>
             </div>
-
-            <Script
-                src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=visualization`}
-                onLoad={() => setMapLoaded(true)}
-            />
         </div>
     );
 }

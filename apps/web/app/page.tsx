@@ -12,7 +12,6 @@ import Link from 'next/link';
 import { Category, Business, City } from '../types/api';
 import Slider from "react-slick";
 import CitySearchSelect from '../components/CitySearchSelect';
-import Script from 'next/script';
 export default function HomePage() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [featuredBusinesses, setFeaturedBusinesses] = useState<Business[]>([]);

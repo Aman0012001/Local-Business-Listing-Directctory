@@ -155,3 +155,179 @@
 [2026-03-12T19:15:02.097Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: vendore@gmail.com)
 [2026-03-12T19:15:03.083Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
 [2026-03-12T19:15:03.083Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-13T03:57:35.294Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-13T03:57:35.296Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-13T03:57:35.970Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - ERROR: column Listing__Listing_reviews.is_suspicious does not exist
+QueryFailedError: column Listing__Listing_reviews.is_suspicious does not exist
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
+    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
+    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
+    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:405:29)
+[2026-03-13T03:57:36.457Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-13T03:57:36.458Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-13T03:57:36.999Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - ERROR: column Listing__Listing_reviews.is_suspicious does not exist
+QueryFailedError: column Listing__Listing_reviews.is_suspicious does not exist
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
+    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
+    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
+    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:405:29)
+[2026-03-13T03:57:44.681Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-13T03:57:44.682Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-13T03:57:44.695Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-13T03:57:44.695Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-13T03:57:45.262Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - ERROR: column Listing__Listing_reviews.is_suspicious does not exist
+QueryFailedError: column Listing__Listing_reviews.is_suspicious does not exist
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
+    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
+    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
+    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:405:29)
+[2026-03-13T03:57:45.284Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - ERROR: column Listing__Listing_reviews.is_suspicious does not exist
+QueryFailedError: column Listing__Listing_reviews.is_suspicious does not exist
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
+    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
+    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
+    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:405:29)
+[2026-03-13T03:57:58.229Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-13T03:57:58.230Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-13T03:57:58.255Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-13T03:57:58.255Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-13T03:57:58.826Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - ERROR: column Listing__Listing_reviews.is_suspicious does not exist
+QueryFailedError: column Listing__Listing_reviews.is_suspicious does not exist
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
+    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
+    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
+    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:405:29)
+[2026-03-13T03:57:58.915Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - ERROR: column Listing__Listing_reviews.is_suspicious does not exist
+QueryFailedError: column Listing__Listing_reviews.is_suspicious does not exist
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
+    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
+    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
+    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:405:29)
+[2026-03-13T03:58:03.776Z] [BusinessesController] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: superadmin@example.com)
+[2026-03-13T03:58:03.776Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: superadmin@example.com)
+[2026-03-13T03:58:04.299Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - ERROR: column Listing__Listing_reviews.is_suspicious does not exist
+QueryFailedError: column Listing__Listing_reviews.is_suspicious does not exist
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
+    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
+    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
+    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:405:29)
+[2026-03-13T03:58:04.780Z] [BusinessesController] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: superadmin@example.com)
+[2026-03-13T03:58:04.781Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: superadmin@example.com)
+[2026-03-13T03:58:05.281Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - ERROR: column Listing__Listing_reviews.is_suspicious does not exist
+QueryFailedError: column Listing__Listing_reviews.is_suspicious does not exist
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
+    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
+    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
+    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:405:29)
+[2026-03-13T04:06:13.626Z] [BusinessesController] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: Public)
+[2026-03-13T04:06:13.627Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: Public)
+[2026-03-13T04:06:20.598Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - Found in DB. Status: pending
+[2026-03-13T04:06:21.674Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - SUCCESS
+[2026-03-13T04:07:07.883Z] [BusinessesController] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: Public)
+[2026-03-13T04:07:07.886Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: Public)
+[2026-03-13T04:07:07.944Z] [BusinessesController] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: Public)
+[2026-03-13T04:07:07.945Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: Public)
+[2026-03-13T04:07:07.991Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - ERROR: connect ENETUNREACH 66.33.22.240:45505
+Error: connect ENETUNREACH 66.33.22.240:45505
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2026-03-13T04:07:08.024Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - ERROR: connect ENETUNREACH 66.33.22.240:45505
+Error: connect ENETUNREACH 66.33.22.240:45505
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2026-03-13T04:07:09.565Z] [BusinessesController] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: Public)
+[2026-03-13T04:07:09.579Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: Public)
+[2026-03-13T04:07:09.629Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - ERROR: connect ENETUNREACH 66.33.22.240:45505
+Error: connect ENETUNREACH 66.33.22.240:45505
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2026-03-13T04:07:09.710Z] [BusinessesController] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: Public)
+[2026-03-13T04:07:09.711Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: Public)
+[2026-03-13T04:07:09.753Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - ERROR: connect ENETUNREACH 66.33.22.240:45505
+Error: connect ENETUNREACH 66.33.22.240:45505
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2026-03-13T04:07:10.404Z] [BusinessesController] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: Public)
+[2026-03-13T04:07:10.405Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: Public)
+[2026-03-13T04:07:10.428Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - ERROR: connect ENETUNREACH 66.33.22.240:45505
+Error: connect ENETUNREACH 66.33.22.240:45505
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2026-03-13T04:07:10.447Z] [BusinessesController] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: Public)
+[2026-03-13T04:07:10.448Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: Public)
+[2026-03-13T04:07:10.470Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - ERROR: connect ENETUNREACH 66.33.22.240:45505
+Error: connect ENETUNREACH 66.33.22.240:45505
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2026-03-14T13:25:47.391Z] [BusinessesController] findBySlug: hair-salon-mmp8acr9 (User: Public)
+[2026-03-14T13:25:47.392Z] findBySlug: hair-salon-mmp8acr9 (User: Public)
+[2026-03-14T13:25:48.505Z] findBySlug: hair-salon-mmp8acr9 - Found in DB. Status: approved
+[2026-03-14T13:25:48.914Z] findBySlug: hair-salon-mmp8acr9 - SUCCESS
+[2026-03-14T13:25:48.920Z] [BusinessesController] findBySlug: hair-salon-mmp8acr9 (User: Public)
+[2026-03-14T13:25:48.920Z] findBySlug: hair-salon-mmp8acr9 (User: Public)
+[2026-03-14T13:25:50.008Z] findBySlug: hair-salon-mmp8acr9 - Found in DB. Status: approved
+[2026-03-14T13:25:50.440Z] findBySlug: hair-salon-mmp8acr9 - SUCCESS
+[2026-03-14T13:44:37.312Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-14T13:44:37.314Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-14T13:44:38.561Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T13:44:39.044Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T13:44:39.058Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-14T13:44:39.060Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-14T13:49:03.375Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-14T13:49:03.377Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-14T13:49:05.308Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T13:49:05.771Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T13:49:05.802Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-14T13:49:05.802Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-14T13:49:07.023Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T13:49:07.466Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T13:50:00.974Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-14T13:50:00.976Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-14T13:50:08.188Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T13:50:08.827Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T13:51:36.002Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-14T13:51:36.003Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-14T13:51:41.536Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T13:51:41.962Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T13:51:41.977Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-14T13:51:41.977Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-14T13:51:43.149Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T13:51:43.578Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T13:53:40.829Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-14T13:53:40.830Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-14T13:53:46.249Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T13:53:46.681Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T13:54:09.649Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-14T13:54:09.650Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-14T13:54:14.865Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T13:54:15.280Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T14:25:02.804Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-14T14:25:02.806Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-14T14:25:07.485Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T14:25:07.911Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS

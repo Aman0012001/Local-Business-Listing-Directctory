@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Loader2, Store, MapPin, Phone, TextQuote, Layers, Sparkles, Plus, Check, Hash, Share2, Globe, MessageSquare, Navigation, ChevronDown } from 'lucide-react';
 import { api, getImageUrl } from '../../lib/api';
-import Script from 'next/script';
 import { Category, Business, City } from '../../types/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import CategorySearchSelect from '../CategorySearchSelect';
@@ -910,11 +909,6 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                     </div>
                 )}
             </AnimatePresence>
-            <Script
-                src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`}
-                onLoad={() => setMapLoaded(true)}
-                onError={() => setMapError(true)}
-            />
         </>
     );
 }

@@ -11,7 +11,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '../../../components/Navbar';
 import Footer from '../../../components/Footer';
 import Link from 'next/link';
-import Script from 'next/script';
 import FollowButton from '../../../components/FollowButton';
 import { api, getImageUrl } from '../../../lib/api';
 import { Business } from '../../../types/api';
@@ -144,6 +143,14 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
             initMap();
         }
     }, [mapLoaded, business, activeTab]);
+
+    // Check if Google Maps is already loaded in case Script's onLoad doesn't fire
+    useEffect(() => {
+        if (typeof window !== 'undefined' && window.google) {
+            console.log('[BusinessDetail] Google Maps already available');
+            setMapLoaded(true);
+        }
+    }, []);
 
     useEffect(() => {
         const loadBusiness = async () => {
@@ -1455,18 +1462,6 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                 )}
             </AnimatePresence>
 
-            {/* Google Maps Script */}
-            <Script
-                src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`}
-                onLoad={() => {
-                    console.log('[BusinessDetail] Google Maps Script Loaded');
-                    setMapLoaded(true);
-                }}
-                onError={() => {
-                    console.error('[BusinessDetail] Google Maps Script Failed to Load');
-                    setMapError(true);
-                }}
-            />
         </div>
     );
 }

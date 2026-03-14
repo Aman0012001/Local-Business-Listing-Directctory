@@ -1,7 +1,7 @@
 import CityVendorsClient from './CityVendorsClient';
 
 export const dynamic = 'force-static';
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 // For static export
 export async function generateStaticParams() {
