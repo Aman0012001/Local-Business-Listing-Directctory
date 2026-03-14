@@ -4,6 +4,8 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Brackets } from 'typeorm';
 import { Listing, BusinessStatus } from '../../entities/business.entity';
+import { SearchBusinessDto } from '../businesses/dto/search-business.dto';
+import { DayOfWeek } from '../../entities/business-hours.entity';
 
 @Injectable()
 export class SearchService implements OnModuleInit {
@@ -116,8 +118,26 @@ export class SearchService implements OnModuleInit {
     /**
      * Database-based fallback search using TypeORM
      */
-    private async dbSearch(query: string, city?: string, category?: string): Promise<any[]> {
-        this.logger.log(`[DB Fallback] Searching for: "${query}", city: ${city}, category: ${category}`);
+    private async dbSearch(searchDto: SearchBusinessDto): Promise<any[]> {
+        const {
+            query,
+            city,
+            categorySlug,
+            minRating,
+            latitude,
+            longitude,
+            radius,
+            openNow,
+            verifiedOnly,
+            featuredOnly,
+            limit = 50,
+            page = 1
+        } = searchDto;
+
+        const skip = (page - 1) * limit;
+        const take = limit;
+
+        this.logger.log(`[DB Fallback] Search params: ${JSON.stringify(searchDto)}`);
 
         const qb = this.businessRepository
             .createQueryBuilder('b')
@@ -126,7 +146,6 @@ export class SearchService implements OnModuleInit {
 
         if (query) {
             const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 0);
-            
             for (const term of searchTerms) {
                 qb.andWhere(
                     new Brackets((innerQb) => {
@@ -144,13 +163,58 @@ export class SearchService implements OnModuleInit {
             qb.andWhere('LOWER(b.city) = :city', { city: city.toLowerCase() });
         }
 
-        if (category) {
-            qb.andWhere('LOWER(category.name) LIKE :cat', { cat: `%${category.toLowerCase()}%` });
+        if (categorySlug) {
+            qb.andWhere('category.slug = :categorySlug', { categorySlug });
         }
 
-        qb.orderBy('b.isFeatured', 'DESC')
+        if (minRating) {
+            qb.andWhere('b.averageRating >= :minRating', { minRating });
+        }
+
+        if (verifiedOnly) {
+            qb.andWhere('b.isVerified = :verifiedOnly', { verifiedOnly: true });
+        }
+
+        if (featuredOnly) {
+            qb.andWhere('b.isFeatured = :featuredOnly', { featuredOnly: true });
+        }
+
+        // Distance Filter (Haversine Formula)
+        if (latitude && longitude) {
+            // Earth's radius in kilometers = 6371
+            const formula = `(6371 * acos(cos(radians(:lat)) * cos(radians(b.latitude)) * cos(radians(b.longitude) - radians(:lng)) + sin(radians(:lat)) * sin(radians(b.latitude))))`;
+            qb.addSelect(formula, 'distance');
+            qb.setParameters({ lat: latitude, lng: longitude });
+
+            if (radius) {
+                qb.andWhere(`${formula} <= :radius`, { radius });
+            }
+            qb.addOrderBy('distance', 'ASC');
+        }
+
+        // Open Now Filter
+        if (openNow) {
+            const now = new Date();
+            const days = [
+                DayOfWeek.SUNDAY,
+                DayOfWeek.MONDAY,
+                DayOfWeek.TUESDAY,
+                DayOfWeek.WEDNESDAY,
+                DayOfWeek.THURSDAY,
+                DayOfWeek.FRIDAY,
+                DayOfWeek.SATURDAY,
+            ];
+            const currentDay = days[now.getDay()];
+            const currentTime = now.toTimeString().split(' ')[0]; // HH:MM:SS
+
+            qb.innerJoin('b.businessHours', 'bh', 'bh.dayOfWeek = :currentDay AND bh.isOpen = true', { currentDay });
+            qb.andWhere(':currentTime BETWEEN bh.openTime AND bh.closeTime', { currentTime });
+        }
+
+        qb.addOrderBy('b.isFeatured', 'DESC')
             .addOrderBy('b.averageRating', 'DESC')
-            .take(50);
+            .skip(skip)
+            .take(take);
 
         const results = await qb.getMany();
 
@@ -174,10 +238,12 @@ export class SearchService implements OnModuleInit {
         }));
     }
 
-    async search(query: string, city?: string, category?: string) {
+    async search(searchDto: SearchBusinessDto) {
         if (!this.isElasticAvailable) {
-            return this.dbSearch(query, city, category);
+            return this.dbSearch(searchDto);
         }
+
+        const { query, city, categorySlug, minRating, latitude, longitude, radius, openNow, verifiedOnly } = searchDto;
 
         const filters: any[] = [{ term: { status: 'approved' } }];
 
@@ -185,9 +251,32 @@ export class SearchService implements OnModuleInit {
             filters.push({ term: { city: city.toLowerCase() } });
         }
 
-        if (category) {
-            filters.push({ term: { category: category.toLowerCase() } });
+        if (categorySlug) {
+            filters.push({ term: { category_slug: categorySlug } });
         }
+
+        if (minRating) {
+            filters.push({ range: { rating: { gte: minRating } } });
+        }
+
+        if (verifiedOnly) {
+            filters.push({ term: { isVerified: true } });
+        }
+
+        if (latitude && longitude && radius) {
+            filters.push({
+                geo_distance: {
+                    distance: `${radius}km`,
+                    location: {
+                        lat: latitude,
+                        lon: longitude,
+                    },
+                },
+            });
+        }
+
+        // Note: Open Now for ES requires complex script filters or checking against indexed hours
+        // For simplicity, we'll implement it if needed or warn that it's limited in ES for now.
 
         const response = await this.elasticsearchService.search({
             index: this.INDEX_NAME,

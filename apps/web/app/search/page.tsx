@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Search, MapPin, Sliders, Star, X, Filter } from 'lucide-react';
+import { Search, MapPin, Sliders, Star, X, Filter, Navigation, CheckCircle2, Clock } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import BusinessCard from '../../components/BusinessCard';
@@ -17,11 +17,17 @@ function SearchResults() {
     const city = searchParams.get('city') || '';
     const categorySlug = searchParams.get('category') || '';
     const minRating = searchParams.get('minRating') || '';
+    const radius = searchParams.get('radius') || '';
+    const latitude = searchParams.get('latitude') || '';
+    const longitude = searchParams.get('longitude') || '';
+    const openNow = searchParams.get('openNow') === 'true';
+    const verifiedOnly = searchParams.get('verifiedOnly') === 'true';
 
     const [results, setResults] = useState<Business[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [showFilters, setShowFilters] = useState(false);
+    const [geoLoading, setGeoLoading] = useState(false);
 
     useEffect(() => {
         const loadData = async () => {
@@ -33,6 +39,11 @@ function SearchResults() {
                         city: city,
                         categorySlug: categorySlug,
                         minRating: minRating,
+                        radius: radius ? Number(radius) : undefined,
+                        latitude: latitude ? Number(latitude) : undefined,
+                        longitude: longitude ? Number(longitude) : undefined,
+                        openNow: openNow || undefined,
+                        verifiedOnly: verifiedOnly || undefined,
                         limit: 20
                     }),
                     api.categories.getAll()
@@ -54,7 +65,42 @@ function SearchResults() {
             }
         };
         loadData();
-    }, [query, city, categorySlug, minRating]);
+    }, [query, city, categorySlug, minRating, radius, latitude, longitude, openNow, verifiedOnly]);
+
+    const handleNearMe = () => {
+        if (!navigator.geolocation) {
+            alert('Geolocation is not supported by your browser');
+            return;
+        }
+
+        setGeoLoading(true);
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                const params = new URLSearchParams(searchParams.toString());
+                params.set('latitude', String(latitude));
+                params.set('longitude', String(longitude));
+                if (!params.has('radius')) params.set('radius', '10');
+                router.push(`/search?${params.toString()}`);
+                setGeoLoading(false);
+            },
+            (error) => {
+                console.error('Geolocation error:', error);
+                alert('Could not get your location. Please check your browser permissions.');
+                setGeoLoading(false);
+            }
+        );
+    };
+
+    const updateFilter = (key: string, value: string | boolean | null) => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (value === null || value === false || value === '') {
+            params.delete(key);
+        } else {
+            params.set(key, String(value));
+        }
+        router.push(`/search?${params.toString()}`);
+    };
 
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -104,21 +150,86 @@ function SearchResults() {
                                     {[4, 3, 2, 1].map(star => (
                                         <button
                                             key={star}
-                                            onClick={() => {
-                                                const params = new URLSearchParams(searchParams.toString());
-                                                if (minRating === String(star)) {
-                                                    params.delete('minRating');
-                                                } else {
-                                                    params.set('minRating', String(star));
-                                                }
-                                                router.push(`/search?${params.toString()}`);
-                                            }}
+                                            onClick={() => updateFilter('minRating', minRating === String(star) ? null : String(star))}
                                             className={`flex-1 py-2 rounded-xl border transition-all font-bold text-xs flex items-center justify-center gap-1 ${minRating === String(star) ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20' : 'border-slate-200 text-slate-600 hover:border-blue-500 hover:text-blue-600'}`}
                                         >
                                             {star}<Star className={`w-3 h-3 ${minRating === String(star) ? 'fill-current' : ''}`} />
                                         </button>
                                     ))}
                                 </div>
+                            </div>
+
+                            {/* Distance Filter */}
+                            <div>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h4 className="text-sm font-bold text-slate-900 uppercase tracking-widest">Radius</h4>
+                                    <button 
+                                        onClick={handleNearMe}
+                                        disabled={geoLoading}
+                                        className={`p-1.5 rounded-lg border transition-all ${latitude ? 'bg-orange-50 border-orange-200 text-orange-600' : 'bg-white border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-200'}`}
+                                        title="Use my current location"
+                                    >
+                                        <Navigation className={`w-4 h-4 ${geoLoading ? 'animate-spin' : ''}`} />
+                                    </button>
+                                </div>
+                                {latitude ? (
+                                    <>
+                                        <input 
+                                            type="range" 
+                                            min="1" 
+                                            max="50" 
+                                            value={radius || 10} 
+                                            onChange={(e) => updateFilter('radius', e.target.value)}
+                                            className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                        />
+                                        <div className="flex justify-between mt-2">
+                                            <span className="text-[10px] font-bold text-slate-400">1km</span>
+                                            <span className="text-sm font-black text-blue-600">{radius || 10}km</span>
+                                            <span className="text-[10px] font-bold text-slate-400">50km</span>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <p className="text-[11px] text-slate-400 font-medium italic">Click the arrow icon to search near you</p>
+                                )}
+                            </div>
+
+                            {/* Status Filters */}
+                            <div className="space-y-4 pt-4 border-t border-slate-100">
+                                <label className="flex items-center justify-between cursor-pointer group">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`p-2 rounded-lg transition-colors ${openNow ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'}`}>
+                                            <Clock className="w-4 h-4" />
+                                        </div>
+                                        <span className={`text-sm font-bold ${openNow ? 'text-slate-900' : 'text-slate-600'}`}>Open Now</span>
+                                    </div>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={openNow} 
+                                        onChange={(e) => updateFilter('openNow', e.target.checked)}
+                                        className="sr-only"
+                                    />
+                                    <div className={`w-10 h-5 rounded-full relative transition-colors ${openNow ? 'bg-green-500' : 'bg-slate-300'}`}>
+                                        <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${openNow ? 'right-1' : 'left-1'}`} />
+                                    </div>
+                                </label>
+
+                                <label className="flex items-center justify-between cursor-pointer group">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`p-2 rounded-lg transition-colors ${verifiedOnly ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'}`}>
+                                            <CheckCircle2 className="w-4 h-4" />
+                                        </div>
+                                        <span className={`text-sm font-bold ${verifiedOnly ? 'text-slate-900' : 'text-slate-600'}`}>Verified Only</span>
+                                    </div>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={verifiedOnly} 
+                                        onChange={(e) => updateFilter('verifiedOnly', e.target.checked)}
+                                        className="sr-only"
+                                    />
+                                    <div className={`w-10 h-5 rounded-full relative transition-colors ${verifiedOnly ? 'bg-blue-500' : 'bg-slate-300'}`}>
+                                        <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${verifiedOnly ? 'right-1' : 'left-1'}`} />
+                                    </div>
+                                </label>
                             </div>
                         </div>
                     </aside>

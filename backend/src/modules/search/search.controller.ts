@@ -7,6 +7,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserRole } from '../../entities/user.entity';
+import { SearchBusinessDto } from '../businesses/dto/search-business.dto';
 
 @ApiTags('search')
 @Controller('search')
@@ -19,20 +20,22 @@ export class SearchController {
 
     @Public()
     @Get()
-    @ApiOperation({ summary: 'Search businesses using Elasticsearch' })
+    @ApiOperation({ summary: 'Search businesses using Elasticsearch or Database fallback' })
     @ApiResponse({ status: 200, description: 'Search results returned' })
     async search(
-        @Query('q') query: string,
-        @Query('city') city?: string,
-        @Query('category') category?: string,
+        @Query() searchDto: SearchBusinessDto,
         @Req() req?: any
     ) {
         // Trigger broadcast notification (async, don't await to keep search fast)
-        this.broadcastService.handleSearch(query, req?.user?.id, city).catch(err => {
+        this.broadcastService.handleSearch(
+            searchDto.query || '', 
+            req?.user?.id, 
+            searchDto.city
+        ).catch(err => {
             console.error('Broadcast handleSearch error:', err);
         });
 
-        return this.searchService.search(query, city, category);
+        return this.searchService.search(searchDto);
     }
 
     @Post('sync')
