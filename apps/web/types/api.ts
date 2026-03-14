@@ -82,6 +82,8 @@ export interface Business {
             lastLoginAt?: string;
             lastActiveAt?: string;
             lastLogoutAt?: string;
+            avatarUrl?: string;
+            createdAt?: string;
         };
         businessHours?: Record<string, { isOpen: boolean; openTime: string; closeTime: string }>;
         socialLinks?: { platform: string; url: string; }[];

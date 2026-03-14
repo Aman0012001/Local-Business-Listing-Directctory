@@ -12,6 +12,9 @@ import Link from 'next/link';
 import { Category, Business, City } from '../types/api';
 import Slider from "react-slick";
 import CitySearchSelect from '../components/CitySearchSelect';
+// Script is removed to avoid multiple loads (already in layout.tsx)
+
+
 export default function HomePage() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [featuredBusinesses, setFeaturedBusinesses] = useState<Business[]>([]);
@@ -28,7 +31,8 @@ export default function HomePage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCity, setSelectedCity] = useState('');
     const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
-    const [mapLoaded, setMapLoaded] = useState(false);
+    const [mapReady, setMapReady] = useState(false);
+
 
     const [loading, setLoading] = useState(true);
     const [statsComments, setStatsComments] = useState<any[]>([]);
@@ -111,9 +115,26 @@ export default function HomePage() {
         window.location.href = `/search?${params.toString()}`;
     };
 
+    // Detect when Google Maps API is ready
+    useEffect(() => {
+        if ((window as any).google) {
+            setMapReady(true);
+            return;
+        }
+
+        const interval = setInterval(() => {
+            if ((window as any).google) {
+                setMapReady(true);
+                clearInterval(interval);
+            }
+        }, 500);
+
+        return () => clearInterval(interval);
+    }, []);
+
     // Auto-detect location on load
     useEffect(() => {
-        if (mapLoaded && !selectedCity && navigator.geolocation) {
+        if (mapReady && !selectedCity && navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     const { latitude, longitude } = position.coords;
@@ -135,7 +156,7 @@ export default function HomePage() {
                 { timeout: 5000 }
             );
         }
-    }, [mapLoaded]);
+    }, [mapReady]);
 
     if (loading) {
         return (
@@ -159,10 +180,8 @@ export default function HomePage() {
     return (
         <div className=" bg-white font-sans text-slate-900 overflow-x-hidden">
             <Navbar />
-            <Script
-                src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`}
-                onLoad={() => setMapLoaded(true)}
-            />
+            {/* Google Maps Script is handled in layout.tsx */}
+
 
             {/* Hero Section */}
             <section className="relative pt-32 pb-44 px-4 overflow-visible" style={{ height: "100vh" }}>

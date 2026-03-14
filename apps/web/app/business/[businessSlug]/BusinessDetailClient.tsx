@@ -144,12 +144,23 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
         }
     }, [mapLoaded, business, activeTab]);
 
-    // Check if Google Maps is already loaded in case Script's onLoad doesn't fire
+    // Check if Google Maps is already loaded or wait for it
     useEffect(() => {
-        if (typeof window !== 'undefined' && window.google) {
+        if (typeof window !== 'undefined' && (window as any).google) {
             console.log('[BusinessDetail] Google Maps already available');
             setMapLoaded(true);
+            return;
         }
+
+        const interval = setInterval(() => {
+            if (typeof window !== 'undefined' && (window as any).google) {
+                console.log('[BusinessDetail] Google Maps became available');
+                setMapLoaded(true);
+                clearInterval(interval);
+            }
+        }, 500);
+
+        return () => clearInterval(interval);
     }, []);
 
     useEffect(() => {
@@ -600,7 +611,7 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                         </div>
 
                         <div className="min-h-[400px]">
-                            {activeTab === 'Overview' && (
+                            <div className={activeTab === 'Overview' ? 'block' : 'hidden'}>
                                 <div className="prose prose-slate max-w-none animate-in fade-in duration-500">
                                     <h3 className="text-2xl font-bold text-slate-900 mb-6 italic">About {business.title}</h3>
                                     <p className="text-lg text-slate-600 leading-relaxed mb-8">
@@ -659,9 +670,9 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                         </div>
                                     </div>
                                 </div>
-                            )}
+                            </div>
 
-                            {activeTab === 'Reviews' && (
+                            <div className={activeTab === 'Reviews' ? 'block' : 'hidden'}>
                                 <div className="space-y-8 animate-in fade-in duration-500">
                                     <div className="flex items-center justify-between">
                                         <h3 className="text-2xl font-bold text-slate-900">Customer Reviews</h3>
@@ -733,9 +744,9 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                         </div>
                                     )}
                                 </div>
-                            )}
+                            </div>
 
-                            {activeTab === 'Amenities' && (
+                            <div className={activeTab === 'Amenities' ? 'block' : 'hidden'}>
                                 <div className="animate-in fade-in duration-500">
                                     <h3 className="text-2xl font-bold text-slate-900 mb-8">Business Amenities</h3>
                                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
@@ -760,9 +771,9 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                         )}
                                     </div>
                                 </div>
-                            )}
+                            </div>
 
-                            {activeTab === 'Offer / Deal' && (
+                            <div className={activeTab === 'Offer / Deal' ? 'block' : 'hidden'}>
                                 <div className="animate-in fade-in duration-500">
                                     <h3 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
                                         <Tag className="w-6 h-6 text-orange-500" /> Offer / Banner Ad
@@ -829,7 +840,7 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                         </div>
                                     </div>
                                 </div>
-                            )}
+                            </div>
 
                         </div>{/* end min-h-[400px] */}
                     </div>{/* end lg:col-span-2 */}
@@ -840,21 +851,6 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
 
                             {/* Actions/Contact Card */}
                             <div className="bg-slate-900 rounded-[16px] p-8 text-white shadow-2xl shadow-blue-500/20">
-                                <div className="space-y-6 mb-8">
-                                    <div className="flex items-center justify-between gap-3 flex-wrap">
-                                        <div className="text-xs font-bold uppercase tracking-widest text-slate-400">Available Now</div>
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            <VendorOnlineBadge isOnline={business.vendor?.user?.isOnline} />
-                                            <BusinessOpenBadge business={business} />
-                                        </div>
-                                    </div>
-                                    <FollowButton 
-                                        businessId={business.id} 
-                                        initialFollowersCount={business.followersCount}
-                                        className="w-full"
-                                    />
-                                </div>
-
                                 <h4 className="text-xl font-bold mb-6">Connect with Business</h4>
 
                                 <div className="space-y-4 mb-8">
@@ -991,6 +987,84 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                             </div>
                                         );
                                     })()}
+                                </div>
+                            </div>
+
+                            {/* Business Profile / Vendor Profile Card */}
+                            <div className="bg-white rounded-[20px] p-8 border border-slate-100 shadow-sm transition-all hover:shadow-md">
+                                <h4 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
+                                    <User className="w-5 h-5 text-blue-600" /> Business Profile
+                                </h4>
+                                
+                                <div className="flex flex-col items-center text-center">
+                                    <div className="w-24 h-24 bg-blue-50 rounded-3xl flex items-center justify-center text-blue-600 font-bold overflow-hidden shadow-inner mb-4 relative cursor-pointer group">
+                                        {business.vendor?.user?.avatarUrl ? (
+                                            <img 
+                                                src={getImageUrl(business.vendor.user.avatarUrl) as string} 
+                                                alt={business.vendor.user.fullName || 'Vendor'} 
+                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                                            />
+                                        ) : (
+                                            <span className="text-2xl">{(business.vendor?.user?.fullName?.[0] || 'V').toUpperCase()}</span>
+                                        )}
+                                        {business.vendor?.user?.isOnline && (
+                                            <div className="absolute bottom-1 right-1 w-4.5 h-4.5 bg-emerald-500 border-[3px] border-white rounded-full shadow-sm" />
+                                        )}
+                                    </div>
+                                    
+                                    <h5 className="text-lg font-black text-slate-900 leading-tight mb-1">
+                                        {business.vendor?.user?.fullName || 'Verified Business Owner'}
+                                    </h5>
+                                    
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-emerald-100">
+                                            <ShieldCheck className="w-3 h-3" /> Verified Vendor
+                                        </span>
+                                    </div>
+
+                                    {/* Status & Followers Section */}
+                                    <div className="w-full grid grid-cols-2 gap-3 mb-6">
+                                        <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col items-center justify-center gap-1">
+                                            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Availability</div>
+                                            <VendorOnlineBadge isOnline={business.vendor?.user?.isOnline} />
+                                        </div>
+                                        <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col items-center justify-center gap-1 text-center">
+                                            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Store Status</div>
+                                            <BusinessOpenBadge business={business} />
+                                        </div>
+                                    </div>
+
+                                    <div className="w-full mb-6">
+                                        <FollowButton 
+                                            businessId={business.id} 
+                                            initialFollowersCount={business.followersCount}
+                                            className="w-full"
+                                        />
+                                    </div>
+                                    
+                                    <div className="w-full pt-6 border-t border-slate-100 space-y-4 text-left">
+                                        <div className="flex items-center justify-between text-xs">
+                                            <span className="font-bold text-slate-400 uppercase tracking-widest text-[9px]">Member since</span>
+                                            <span className="font-black text-slate-900">
+                                                {business.vendor?.user?.createdAt 
+                                                    ? new Date(business.vendor.user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) 
+                                                    : 'Oct 2024'}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex items-center justify-between text-xs">
+                                            <span className="font-bold text-slate-400 uppercase tracking-widest text-[9px]">Response Rate</span>
+                                            <span className="font-black text-emerald-600">98% High</span>
+                                        </div>
+                                        
+                                        <button 
+                                            id="view-vendor-profile-btn"
+                                            onClick={() => handleContactIntent('enquiry')}
+                                            className="block w-full py-4 bg-slate-50 text-slate-900 rounded-2xl font-black text-sm text-center hover:bg-slate-900 hover:text-white transition-all border border-slate-100 shadow-sm"
+                                        >
+                                            View Profile
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

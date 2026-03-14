@@ -25,7 +25,7 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en" className={`${inter.variable}`} suppressHydrationWarning>
-            <body className="bg-white text-slate-900 min-h-screen antialiased font-sans" suppressHydrationWarning>
+            <body className="bg-white text-slate-900 min-h-screen antialiased" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }} suppressHydrationWarning>
                 <AuthProvider>
                     <SocketProvider>
                         {children}
