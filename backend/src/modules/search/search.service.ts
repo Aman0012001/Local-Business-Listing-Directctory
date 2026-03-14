@@ -37,7 +37,8 @@ export class SearchService implements OnModuleInit {
             this.logger.log('✅ Elasticsearch index ready.');
         } catch (error) {
             this.isElasticAvailable = false;
-            this.logger.warn('⚠️ Elasticsearch is enabled but not reachable. Search will use database fallback.');
+            this.logger.warn(`⚠️ Elasticsearch is enabled but not reachable: ${error.message}`);
+            this.logger.debug(error);
         }
     }
 

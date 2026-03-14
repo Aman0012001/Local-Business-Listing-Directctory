@@ -19,6 +19,9 @@ import { NotificationsModule } from '../notifications/notifications.module';
                     username: configService.get<string>('ELASTICSEARCH_USERNAME') || 'elastic',
                     password: configService.get<string>('ELASTICSEARCH_PASSWORD') || '',
                 },
+                tls: {
+                    rejectUnauthorized: configService.get<string>('ELASTICSEARCH_REJECT_UNAUTHORIZED') !== 'false',
+                },
             }),
             inject: [ConfigService],
         }),
