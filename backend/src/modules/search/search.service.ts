@@ -1,7 +1,8 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Brackets } from 'typeorm';
 import { Listing, BusinessStatus } from '../../entities/business.entity';
 
 @Injectable()
@@ -12,11 +13,20 @@ export class SearchService implements OnModuleInit {
 
     constructor(
         private readonly elasticsearchService: ElasticsearchService,
+        private readonly configService: ConfigService,
         @InjectRepository(Listing)
         private readonly businessRepository: Repository<Listing>,
     ) { }
 
     async onModuleInit() {
+        const isEnabled = this.configService.get<string>('ELASTICSEARCH_ENABLED') === 'true';
+
+        if (!isEnabled) {
+            this.isElasticAvailable = false;
+            this.logger.log('ℹ️ Elasticsearch is disabled by configuration. Using database search.');
+            return;
+        }
+
         try {
             await this.elasticsearchService.ping();
             this.isElasticAvailable = true;
@@ -25,7 +35,7 @@ export class SearchService implements OnModuleInit {
             this.logger.log('✅ Elasticsearch index ready.');
         } catch (error) {
             this.isElasticAvailable = false;
-            this.logger.warn('⚠️ Elasticsearch is not available. Search will use database fallback.');
+            this.logger.warn('⚠️ Elasticsearch is enabled but not reachable. Search will use database fallback.');
         }
     }
 
@@ -115,10 +125,19 @@ export class SearchService implements OnModuleInit {
             .where('b.status = :status', { status: BusinessStatus.APPROVED });
 
         if (query) {
-            qb.andWhere(
-                `(LOWER(b.name) LIKE :q OR LOWER(b.description) LIKE :q OR LOWER(b.city) LIKE :q)`,
-                { q: `%${query.toLowerCase()}%` },
-            );
+            const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 0);
+            
+            for (const term of searchTerms) {
+                qb.andWhere(
+                    new Brackets((innerQb) => {
+                        innerQb.where('LOWER(b.name) LIKE :term', { term: `%${term}%` })
+                            .orWhere('LOWER(b.description) LIKE :term', { term: `%${term}%` })
+                            .orWhere('LOWER(b.city) LIKE :term', { term: `%${term}%` })
+                            .orWhere('LOWER(category.name) LIKE :term', { term: `%${term}%` });
+                    }),
+                    { term: `%${term}%` }
+                );
+            }
         }
 
         if (city) {
