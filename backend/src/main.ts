@@ -17,15 +17,25 @@ async function bootstrap() {
     app.use(compression());
     app.use(helmet());
 
-    // Enable shutdown hooks
     app.enableShutdownHooks();
 
     const configService = app.get(ConfigService);
 
-    // API prefix
-    app.setGlobalPrefix(configService.get('API_PREFIX') || 'api');
+    /**
+     * -----------------------
+     * GLOBAL API PREFIX
+     * -----------------------
+     */
 
-    // API Versioning
+    const apiPrefix = configService.get('API_PREFIX') || 'api';
+    app.setGlobalPrefix(apiPrefix);
+
+    /**
+     * -----------------------
+     * API VERSIONING
+     * -----------------------
+     */
+
     app.enableVersioning({
         type: VersioningType.URI,
         defaultVersion: '1',
@@ -50,19 +60,21 @@ async function bootstrap() {
 
     app.enableCors({
         origin: (origin, callback) => {
-            // allow mobile apps / curl / postman
             if (!origin) {
                 return callback(null, true);
             }
 
-            // Check if origin matches exactly or is a valid subdomain of the production URL (if configured)
-            const isAllowed = allowedOrigins.some(allowed => {
+            const isAllowed = allowedOrigins.some((allowed) => {
                 if (allowed === '*') return true;
                 if (allowed === origin) return true;
-                // Add logic for dynamic railway subdomains if needed
-                if (allowed.includes('up.railway.app') && origin.endsWith('up.railway.app')) {
-                   return true;
+
+                if (
+                    allowed.includes('up.railway.app') &&
+                    origin.endsWith('up.railway.app')
+                ) {
+                    return true;
                 }
+
                 return false;
             });
 
@@ -115,12 +127,24 @@ async function bootstrap() {
 
     /**
      * -----------------------
-     * SWAGGER (DEV ONLY)
+     * SWAGGER SETUP
      * -----------------------
      */
 
-    if (configService.get('NODE_ENV') !== 'production') {
-        const config = new DocumentBuilder()
+    const showSwaggerEnv = configService.get('SHOW_SWAGGER');
+    const nodeEnv = configService.get('NODE_ENV');
+
+    const showSwagger =
+        showSwaggerEnv === 'true' ||
+        showSwaggerEnv === true ||
+        nodeEnv !== 'production';
+
+    console.log(
+        `🔍 Swagger Diagnosis → SHOW_SWAGGER=${showSwaggerEnv} | NODE_ENV=${nodeEnv} | Enabled=${showSwagger}`,
+    );
+
+    if (showSwagger) {
+        const swaggerConfig = new DocumentBuilder()
             .setTitle('Local Business Discovery Platform API')
             .setDescription(
                 'Hyperlocal business discovery platform API documentation',
@@ -138,11 +162,24 @@ async function bootstrap() {
             .addTag('search')
             .addTag('admin')
             .addServer('http://localhost:3001', 'Local development server')
-            .addServer('https://local-business-listing-directctory-production.up.railway.app', 'Production server')
+            .addServer(
+                'https://local-business-listing-directctory-production.up.railway.app',
+                'Production server',
+            )
             .build();
 
-        const document = SwaggerModule.createDocument(app, config);
-        SwaggerModule.setup('api/docs', app, document);
+        const document = SwaggerModule.createDocument(app, swaggerConfig);
+
+        SwaggerModule.setup('docs', app, document, {
+            useGlobalPrefix: true,
+            swaggerOptions: {
+                persistAuthorization: true,
+            },
+        });
+
+        console.log(`✅ Swagger UI initialized at /${apiPrefix}/docs`);
+    } else {
+        console.log('⚠️ Swagger disabled');
     }
 
     /**
@@ -156,6 +193,7 @@ async function bootstrap() {
     await app.listen(port, '0.0.0.0');
 
     console.log(`🚀 Server running on port ${port}`);
+    console.log(`📄 Swagger Docs → http://localhost:${port}/${apiPrefix}/docs`);
 }
 
 bootstrap();
