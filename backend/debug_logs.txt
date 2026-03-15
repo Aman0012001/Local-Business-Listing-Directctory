@@ -403,3 +403,111 @@ Error: connect ENETUNREACH 66.33.22.240:45505
 [2026-03-14T21:58:02.969Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
 [2026-03-14T21:58:03.979Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
 [2026-03-14T21:58:04.387Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T22:02:36.520Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:02:36.520Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:02:37.779Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T22:02:38.190Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T22:02:38.611Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:02:38.612Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:02:39.649Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T22:02:40.118Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T22:02:40.573Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:02:40.574Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:02:41.859Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T22:02:42.284Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T22:03:50.123Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:03:50.124Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:03:51.359Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T22:03:51.759Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T22:03:52.190Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:03:52.190Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:03:53.207Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T22:03:53.611Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T22:03:54.029Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:03:54.029Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:03:55.046Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T22:03:55.448Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T22:06:02.571Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:06:02.572Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:06:03.900Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T22:06:04.319Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T22:06:04.772Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:06:04.772Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:06:05.878Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T22:06:06.295Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T22:06:06.721Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:06:06.722Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:06:07.771Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T22:06:08.189Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T22:08:14.656Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:08:14.656Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:08:15.973Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T22:08:16.403Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T22:14:32.041Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:14:32.041Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:14:33.711Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T22:14:34.130Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T22:14:34.551Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:14:34.552Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:14:35.626Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T22:14:36.045Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T22:14:47.755Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:14:47.756Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:14:49.073Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T22:14:49.507Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T22:14:49.936Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:14:49.936Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:14:51.023Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T22:14:51.447Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T22:14:54.082Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:14:54.082Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:14:55.131Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T22:14:55.534Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T22:15:21.234Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:15:21.234Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:15:22.296Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T22:15:22.713Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T22:15:23.385Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:15:23.385Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:15:24.747Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T22:15:25.149Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T22:17:34.952Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:17:34.953Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:17:36.306Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T22:17:36.719Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T22:17:39.119Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:17:39.120Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:17:40.417Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T22:17:40.819Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T22:40:59.153Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:40:59.154Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:41:00.592Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T22:41:00.995Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T22:41:01.419Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:41:01.419Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:41:02.521Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T22:41:02.936Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-14T22:54:11.932Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:54:11.933Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-14T22:54:13.195Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-14T22:54:13.665Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-15T08:15:47.626Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-15T08:15:47.627Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-15T08:15:49.150Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-15T08:15:49.679Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-15T08:15:50.243Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-15T08:15:50.244Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-15T08:15:51.614Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-15T08:15:52.117Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-15T08:45:28.969Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-15T08:45:28.973Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-15T08:45:30.821Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-15T08:45:31.392Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-15T08:46:36.607Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-15T08:46:36.608Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-15T08:46:38.040Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-15T08:46:38.508Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-15T09:23:38.989Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-15T09:23:38.990Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-15T09:23:41.089Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-15T09:23:41.659Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS

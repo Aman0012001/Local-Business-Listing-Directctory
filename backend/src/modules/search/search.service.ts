@@ -9,7 +9,7 @@ import { DayOfWeek } from '../../entities/business-hours.entity';
 
 @Injectable()
 export class SearchService implements OnModuleInit {
-    private readonly INDEX_NAME = 'businesses';
+    private INDEX_NAME = 'businesses';
     private isElasticAvailable = false;
     private readonly logger = new Logger(SearchService.name);
 
@@ -28,6 +28,8 @@ export class SearchService implements OnModuleInit {
             this.logger.log('ℹ️ Elasticsearch is disabled by configuration. Using database search.');
             return;
         }
+
+        this.INDEX_NAME = this.configService.get<string>('ELASTICSEARCH_INDEX') || 'businesses';
 
         try {
             await this.elasticsearchService.ping();

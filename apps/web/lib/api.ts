@@ -287,6 +287,7 @@ export const api = {
             body: JSON.stringify(profileData),
         }),
         getByCity: (city: string) => fetcher<any>(`/vendors/by-city?city=${encodeURIComponent(city)}`),
+        getPublicProfile: (id: string) => fetcher<any>(`/vendors/${id}/public`),
     },
     leads: {
         getForVendor: (params: any = {}) => {
@@ -298,16 +299,17 @@ export const api = {
             method: 'PATCH',
             body: JSON.stringify({ status }),
         }),
-        createEnquiry: (data: {
+        createLead: (data: {
             businessId: string;
             name: string;
             email: string;
             phone?: string;
             message: string;
+            type?: 'call' | 'whatsapp' | 'chat';
             source?: string;
         }) => fetcher<any>('/leads', {
             method: 'POST',
-            body: JSON.stringify({ ...data, type: 'chat' }),
+            body: JSON.stringify({ ...data, type: data.type || 'chat' }),
         }),
         getMyEnquiries: (params: any = {}) => {
             const query = new URLSearchParams(params).toString();

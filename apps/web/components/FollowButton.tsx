@@ -111,14 +111,10 @@ export default function FollowButton({
             </button>
             {followersCount > 0 && (
                 <div className="flex items-center gap-2 px-1">
-                    <div className="flex -space-x-2">
-                        {[...Array(Math.min(3, followersCount))].map((_, i) => (
-                            <div key={i} className="w-6 h-6 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center overflow-hidden">
-                                <Users className="w-3 h-3 text-slate-500" />
-                            </div>
-                        ))}
+                    <div className="w-6 h-6 rounded-full border border-white/20 bg-black flex items-center justify-center">
+                        <Users className="w-3.5 h-3.5 text-white" />
                     </div>
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none">
                         {followersCount.toLocaleString()} {followersCount === 1 ? 'follower' : 'followers'}
                     </span>
                 </div>

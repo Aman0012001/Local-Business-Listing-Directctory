@@ -17,6 +17,12 @@ import { Business } from '../../../types/api';
 import { useAuth } from '../../../context/AuthContext';
 import { getBusinessOpenStatus } from '../../../lib/business-status';
 
+const WhatsAppIcon = ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" className={className} xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+    </svg>
+);
+
 // Simple Online/Offline badge — green when vendor is logged in, red when not
 const VendorOnlineBadge = ({ isOnline, lastActiveAt, lastLogoutAt }: { isOnline?: boolean; lastActiveAt?: string; lastLogoutAt?: string }) => {
     if (isOnline) {
@@ -49,15 +55,13 @@ const BusinessOpenBadge = ({ business }: { business: Business }) => {
     return (
         <span
             title={todayHours ? `Today: ${todayHours}` : undefined}
-            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border shadow-sm ${
-                isOpen
-                    ? 'bg-green-50 text-green-700 border-green-200'
-                    : 'bg-slate-100 text-slate-600 border-slate-200'
-            }`}
+            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border shadow-sm ${isOpen
+                ? 'bg-green-50 text-green-700 border-green-200'
+                : 'bg-slate-100 text-slate-600 border-slate-200'
+                }`}
         >
             <Clock className="w-3.5 h-3.5" />
-            {label}
-            {todayHours && <span className="font-normal normal-case text-[11px] opacity-80">{todayHours}</span>}
+            {todayHours ? `${todayHours} (${label})` : label}
         </span>
     );
 };
@@ -189,16 +193,6 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                     console.error('[BusinessDetail] Failed to load comments:', ce);
                 }
 
-                // Check if favorite
-                if (user) {
-                    try {
-                        const favs = await api.users.getFavorites();
-                        setIsFavorite(favs.data.some(fav => fav.id === data.id));
-                    } catch (fe) {
-                        console.error('[BusinessDetail] Failed to check favorite status:', fe);
-                    }
-                }
-
                 // Load public offers for this business
                 try {
                     const offersData = await api.offers.getByBusiness(data.id);
@@ -215,7 +209,22 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
             }
         };
         if (slug) loadBusiness();
-    }, [slug, user]);
+    }, [slug]);
+
+    // Separate effect for user-specific state (e.g. favorite status)
+    useEffect(() => {
+        const checkUserStates = async () => {
+            if (user && business?.id) {
+                try {
+                    const favs = await api.users.getFavorites();
+                    setIsFavorite(favs.data.some(fav => fav.id === business.id));
+                } catch (fe) {
+                    console.error('[BusinessDetail] Failed to check favorite status:', fe);
+                }
+            }
+        };
+        checkUserStates();
+    }, [user, business?.id]);
 
     // Pre-fill enquiry form when user is available
     useEffect(() => {
@@ -259,7 +268,7 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
         }
     };
 
-    const handleContactIntent = (action: 'call' | 'whatsapp' | 'enquiry') => {
+    const handleContactIntent = async (action: 'call' | 'whatsapp' | 'enquiry') => {
         if (!user) {
             alert('Please login to connect with this business.');
             return;
@@ -268,9 +277,36 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
         if (action === 'enquiry') {
             setPendingAction(null);
             openEnquiryModal();
-        } else {
-            setPendingAction(action);
-            openEnquiryModal();
+            return;
+        }
+
+        // For direct actions (Call/WhatsApp), generate lead immediately and then redirect
+        try {
+            await api.leads.createLead({
+                businessId: business!.id,
+                name: user.fullName || 'User',
+                email: user.email || '',
+                phone: user.phone || undefined,
+                message: `User clicked ${action === 'call' ? 'Call Now' : 'WhatsApp Express'}`,
+                type: action,
+                source: `direct-${action}`,
+            });
+
+            if (action === 'call' && business?.phone) {
+                window.location.href = `tel:${business.phone}`;
+            } else if (action === 'whatsapp' && (business?.whatsapp || business?.phone)) {
+                const waNumber = (business.whatsapp || business.phone).replace(/\s+/g, '');
+                window.open(`https://wa.me/${waNumber.startsWith('+') ? waNumber.substring(1) : waNumber}`, '_blank');
+            }
+        } catch (err) {
+            console.error('Failed to generate lead:', err);
+            // Still perform the action even if lead capture fails
+            if (action === 'call' && business?.phone) {
+                window.location.href = `tel:${business.phone}`;
+            } else if (action === 'whatsapp' && (business?.whatsapp || business?.phone)) {
+                const waNumber = (business.whatsapp || business.phone).replace(/\s+/g, '');
+                window.open(`https://wa.me/${waNumber.startsWith('+') ? waNumber.substring(1) : waNumber}`, '_blank');
+            }
         }
     };
 
@@ -284,23 +320,24 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
         setSubmittingEnquiry(true);
         setEnquiryError('');
         try {
-            await api.leads.createEnquiry({
+            await api.leads.createLead({
                 businessId: business.id,
                 name: enquiryName.trim(),
                 email: enquiryEmail.trim(),
                 phone: enquiryPhone.trim() || undefined,
                 message: enquiryMessage.trim(),
+                type: 'chat',
                 source: pendingAction ? `intent-${pendingAction}` : 'business-page',
             });
             setEnquirySuccess(true);
             setEnquiryMessage('');
 
-            // After successful lead capture, trigger the pending action
+            // After successful lead capture (for modal flow if any), trigger the pending action
             if (pendingAction === 'call' && business.phone) {
                 window.location.href = `tel:${business.phone}`;
             } else if (pendingAction === 'whatsapp' && (business.whatsapp || business.phone)) {
                 const waNumber = (business.whatsapp || business.phone).replace(/\s+/g, '');
-                window.open(`https://wa.me/${waNumber}`, '_blank');
+                window.open(`https://wa.me/${waNumber.startsWith('+') ? waNumber.substring(1) : waNumber}`, '_blank');
             }
 
             setTimeout(() => {
@@ -493,8 +530,8 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                     <div className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-bold uppercase tracking-wider">
                                         {business.category?.name || 'Business'}
                                     </div>
-                                    <VendorOnlineBadge 
-                                        isOnline={business.vendor?.user?.isOnline} 
+                                    <VendorOnlineBadge
+                                        isOnline={business.vendor?.user?.isOnline}
                                         lastActiveAt={business.vendor?.user?.lastActiveAt}
                                         lastLogoutAt={business.vendor?.user?.lastLogoutAt}
                                     />
@@ -520,8 +557,8 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                 >
                                     <Heart className={`w-5 h-5 ${isFavorite ? 'fill-rose-500' : ''}`} />
                                 </button>
-                                <FollowButton 
-                                    businessId={business.id} 
+                                <FollowButton
+                                    businessId={business.id}
                                     initialFollowersCount={business.followersCount}
                                     variant="compact"
                                 />
@@ -827,7 +864,7 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                                         onClick={() => handleContactIntent('whatsapp')}
                                                         className="inline-flex items-center gap-2 px-6 py-3.5 bg-[#25D366] text-white rounded-2xl font-bold text-sm hover:bg-[#128C7E] transition-all shadow-lg shadow-green-500/20"
                                                     >
-                                                        <MessageSquare className="w-4 h-4" /> WhatsApp Us
+                                                        <WhatsAppIcon className="w-5 h-5" /> WhatsApp Us
                                                     </button>
                                                 )}
                                             </div>
@@ -865,9 +902,9 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                     {(business.whatsapp || business.phone) && (
                                         <button
                                             onClick={() => handleContactIntent('whatsapp')}
-                                            className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-blue-700 transition-all"
+                                            className="w-full py-4 bg-[#25D366] text-white rounded-2xl font-extrabold flex items-center justify-center gap-3 hover:bg-[#128C7E] transition-all shadow-lg shadow-green-500/10"
                                         >
-                                            <MessageSquare className="w-5 h-5" /> WhatsApp Express
+                                            <WhatsAppIcon className="w-6 h-6" /> WhatsApp Express
                                         </button>
                                     )}
                                 </div>
@@ -995,14 +1032,14 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                 <h4 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
                                     <User className="w-5 h-5 text-blue-600" /> Business Profile
                                 </h4>
-                                
+
                                 <div className="flex flex-col items-center text-center">
                                     <div className="w-24 h-24 bg-blue-50 rounded-3xl flex items-center justify-center text-blue-600 font-bold overflow-hidden shadow-inner mb-4 relative cursor-pointer group">
                                         {business.vendor?.user?.avatarUrl ? (
-                                            <img 
-                                                src={getImageUrl(business.vendor.user.avatarUrl) as string} 
-                                                alt={business.vendor.user.fullName || 'Vendor'} 
-                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                                            <img
+                                                src={getImageUrl(business.vendor.user.avatarUrl) as string}
+                                                alt={business.vendor.user.fullName || 'Vendor'}
+                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                             />
                                         ) : (
                                             <span className="text-2xl">{(business.vendor?.user?.fullName?.[0] || 'V').toUpperCase()}</span>
@@ -1011,11 +1048,11 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                             <div className="absolute bottom-1 right-1 w-4.5 h-4.5 bg-emerald-500 border-[3px] border-white rounded-full shadow-sm" />
                                         )}
                                     </div>
-                                    
+
                                     <h5 className="text-lg font-black text-slate-900 leading-tight mb-1">
                                         {business.vendor?.user?.fullName || 'Verified Business Owner'}
                                     </h5>
-                                    
+
                                     <div className="flex items-center gap-2 mb-4">
                                         <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-emerald-100">
                                             <ShieldCheck className="w-3 h-3" /> Verified Vendor
@@ -1024,31 +1061,55 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
 
                                     {/* Status & Followers Section */}
                                     <div className="w-full grid grid-cols-2 gap-3 mb-6">
-                                        <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col items-center justify-center gap-1">
+                                        <div className="">
                                             <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Availability</div>
                                             <VendorOnlineBadge isOnline={business.vendor?.user?.isOnline} />
                                         </div>
-                                        <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col items-center justify-center gap-1 text-center">
-                                            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Store Status</div>
+                                        <div className="">
+                                            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Status</div>
                                             <BusinessOpenBadge business={business} />
                                         </div>
                                     </div>
 
                                     <div className="w-full mb-6">
-                                        <FollowButton 
-                                            businessId={business.id} 
+                                        <FollowButton
+                                            businessId={business.id}
                                             initialFollowersCount={business.followersCount}
                                             className="w-full"
                                         />
                                     </div>
-                                    
+
                                     <div className="w-full pt-6 border-t border-slate-100 space-y-4 text-left">
                                         <div className="flex items-center justify-between text-xs">
                                             <span className="font-bold text-slate-400 uppercase tracking-widest text-[9px]">Member since</span>
                                             <span className="font-black text-slate-900">
-                                                {business.vendor?.user?.createdAt 
-                                                    ? new Date(business.vendor.user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) 
+                                                {business.vendor?.user?.createdAt
+                                                    ? new Date(business.vendor.user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
                                                     : 'Oct 2024'}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex items-center justify-between text-xs">
+                                            <span className="font-bold text-slate-400 uppercase tracking-widest text-[9px]">Working Hours</span>
+                                            <span className="font-black text-slate-900">
+                                                {(() => {
+                                                    // Check if vendor logged in today
+                                                    const lastLogin = business.vendor?.user?.lastLoginAt;
+                                                    if (lastLogin) {
+                                                        const loginDate = new Date(lastLogin);
+                                                        const today = new Date();
+                                                        if (loginDate.toDateString() === today.toDateString()) {
+                                                            return `Today at ${loginDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+                                                        }
+                                                    }
+
+                                                    // Fallback to business hours
+                                                    const hoursData = (business.businessHours && business.businessHours.length > 0)
+                                                        ? business.businessHours
+                                                        : business.vendor?.businessHours;
+                                                    const { todayHours } = getBusinessOpenStatus(hoursData);
+                                                    return todayHours || 'Closed';
+                                                })()}
                                             </span>
                                         </div>
 
@@ -1056,14 +1117,14 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                             <span className="font-bold text-slate-400 uppercase tracking-widest text-[9px]">Response Rate</span>
                                             <span className="font-black text-emerald-600">98% High</span>
                                         </div>
-                                        
-                                        <button 
+
+                                        <Link
                                             id="view-vendor-profile-btn"
-                                            onClick={() => handleContactIntent('enquiry')}
+                                            href={`/vendors/${business.vendorId}`}
                                             className="block w-full py-4 bg-slate-50 text-slate-900 rounded-2xl font-black text-sm text-center hover:bg-slate-900 hover:text-white transition-all border border-slate-100 shadow-sm"
                                         >
                                             View Profile
-                                        </button>
+                                        </Link>
                                     </div>
                                 </div>
                             </div>

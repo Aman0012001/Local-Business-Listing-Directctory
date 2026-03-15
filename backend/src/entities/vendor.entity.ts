@@ -27,6 +27,9 @@ export class Vendor {
     @Column({ name: 'business_name', nullable: true })
     businessName: string;
 
+    @Column({ nullable: true, type: 'text' })
+    bio: string;
+
     @Column({ name: 'business_email', nullable: true })
     businessEmail: string;
 

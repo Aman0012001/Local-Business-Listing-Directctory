@@ -44,8 +44,7 @@ const BusinessOpenBadge = ({ business }: { business: Business }) => {
                 }`}
         >
             <Clock className="w-3 h-3" />
-            {label}
-            {todayHours && <span className="hidden sm:inline font-normal normal-case">&middot; {todayHours}</span>}
+            {todayHours ? `${todayHours} (${label})` : label}
         </span>
     );
 };
