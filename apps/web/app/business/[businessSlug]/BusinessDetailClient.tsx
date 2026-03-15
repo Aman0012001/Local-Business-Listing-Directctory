@@ -148,16 +148,15 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
         }
     }, [mapLoaded, business, activeTab]);
 
-    // Check if Google Maps is already loaded or wait for it
     useEffect(() => {
-        if (typeof window !== 'undefined' && (window as any).google) {
+        if (typeof window !== 'undefined' && (window as any).google && (window as any).google.maps) {
             console.log('[BusinessDetail] Google Maps already available');
             setMapLoaded(true);
             return;
         }
 
         const interval = setInterval(() => {
-            if (typeof window !== 'undefined' && (window as any).google) {
+            if (typeof window !== 'undefined' && (window as any).google && (window as any).google.maps) {
                 console.log('[BusinessDetail] Google Maps became available');
                 setMapLoaded(true);
                 clearInterval(interval);

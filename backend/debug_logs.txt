@@ -566,3 +566,11 @@ Error: Connection terminated due to connection timeout
 [2026-03-15T15:01:58.056Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
 [2026-03-15T15:01:59.766Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
 [2026-03-15T15:02:00.378Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-15T15:52:18.930Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-15T15:52:20.967Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-15T15:52:21.567Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-15T15:52:22.274Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-15T15:52:23.758Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-15T18:51:53.206Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-15T18:51:54.663Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-15T18:51:55.176Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
