@@ -550,3 +550,7 @@ Error: Connection terminated due to connection timeout
 [2026-03-15T11:08:30.700Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: vendore@gmail.com)
 [2026-03-15T11:08:32.081Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
 [2026-03-15T11:08:32.081Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-15T12:59:30.003Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: vendore@gmail.com)
+[2026-03-15T12:59:30.005Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: vendore@gmail.com)
+[2026-03-15T12:59:31.449Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-15T12:59:31.450Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
