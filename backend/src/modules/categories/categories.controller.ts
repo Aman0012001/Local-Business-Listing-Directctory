@@ -10,8 +10,10 @@ import {
     UseGuards,
     HttpCode,
     HttpStatus,
+    UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { CacheInterceptor } from '@nestjs/cache-manager';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -114,6 +116,7 @@ export class CategoriesController {
     // --- Public Endpoints ---
 
     @Public()
+    @UseInterceptors(CacheInterceptor)
     @Get()
     @ApiOperation({ summary: 'Get all active categories' })
     @ApiQuery({ name: 'includeSubcategories', required: false, type: Boolean })
@@ -123,6 +126,7 @@ export class CategoriesController {
     }
 
     @Public()
+    @UseInterceptors(CacheInterceptor)
     @Get('tree')
     @ApiOperation({ summary: 'Get category tree (hierarchical structure - active only)' })
     @ApiResponse({ status: 200, description: 'Category tree retrieved successfully' })
@@ -131,6 +135,7 @@ export class CategoriesController {
     }
 
     @Public()
+    @UseInterceptors(CacheInterceptor)
     @Get('root')
     @ApiOperation({ summary: 'Get root categories (no parent - active only)' })
     @ApiResponse({ status: 200, description: 'Root categories retrieved successfully' })

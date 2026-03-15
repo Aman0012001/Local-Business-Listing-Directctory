@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Query, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Query, UseGuards, Req, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { CacheInterceptor } from '@nestjs/cache-manager';
 import { SearchService } from './search.service';
 import { BroadcastService } from '../notifications/broadcast.service';
 import { Public } from '../../common/decorators/public.decorator';
@@ -19,6 +20,7 @@ export class SearchController {
     ) { }
 
     @Public()
+    @UseInterceptors(CacheInterceptor)
     @Get()
     @ApiOperation({ summary: 'Search businesses using Elasticsearch or Database fallback' })
     @ApiResponse({ status: 200, description: 'Search results returned' })

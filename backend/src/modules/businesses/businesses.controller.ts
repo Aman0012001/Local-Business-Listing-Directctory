@@ -10,8 +10,10 @@ import {
     UseGuards,
     HttpCode,
     HttpStatus,
+    UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { CacheInterceptor } from '@nestjs/cache-manager';
 import { BusinessesService } from './businesses.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
@@ -75,6 +77,7 @@ export class BusinessesController {
 
 
     @Public()
+    @UseInterceptors(CacheInterceptor)
     @Get('search')
     @ApiOperation({ summary: 'Search listings with filters and geo-location' })
     @ApiResponse({ status: 200, description: 'Search results returned' })
@@ -84,6 +87,7 @@ export class BusinessesController {
 
     @Public()
     @UseGuards(OptionalJwtAuthGuard)
+    @UseInterceptors(CacheInterceptor)
     @Get('slug/:slug')
     @ApiOperation({ summary: 'Get listing by slug' })
     @ApiResponse({ status: 200, description: 'Listing found' })
@@ -98,6 +102,7 @@ export class BusinessesController {
 
     @Public()
     @UseGuards(OptionalJwtAuthGuard)
+    @UseInterceptors(CacheInterceptor)
     @Get(':id')
     @ApiOperation({ summary: 'Get listing by ID' })
     @ApiResponse({ status: 200, description: 'Listing found' })

@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
+import { CacheModule } from '@nestjs/cache-manager';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -35,6 +36,11 @@ import { join } from 'path';
             envFilePath: ['.env.local', '.env'],
         }),
         ScheduleModule.forRoot(),
+        CacheModule.register({
+            isGlobal: true,
+            ttl: 300, // 5 minutes
+            max: 1000, // maximum number of items in cache
+        }),
 
         // Database
         TypeOrmModule.forRootAsync({
