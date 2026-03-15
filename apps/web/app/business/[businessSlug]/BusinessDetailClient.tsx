@@ -121,23 +121,17 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
             mapRef.current = new (window as any).google.maps.Map(mapContainerRef.current, {
                 center,
                 zoom: 15,
+                mapId: 'DEMO_MAP_ID',
                 mapTypeId: 'roadmap',
                 zoomControl: true,
                 streetViewControl: true,
                 fullscreenControl: true,
             });
 
-            markerRef.current = new (window as any).google.maps.Marker({
+            markerRef.current = new (window as any).google.maps.marker.AdvancedMarkerElement({
                 position: center,
                 map: mapRef.current,
-                icon: {
-                    path: (window as any).google.maps.SymbolPath.CIRCLE,
-                    fillColor: '#2563eb',
-                    fillOpacity: 1,
-                    strokeWeight: 4,
-                    strokeColor: '#ffffff',
-                    scale: 10
-                }
+                title: business.title,
             });
         }
     };
@@ -149,14 +143,14 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
     }, [mapLoaded, business, activeTab]);
 
     useEffect(() => {
-        if (typeof window !== 'undefined' && (window as any).google && (window as any).google.maps) {
+        if (typeof window !== 'undefined' && (window as any).google && (window as any).google.maps && (window as any).google.maps.marker) {
             console.log('[BusinessDetail] Google Maps already available');
             setMapLoaded(true);
             return;
         }
 
         const interval = setInterval(() => {
-            if (typeof window !== 'undefined' && (window as any).google && (window as any).google.maps) {
+            if (typeof window !== 'undefined' && (window as any).google && (window as any).google.maps && (window as any).google.maps.marker) {
                 console.log('[BusinessDetail] Google Maps became available');
                 setMapLoaded(true);
                 clearInterval(interval);
@@ -556,11 +550,6 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                 >
                                     <Heart className={`w-5 h-5 ${isFavorite ? 'fill-rose-500' : ''}`} />
                                 </button>
-                                <FollowButton
-                                    businessId={business.id}
-                                    initialFollowersCount={business.followersCount}
-                                    variant="compact"
-                                />
                                 <button
                                     onClick={handleShare}
                                     className="p-3 border border-slate-200 rounded-2xl hover:bg-slate-50 transition-colors relative"

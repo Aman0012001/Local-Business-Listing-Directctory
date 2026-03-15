@@ -243,34 +243,30 @@ export default function AddListingPage() {
             mapRef.current = new (window as any).google.maps.Map(mapContainerRef.current, {
                 center: defaultCenter,
                 zoom: 15,
+                mapId: 'DEMO_MAP_ID',
                 mapTypeControl: false,
                 streetViewControl: false,
                 fullscreenControl: false,
             });
 
-            markerRef.current = new (window as any).google.maps.Marker({
+            markerRef.current = new (window as any).google.maps.marker.AdvancedMarkerElement({
                 position: defaultCenter,
                 map: mapRef.current,
-                draggable: true,
-                animation: (window as any).google.maps.Animation.DROP,
-                icon: {
-                    path: (window as any).google.maps.SymbolPath.CIRCLE,
-                    fillColor: '#f97316',
-                    fillOpacity: 1,
-                    strokeWeight: 4,
-                    strokeColor: '#ffffff',
-                    scale: 10
-                }
+                gmpDraggable: true,
+                title: "Drag to set location",
             });
 
             markerRef.current.addListener("dragend", () => {
-                const pos = markerRef.current.getPosition();
-                updateLocationFromCoords(pos.lat(), pos.lng());
+                const pos = markerRef.current.position;
+                if (!pos) return;
+                const lat = typeof pos.lat === 'function' ? pos.lat() : pos.lat;
+                const lng = typeof pos.lng === 'function' ? pos.lng() : pos.lng;
+                updateLocationFromCoords(lat, lng);
             });
 
             mapRef.current.addListener("click", (e: any) => {
                 if (e.latLng) {
-                    markerRef.current.setPosition(e.latLng);
+                    markerRef.current.position = e.latLng;
                     updateLocationFromCoords(e.latLng.lat(), e.latLng.lng());
                 }
             });
@@ -295,7 +291,7 @@ export default function AddListingPage() {
 
                     mapRef.current.setCenter({ lat, lng });
                     mapRef.current.setZoom(17);
-                    markerRef.current.setPosition({ lat, lng });
+                    markerRef.current.position = { lat, lng };
 
                     let city = '';
                     let state = '';
@@ -355,7 +351,7 @@ export default function AddListingPage() {
                     const pos = { lat: latitude, lng: longitude };
                     mapRef.current.setCenter(pos);
                     mapRef.current.setZoom(17);
-                    markerRef.current.setPosition(pos);
+                    markerRef.current.position = pos;
                     updateLocationFromCoords(latitude, longitude);
                 }
             },

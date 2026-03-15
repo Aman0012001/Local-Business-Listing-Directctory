@@ -188,3 +188,13 @@ Details: {"errno":-4062,"code":"ENETUNREACH","syscall":"connect","address":"66.3
 [2026-03-15T15:53:54.022Z] NotificationsService Constructor Called
 [2026-03-15T15:53:54.881Z] NotificationsService Constructor Called
 [2026-03-15T18:49:52.322Z] NotificationsService Constructor Called
+[Search ERROR] 2026-03-15T19:10:10.353Z: Connection terminated unexpectedly
+Stack: QueryFailedError: Connection terminated unexpectedly
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.executeCountQuery (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3101:25)
+    at async SelectQueryBuilder.getCount (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1786:29)
+    at async BusinessesService.search (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:327:27)
+Details: {"query":"SELECT COUNT(DISTINCT(\"listing\".\"id\")) AS \"cnt\" FROM \"businesses\" \"listing\" LEFT JOIN \"categories\" \"category\" ON \"category\".\"id\"=\"listing\".\"category_id\"  LEFT JOIN \"vendors\" \"vendor\" ON \"vendor\".\"id\"=\"listing\".\"vendor_id\"  LEFT JOIN \"users\" \"user\" ON \"user\".\"id\"=\"vendor\".\"user_id\"  LEFT JOIN \"business_hours\" \"businessHours\" ON \"businessHours\".\"business_id\"=\"listing\".\"id\"  LEFT JOIN \"business_amenities\" \"businessAmenities\" ON \"businessAmenities\".\"business_id\"=\"listing\".\"id\"  LEFT JOIN \"amenities\" \"amenity\" ON \"amenity\".\"id\"=\"businessAmenities\".\"amenity_id\" WHERE \"listing\".\"status\" IN ($1, $2)","parameters":["pending","approved"],"driverError":{}}
+
