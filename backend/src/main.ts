@@ -137,6 +137,8 @@ async function bootstrap() {
             .addTag('subscriptions')
             .addTag('search')
             .addTag('admin')
+            .addServer('http://localhost:3001', 'Local development server')
+            .addServer('https://local-business-listing-directctory-production.up.railway.app', 'Production server')
             .build();
 
         const document = SwaggerModule.createDocument(app, config);

@@ -2,8 +2,8 @@
 const nextConfig = {
     reactStrictMode: true,
 
-    // remove static export because project has dynamic routes
-    // output: 'export',
+    // enable static export for traditional hosting
+    output: 'export',
 
     images: {
         unoptimized: true,

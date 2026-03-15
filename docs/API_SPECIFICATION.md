@@ -3,7 +3,7 @@
 ## Base URL
 ```
 Development: http://localhost:3001/api/v1
-Production: https://api.yourdomain.com/api/v1
+Production: https://local-business-listing-directctory-production.up.railway.app/api/v1
 ```
 
 ## Authentication

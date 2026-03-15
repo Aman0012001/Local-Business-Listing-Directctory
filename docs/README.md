@@ -70,8 +70,8 @@ npm run start:dev
 ```
 
 ### 3. Access API
-- **Web Interface:** http://localhost:3000
-- **Users Endpoint:** http://localhost:3000/users
+- **Web Interface:** https://local-business-listing-directctory-production.up.railway.app
+- **Users Endpoint:** https://local-business-listing-directctory-production.up.railway.app/api/v1/users
 
 ---
 
@@ -85,10 +85,11 @@ npm run start:dev
 - **Tables:** 15
 
 ### API
-- **Port:** 3000
+- **Port:** 3001 (Local) / Railway Managed (Prod)
 - **Status:** Running
 - **Framework:** NestJS
 - **Database:** TypeORM + PostgreSQL
+- **Production URL:** https://local-business-listing-directctory-production.up.railway.app
 
 ---
 
@@ -106,9 +107,9 @@ npm run start:dev
 
 ## 🔗 Useful Links
 
-- **API Root:** http://localhost:3000
-- **Users API:** http://localhost:3000/users
-- **Project Root:** `e:\0.1\business saas`
+- **Production API Root:** https://local-business-listing-directctory-production.up.railway.app/api/v1
+- **Local API Root:** http://localhost:3001/api/v1
+- **Swagger Docs:** https://local-business-listing-directctory-production.up.railway.app/api/docs
 
 ---
 
