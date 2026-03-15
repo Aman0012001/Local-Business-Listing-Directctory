@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { api } from '../lib/api';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
-const GOOGLE_CLIENT_ID = '696583631101-3td2apbr7d2tlbne4o6tmc0crg84u1nv.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '696583631101-3td2apbr7d2tlbne4o6tmc0crg84u1nv.apps.googleusercontent.com';
 
 // Ping interval: mark user as online every 90 seconds
 const PING_INTERVAL_MS = 90_000;

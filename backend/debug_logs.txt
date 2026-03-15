@@ -523,3 +523,26 @@ Error: connect ENETUNREACH 66.33.22.240:45505
 [2026-03-15T09:54:15.445Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: krajthankur@gmail.com)
 [2026-03-15T09:54:16.889Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
 [2026-03-15T09:54:17.368Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-15T10:19:25.421Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: krajthankur@gmail.com)
+[2026-03-15T10:19:25.424Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: krajthankur@gmail.com)
+[2026-03-15T10:19:26.817Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-15T10:19:27.263Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-15T10:20:29.336Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: krajthankur@gmail.com)
+[2026-03-15T10:20:29.336Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: krajthankur@gmail.com)
+[2026-03-15T10:20:31.056Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-15T10:20:31.627Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-15T10:46:35.198Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-15T10:46:35.206Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-15T10:46:45.259Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - ERROR: Connection terminated due to connection timeout
+Error: Connection terminated due to connection timeout
+    at Client._connectionCallback (E:\localweb\Local-Business-Listing-Directctory\node_modules\pg-pool\index.js:262:17)
+    at Connection.<anonymous> (E:\localweb\Local-Business-Listing-Directctory\node_modules\pg\lib\client.js:190:18)
+    at Object.onceWrapper (node:events:622:28)
+    at Connection.emit (node:events:508:28)
+    at Socket.<anonymous> (E:\localweb\Local-Business-Listing-Directctory\node_modules\pg\lib\connection.js:61:12)
+    at Socket.emit (node:events:520:35)
+    at TCP.<anonymous> (node:net:346:12)
+[2026-03-15T10:47:04.328Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-15T10:47:04.328Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-15T10:47:13.307Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-15T10:47:13.882Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
