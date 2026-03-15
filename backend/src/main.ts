@@ -1,5 +1,9 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, VersioningType, ClassSerializerInterceptor } from '@nestjs/common';
+import {
+    ValidationPipe,
+    VersioningType,
+    ClassSerializerInterceptor,
+} from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
@@ -11,13 +15,14 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule, { rawBody: true });
 
     app.use(compression());
+    app.use(helmet());
 
     // Enable shutdown hooks
     app.enableShutdownHooks();
 
     const configService = app.get(ConfigService);
 
-    // Global prefix
+    // API prefix
     app.setGlobalPrefix(configService.get('API_PREFIX') || 'api');
 
     // API Versioning
@@ -26,22 +31,36 @@ async function bootstrap() {
         defaultVersion: '1',
     });
 
-    // CORS
-    const corsOrigin = configService.get('CORS_ORIGIN');
-    const allowedOrigins = corsOrigin ? corsOrigin.split(',').map(o => o.trim()).filter(Boolean) : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+    /**
+     * -----------------------
+     * CORS CONFIGURATION
+     * -----------------------
+     */
+
+    const corsOrigin = configService.get<string>('CORS_ORIGIN');
+
+    const allowedOrigins = corsOrigin
+        ? corsOrigin.split(',').map((o) => o.trim())
+        : [
+            'http://localhost:3000',
+            'http://127.0.0.1:3000',
+            'http://localhost:3001',
+            'http://127.0.0.1:3001',
+        ];
 
     app.enableCors({
         origin: (origin, callback) => {
-            // Allow requests with no origin (like mobile apps or curl)
+            // allow mobile apps / curl / postman
             if (!origin) {
                 return callback(null, true);
             }
 
             if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
-                callback(null, true);
-            } else {
-                callback(new Error('Not allowed by CORS'));
+                return callback(null, true);
             }
+
+            console.warn(`❌ Blocked by CORS: ${origin}`);
+            return callback(new Error('Not allowed by CORS'), false);
         },
         credentials: true,
         methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
@@ -50,15 +69,17 @@ async function bootstrap() {
             'Accept',
             'Authorization',
             'X-Requested-With',
-            'X-HTTP-Method-Override',
-            'Content-Range',
-            'Range',
             'Origin',
         ],
         exposedHeaders: ['Content-Range', 'X-Content-Range'],
     });
 
-    // Global validation pipe
+    /**
+     * -----------------------
+     * GLOBAL VALIDATION
+     * -----------------------
+     */
+
     app.useGlobalPipes(
         new ValidationPipe({
             whitelist: true,
@@ -70,34 +91,57 @@ async function bootstrap() {
         }),
     );
 
-    // Global interceptor for virtual properties (@Expose)
-    app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+    /**
+     * -----------------------
+     * SERIALIZER INTERCEPTOR
+     * -----------------------
+     */
 
-    // Swagger documentation
+    app.useGlobalInterceptors(
+        new ClassSerializerInterceptor(app.get(Reflector)),
+    );
+
+    /**
+     * -----------------------
+     * SWAGGER (DEV ONLY)
+     * -----------------------
+     */
+
     if (configService.get('NODE_ENV') !== 'production') {
         const config = new DocumentBuilder()
             .setTitle('Local Business Discovery Platform API')
-            .setDescription('Hyperlocal business discovery platform API documentation')
+            .setDescription(
+                'Hyperlocal business discovery platform API documentation',
+            )
             .setVersion('1.0')
             .addBearerAuth()
-            .addTag('auth', 'Authentication endpoints')
-            .addTag('users', 'User management')
-            .addTag('vendors', 'Vendor management')
-            .addTag('businesses', 'Business listings')
-            .addTag('categories', 'Category management')
-            .addTag('reviews', 'Reviews and ratings')
-            .addTag('leads', 'Lead generation')
-            .addTag('subscriptions', 'Subscription management')
-            .addTag('search', 'Search functionality')
-            .addTag('admin', 'Admin operations')
+            .addTag('auth')
+            .addTag('users')
+            .addTag('vendors')
+            .addTag('businesses')
+            .addTag('categories')
+            .addTag('reviews')
+            .addTag('leads')
+            .addTag('subscriptions')
+            .addTag('search')
+            .addTag('admin')
             .build();
 
         const document = SwaggerModule.createDocument(app, config);
         SwaggerModule.setup('api/docs', app, document);
     }
 
+    /**
+     * -----------------------
+     * SERVER START
+     * -----------------------
+     */
+
     const port = configService.get('PORT') || 3001;
+
     await app.listen(port, '0.0.0.0');
+
+    console.log(`🚀 Server running on port ${port}`);
 }
 
 bootstrap();
