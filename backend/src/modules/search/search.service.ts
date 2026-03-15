@@ -182,15 +182,17 @@ export class SearchService implements OnModuleInit {
             qb.andWhere('b.isFeatured = :featuredOnly', { featuredOnly: true });
         }
 
-        // Distance Filter (Haversine Formula)
+        // Distance Filter (Earthdistance)
         if (latitude && longitude) {
-            // Earth's radius in kilometers = 6371
-            const formula = `(6371 * acos(cos(radians(:lat)) * cos(radians(b.latitude)) * cos(radians(b.longitude) - radians(:lng)) + sin(radians(:lat)) * sin(radians(b.latitude))))`;
-            qb.addSelect(formula, 'distance');
+            // earth_distance uses meters, radius is in km so multiply by 1000
+            const formula = `earth_distance(ll_to_earth(b.latitude, b.longitude), ll_to_earth(:lat, :lng))`;
+            qb.addSelect(`${formula} / 1000`, 'distance');
             qb.setParameters({ lat: latitude, lng: longitude });
 
             if (radius) {
-                qb.andWhere(`${formula} <= :radius`, { radius });
+                // radius is in km, comparison in meters
+                const radiusInMeters = radius * 1000;
+                qb.andWhere(`${formula} <= :radiusInMeters`, { radiusInMeters });
             }
             qb.addOrderBy('distance', 'ASC');
         }
