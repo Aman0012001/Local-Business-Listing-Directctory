@@ -511,3 +511,15 @@ Error: connect ENETUNREACH 66.33.22.240:45505
 [2026-03-15T09:23:38.990Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
 [2026-03-15T09:23:41.089Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
 [2026-03-15T09:23:41.659Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-15T09:44:31.366Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: krajthankur@gmail.com)
+[2026-03-15T09:44:31.368Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: krajthankur@gmail.com)
+[2026-03-15T09:44:32.734Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-15T09:44:33.158Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-15T09:44:33.624Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: krajthankur@gmail.com)
+[2026-03-15T09:44:33.624Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: krajthankur@gmail.com)
+[2026-03-15T09:44:34.827Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-15T09:44:35.273Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-15T09:54:15.442Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: krajthankur@gmail.com)
+[2026-03-15T09:54:15.445Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: krajthankur@gmail.com)
+[2026-03-15T09:54:16.889Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-15T09:54:17.368Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS

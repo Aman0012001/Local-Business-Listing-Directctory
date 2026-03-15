@@ -1,9 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     reactStrictMode: true,
-    output: process.env.NODE_ENV === 'production' ? 'export' : undefined,
+
+    // remove static export because project has dynamic routes
+    // output: 'export',
+
     images: {
         unoptimized: true,
+        remotePatterns: [
+            {
+                protocol: "https",
+                hostname: "lh3.googleusercontent.com",
+            },
+        ],
     },
 };
 

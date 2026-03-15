@@ -890,7 +890,7 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                             <div className="bg-slate-900 rounded-[16px] p-8 text-white shadow-2xl shadow-blue-500/20">
                                 <h4 className="text-xl font-bold mb-6">Connect with Business</h4>
 
-                                <div className="space-y-4 mb-8">
+                                <div className="space-y-4 mb-4">
                                     {business.phone && (
                                         <button
                                             onClick={() => handleContactIntent('call')}
