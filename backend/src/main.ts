@@ -55,7 +55,18 @@ async function bootstrap() {
                 return callback(null, true);
             }
 
-            if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+            // Check if origin matches exactly or is a valid subdomain of the production URL (if configured)
+            const isAllowed = allowedOrigins.some(allowed => {
+                if (allowed === '*') return true;
+                if (allowed === origin) return true;
+                // Add logic for dynamic railway subdomains if needed
+                if (allowed.includes('up.railway.app') && origin.endsWith('up.railway.app')) {
+                   return true;
+                }
+                return false;
+            });
+
+            if (isAllowed) {
                 return callback(null, true);
             }
 
@@ -70,8 +81,9 @@ async function bootstrap() {
             'Authorization',
             'X-Requested-With',
             'Origin',
+            'X-CSRF-Token',
         ],
-        exposedHeaders: ['Content-Range', 'X-Content-Range'],
+        exposedHeaders: ['Content-Range', 'X-Content-Range', 'X-Total-Count'],
     });
 
     /**
