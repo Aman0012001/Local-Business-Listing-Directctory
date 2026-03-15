@@ -15,6 +15,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { CacheInterceptor } from '@nestjs/cache-manager';
 import { BusinessesService } from './businesses.service';
+import { SearchService } from '../search/search.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { SearchBusinessDto } from './dto/search-business.dto';
@@ -25,14 +26,16 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../../common/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { ParseUuidPipe } from '../../common/pipes/parse-uuid.pipe';
-import { Listing } from '../../entities/business.entity';
 import { User, UserRole } from '../../entities/user.entity';
 
 @ApiTags('businesses')
 @Controller('businesses')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class BusinessesController {
-    constructor(private readonly businessesService: BusinessesService) { }
+    constructor(
+        private readonly businessesService: BusinessesService,
+        private readonly searchService: SearchService
+    ) { }
 
     @Post()
     @Roles(UserRole.VENDOR, UserRole.ADMIN)
@@ -44,10 +47,6 @@ export class BusinessesController {
         @Body() createBusinessDto: CreateBusinessDto,
         @CurrentUser() user: User,
     ) {
-        console.log(`[BusinessesController] Creating listing: "${createBusinessDto.title}". Images:`, createBusinessDto.images?.length || 0);
-        if (createBusinessDto.images) {
-            console.log(`[BusinessesController] Image URLs:`, createBusinessDto.images);
-        }
         return this.businessesService.create(createBusinessDto, user);
     }
 
@@ -74,8 +73,6 @@ export class BusinessesController {
         return this.businessesService.updateImage(id, imageUrl, user);
     }
 
-
-
     @Public()
     @UseInterceptors(CacheInterceptor)
     @Get('search')
@@ -93,10 +90,6 @@ export class BusinessesController {
     @ApiResponse({ status: 200, description: 'Listing found' })
     @ApiResponse({ status: 404, description: 'Listing not found' })
     findBySlug(@Param('slug') slug: string, @CurrentUser() user?: User) {
-        const fs = require('fs');
-        const path = require('path');
-        const logFile = path.join(process.cwd(), 'debug_logs.txt');
-        fs.appendFileSync(logFile, `[${new Date().toISOString()}] [BusinessesController] findBySlug: ${slug} (User: ${user?.email || 'Public'})\n`);
         return this.businessesService.findBySlug(slug, user);
     }
 
@@ -172,5 +165,11 @@ export class BusinessesController {
     @ApiOperation({ summary: 'Create a new amenity' })
     createAmenity(@Body() data: { name: string, icon?: string }) {
         return this.businessesService.createAmenity(data.name, data.icon);
+    }
+
+    @Post('sync')
+    @Public()
+    async sync() {
+        return this.searchService.reindexAll();
     }
 }

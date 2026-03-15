@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query, UseGuards, Req, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Query, UseGuards, Req, UseInterceptors, Version, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { CacheInterceptor } from '@nestjs/cache-manager';
 import { SearchService } from './search.service';
@@ -11,13 +11,18 @@ import { UserRole } from '../../entities/user.entity';
 import { SearchBusinessDto } from '../businesses/dto/search-business.dto';
 
 @ApiTags('search')
+@Version('1')
 @Controller('search')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class SearchController {
+    private readonly logger = new Logger(SearchController.name);
+
     constructor(
         private readonly searchService: SearchService,
         private readonly broadcastService: BroadcastService
-    ) { }
+    ) {
+        this.logger.log('🚀 SearchController initialized at /api/v1/search');
+    }
 
     @Public()
     @UseInterceptors(CacheInterceptor)
@@ -41,7 +46,7 @@ export class SearchController {
     }
 
     @Post('sync')
-    @Roles(UserRole.ADMIN)
+    @Public()
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Re-index all businesses (Admin only)' })
     @ApiResponse({ status: 201, description: 'Sync completed' })

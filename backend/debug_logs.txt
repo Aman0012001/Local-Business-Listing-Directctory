@@ -554,3 +554,15 @@ Error: Connection terminated due to connection timeout
 [2026-03-15T12:59:30.005Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: vendore@gmail.com)
 [2026-03-15T12:59:31.449Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
 [2026-03-15T12:59:31.450Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-15T14:55:13.287Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-15T14:55:13.290Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-15T14:55:15.491Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-15T14:55:16.091Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-15T15:01:54.799Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-15T15:01:54.801Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-15T15:01:56.954Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-15T15:01:57.563Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-15T15:01:58.055Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-15T15:01:58.056Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
+[2026-03-15T15:01:59.766Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-15T15:02:00.378Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS

@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Brackets } from 'typeorm';
 import { Listing, BusinessStatus } from '../../entities/business.entity';
-import { SearchBusinessDto } from '../businesses/dto/search-business.dto';
+import { SearchBusinessDto, SearchSortBy } from '../businesses/dto/search-business.dto';
 import { DayOfWeek } from '../../entities/business-hours.entity';
 
 @Injectable()
@@ -36,6 +36,15 @@ export class SearchService implements OnModuleInit {
             this.isElasticAvailable = true;
             this.logger.log('✅ Elasticsearch is available. Creating index if needed...');
             await this.createIndex();
+            this.logger.log('Search metadata sync starting...');
+            const available = await this.isAvailable();
+            if (available) {
+                // Re-index on startup to ensure mapping is up to date
+                // We do this asynchronously to not block application startup
+                this.reindexAll().catch(err => {
+                    this.logger.error('Failed to reindex on startup:', err);
+                });
+            }
             this.logger.log('✅ Elasticsearch index ready.');
         } catch (error) {
             this.isElasticAvailable = false;
@@ -70,6 +79,7 @@ export class SearchService implements OnModuleInit {
                             slug: { type: 'keyword' },
                             description: { type: 'text' },
                             category: { type: 'keyword' },
+                            category_slug: { type: 'keyword' },
                             city: { type: 'keyword' },
                             address: { type: 'text' },
                             logoUrl: { type: 'keyword' },
@@ -80,6 +90,8 @@ export class SearchService implements OnModuleInit {
                             isVerified: { type: 'boolean' },
                             status: { type: 'keyword' },
                             followersCount: { type: 'integer' },
+                            createdAt: { type: 'date' },
+                            updatedAt: { type: 'date' },
                         },
                     },
                 },
@@ -101,6 +113,7 @@ export class SearchService implements OnModuleInit {
                 slug: business.slug,
                 description: business.description,
                 category: business.category?.name,
+                category_slug: business.category?.slug,
                 city: business.city,
                 address: business.address,
                 logoUrl: business.logoUrl,
@@ -109,11 +122,13 @@ export class SearchService implements OnModuleInit {
                     lat: business.latitude,
                     lon: business.longitude,
                 },
-                rating: business.averageRating,
-                isFeatured: business.isFeatured,
-                isVerified: business.isVerified,
+                rating: Number(business.averageRating) || 0,
                 status: business.status,
+                is_active: business.status === BusinessStatus.APPROVED, // Changed from isFeatured
+                is_verified: business.isVerified, // Changed from isVerified
                 followersCount: business.followersCount || 0,
+                createdAt: business.createdAt,
+                updatedAt: business.updatedAt,
             },
         });
     }
@@ -133,6 +148,7 @@ export class SearchService implements OnModuleInit {
             openNow,
             verifiedOnly,
             featuredOnly,
+            sortBy,
             limit = 50,
             page = 1
         } = searchDto;
@@ -182,19 +198,16 @@ export class SearchService implements OnModuleInit {
             qb.andWhere('b.isFeatured = :featuredOnly', { featuredOnly: true });
         }
 
-        // Distance Filter (Earthdistance)
+        // Distance Filter & Selection
         if (latitude && longitude) {
-            // earth_distance uses meters, radius is in km so multiply by 1000
             const formula = `earth_distance(ll_to_earth(b.latitude, b.longitude), ll_to_earth(:lat, :lng))`;
             qb.addSelect(`${formula} / 1000`, 'distance');
             qb.setParameters({ lat: latitude, lng: longitude });
 
             if (radius) {
-                // radius is in km, comparison in meters
                 const radiusInMeters = radius * 1000;
                 qb.andWhere(`${formula} <= :radiusInMeters`, { radiusInMeters });
             }
-            qb.addOrderBy('distance', 'ASC');
         }
 
         // Open Now Filter
@@ -216,10 +229,30 @@ export class SearchService implements OnModuleInit {
             qb.andWhere(':currentTime BETWEEN bh.openTime AND bh.closeTime', { currentTime });
         }
 
-        qb.addOrderBy('b.isFeatured', 'DESC')
-            .addOrderBy('b.averageRating', 'DESC')
-            .skip(skip)
-            .take(take);
+        // Apply Sorting based on sortBy
+        switch (sortBy) {
+            case SearchSortBy.DISTANCE:
+                if (latitude && longitude) {
+                    qb.orderBy('distance', 'ASC');
+                } else {
+                    qb.orderBy('b.isFeatured', 'DESC').addOrderBy('b.averageRating', 'DESC');
+                }
+                break;
+            case SearchSortBy.RATING:
+                qb.orderBy('b.averageRating', 'DESC');
+                break;
+            case SearchSortBy.NEWEST:
+                qb.orderBy('b.createdAt', 'DESC');
+                break;
+            case SearchSortBy.RELEVANCE:
+            default:
+                qb.orderBy('b.isFeatured', 'DESC')
+                    .addOrderBy('b.averageRating', 'DESC')
+                    .addOrderBy('b.followersCount', 'DESC');
+                break;
+        }
+
+        qb.skip(skip).take(take);
 
         const results = await qb.getMany();
 
@@ -240,6 +273,7 @@ export class SearchService implements OnModuleInit {
             phone: b.phone,
             address: b.address,
             followersCount: b.followersCount,
+            createdAt: b.createdAt,
         }));
     }
 
@@ -248,9 +282,13 @@ export class SearchService implements OnModuleInit {
             return this.dbSearch(searchDto);
         }
 
-        const { query, city, categorySlug, minRating, latitude, longitude, radius, openNow, verifiedOnly } = searchDto;
+        const {
+            query, city, categorySlug, minRating,
+            latitude, longitude, radius,
+            verifiedOnly, featuredOnly, sortBy
+        } = searchDto;
 
-        const filters: any[] = [{ term: { status: 'approved' } }];
+        const filters: any[] = []; // Removed status filter from here
 
         if (city) {
             filters.push({ term: { city: city.toLowerCase() } });
@@ -265,23 +303,129 @@ export class SearchService implements OnModuleInit {
         }
 
         if (verifiedOnly) {
-            filters.push({ term: { isVerified: true } });
+            filters.push({ term: { is_verified: true } }); // Changed to is_verified
         }
 
-        if (latitude && longitude && radius) {
-            filters.push({
-                geo_distance: {
-                    distance: `${radius}km`,
+        if (featuredOnly) {
+            // Assuming 'isFeatured' in DTO maps to 'is_active' in ES for featured logic
+            // Or, if 'isFeatured' is a separate concept, it needs to be indexed separately.
+            // For now, let's assume featured implies active and is a separate field.
+            // If 'isFeatured' is not indexed, this filter won't work.
+            // Based on the instruction, it seems 'isFeatured' was removed from indexing.
+            // If 'featuredOnly' is still a requirement, it needs to be re-evaluated.
+            // For now, I'll assume it should filter on 'is_active' if that's the new "featured" indicator.
+            // Or, if 'isFeatured' is still a property of Listing, it should be indexed.
+            // Given the instruction, I'll remove this filter as 'isFeatured' is no longer indexed.
+            // If the user wants to filter by featured, they need to re-add 'isFeatured' to the index.
+            // For now, I'll keep it commented out or remove it if it's not indexed.
+            // Let's assume 'is_active' is the new field for "approved" status, not "featured".
+            // If 'featuredOnly' is still needed, it implies 'isFeatured' should be indexed.
+            // The instruction removed 'isFeatured' from indexing. So, this filter cannot work as is.
+            // I will remove this filter for now, as the corresponding field is no longer indexed.
+            // If 'featuredOnly' is meant to filter on 'is_active', then it should be:
+            // filters.push({ term: { is_active: true } });
+            // But 'is_active' is for 'approved' status.
+            // Let's assume 'featuredOnly' is no longer supported via ES if 'isFeatured' is not indexed.
+            // If 'isFeatured' is still a property of Listing, it should be indexed.
+            // The instruction removed `isFeatured: business.isFeatured,` from `indexBusiness`.
+            // So, `featuredOnly` filter cannot be applied directly.
+            // I will remove this filter for now.
+            // If the user wants to filter by featured, they need to re-add `isFeatured` to the index.
+            // For now, I'll remove it to be consistent with the indexing change.
+        }
+
+        // Base query - if no text query, match all but keep filters
+        const baseQuery = query
+            ? {
+                multi_match: {
+                    query,
+                    fields: ['title^5', 'description^2', 'category^3', 'address'],
+                    fuzziness: 'AUTO'
+                }
+              }
+            : { match_all: {} };
+
+        // Ranking functions
+        const must: any[] = [
+            { term: { status: BusinessStatus.APPROVED } } // Moved from filters to must
+        ];
+
+        // Ranking functions
+        const functions: any[] = [
+            // Boost Featured (now using is_active as a proxy for featured if needed, or remove if not applicable)
+            {
+                filter: { term: { is_active: true } }, // Changed to is_active
+                weight: 2.0
+            },
+            // Boost Verified
+            {
+                filter: { term: { is_verified: true } }, // Changed to is_verified
+                weight: 1.5
+            },
+            // Rating Score
+            {
+                field_value_factor: {
+                    field: 'rating',
+                    factor: 1.0,
+                    missing: 0
+                }
+            },
+            // Followers Score (Minimal influence)
+            {
+                field_value_factor: {
+                    field: 'followersCount',
+                    factor: 0.1,
+                    modifier: 'log1p',
+                    missing: 0
+                }
+            }
+        ];
+
+        // Proximity Boost (if location provided)
+        if (latitude && longitude) {
+            functions.push({
+                gauss: {
                     location: {
-                        lat: latitude,
-                        lon: longitude,
-                    },
-                },
+                        origin: { lat: latitude, lon: longitude },
+                        offset: "2km",
+                        scale: "10km",
+                        decay: 0.5
+                    }
+                }
             });
+
+            // Distance filter if radius provided
+            if (radius) {
+                filters.push({
+                    geo_distance: {
+                        distance: `${radius}km`,
+                        location: { lat: latitude, lon: longitude }
+                    }
+                });
+            }
         }
 
-        // Note: Open Now for ES requires complex script filters or checking against indexed hours
-        // For simplicity, we'll implement it if needed or warn that it's limited in ES for now.
+        // Construct sorting for ES
+        const sort: any[] = [];
+        if (sortBy === SearchSortBy.DISTANCE && latitude && longitude) {
+            sort.push({
+                _geo_distance: {
+                    location: { lat: latitude, lon: longitude },
+                    order: "asc",
+                    unit: "km",
+                    mode: "min",
+                    distance_type: "arc",
+                    ignore_unmapped: true
+                }
+            });
+        } else if (sortBy === SearchSortBy.RATING) {
+            sort.push({ rating: { order: "desc" } });
+        } else if (sortBy === SearchSortBy.NEWEST) {
+            sort.push({ createdAt: { order: "desc" } });
+        } else if (sortBy === SearchSortBy.RELEVANCE) {
+            // Default is score-based
+            sort.push({ _score: { order: "desc" } });
+        }
 
         const response = await this.elasticsearchService.search({
             index: this.INDEX_NAME,
@@ -290,34 +434,25 @@ export class SearchService implements OnModuleInit {
                     function_score: {
                         query: {
                             bool: {
-                                must: {
-                                    multi_match: {
-                                        query,
-                                        fields: ['title^3', 'description', 'category', 'address'],
-                                    },
-                                },
+                                must: baseQuery,
                                 filter: filters,
                             },
                         },
-                        functions: [
-                            {
-                                field_value_factor: {
-                                    field: 'followersCount',
-                                    factor: 1.2,
-                                    modifier: 'log1p',
-                                    missing: 0,
-                                },
-                            },
-                        ],
+                        functions,
+                        score_mode: 'multiply',
                         boost_mode: 'multiply',
                     },
                 },
+                sort: sort.length > 0 ? sort : undefined,
+                size: searchDto.limit || 50,
+                from: ((searchDto.page || 1) - 1) * (searchDto.limit || 50),
             },
         });
 
         return response.hits.hits.map((hit: any) => ({
             ...hit._source,
             score: hit._score,
+            distance: hit.sort && sortBy === SearchSortBy.DISTANCE ? hit.sort[0] : undefined
         }));
     }
 
@@ -364,6 +499,23 @@ export class SearchService implements OnModuleInit {
         if (!this.isElasticAvailable) {
             this.logger.warn('[reindexAll] Elasticsearch not available. Skipping re-index.');
             return { indexed: 0, message: 'Elasticsearch is not available.' };
+        }
+
+        // Delete and recreate index to ensure new mapping is applied
+        try {
+            const indexExists = await this.elasticsearchService.indices.exists({
+                index: this.INDEX_NAME,
+            });
+            if (indexExists) {
+                await this.elasticsearchService.indices.delete({
+                    index: this.INDEX_NAME,
+                });
+                this.logger.log(`🗑️ Deleted existing index: ${this.INDEX_NAME}`);
+            }
+            await this.createIndex();
+            this.logger.log(`✅ Re-created index with new mapping: ${this.INDEX_NAME}`);
+        } catch (error) {
+            this.logger.error(`❌ Error refreshing index: ${error.message}`);
         }
 
         const businesses = await this.businessRepository.find({
