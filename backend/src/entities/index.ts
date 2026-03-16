@@ -20,6 +20,7 @@ export * from './review-helpful-vote.entity';
 export * from './lead.entity';
 export * from './favorite.entity';
 export * from './follow.entity';
+export * from './payout.entity';
 
 // Subscriptions & Payments
 export * from './subscription-plan.entity';

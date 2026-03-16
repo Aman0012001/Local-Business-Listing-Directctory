@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 import { AffiliateReferral } from './referral.entity';
+import { Payout } from './payout.entity';
 
 export enum AffiliateStatus {
     ACTIVE = 'active',
@@ -31,18 +32,17 @@ export class Affiliate {
     @Index()
     referralCode: string;
 
-    @Column({ name: 'total_earnings', type: 'decimal', precision: 15, scale: 2, default: 0 })
+    @Column({ name: 'total_earnings', type: 'decimal', precision: 10, scale: 2, default: 0 })
     totalEarnings: number;
 
-    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
+    @Column({ name: 'total_withdrawals', type: 'decimal', precision: 10, scale: 2, default: 0 })
+    totalWithdrawals: number;
+
+    @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
     balance: number;
 
-    @Column({
-        type: 'enum',
-        enum: AffiliateStatus,
-        default: AffiliateStatus.ACTIVE,
-    })
-    status: AffiliateStatus;
+    @Column({ default: 'active' })
+    status: string;
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
@@ -51,10 +51,13 @@ export class Affiliate {
     updatedAt: Date;
 
     // Relations
-    @OneToOne(() => User)
+    @OneToOne(() => User, (user) => user.affiliate)
     @JoinColumn({ name: 'user_id' })
     user: User;
 
     @OneToMany(() => AffiliateReferral, (referral) => referral.affiliate)
     referrals: AffiliateReferral[];
+
+    @OneToMany(() => Payout, (payout) => payout.affiliate)
+    payouts: Payout[];
 }

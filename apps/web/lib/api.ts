@@ -410,11 +410,24 @@ export const api = {
         delete: (id: string) => fetcher(`/notifications/${id}`, { method: 'DELETE' }),
     },
     affiliate: {
-        join: (dto: any) => fetcher('/affiliate/join', { method: 'POST', body: dto }),
-        getStats: () => fetcher('/affiliate/stats'),
-        getReferrals: () => fetcher('/affiliate/referrals'),
+        join: (dto: any) => fetcher('/affiliate/join', { method: 'POST', body: JSON.stringify(dto) }),
+        getStats: () => fetcher<any>('/affiliate/stats'),
+        getReferrals: () => fetcher<any[]>('/affiliate/referrals'),
         trackClick: (code: string) => fetcher(`/affiliate/track-click?code=${code}`, { method: 'POST' }),
-        checkIn: (dto: any) => fetcher('/affiliate/check-in', { method: 'POST', body: dto }),
+        checkIn: (dto: any) => fetcher('/affiliate/check-in', { method: 'POST', body: JSON.stringify(dto) }),
+        requestPayout: (data: { amount: number; method: string; details: string }) => fetcher('/affiliate/payouts', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+        getPayouts: () => fetcher<any[]>('/affiliate/payouts'),
+        // Admin
+        adminGetStats: () => fetcher<any>('/affiliate/admin/stats'),
+        adminGetPayouts: () => fetcher<any[]>('/affiliate/admin/payouts'),
+        adminUpdatePayout: (id: string, data: { status: string; notes?: string }) => fetcher(`/affiliate/admin/payouts/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        }),
+        adminGetAffiliates: () => fetcher<any[]>('/affiliate/admin/affiliates'),
     },
     subscriptions: {
         getPlans: () => fetcher<any[]>('/subscriptions/plans'),

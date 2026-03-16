@@ -16,9 +16,17 @@ export default function AffiliateDashboard() {
     const { user } = useAuth();
     const [stats, setStats] = useState<any>(null);
     const [referrals, setReferrals] = useState<any[]>([]);
+    const [payouts, setPayouts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [joining, setJoining] = useState(false);
     const [copySuccess, setCopySuccess] = useState(false);
+    
+    // Payout Form State
+    const [showPayoutModal, setShowPayoutModal] = useState(false);
+    const [payoutAmount, setPayoutAmount] = useState('');
+    const [payoutMethod, setPayoutMethod] = useState('UPI');
+    const [payoutDetails, setPayoutDetails] = useState('');
+    const [submittingPayout, setSubmittingPayout] = useState(false);
 
     useEffect(() => {
         if (user) {
@@ -28,10 +36,14 @@ export default function AffiliateDashboard() {
 
     const loadData = async () => {
         try {
-            const statsData = await api.affiliate.getStats();
+            const [statsData, refData, payoutData] = await Promise.all([
+                api.affiliate.getStats(),
+                api.affiliate.getReferrals(),
+                api.affiliate.getPayouts()
+            ]);
             setStats(statsData);
-            const refData = await api.affiliate.getReferrals() as any[];
-            setReferrals(refData);
+            setReferrals(refData as any[]);
+            setPayouts(payoutData as any[]);
         } catch (err) {
             console.error('Failed to load affiliate data:', err);
         } finally {
@@ -48,6 +60,44 @@ export default function AffiliateDashboard() {
             alert(err.message || 'Failed to join affiliate program');
         } finally {
             setJoining(false);
+        }
+    };
+
+    const handleRequestPayout = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const amount = parseFloat(payoutAmount);
+        
+        if (isNaN(amount) || amount < 500) {
+            alert('Minimum withdrawal is Rs. 500');
+            return;
+        }
+
+        if (amount > stats.balance) {
+            alert('Insufficient balance');
+            return;
+        }
+
+        if (!payoutDetails) {
+            alert('Please provide payment details');
+            return;
+        }
+
+        setSubmittingPayout(true);
+        try {
+            await api.affiliate.requestPayout({
+                amount,
+                method: payoutMethod,
+                details: payoutDetails
+            });
+            setShowPayoutModal(false);
+            setPayoutAmount('');
+            setPayoutDetails('');
+            await loadData();
+            alert('Payout request submitted successfully!');
+        } catch (err: any) {
+            alert(err.message || 'Failed to submit payout request');
+        } finally {
+            setSubmittingPayout(false);
         }
     };
 
@@ -69,6 +119,7 @@ export default function AffiliateDashboard() {
             </div>
         );
     }
+// ... [rest of the component logic remains similar but with added UI sections]
 
     if (!stats && !loading) {
         return (
@@ -189,30 +240,32 @@ export default function AffiliateDashboard() {
                 <div className="grid lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 space-y-6">
                         <div className="bg-white rounded-[32px] border border-slate-200 overflow-hidden">
-                            <div className="p-8 border-b border-slate-100 flex items-center justify-between">
-                                <h3 className="text-xl font-black text-slate-900">Recent Activity</h3>
-                                <button className="text-xs font-black uppercase tracking-widest text-blue-600 hover:text-blue-700">View All</button>
+                            <div className="p-8 border-b border-slate-100 flex items-center justify-between font-black text-slate-900">
+                                <h3 className="text-xl">Payout History</h3>
                             </div>
                             <div className="p-4">
-                                {referrals.length > 0 ? (
+                                {payouts.length > 0 ? (
                                     <div className="space-y-2">
-                                        {referrals.map((ref, idx) => (
+                                        {payouts.map((payout, idx) => (
                                             <div key={idx} className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-2xl transition-all">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 font-bold uppercase">
-                                                        {ref.referredUser?.fullName?.[0] || 'U'}
+                                                    <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400">
+                                                        <Wallet className="w-6 h-6" />
                                                     </div>
                                                     <div>
-                                                        <h4 className="text-sm font-black text-slate-900">{ref.referredUser?.fullName || 'Anonymous User'}</h4>
-                                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{new Date(ref.createdAt).toLocaleDateString()} • {ref.type}</p>
+                                                        <h4 className="text-sm font-black text-slate-900">Rs. {payout.amount}</h4>
+                                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                                            {new Date(payout.createdAt).toLocaleDateString()} • {payout.paymentMethod}
+                                                        </p>
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
-                                                    <div className={`text-sm font-black ${ref.status === 'converted' ? 'text-emerald-500' : 'text-slate-400'}`}>
-                                                        {ref.status === 'converted' ? `+Rs. ${ref.commissionAmount}` : 'Pending'}
-                                                    </div>
-                                                    <span className={`text-[9px] font-black uppercase tracking-widest ${ref.status === 'converted' ? 'text-emerald-600/50' : 'text-slate-300'}`}>
-                                                        {ref.status}
+                                                    <span className={`px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                                        payout.status === 'paid' ? 'bg-emerald-100 text-emerald-600' :
+                                                        payout.status === 'rejected' ? 'bg-red-100 text-red-600' :
+                                                        'bg-orange-100 text-orange-600'
+                                                    }`}>
+                                                        {payout.status}
                                                     </span>
                                                 </div>
                                             </div>
@@ -221,9 +274,9 @@ export default function AffiliateDashboard() {
                                 ) : (
                                     <div className="py-20 text-center">
                                         <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-100">
-                                            <AlertCircle className="w-8 h-8 text-slate-200" />
+                                            <Timer className="w-8 h-8 text-slate-200" />
                                         </div>
-                                        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No activity found yet</p>
+                                        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No payouts yet</p>
                                     </div>
                                 )}
                             </div>
@@ -247,7 +300,10 @@ export default function AffiliateDashboard() {
                                     <p className="text-sm text-slate-300 font-medium">Minimum payout is <span className="text-white font-black">Rs. 500</span>. Payments processed weekly.</p>
                                 </div>
                             </div>
-                            <button className="w-full mt-10 py-4 bg-orange-500 text-white rounded-2xl font-black text-sm hover:bg-orange-600 transition-all flex items-center justify-center gap-2">
+                            <button 
+                                onClick={() => setShowPayoutModal(true)}
+                                className="w-full mt-10 py-4 bg-orange-500 text-white rounded-2xl font-black text-sm hover:bg-orange-600 transition-all flex items-center justify-center gap-2"
+                            >
                                 Request Payout <ChevronRight className="w-4 h-4" />
                             </button>
                         </div>
@@ -260,6 +316,88 @@ export default function AffiliateDashboard() {
                         </div>
                     </div>
                 </div>
+
+                {/* Payout Modal */}
+                <AnimatePresence>
+                    {showPayoutModal && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                            <motion.div 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setShowPayoutModal(false)}
+                                className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+                            />
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                                className="relative w-full max-w-lg bg-white rounded-[40px] shadow-2xl overflow-hidden"
+                            >
+                                <div className="p-10">
+                                    <h2 className="text-3xl font-black text-slate-900 mb-2">Withdraw Earnings</h2>
+                                    <p className="text-slate-500 font-medium mb-8">Available balance: <b>Rs. {stats?.balance}</b></p>
+                                    
+                                    <form onSubmit={handleRequestPayout} className="space-y-6">
+                                        <div>
+                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Amount (Min Rs. 500)</label>
+                                            <input 
+                                                type="number"
+                                                value={payoutAmount}
+                                                onChange={(e) => setPayoutAmount(e.target.value)}
+                                                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none font-bold"
+                                                placeholder="Enter amount"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Payment Method</label>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                {['Bank Transfer', 'EasyPaisa', 'JazzCash', 'UPI'].map(method => (
+                                                    <button 
+                                                        key={method}
+                                                        type="button"
+                                                        onClick={() => setPayoutMethod(method)}
+                                                        className={`py-3 rounded-xl border-2 text-xs font-black transition-all ${payoutMethod === method ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-slate-100 text-slate-400 hover:border-slate-200'}`}
+                                                    >
+                                                        {method}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Payment Details (Account #, Name)</label>
+                                            <textarea 
+                                                value={payoutDetails}
+                                                onChange={(e) => setPayoutDetails(e.target.value)}
+                                                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none font-bold"
+                                                placeholder="Enter your account details..."
+                                                rows={3}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="flex gap-4 pt-4">
+                                            <button 
+                                                type="button"
+                                                onClick={() => setShowPayoutModal(false)}
+                                                className="flex-1 py-4 bg-slate-100 text-slate-500 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button 
+                                                type="submit"
+                                                disabled={submittingPayout}
+                                                className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black text-sm hover:bg-orange-500 transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-200"
+                                            >
+                                                {submittingPayout ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Submit Request'}
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
             </main>
             <Footer />
         </div>

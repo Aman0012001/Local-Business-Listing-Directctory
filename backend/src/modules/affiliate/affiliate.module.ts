@@ -5,7 +5,7 @@ import { AffiliateController } from './affiliate.controller';
 import { Affiliate } from '../../entities/affiliate.entity';
 import { AffiliateReferral } from '../../entities/referral.entity';
 import { BusinessCheckIn } from '../../entities/check-in.entity';
-import { Listing } from '../../entities/business.entity';
+import { Payout } from '../../entities/payout.entity';
 import { User } from '../../entities/user.entity';
 
 @Module({
@@ -14,7 +14,7 @@ import { User } from '../../entities/user.entity';
             Affiliate,
             AffiliateReferral,
             BusinessCheckIn,
-            Listing,
+            Payout,
             User,
         ]),
     ],
