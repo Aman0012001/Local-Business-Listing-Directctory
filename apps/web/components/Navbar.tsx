@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { Menu, ChevronDown, MapPin, User as UserIcon, LogOut, X, Search, Building2, Globe, Bell, Check, Trash2, BellRing } from 'lucide-react';
+import { Menu, ChevronDown, MapPin, User as UserIcon, LogOut, X, Search, Building2, Globe, Bell, Check, Trash2, BellRing, Megaphone } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api, getImageUrl } from '../lib/api';
 import { Category, City } from '../types/api';
@@ -226,6 +226,15 @@ export default function Navbar() {
                                                         <div className="flex flex-col">
                                                             <span className="text-sm font-bold text-slate-900">Newly Added</span>
                                                             <span className="text-[10px] text-slate-400 font-medium italic">Fresh arrivals this week</span>
+                                                        </div>
+                                                    </Link>
+                                                    <Link href="/offers-events" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
+                                                        <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-500">
+                                                            <Megaphone className="w-4 h-4" />
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-bold text-slate-900">Offer & Events</span>
+                                                            <span className="text-[10px] text-slate-400 font-medium italic">Best deals & local events</span>
                                                         </div>
                                                     </Link>
                                                     <Link href="/search" className="mt-2 text-center py-2 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-900 border-t border-slate-50 pt-3">

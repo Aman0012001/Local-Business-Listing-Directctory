@@ -476,21 +476,31 @@ export const api = {
         }),
     },
     offers: {
-        create: (data: any) => fetcher<any>('/vendor/offers', {
+        create: (data: any) => fetcher<any>('/offers', {
             method: 'POST',
             body: JSON.stringify(data),
         }),
         getMy: (page = 1, limit = 10) =>
-            fetcher<{ data: any[]; meta: any }>(`/vendor/offers?page=${page}&limit=${limit}`),
-        update: (id: string, data: any) => fetcher<any>(`/vendor/offers/${id}`, {
+            fetcher<{ data: any[]; meta: any }>(`/offers/vendor?page=${page}&limit=${limit}`),
+        update: (id: string, data: any) => fetcher<any>(`/offers/${id}`, {
             method: 'PATCH',
             body: JSON.stringify(data),
         }),
-        remove: (id: string) => fetcher<void>(`/vendor/offers/${id}`, {
+        remove: (id: string) => fetcher<void>(`/offers/${id}`, {
             method: 'DELETE',
         }),
         getByBusiness: (businessId: string) =>
-            fetcher<any[]>(`/business/${businessId}/offers`),
+            fetcher<any[]>(`/offers/business/${businessId}/offers`),
+        search: (params: Record<string, string | number | boolean | undefined | null>) => {
+            const sanitizedParams: Record<string, string> = {};
+            Object.entries(params).forEach(([key, value]) => {
+                if (value !== undefined && value !== null && value !== '' && value !== false) {
+                    sanitizedParams[key] = String(value);
+                }
+            });
+            const query = new URLSearchParams(sanitizedParams).toString();
+            return fetcher<{ data: any[]; meta: any }>(`/offers/public/search?${query}`);
+        },
     },
     comments: {
         create: (data: any) => fetcher<any>('/comments', {

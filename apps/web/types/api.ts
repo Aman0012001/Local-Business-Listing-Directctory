@@ -133,3 +133,8 @@ export interface SearchResponse {
         hasMore: boolean;
     };
 }
+
+export enum OfferType {
+    OFFER = 'offer',
+    EVENT = 'event',
+}

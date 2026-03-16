@@ -11,6 +11,9 @@ import { Vendor } from '../../entities/vendor.entity';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { UpdateOfferDto } from './dto/update-offer.dto';
 
+import { SearchOfferDto } from './dto/search-offer.dto';
+import { Brackets } from 'typeorm';
+
 @Injectable()
 export class OffersService {
     constructor(
@@ -96,6 +99,65 @@ export class OffersService {
         };
     }
 
+    /** Public search for offers and events with filters */
+    async findAllPublic(dto: SearchOfferDto) {
+        const { query, city, latitude, longitude, radius, type, limit = 10, page = 1 } = dto;
+        const skip = (Number(page) - 1) * Number(limit);
+
+        const qb = this.offerRepository.createQueryBuilder('o')
+            .leftJoinAndSelect('o.business', 'b')
+            .leftJoinAndSelect('b.category', 'cat')
+            .where('o.isActive = :isActive', { isActive: true })
+            .andWhere('o.status != :expired', { expired: OfferStatus.EXPIRED });
+
+        if (query) {
+            qb.andWhere(new Brackets(inner => {
+                inner.where('LOWER(o.title) LIKE :query', { query: `%${query.toLowerCase()}%` })
+                    .orWhere('LOWER(o.description) LIKE :query', { query: `%${query.toLowerCase()}%` })
+                    .orWhere('LOWER(b.title) LIKE :query', { query: `%${query.toLowerCase()}%` });
+            }));
+        }
+
+        if (city) {
+            qb.andWhere('LOWER(b.city) = :city', { city: city.toLowerCase() });
+        }
+
+        if (type) {
+            qb.andWhere('o.type = :type', { type });
+        }
+
+        if (latitude && longitude) {
+            const formula = `earth_distance(ll_to_earth(b.latitude, b.longitude), ll_to_earth(:lat, :lng))`;
+            qb.addSelect(`${formula} / 1000`, 'distance');
+            qb.setParameters({ lat: latitude, lng: longitude });
+
+            if (radius) {
+                const radiusInMeters = radius * 1000;
+                qb.andWhere(`${formula} <= :radiusInMeters`, { radiusInMeters });
+            }
+            qb.orderBy('distance', 'ASC');
+        } else {
+            qb.orderBy('o.createdAt', 'DESC');
+        }
+
+        const [offers, total] = await qb
+            .skip(skip)
+            .take(Number(limit))
+            .getManyAndCount();
+
+        const withStatus = offers.map(o => this.computeStatus(o));
+
+        return {
+            data: withStatus,
+            meta: {
+                total,
+                page: Number(page),
+                limit: Number(limit),
+                totalPages: Math.ceil(total / Number(limit)),
+            },
+        };
+    }
+
     /** Update an existing offer (vendor-scoped) */
     async update(id: string, userId: string, dto: UpdateOfferDto): Promise<OfferEvent> {
         const vendor = await this.getVendorByUserId(userId);
@@ -155,3 +217,4 @@ export class OffersService {
         return result.affected || 0;
     }
 }
+

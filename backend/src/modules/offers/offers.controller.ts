@@ -15,6 +15,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { OffersService } from './offers.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { UpdateOfferDto } from './dto/update-offer.dto';
+import { SearchOfferDto } from './dto/search-offer.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -23,14 +24,20 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { User, UserRole } from '../../entities/user.entity';
 
 @ApiTags('offers')
-@Controller()
+@Controller('offers')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class OffersController {
     constructor(private readonly offersService: OffersService) { }
 
-    // ─── Vendor Endpoints ────────────────────────────────────────────────────
+    /** Public search for offers and events */
+    @Public()
+    @Get('public/search')
+    async findAllPublic(@Query() dto: SearchOfferDto) {
+        return this.offersService.findAllPublic(dto);
+    }
 
-    @Post('vendor/offers')
+    @Post()
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.VENDOR, UserRole.ADMIN)
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Create a new offer or event (Vendor)' })
@@ -42,7 +49,8 @@ export class OffersController {
         return this.offersService.create(user.id, dto);
     }
 
-    @Get('vendor/offers')
+    @Get('vendor')
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.VENDOR, UserRole.ADMIN)
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Get all offers for the authenticated vendor (paginated)' })
@@ -55,7 +63,8 @@ export class OffersController {
         return this.offersService.findByVendor(user.id, page, limit);
     }
 
-    @Patch('vendor/offers/:id')
+    @Patch(':id')
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.VENDOR, UserRole.ADMIN)
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Update an offer (Vendor owner only)' })
@@ -69,7 +78,8 @@ export class OffersController {
         return this.offersService.update(id, user.id, dto);
     }
 
-    @Delete('vendor/offers/:id')
+    @Delete(':id')
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.VENDOR, UserRole.ADMIN)
     @ApiBearerAuth()
     @HttpCode(HttpStatus.NO_CONTENT)
