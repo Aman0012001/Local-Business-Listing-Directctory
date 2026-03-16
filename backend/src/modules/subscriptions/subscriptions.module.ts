@@ -8,6 +8,8 @@ import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
 import { Transaction } from '../../entities/transaction.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { User } from '../../entities/user.entity';
+import { Affiliate } from '../../entities/affiliate.entity';
+import { AffiliateReferral } from '../../entities/referral.entity';
 import { SubscriptionsSeederService } from './subscriptions-seeder.service';
 
 @Module({
@@ -18,6 +20,8 @@ import { SubscriptionsSeederService } from './subscriptions-seeder.service';
             Transaction,
             Vendor,
             User,
+            Affiliate,
+            AffiliateReferral,
         ]),
     ],
     controllers: [SubscriptionsController],

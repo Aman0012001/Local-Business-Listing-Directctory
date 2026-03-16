@@ -212,3 +212,7 @@ Details: {"query":"SELECT COUNT(DISTINCT(\"listing\".\"id\")) AS \"cnt\" FROM \"
 [2026-03-16T16:44:49.948Z] NotificationsService Constructor Called
 [2026-03-16T17:00:51.319Z] NotificationsService Constructor Called
 [2026-03-16T17:01:37.814Z] NotificationsService Constructor Called
+[2026-03-16T17:17:50.014Z] NotificationsService Constructor Called
+[2026-03-16T17:17:58.253Z] NotificationsService Constructor Called
+[2026-03-16T17:18:10.653Z] NotificationsService Constructor Called
+[2026-03-16T17:18:32.238Z] NotificationsService Constructor Called

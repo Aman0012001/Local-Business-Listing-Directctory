@@ -25,7 +25,7 @@ export default function Navbar() {
     const fetchNotifications = useCallback(async () => {
         if (!user) return;
         try {
-            const res = await api.notifications.getAll();
+            const res = await api.notifications.getAll() as any;
             setNotifications(res.notifications || []);
             setUnreadCount(res.unreadCount || 0);
         } catch { /* ignore */ }
@@ -128,6 +128,9 @@ export default function Navbar() {
                         <div className="flex items-center gap-2 pointer-events-auto">
                             <Link href="/" className="relative text-[#2D3E50] font-bold text-[15px] px-4 py-2 rounded-xl hover:bg-slate-50 transition-all hover:text-[#FF7A30]">
                                 Home
+                            </Link>
+                            <Link href="/affiliate" className="relative text-[#2D3E50]/70 font-bold text-[15px] px-4 py-2 rounded-xl hover:bg-slate-50 transition-all hover:text-[#FF7A30]">
+                                Affiliate
                             </Link>
 
                             {/* Categories Dropdown */}

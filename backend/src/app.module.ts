@@ -25,6 +25,7 @@ import { OffersModule } from './modules/offers/offers.module';
 import { CommentsModule } from './modules/comments/comments.module';
 import { DemandModule } from './modules/demand/demand.module';
 import { FollowsModule } from './modules/follows/follows.module';
+import { AffiliateModule } from './modules/affiliate/affiliate.module';
 
 import { join } from 'path';
 
@@ -81,6 +82,7 @@ import { join } from 'path';
         CommentsModule,
         DemandModule,
         FollowsModule,
+        AffiliateModule,
     ],
     providers: [
         {

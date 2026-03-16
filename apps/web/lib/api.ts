@@ -404,10 +404,17 @@ export const api = {
         },
     },
     notifications: {
-        getAll: () => fetcher<any>('/notifications'),
-        markRead: (id: string) => fetcher<any>(`/notifications/${id}/read`, { method: 'PATCH' }),
-        markAllRead: () => fetcher<any>('/notifications/read-all', { method: 'PATCH' }),
-        delete: (id: string) => fetcher<any>(`/notifications/${id}`, { method: 'DELETE' }),
+        getAll: () => fetcher('/notifications'),
+        markRead: (id: string) => fetcher(`/notifications/${id}/read`, { method: 'PATCH' }),
+        markAllRead: () => fetcher('/notifications/read-all', { method: 'PATCH' }),
+        delete: (id: string) => fetcher(`/notifications/${id}`, { method: 'DELETE' }),
+    },
+    affiliate: {
+        join: (dto: any) => fetcher('/affiliate/join', { method: 'POST', body: dto }),
+        getStats: () => fetcher('/affiliate/stats'),
+        getReferrals: () => fetcher('/affiliate/referrals'),
+        trackClick: (code: string) => fetcher(`/affiliate/track-click?code=${code}`, { method: 'POST' }),
+        checkIn: (dto: any) => fetcher('/affiliate/check-in', { method: 'POST', body: dto }),
     },
     subscriptions: {
         getPlans: () => fetcher<any[]>('/subscriptions/plans'),

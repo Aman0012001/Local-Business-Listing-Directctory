@@ -5,7 +5,7 @@ import {
     Star, MapPin, Globe, Phone, Mail, Clock, ShieldCheck,
     Share2, Heart, MessageSquare, ChevronLeft, ChevronRight, CheckCircle2, X,
     Send, User, Tag, Zap, Calendar, Megaphone, Store, Search, ArrowLeft,
-    Facebook, Twitter, Instagram, Linkedin, Youtube, Link as LinkIcon, Images, Navigation, Loader2
+    Facebook, Twitter, Instagram, Linkedin, Youtube, Link as LinkIcon, Images, Navigation, Loader2, Footprints, Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '../../../components/Navbar';
@@ -95,6 +95,8 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
     const [enquiryError, setEnquiryError] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [pendingAction, setPendingAction] = useState<'call' | 'whatsapp' | null>(null);
+    const [isCheckingIn, setIsCheckingIn] = useState(false);
+    const [checkInDone, setCheckInDone] = useState(false);
 
     // Lightbox state
     const [showLightbox, setShowLightbox] = useState(false);
@@ -192,6 +194,19 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                     setOffers(Array.isArray(offersData) ? offersData : []);
                 } catch (oe) {
                     console.error('[BusinessDetail] Failed to load offers:', oe);
+                }
+
+                // Check for referral code in URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const refCode = urlParams.get('ref');
+                if (refCode && typeof window !== 'undefined') {
+                    // Try to track the click for the logged in user
+                    if (user) {
+                        try { await api.affiliate.trackClick(refCode); } catch (e) {}
+                    } else {
+                        // Store in session storage for later if not logged in
+                        sessionStorage.setItem('referralCode', refCode);
+                    }
                 }
             } catch (err: any) {
                 console.error('[BusinessDetail] CRITICAL error loading business details:', err);
@@ -385,6 +400,29 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
         }
     };
 
+    const handleCheckIn = async () => {
+        if (!user) {
+            alert('Please login to check-in.');
+            return;
+        }
+        if (!business) return;
+
+        setIsCheckingIn(true);
+        try {
+            const refCode = new URLSearchParams(window.location.search).get('ref') || sessionStorage.getItem('referralCode');
+            await api.affiliate.checkIn({
+                businessId: business.id,
+                referralCode: refCode || undefined
+            });
+            setCheckInDone(true);
+            // Optional: Show some success animation or toast
+        } catch (err: any) {
+            console.error('Check-in failed:', err);
+        } finally {
+            setIsCheckingIn(false);
+        }
+    };
+
     if (loading) return <div className="min-h-screen bg-white"><Navbar /><div className="max-w-7xl mx-auto px-4 py-20 text-center text-slate-400">Loading business details...</div></div>;
 
     if (error || !business) {
@@ -560,6 +598,15 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                             Link Copied!
                                         </div>
                                     )}
+                                </button>
+                                
+                                <button
+                                    onClick={handleCheckIn}
+                                    disabled={isCheckingIn || checkInDone}
+                                    className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-sm transition-all shadow-lg active:scale-95 ${checkInDone ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-500/20'}`}
+                                >
+                                    {isCheckingIn ? <Loader2 className="w-4 h-4 animate-spin" /> : checkInDone ? <CheckCircle2 className="w-4 h-4" /> : <Footprints className="w-4 h-4" />}
+                                    {checkInDone ? 'Checked In' : 'Check In'}
                                 </button>
                             </div>
                         </div>

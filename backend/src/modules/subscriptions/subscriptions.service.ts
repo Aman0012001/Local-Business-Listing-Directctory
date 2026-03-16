@@ -11,6 +11,8 @@ import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
 import { Transaction, PaymentStatus } from '../../entities/transaction.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { User } from '../../entities/user.entity';
+import { AffiliateReferral, ReferralStatus, ReferralType } from '../../entities/referral.entity';
+import { Affiliate } from '../../entities/affiliate.entity';
 import { CreatePlanDto, UpdatePlanDto, CheckoutDto, AssignPlanDto } from './dto/subscription.dto';
 
 import { ConfigService } from '@nestjs/config';
@@ -28,6 +30,10 @@ export class SubscriptionsService {
         private vendorRepository: Repository<Vendor>,
         @InjectRepository(User)
         private userRepository: Repository<User>,
+        @InjectRepository(AffiliateReferral)
+        private referralRepository: Repository<AffiliateReferral>,
+        @InjectRepository(Affiliate)
+        private affiliateRepository: Repository<Affiliate>,
         private configService: ConfigService,
     ) { }
 
@@ -248,6 +254,34 @@ export class SubscriptionsService {
         });
 
         await this.transactionRepository.save(transaction);
+
+        // --- Affiliate Integration ---
+        // Check if there's a pending referral for this user (signup or subscription type)
+        const referral = await this.referralRepository.findOne({
+            where: [
+                { referredUserId: vendor.userId, status: ReferralStatus.PENDING, type: ReferralType.SIGNUP },
+                { referredUserId: vendor.userId, status: ReferralStatus.PENDING, type: ReferralType.SUBSCRIPTION }
+            ],
+            order: { createdAt: 'DESC' }
+        });
+
+        if (referral) {
+            // Calculate commission (e.g., 10% of the plan price)
+            const commissionAmount = Number(plan.price) * 0.10;
+            
+            referral.status = ReferralStatus.CONVERTED;
+            referral.commissionAmount = commissionAmount;
+            await this.referralRepository.save(referral);
+
+            // Credit the affiliate
+            const affiliate = await this.affiliateRepository.findOne({ where: { id: referral.affiliateId } });
+            if (affiliate) {
+                affiliate.balance = Number(affiliate.balance) + commissionAmount;
+                affiliate.totalEarnings = Number(affiliate.totalEarnings) + commissionAmount;
+                await this.affiliateRepository.save(affiliate);
+            }
+        }
+        // ------------------------------
 
         return savedSub;
     }
