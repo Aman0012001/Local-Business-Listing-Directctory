@@ -75,8 +75,8 @@ export default function AdminCitiesPage() {
         setActionLoading('import');
         try {
             const addressComponents = selectedPlace.address_components;
-            const cityName = addressComponents.find((c: any) => c.types.includes('locality'))?.long_name || 
-                           addressComponents.find((c: any) => c.types.includes('administrative_area_level_2'))?.long_name;
+            const cityName = addressComponents.find((c: any) => c.types.includes('locality'))?.long_name ||
+                addressComponents.find((c: any) => c.types.includes('administrative_area_level_2'))?.long_name;
             const state = addressComponents.find((c: any) => c.types.includes('administrative_area_level_1'))?.long_name;
             const country = addressComponents.find((c: any) => c.types.includes('country'))?.long_name;
 
@@ -161,7 +161,7 @@ export default function AdminCitiesPage() {
             </div>
 
             {/* Cities Table */}
-            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden text-sans">
+            <div className="bg-white rounded-[28px] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden text-sans">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
@@ -284,7 +284,7 @@ export default function AdminCitiesPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="bg-white rounded-[2.5rem] p-8 max-w-lg w-full shadow-2xl relative overflow-hidden"
+                            className="bg-white rounded-[28px] p-8 max-w-lg w-full shadow-2xl relative overflow-hidden"
                             onClick={e => e.stopPropagation()}
                         >
                             <div className="flex items-center justify-between mb-8">
@@ -341,8 +341,8 @@ export default function AdminCitiesPage() {
                                         <button
                                             type="button"
                                             onClick={() => setImportData({ ...importData, isPopular: !importData.isPopular })}
-                                            className={`w-full h-14 px-5 rounded-2xl border flex items-center justify-center gap-2 font-bold transition-all ${importData.isPopular 
-                                                ? 'bg-amber-50 border-amber-200 text-amber-600' 
+                                            className={`w-full h-14 px-5 rounded-2xl border flex items-center justify-center gap-2 font-bold transition-all ${importData.isPopular
+                                                ? 'bg-amber-50 border-amber-200 text-amber-600'
                                                 : 'bg-slate-50 border-slate-200 text-slate-400'}`}
                                         >
                                             <Star className={`w-4 h-4 ${importData.isPopular ? 'fill-current' : ''}`} />
@@ -373,14 +373,14 @@ export default function AdminCitiesPage() {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="bg-white rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl text-center"
+                            className="bg-white rounded-[28px] p-10 max-w-md w-full shadow-2xl text-center"
                         >
                             <div className="w-20 h-20 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-6">
                                 <XCircle className="w-10 h-10" />
                             </div>
                             <h3 className="text-2xl font-black text-slate-900 tracking-tight">Remove City?</h3>
                             <p className="text-slate-500 font-medium mt-3 leading-relaxed">
-                                Are you sure you want to remove <span className="text-slate-900 font-black">"{selectedCity.name}"</span>? 
+                                Are you sure you want to remove <span className="text-slate-900 font-black">"{selectedCity.name}"</span>?
                                 Businesses listed in this city may become harder to find.
                             </p>
                             <div className="flex gap-4 mt-10">

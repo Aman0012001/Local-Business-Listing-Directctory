@@ -159,7 +159,7 @@ export default function AdminBusinessesPage() {
                     <Loader2 className="w-10 h-10 animate-spin text-slate-300" />
                 </div>
             ) : businesses.length === 0 ? (
-                <div className="bg-white rounded-[2.5rem] p-20 flex flex-col items-center text-center border-2 border-dashed border-slate-100">
+                <div className="bg-white rounded-[28px] p-20 flex flex-col items-center text-center border-2 border-dashed border-slate-100">
                     <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mb-6">
                         <Store className="w-10 h-10 text-slate-200" />
                     </div>
@@ -167,7 +167,7 @@ export default function AdminBusinessesPage() {
                     <p className="text-slate-400 font-medium mt-2 max-w-xs">Try adjusting your search or filters to find what you're looking for.</p>
                 </div>
             ) : (
-                <div className={`bg-white rounded-[2.5rem] border border-slate-100 shadow-slate-200/50 relative ${openMenu ? 'z-[60]' : ''}`}>
+                <div className={`bg-white rounded-[28px] border border-slate-100 shadow-slate-200/50 relative ${openMenu ? 'z-[60]' : ''}`}>
                     <div className="overflow-x-auto scrollbar-hide">
                         <table className="w-full text-left border-collapse min-w-[800px]">
                             <thead>

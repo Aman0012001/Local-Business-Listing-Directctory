@@ -29,7 +29,7 @@ export default function VendorNotifications() {
     const fetchNotifications = async () => {
         setLoading(true);
         try {
-            const data = await api.notifications.getAll();
+            const data: any = await api.notifications.getAll();
             setNotifications(data.notifications || []);
         } catch (error) {
             console.error('Failed to fetch notifications:', error);

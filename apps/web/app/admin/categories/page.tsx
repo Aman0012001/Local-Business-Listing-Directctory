@@ -249,7 +249,7 @@ export default function AdminCategoriesPage() {
             </div>
 
             {/* Table */}
-            <div className="bg-white rounded-[2.5rem] border border-slate-100  shadow-slate-200/50 overflow-hidden">
+            <div className="bg-white rounded-[28px] border border-slate-100  shadow-slate-200/50 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
@@ -435,7 +435,7 @@ export default function AdminCategoriesPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="bg-white rounded-[2.5rem] p-8 max-w-lg w-full shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto"
+                            className="bg-white rounded-[28px] p-8 max-w-lg w-full shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto"
                             onClick={e => e.stopPropagation()}
                         >
                             <div className="flex items-center justify-between mb-8">
@@ -554,7 +554,7 @@ export default function AdminCategoriesPage() {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="bg-white rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl text-center"
+                            className="bg-white rounded-[28px] p-10 max-w-md w-full shadow-2xl text-center"
                         >
                             <div className="w-20 h-20 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-6">
                                 <AlertTriangle className="w-10 h-10" />

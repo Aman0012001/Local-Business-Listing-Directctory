@@ -80,7 +80,7 @@ export default function AdminPlansPage() {
                 maxListings: plan.maxListings,
                 isFeatured: plan.isFeatured,
                 isActive: plan.isActive,
-                dashboardFeatures: plan.dashboardFeatures || {
+                dashboardFeatures: (plan.dashboardFeatures as any) || {
                     showAnalytics: false,
                     showOffers: false,
                     showLeads: false,

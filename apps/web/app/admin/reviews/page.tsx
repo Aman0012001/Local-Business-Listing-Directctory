@@ -2,13 +2,13 @@
 
 import React, { useEffect, useState } from 'react';
 import { api } from '../../../lib/api';
-import { 
-    ShieldAlert, 
-    CheckCircle, 
-    Trash2, 
-    Filter, 
-    Search, 
-    Clock, 
+import {
+    ShieldAlert,
+    CheckCircle,
+    Trash2,
+    Filter,
+    Search,
+    Clock,
     User as UserIcon,
     Store,
     AlertTriangle,
@@ -43,7 +43,7 @@ export default function ReviewModerationPage() {
             };
             if (filter.isSuspicious !== 'all') params.isSuspicious = filter.isSuspicious;
             if (filter.isApproved !== 'all') params.isApproved = filter.isApproved;
-            
+
             const response = await api.reviews.adminGetAll(params);
             setReviews(response.data);
             setTotalPages(Math.ceil(response.meta.total / 10));
@@ -108,7 +108,7 @@ export default function ReviewModerationPage() {
                 <div className="flex flex-wrap items-center gap-3">
                     <div className="relative group">
                         <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <select 
+                        <select
                             value={filter.isSuspicious}
                             onChange={(e) => setFilter(prev => ({ ...prev, isSuspicious: e.target.value }))}
                             className="pl-11 pr-8 py-3 bg-white border border-slate-200 rounded-2xl appearance-none focus:outline-none focus:ring-4 focus:ring-red-500/10 focus:border-red-500 transition-all font-bold text-slate-700"
@@ -121,7 +121,7 @@ export default function ReviewModerationPage() {
 
                     <div className="relative group">
                         <CheckCircle className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <select 
+                        <select
                             value={filter.isApproved}
                             onChange={(e) => setFilter(prev => ({ ...prev, isApproved: e.target.value }))}
                             className="pl-11 pr-8 py-3 bg-white border border-slate-200 rounded-2xl appearance-none focus:outline-none focus:ring-4 focus:ring-red-500/10 focus:border-red-500 transition-all font-bold text-slate-700"
@@ -132,7 +132,7 @@ export default function ReviewModerationPage() {
                         </select>
                     </div>
 
-                    <button 
+                    <button
                         onClick={fetchReviews}
                         className="p-3 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all active:scale-95 text-slate-600 shadow-sm"
                     >
@@ -144,12 +144,12 @@ export default function ReviewModerationPage() {
             {/* Content Area */}
             <div className="grid grid-cols-1 gap-6">
                 {loading && reviews.length === 0 ? (
-                    <div className="bg-white rounded-[2.5rem] p-20 border border-slate-100 flex flex-col items-center justify-center gap-4">
+                    <div className="bg-white rounded-[28px] p-20 border border-slate-100 flex flex-col items-center justify-center gap-4">
                         <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
                         <p className="font-bold text-slate-900">Loading reviews for moderation...</p>
                     </div>
                 ) : reviews.length === 0 ? (
-                    <div className="bg-white rounded-[2.5rem] p-20 border border-slate-100 flex flex-col items-center justify-center text-center gap-4">
+                    <div className="bg-white rounded-[28px] p-20 border border-slate-100 flex flex-col items-center justify-center text-center gap-4">
                         <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-[2rem] flex items-center justify-center">
                             <MessageSquare className="w-10 h-10" />
                         </div>
@@ -167,7 +167,7 @@ export default function ReviewModerationPage() {
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 transition={{ delay: i * 0.05 }}
-                                className={`bg-white rounded-[2.5rem] border ${review.isSuspicious ? 'border-orange-200 bg-orange-50/10' : 'border-slate-100'} p-8 shadow-sm group hover:shadow-xl transition-all duration-500`}
+                                className={`bg-white rounded-[28px] border ${review.isSuspicious ? 'border-orange-200 bg-orange-50/10' : 'border-slate-100'} p-8 shadow-sm group hover:shadow-xl transition-all duration-500`}
                             >
                                 <div className="flex flex-col lg:flex-row gap-8">
                                     {/* Left Side: Rating & Content */}
@@ -176,9 +176,9 @@ export default function ReviewModerationPage() {
                                             <div className="flex items-center gap-4">
                                                 <div className="flex gap-0.5">
                                                     {[...Array(5)].map((_, i) => (
-                                                        <Star 
-                                                            key={i} 
-                                                            className={`w-4 h-4 ${i < review.rating ? 'text-orange-400 fill-orange-400' : 'text-slate-200'}`} 
+                                                        <Star
+                                                            key={i}
+                                                            className={`w-4 h-4 ${i < review.rating ? 'text-orange-400 fill-orange-400' : 'text-slate-200'}`}
                                                         />
                                                     ))}
                                                 </div>
@@ -258,8 +258,8 @@ export default function ReviewModerationPage() {
                                         <button
                                             disabled={!!actionLoading}
                                             onClick={() => handleModerate(review.id, { isApproved: true, isSuspicious: false })}
-                                            className={`flex-grow flex items-center justify-center gap-2 px-6 py-4 rounded-2xl font-black text-sm transition-all active:scale-95 ${review.isApproved && !review.isSuspicious 
-                                                ? 'bg-emerald-50 text-emerald-600 border border-emerald-100 cursor-default' 
+                                            className={`flex-grow flex items-center justify-center gap-2 px-6 py-4 rounded-2xl font-black text-sm transition-all active:scale-95 ${review.isApproved && !review.isSuspicious
+                                                ? 'bg-emerald-50 text-emerald-600 border border-emerald-100 cursor-default'
                                                 : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-200'}`}
                                         >
                                             <CheckCircle className="w-4 h-4" />
@@ -267,10 +267,10 @@ export default function ReviewModerationPage() {
                                         </button>
 
                                         <button
-                                             disabled={!!actionLoading}
-                                             onClick={() => handleModerate(review.id, { isApproved: false, isSuspicious: true })}
-                                             className={`flex-grow flex items-center justify-center gap-2 px-6 py-4 rounded-2xl font-black text-sm transition-all active:scale-95 ${review.isSuspicious 
-                                                ? 'bg-orange-50 text-orange-600 border border-orange-100 cursor-default' 
+                                            disabled={!!actionLoading}
+                                            onClick={() => handleModerate(review.id, { isApproved: false, isSuspicious: true })}
+                                            className={`flex-grow flex items-center justify-center gap-2 px-6 py-4 rounded-2xl font-black text-sm transition-all active:scale-95 ${review.isSuspicious
+                                                ? 'bg-orange-50 text-orange-600 border border-orange-100 cursor-default'
                                                 : 'bg-orange-100 text-orange-700 hover:bg-orange-200'}`}
                                         >
                                             <ShieldAlert className="w-4 h-4" />

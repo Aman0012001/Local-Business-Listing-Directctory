@@ -37,7 +37,7 @@ export default function SearchAnalyticsPage() {
 
             // Calculate some basic stats from the heatmap data
             const total = data.reduce((acc, curr) => acc + parseInt(curr.intensity), 0);
-            const top = data.length > 0 ? data.sort((a,b) => parseInt(b.intensity) - parseInt(a.intensity))[0].keyword : 'N/A';
+            const top = data.length > 0 ? data.sort((a, b) => parseInt(b.intensity) - parseInt(a.intensity))[0].keyword : 'N/A';
 
             setStats({
                 totalSearches: total,
@@ -239,7 +239,7 @@ export default function SearchAnalyticsPage() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.1 }}
                         key={i}
-                        className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center gap-6"
+                        className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-sm flex items-center gap-6"
                     >
                         <div className={`${stat.color} p-4 rounded-3xl text-white shadow-lg`}>
                             <stat.icon className="w-6 h-6" />

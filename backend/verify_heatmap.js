@@ -1,5 +1,5 @@
 async function verify() {
-    const baseUrl = 'http://localhost:3001/api/v1';
+    const baseUrl = 'http://localhost:3002/api/v1';
     
     try {
         console.log('Fetching heatmap data...');

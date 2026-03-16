@@ -410,10 +410,10 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
         setIsCheckingIn(true);
         try {
             const refCode = new URLSearchParams(window.location.search).get('ref') || sessionStorage.getItem('referralCode');
-            await api.affiliate.checkIn({
-                businessId: business.id,
-                referralCode: refCode || undefined
-            });
+            await api.affiliate.checkIn(
+                business.id,
+                refCode || undefined
+            );
             setCheckInDone(true);
             // Optional: Show some success animation or toast
         } catch (err: any) {

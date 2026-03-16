@@ -123,7 +123,7 @@ export default function VendorDemandPage() {
                     </p>
                 </div>
             ) : (
-                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+                <div className="bg-white rounded-[28px] border border-slate-100 shadow-sm overflow-hidden">
                     <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                         <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                             <BarChart2 className="w-6 h-6 text-blue-600" />

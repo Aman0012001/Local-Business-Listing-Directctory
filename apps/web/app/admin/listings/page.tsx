@@ -119,7 +119,7 @@ export default function AdminListingsPage() {
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="bg-white rounded-[2.5rem] p-24 flex flex-col items-center text-center border-2 border-dashed border-slate-100"
+                    className="bg-white rounded-[28px] p-24 flex flex-col items-center text-center border-2 border-dashed border-slate-100"
                 >
                     <div className="w-24 h-24 bg-emerald-50 rounded-[2rem] flex items-center justify-center mb-6 shadow-inner">
                         <ShieldCheck className="w-12 h-12 text-emerald-500" />
@@ -138,7 +138,7 @@ export default function AdminListingsPage() {
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 transition={{ delay: idx * 0.05 }}
-                                className="bg-white rounded-[2.5rem] border border-slate-100  shadow-slate-200/40 overflow-hidden group hover:border-blue-200 transition-all duration-500"
+                                className="bg-white rounded-[28px] border border-slate-100  shadow-slate-200/40 overflow-hidden group hover:border-blue-200 transition-all duration-500"
                             >
                                 <div className="flex flex-col lg:flex-row lg:items-center gap-8 p-8">
                                     {/* Visual Group */}

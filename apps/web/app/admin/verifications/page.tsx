@@ -120,7 +120,7 @@ export default function AdminVerificationsPage() {
                     <Loader2 className="w-10 h-10 animate-spin text-slate-300" />
                 </div>
             ) : vendors.length === 0 ? (
-                <div className="bg-white rounded-[2.5rem] p-24 flex flex-col items-center text-center border border-slate-100 shadow-sm">
+                <div className="bg-white rounded-[28px] p-24 flex flex-col items-center text-center border border-slate-100 shadow-sm">
                     <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mb-6">
                         <Briefcase className="w-10 h-10 text-slate-200" />
                     </div>
@@ -128,7 +128,7 @@ export default function AdminVerificationsPage() {
                     <p className="text-slate-400 font-medium mt-2 max-w-xs">There are no vendors matching your current filters.</p>
                 </div>
             ) : (
-                <div className="bg-white rounded-[2.5rem] border border-slate-100  shadow-slate-200/50 overflow-hidden">
+                <div className="bg-white rounded-[28px] border border-slate-100  shadow-slate-200/50 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>

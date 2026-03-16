@@ -118,6 +118,24 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
     const [newAmenityName, setNewAmenityName] = useState('');
     const [creatingAmenity, setCreatingAmenity] = useState(false);
 
+    const [newFaq, setNewFaq] = useState({ question: '', answer: '' });
+
+    const addFaq = () => {
+        if (!newFaq.question.trim() || !newFaq.answer.trim()) return;
+        setFormData(prev => ({
+            ...prev,
+            faqs: [...(prev.faqs || []), newFaq]
+        }));
+        setNewFaq({ question: '', answer: '' });
+    };
+
+    const removeFaq = (index: number) => {
+        setFormData(prev => ({
+            ...prev,
+            faqs: (prev.faqs || []).filter((_, i) => i !== index)
+        }));
+    };
+
     // Google Maps State & Refs
     const [mapError, setMapError] = useState(false);
     const [mapLoaded, setMapLoaded] = useState(false);
