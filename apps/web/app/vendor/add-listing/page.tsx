@@ -6,7 +6,7 @@ import {
     Loader2, Store, MapPin, Phone, TextQuote, Layers,
     ArrowLeft, CheckCircle, ImagePlus, Building2, Tag,
     FileText, Navigation, Sparkles, X, Images, Check, Plus,
-    ChevronLeft, ChevronRight, Hash, Share2, Globe, Search, ChevronDown
+    ChevronLeft, ChevronRight, Hash, Share2, Globe, Search, ChevronDown, HelpCircle, Trash2
 } from 'lucide-react';
 import { api, getImageUrl } from '../../../lib/api';
 import { Category, City } from '../../../types/api';
@@ -16,6 +16,7 @@ const steps = [
     { id: 1, label: 'Business Info', icon: Building2 },
     { id: 2, label: 'Location', icon: Navigation },
     { id: 3, label: 'Details', icon: FileText },
+    { id: 4, label: 'FAQs', icon: HelpCircle },
 ];
 
 const inputClass =
@@ -146,7 +147,26 @@ export default function AddListingPage() {
         whatsapp: '',
         website: '',
         suggestedCategoryName: '',
+        faqs: [] as { question: string; answer: string }[],
     });
+
+    const [newFaq, setNewFaq] = useState({ question: '', answer: '' });
+
+    const addFaq = () => {
+        if (!newFaq.question.trim() || !newFaq.answer.trim()) return;
+        setFormData(prev => ({
+            ...prev,
+            faqs: [...prev.faqs, { ...newFaq }]
+        }));
+        setNewFaq({ question: '', answer: '' });
+    };
+
+    const removeFaq = (index: number) => {
+        setFormData(prev => ({
+            ...prev,
+            faqs: prev.faqs.filter((_, i) => i !== index)
+        }));
+    };
 
     const autoCompleteRef = useRef<any>(null);
     const addressInputRef = useRef<HTMLInputElement>(null);
@@ -460,6 +480,9 @@ export default function AddListingPage() {
         } else {
             submissionData.suggestedCategoryName = undefined;
         }
+
+        // Filter out empty FAQs
+        submissionData.faqs = (submissionData.faqs || []).filter((f: any) => f.question.trim() && f.answer.trim());
 
         // Clean up empty strings for optional URL/Email fields that might fail validation
         // class-validator @IsUrl() fails on empty strings even if @IsOptional()
@@ -1666,15 +1689,134 @@ export default function AddListingPage() {
                                 <ArrowLeft className="w-4 h-4" /> Back
                             </button>
                             <button
-                                disabled={loading || galleryUploading}
+                                type="button"
+                                onClick={() => {
+                                    if (!formData.description.trim() || formData.description.length < 10) {
+                                        setError('Please provide a description with at least 10 characters');
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                        return;
+                                    }
+                                    setError(null);
+                                    setActiveStep(4);
+                                }}
+                                className="flex-[2] py-4 bg-gradient-to-r from-[#0B2244] to-[#0D2E61] text-white rounded-2xl font-black text-base transition-all flex items-center justify-center gap-2"
+                            >
+                                Continue to FAQs <HelpCircle className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* ── STEP 4: FAQs & Publish ── */}
+                {activeStep === 4 && (
+                    <motion.div
+                        key="step4"
+                        initial={{ opacity: 0, x: 30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="space-y-6"
+                    >
+                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm">
+                            <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
+                                    <HelpCircle className="w-4 h-4 text-orange-500" />
+                                </div>
+                                <h3 className="font-black text-slate-900">Frequently Asked Questions</h3>
+                            </div>
+                            <div className="p-6 space-y-6">
+                                {/* FAQ Form */}
+                                <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
+                                    <div className="space-y-2">
+                                        <label className={labelClass}>Question</label>
+                                        <input
+                                            type="text"
+                                            value={newFaq.question}
+                                            onChange={(e) => setNewFaq(prev => ({ ...prev, question: e.target.value }))}
+                                            placeholder="e.g. Do you offer home delivery?"
+                                            className={inputClass}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className={labelClass}>Answer</label>
+                                        <textarea
+                                            value={newFaq.answer}
+                                            onChange={(e) => setNewFaq(prev => ({ ...prev, answer: e.target.value }))}
+                                            placeholder="e.g. Yes, we offer free home delivery within 5km radius."
+                                            rows={3}
+                                            className={`${inputClass} resize-none`}
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={addFaq}
+                                        disabled={!newFaq.question.trim() || !newFaq.answer.trim()}
+                                        className="w-full py-3 bg-white border-2 border-orange-500 text-orange-600 rounded-xl font-black text-sm hover:bg-orange-500 hover:text-white transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <Plus className="w-4 h-4" /> Add FAQ Item
+                                    </button>
+                                </div>
+
+                                {/* FAQ List */}
+                                <div className="space-y-3">
+                                    <AnimatePresence>
+                                        {formData.faqs.map((faq, idx) => (
+                                            <motion.div
+                                                key={idx}
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, scale: 0.95 }}
+                                                className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-slate-200 transition-all group"
+                                            >
+                                                <div className="flex justify-between gap-4">
+                                                    <div className="flex-1 space-y-1">
+                                                        <h4 className="text-sm font-black text-slate-900 flex items-start gap-2">
+                                                            <span className="text-orange-500">Q.</span> {faq.question}
+                                                        </h4>
+                                                        <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                                                            <span className="text-blue-500 font-black">A.</span> {faq.answer}
+                                                        </p>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeFaq(idx)}
+                                                        className="w-8 h-8 rounded-lg bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </motion.div>
+                                        ))}
+                                    </AnimatePresence>
+
+                                    {formData.faqs.length === 0 && (
+                                        <div className="text-center py-10 border-2 border-dashed border-slate-100 rounded-2xl">
+                                            <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                                                <HelpCircle className="w-6 h-6 text-slate-300" />
+                                            </div>
+                                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">No FAQs added yet</p>
+                                            <p className="text-[10px] text-slate-400 mt-1">Help your customers by answering common questions.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setActiveStep(3)}
+                                className="flex-1 py-4 bg-slate-100 text-slate-700 rounded-2xl font-black text-base hover:bg-slate-200 transition-all flex items-center justify-center gap-2"
+                            >
+                                <ArrowLeft className="w-4 h-4" /> Back
+                            </button>
+                            <button
                                 type="submit"
-                                className="flex-[2] py-4 bg-gradient-to-r from-[#FF7A30] to-[#FF9050] text-white rounded-2xl font-black text-base  shadow-orange-500/20 hover:from-[#E86920] hover:to-[#FF7A30] transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
+                                disabled={loading}
+                                className="flex-[2] py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-2xl font-black text-base hover:shadow-orange-500/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 shadow-xl"
                             >
                                 {loading ? (
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                ) : galleryUploading ? (
                                     <>
-                                        <Loader2 className="w-5 h-5 animate-spin" /> Uploading Gallery...
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        Publishing Listing...
                                     </>
                                 ) : (
                                     <>

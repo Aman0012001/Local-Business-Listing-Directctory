@@ -225,7 +225,25 @@ export class CreateBusinessDto {
     offerExpiresAt?: string;
 
     @ApiPropertyOptional({ example: 'https://cdn.example.com/banner.jpg' })
-    @IsOptional()
     @IsString()
+    @IsOptional()
     offerBannerUrl?: string;
+
+    @ApiPropertyOptional({ type: 'boolean', default: false })
+    @IsOptional()
+    isActive?: boolean;
+
+    @ApiPropertyOptional({
+        type: 'array',
+        items: {
+            type: 'object',
+            properties: {
+                question: { type: 'string' },
+                answer: { type: 'string' }
+            }
+        }
+    })
+    @IsArray()
+    @IsOptional()
+    faqs?: { question: string; answer: string }[];
 }

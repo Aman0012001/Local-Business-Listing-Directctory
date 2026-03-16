@@ -214,6 +214,9 @@ export class Listing {
     @Column({ name: 'offer_banner_url', nullable: true, type: 'text' })
     offerBannerUrl: string;
 
+    @Column({ type: 'jsonb', default: '[]' })
+    faqs: { question: string; answer: string }[];
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 

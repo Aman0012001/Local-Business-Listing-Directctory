@@ -100,6 +100,7 @@ export interface Business {
     // Stats
     followersCount?: number;
     status: 'pending' | 'approved' | 'rejected' | 'disabled';
+    faqs?: { question: string; answer: string }[];
 }
 
 export interface Review {

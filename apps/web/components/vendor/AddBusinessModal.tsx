@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Loader2, Store, MapPin, Phone, TextQuote, Layers, Sparkles, Plus, Check, Hash, Share2, Globe, MessageSquare, Navigation, ChevronDown, Tag, ImagePlus } from 'lucide-react';
+import { X, Loader2, Store, MapPin, Phone, TextQuote, Layers, Sparkles, Plus, Check, Hash, Share2, Globe, MessageSquare, Navigation, ChevronDown, Tag, ImagePlus, HelpCircle, Trash2 } from 'lucide-react';
 import { api, getImageUrl } from '../../lib/api';
 import { Category, Business, City } from '../../types/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,6 +27,7 @@ const TABS = [
     { id: 'location', label: 'Location', icon: MapPin },
     { id: 'media', label: 'Media & Amenities', icon: Sparkles },
     { id: 'social', label: 'Contact & Social', icon: Share2 },
+    { id: 'faqs', label: 'FAQs', icon: HelpCircle },
 ];
 
 export default function AddBusinessModal({ isOpen, onClose, onSuccess, business }: AddBusinessModalProps) {
@@ -58,7 +59,8 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
         offerDescription: '',
         offerBadge: '',
         offerExpiresAt: '',
-        offerBannerUrl: ''
+        offerBannerUrl: '',
+        faqs: [] as { question: string; answer: string }[]
     });
 
     const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
@@ -375,7 +377,8 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                 offerDescription: (business as any).offerDescription || '',
                 offerBadge: (business as any).offerBadge || '',
                 offerExpiresAt: (business as any).offerExpiresAt ? new Date((business as any).offerExpiresAt).toISOString().split('T')[0] : '',
-                offerBannerUrl: (business as any).offerBannerUrl || ''
+                offerBannerUrl: (business as any).offerBannerUrl || '',
+                faqs: business.faqs || []
             });
             // Pre-fill gallery previews
             setGalleryPreviews(business.images || []);
@@ -410,6 +413,9 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                     (submissionData as any)[field] = null;
                 }
             });
+
+            // Filter out empty FAQs
+            submissionData.faqs = (submissionData.faqs || []).filter(f => f.question.trim() && f.answer.trim());
 
             if (business) {
                 await api.listings.update(business.id, submissionData);
@@ -912,6 +918,70 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                                                             );
                                                         })}
                                                     </div>
+                                                </div>
+                                            </motion.div>
+                                        )}
+
+                                        {activeTab === 'faqs' && (
+                                            <motion.div key="faqs" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-6">
+                                                <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Question</label>
+                                                        <input
+                                                            type="text"
+                                                            value={newFaq.question}
+                                                            onChange={(e) => setNewFaq(prev => ({ ...prev, question: e.target.value }))}
+                                                            placeholder="e.g. Do you offer home delivery?"
+                                                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-orange-400 outline-none"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Answer</label>
+                                                        <textarea
+                                                            value={newFaq.answer}
+                                                            onChange={(e) => setNewFaq(prev => ({ ...prev, answer: e.target.value }))}
+                                                            placeholder="e.g. Yes, we offer free home delivery..."
+                                                            rows={3}
+                                                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-orange-400 outline-none resize-none"
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={addFaq}
+                                                        disabled={!newFaq.question.trim() || !newFaq.answer.trim()}
+                                                        className="w-full py-3 bg-white border-2 border-orange-500 text-orange-600 rounded-xl font-black text-sm hover:bg-orange-500 hover:text-white transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                                    >
+                                                        <Plus className="w-4 h-4" /> Add FAQ Item
+                                                    </button>
+                                                </div>
+
+                                                <div className="space-y-3">
+                                                    {(formData.faqs || []).map((faq, idx) => (
+                                                        <div key={idx} className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm group">
+                                                            <div className="flex justify-between gap-4">
+                                                                <div className="flex-1 space-y-1">
+                                                                    <h4 className="text-sm font-black text-slate-900 flex items-start gap-2">
+                                                                        <span className="text-orange-500">Q.</span> {faq.question}
+                                                                    </h4>
+                                                                    <p className="text-xs text-slate-500 font-medium">
+                                                                        <span className="text-blue-500 font-black">A.</span> {faq.answer}
+                                                                    </p>
+                                                                </div>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => removeFaq(idx)}
+                                                                    className="w-8 h-8 rounded-lg bg-red-50 text-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                    {(!formData.faqs || formData.faqs.length === 0) && (
+                                                        <div className="text-center py-10 border-2 border-dashed border-slate-100 rounded-2xl">
+                                                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">No FAQs added yet</p>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </motion.div>
                                         )}
