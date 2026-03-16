@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { 
-    Users, TrendingUp, Wallet, Link as LinkIcon, 
+import {
+    Users, TrendingUp, Wallet, Link as LinkIcon,
     CheckCircle2, Copy, Share2, ArrowRight,
     Gift, Timer, AlertCircle, ChevronRight, Loader2
 } from 'lucide-react';
@@ -17,10 +17,11 @@ export default function AffiliateDashboard() {
     const [stats, setStats] = useState<any>(null);
     const [referrals, setReferrals] = useState<any[]>([]);
     const [payouts, setPayouts] = useState<any[]>([]);
+    const [settings, setSettings] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [joining, setJoining] = useState(false);
     const [copySuccess, setCopySuccess] = useState(false);
-    
+
     // Payout Form State
     const [showPayoutModal, setShowPayoutModal] = useState(false);
     const [payoutAmount, setPayoutAmount] = useState('');
@@ -36,14 +37,16 @@ export default function AffiliateDashboard() {
 
     const loadData = async () => {
         try {
-            const [statsData, refData, payoutData] = await Promise.all([
+            const [statsData, refData, payoutData, settingsData] = await Promise.all([
                 api.affiliate.getStats(),
                 api.affiliate.getReferrals(),
-                api.affiliate.getPayouts()
+                api.affiliate.getPayouts(),
+                api.affiliate.getSettings()
             ]);
             setStats(statsData);
             setReferrals(refData as any[]);
             setPayouts(payoutData as any[]);
+            setSettings(settingsData);
         } catch (err) {
             console.error('Failed to load affiliate data:', err);
         } finally {
@@ -66,9 +69,9 @@ export default function AffiliateDashboard() {
     const handleRequestPayout = async (e: React.FormEvent) => {
         e.preventDefault();
         const amount = parseFloat(payoutAmount);
-        
+
         if (isNaN(amount) || amount < 500) {
-            alert('Minimum withdrawal is Rs. 500');
+            alert('Minimum withdrawal is PKR 500');
             return;
         }
 
@@ -119,28 +122,28 @@ export default function AffiliateDashboard() {
             </div>
         );
     }
-// ... [rest of the component logic remains similar but with added UI sections]
+    // ... [rest of the component logic remains similar but with added UI sections]
 
     if (!stats && !loading) {
         return (
             <div className="min-h-screen bg-white">
                 <Navbar />
                 <main className="max-w-4xl mx-auto px-4 py-20 text-center">
-                    <div className="w-24 h-24 bg-orange-50 rounded-[40px] flex items-center justify-center mx-auto mb-8">
+                    <div className="w-24 h-24 bg-orange-50 rounded-[28px] flex items-center justify-center mx-auto mb-8">
                         <Gift className="w-12 h-12 text-orange-500" />
                     </div>
                     <h1 className="text-4xl font-black text-slate-900 mb-4">Join Our Affiliate Program</h1>
                     <p className="text-slate-500 text-lg mb-10 max-w-2xl mx-auto font-medium">
                         Earn rewards for every business you refer and every visit you drive. Start earning today with Punjab's most premium business network.
                     </p>
-                    <button 
+                    <button
                         onClick={handleJoin}
                         disabled={joining}
                         className="px-12 py-5 bg-slate-900 text-white rounded-3xl font-black text-lg hover:bg-orange-500 transition-all active:scale-95 flex items-center gap-3 mx-auto shadow-xl shadow-slate-200"
                     >
                         {joining ? <Loader2 className="w-6 h-6 animate-spin" /> : <>Start Earning Now <ArrowRight className="w-5 h-5" /></>}
                     </button>
-                    
+
                     <div className="grid md:grid-cols-3 gap-8 mt-20">
                         <div className="p-8 bg-slate-50 rounded-3xl border border-slate-100 text-left">
                             <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-orange-500 shadow-sm mb-6">
@@ -183,12 +186,12 @@ export default function AffiliateDashboard() {
                         </div>
                         <h1 className="text-4xl font-black text-slate-900">Your Dashboard</h1>
                     </div>
-                    
+
                     <div className="p-1 bg-white rounded-2xl border border-slate-200 flex gap-2 w-full md:w-[450px]">
                         <div className="flex-1 px-4 py-3 text-sm font-bold text-slate-500 truncate">
                             {typeof window !== 'undefined' ? `${window.location.origin}/?ref=${stats?.referralCode}` : ''}
                         </div>
-                        <button 
+                        <button
                             onClick={copyLink}
                             className="px-6 py-3 bg-slate-900 text-white rounded-[14px] text-xs font-black uppercase tracking-widest hover:bg-orange-500 transition-all flex items-center gap-2"
                         >
@@ -199,25 +202,25 @@ export default function AffiliateDashboard() {
                 </div>
 
                 <div className="grid md:grid-cols-4 gap-6 mb-12">
-                    <div className="p-8 bg-white rounded-[32px] border border-slate-200 shadow-sm">
+                    <div className="p-8 bg-white rounded-[28px] border border-slate-200 shadow-sm">
                         <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-500 mb-6">
                             <Wallet className="w-6 h-6" />
                         </div>
                         <div className="space-y-1">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Available Balance</p>
-                            <h3 className="text-3xl font-black text-slate-900">Rs. {stats?.balance}</h3>
+                            <h3 className="text-3xl font-black text-slate-900">PKR {stats?.balance}</h3>
                         </div>
                     </div>
-                    <div className="p-8 bg-white rounded-[32px] border border-slate-200 shadow-sm">
+                    <div className="p-8 bg-white rounded-[28px] border border-slate-200 shadow-sm">
                         <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-500 mb-6">
                             <TrendingUp className="w-6 h-6" />
                         </div>
                         <div className="space-y-1">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Earnings</p>
-                            <h3 className="text-3xl font-black text-slate-900">Rs. {stats?.totalEarnings}</h3>
+                            <h3 className="text-3xl font-black text-slate-900">PKR {stats?.totalEarnings}</h3>
                         </div>
                     </div>
-                    <div className="p-8 bg-white rounded-[32px] border border-slate-200 shadow-sm">
+                    <div className="p-8 bg-white rounded-[28px] border border-slate-200 shadow-sm">
                         <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-500 mb-6">
                             <Users className="w-6 h-6" />
                         </div>
@@ -226,7 +229,7 @@ export default function AffiliateDashboard() {
                             <h3 className="text-3xl font-black text-slate-900">{stats?.totalReferrals}</h3>
                         </div>
                     </div>
-                    <div className="p-8 bg-white rounded-[32px] border border-slate-200 shadow-sm">
+                    <div className="p-8 bg-white rounded-[28px] border border-slate-200 shadow-sm">
                         <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-500 mb-6">
                             <CheckCircle2 className="w-6 h-6" />
                         </div>
@@ -239,7 +242,7 @@ export default function AffiliateDashboard() {
 
                 <div className="grid lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-white rounded-[32px] border border-slate-200 overflow-hidden">
+                        <div className="bg-white rounded-[28px] border border-slate-200 overflow-hidden">
                             <div className="p-8 border-b border-slate-100 flex items-center justify-between font-black text-slate-900">
                                 <h3 className="text-xl">Payout History</h3>
                             </div>
@@ -253,18 +256,17 @@ export default function AffiliateDashboard() {
                                                         <Wallet className="w-6 h-6" />
                                                     </div>
                                                     <div>
-                                                        <h4 className="text-sm font-black text-slate-900">Rs. {payout.amount}</h4>
+                                                        <h4 className="text-sm font-black text-slate-900">PKR {payout.amount}</h4>
                                                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                                                             {new Date(payout.createdAt).toLocaleDateString()} • {payout.paymentMethod}
                                                         </p>
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
-                                                    <span className={`px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                                                        payout.status === 'paid' ? 'bg-emerald-100 text-emerald-600' :
+                                                    <span className={`px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${payout.status === 'paid' ? 'bg-emerald-100 text-emerald-600' :
                                                         payout.status === 'rejected' ? 'bg-red-100 text-red-600' :
-                                                        'bg-orange-100 text-orange-600'
-                                                    }`}>
+                                                            'bg-orange-100 text-orange-600'
+                                                        }`}>
                                                         {payout.status}
                                                     </span>
                                                 </div>
@@ -284,23 +286,23 @@ export default function AffiliateDashboard() {
                     </div>
 
                     <div className="space-y-6">
-                        <div className="p-8 bg-slate-900 rounded-[32px] text-white">
+                        <div className="p-8 bg-slate-900 rounded-[28px] text-white">
                             <h3 className="text-xl font-black mb-4 italic">Earning Guide</h3>
                             <div className="space-y-6">
                                 <div className="flex gap-4">
                                     <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-orange-400 shrink-0">1</div>
-                                    <p className="text-sm text-slate-300 font-medium">Earn <span className="text-white font-black text-base">10% commission</span> on every premium subscription your referrals buy.</p>
+                                    <p className="text-sm text-slate-300 font-medium">Earn <span className="text-white font-black text-base">{settings?.commissionType === 'percent' ? `${settings?.commissionRate}%` : `PKR ${settings?.commissionRate}`} commission</span> on every premium subscription your referrals buy.</p>
                                 </div>
                                 <div className="flex gap-4">
                                     <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-blue-400 shrink-0">2</div>
-                                    <p className="text-sm text-slate-300 font-medium">Earn <span className="text-white font-black text-base">Rs. 5 fixed</span> reward for every unique business check-in.</p>
+                                    <p className="text-sm text-slate-300 font-medium">Earn <span className="text-white font-black text-base">PKR {settings?.checkinReward || 5}</span> for every unique business check-in.</p>
                                 </div>
                                 <div className="flex gap-4">
                                     <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-emerald-400 shrink-0">3</div>
-                                    <p className="text-sm text-slate-300 font-medium">Minimum payout is <span className="text-white font-black">Rs. 500</span>. Payments processed weekly.</p>
+                                    <p className="text-sm text-slate-300 font-medium">Valid for <span className="text-white font-black">{settings?.validityMonths === '1200' ? 'Lifetime' : `${settings?.validityMonths} months`}</span> from signup. Min payout PKR 500.</p>
                                 </div>
                             </div>
-                            <button 
+                            <button
                                 onClick={() => setShowPayoutModal(true)}
                                 className="w-full mt-10 py-4 bg-orange-500 text-white rounded-2xl font-black text-sm hover:bg-orange-600 transition-all flex items-center justify-center gap-2"
                             >
@@ -308,7 +310,7 @@ export default function AffiliateDashboard() {
                             </button>
                         </div>
 
-                        <div className="p-8 bg-blue-600 rounded-[32px] text-white overflow-hidden relative group">
+                        <div className="p-8 bg-blue-600 rounded-[28px] text-white overflow-hidden relative group">
                             <Share2 className="absolute -right-4 -bottom-4 w-32 h-32 text-white/10 group-hover:scale-110 transition-transform duration-500" />
                             <h3 className="text-xl font-black mb-2">Need Help?</h3>
                             <p className="text-sm text-blue-100 font-medium mb-6 relative z-10">Contact our affiliate support for tips on how to grow your earnings.</p>
@@ -321,27 +323,27 @@ export default function AffiliateDashboard() {
                 <AnimatePresence>
                     {showPayoutModal && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                            <motion.div 
+                            <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 onClick={() => setShowPayoutModal(false)}
                                 className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
                             />
-                            <motion.div 
+                            <motion.div
                                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                                className="relative w-full max-w-lg bg-white rounded-[40px] shadow-2xl overflow-hidden"
+                                className="relative w-full max-w-lg bg-white rounded-[28px] shadow-2xl overflow-hidden"
                             >
                                 <div className="p-10">
                                     <h2 className="text-3xl font-black text-slate-900 mb-2">Withdraw Earnings</h2>
-                                    <p className="text-slate-500 font-medium mb-8">Available balance: <b>Rs. {stats?.balance}</b></p>
-                                    
+                                    <p className="text-slate-500 font-medium mb-8">Available balance: <b>PKR {stats?.balance}</b></p>
+
                                     <form onSubmit={handleRequestPayout} className="space-y-6">
                                         <div>
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Amount (Min Rs. 500)</label>
-                                            <input 
+                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Amount (Min PKR 500)</label>
+                                            <input
                                                 type="number"
                                                 value={payoutAmount}
                                                 onChange={(e) => setPayoutAmount(e.target.value)}
@@ -354,7 +356,7 @@ export default function AffiliateDashboard() {
                                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Payment Method</label>
                                             <div className="grid grid-cols-2 gap-3">
                                                 {['Bank Transfer', 'EasyPaisa', 'JazzCash', 'UPI'].map(method => (
-                                                    <button 
+                                                    <button
                                                         key={method}
                                                         type="button"
                                                         onClick={() => setPayoutMethod(method)}
@@ -367,7 +369,7 @@ export default function AffiliateDashboard() {
                                         </div>
                                         <div>
                                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Payment Details (Account #, Name)</label>
-                                            <textarea 
+                                            <textarea
                                                 value={payoutDetails}
                                                 onChange={(e) => setPayoutDetails(e.target.value)}
                                                 className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none font-bold"
@@ -377,14 +379,14 @@ export default function AffiliateDashboard() {
                                             />
                                         </div>
                                         <div className="flex gap-4 pt-4">
-                                            <button 
+                                            <button
                                                 type="button"
                                                 onClick={() => setShowPayoutModal(false)}
                                                 className="flex-1 py-4 bg-slate-100 text-slate-500 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all"
                                             >
                                                 Cancel
                                             </button>
-                                            <button 
+                                            <button
                                                 type="submit"
                                                 disabled={submittingPayout}
                                                 className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black text-sm hover:bg-orange-500 transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-200"

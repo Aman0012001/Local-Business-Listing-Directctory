@@ -16,6 +16,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nes
 import { CacheInterceptor } from '@nestjs/cache-manager';
 import { BusinessesService } from './businesses.service';
 import { SearchService } from '../search/search.service';
+import { AffiliateService } from '../affiliate/affiliate.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { SearchBusinessDto } from './dto/search-business.dto';
@@ -34,7 +35,8 @@ import { User, UserRole } from '../../entities/user.entity';
 export class BusinessesController {
     constructor(
         private readonly businessesService: BusinessesService,
-        private readonly searchService: SearchService
+        private readonly searchService: SearchService,
+        private readonly affiliateService: AffiliateService,
     ) { }
 
     @Post()
@@ -171,5 +173,24 @@ export class BusinessesController {
     @Public()
     async sync() {
         return this.searchService.reindexAll();
+    }
+
+    @Post(':id/check-in')
+    @ApiOperation({ summary: 'Check-in to a business' })
+    @ApiBody({
+        schema: {
+            type: 'object',
+            properties: {
+                referralCode: { type: 'string', description: 'Optional referral code' },
+                note: { type: 'string' }
+            }
+        }
+    })
+    async checkIn(
+        @Param('id', ParseUuidPipe) id: string,
+        @Body() body: { referralCode?: string },
+        @CurrentUser() user: User,
+    ) {
+        return this.affiliateService.processCheckInReward(user.id, id, body.referralCode);
     }
 }

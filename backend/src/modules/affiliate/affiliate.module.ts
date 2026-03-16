@@ -7,6 +7,7 @@ import { AffiliateReferral } from '../../entities/referral.entity';
 import { BusinessCheckIn } from '../../entities/check-in.entity';
 import { Payout } from '../../entities/payout.entity';
 import { User } from '../../entities/user.entity';
+import { SystemSetting } from '../../entities/system-setting.entity';
 
 @Module({
     imports: [
@@ -16,6 +17,7 @@ import { User } from '../../entities/user.entity';
             BusinessCheckIn,
             Payout,
             User,
+            SystemSetting
         ]),
     ],
     controllers: [AffiliateController],

@@ -190,7 +190,7 @@ export default function VendorCommentsPage() {
                     </div>
                 ) : comments.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-32 gap-6 text-slate-400">
-                        <div className="w-24 h-24 rounded-[40px] bg-slate-50 flex items-center justify-center border border-slate-100">
+                        <div className="w-24 h-24 rounded-[28px] bg-slate-50 flex items-center justify-center border border-slate-100">
                             <MessageSquare className="w-12 h-12 text-slate-200" />
                         </div>
                         <div className="text-center">
@@ -326,7 +326,7 @@ export default function VendorCommentsPage() {
                         onClick={() => setShowReplyModal(false)}>
                         <motion.div initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 30 }}
                             onClick={e => e.stopPropagation()}
-                            className="bg-white rounded-[40px] shadow-2xl w-full max-w-xl overflow-hidden">
+                            className="bg-white rounded-[28px] shadow-2xl w-full max-w-xl overflow-hidden">
 
                             <div className="p-8 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-4">
@@ -395,7 +395,7 @@ export default function VendorCommentsPage() {
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4">
                         <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
-                            className="bg-white rounded-[40px] shadow-2xl w-full max-w-sm p-10 text-center">
+                            className="bg-white rounded-[28px] shadow-2xl w-full max-w-sm p-10 text-center">
                             <div className="w-20 h-20 bg-rose-50 rounded-[20px] flex items-center justify-center mx-auto mb-6">
                                 <Trash2 className="w-10 h-10 text-rose-500" />
                             </div>

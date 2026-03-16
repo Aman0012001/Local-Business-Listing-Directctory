@@ -202,7 +202,7 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                 if (refCode && typeof window !== 'undefined') {
                     // Try to track the click for the logged in user
                     if (user) {
-                        try { await api.affiliate.trackClick(refCode); } catch (e) {}
+                        try { await api.affiliate.trackClick(refCode); } catch (e) { }
                     } else {
                         // Store in session storage for later if not logged in
                         sessionStorage.setItem('referralCode', refCode);
@@ -436,13 +436,13 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
                                 transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-                                className="absolute inset-0 bg-blue-50 rounded-[40px] rotate-6"
+                                className="absolute inset-0 bg-blue-50 rounded-[28px] rotate-6"
                             />
                             <motion.div
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
                                 transition={{ type: 'spring', stiffness: 200, damping: 20, delay: 0.1 }}
-                                className="absolute inset-0 bg-white border-2 border-slate-100 rounded-[40px] shadow-sm flex items-center justify-center"
+                                className="absolute inset-0 bg-white border-2 border-slate-100 rounded-[28px] shadow-sm flex items-center justify-center"
                             >
                                 <Store className="w-16 h-16 text-slate-200" />
                                 <div className="absolute -top-2 -right-2 w-10 h-10 bg-rose-500 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-500/30">
@@ -599,7 +599,7 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                         </div>
                                     )}
                                 </button>
-                                
+
                                 <button
                                     onClick={handleCheckIn}
                                     disabled={isCheckingIn || checkInDone}

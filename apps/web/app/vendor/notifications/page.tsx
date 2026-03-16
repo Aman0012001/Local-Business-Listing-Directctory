@@ -180,7 +180,7 @@ export default function VendorNotifications() {
                     </AnimatePresence>
                 </div>
             ) : (
-                <div className="p-20 text-center bg-slate-50 rounded-[40px] border-2 border-dashed border-slate-200">
+                <div className="p-20 text-center bg-slate-50 rounded-[28px] border-2 border-dashed border-slate-200">
                     <div className="w-24 h-24 bg-white rounded-[20px] flex items-center justify-center mx-auto mb-8 shadow-xl shadow-slate-200/50">
                         <Bell className="w-10 h-10 text-slate-200" />
                     </div>

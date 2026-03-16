@@ -16,6 +16,7 @@ import { Affiliate } from '../../entities/affiliate.entity';
 import { CreatePlanDto, UpdatePlanDto, CheckoutDto, AssignPlanDto } from './dto/subscription.dto';
 
 import { ConfigService } from '@nestjs/config';
+import { AffiliateService } from '../affiliate/affiliate.service';
 
 @Injectable()
 export class SubscriptionsService {
@@ -35,6 +36,7 @@ export class SubscriptionsService {
         @InjectRepository(Affiliate)
         private affiliateRepository: Repository<Affiliate>,
         private configService: ConfigService,
+        private affiliateService: AffiliateService,
     ) { }
 
     /**
@@ -256,7 +258,6 @@ export class SubscriptionsService {
         await this.transactionRepository.save(transaction);
 
         // --- Affiliate Integration ---
-        // Check if there's a pending referral for this user (signup or subscription type)
         const referral = await this.referralRepository.findOne({
             where: [
                 { referredUserId: vendor.userId, status: ReferralStatus.PENDING, type: ReferralType.SIGNUP },
@@ -266,19 +267,35 @@ export class SubscriptionsService {
         });
 
         if (referral) {
-            // Calculate commission (e.g., 10% of the plan price)
-            const commissionAmount = Number(plan.price) * 0.10;
+            // Fetch dynamic settings from AffiliateService
+            const settings = await this.affiliateService.getSettings();
             
-            referral.status = ReferralStatus.CONVERTED;
-            referral.commissionAmount = commissionAmount;
-            await this.referralRepository.save(referral);
+            // Check validity period
+            const monthsPassed = (now.getTime() - referral.createdAt.getTime()) / (1000 * 60 * 60 * 24 * 30);
+            const validityMonths = parseFloat(settings.validityMonths) || 2;
 
-            // Credit the affiliate
-            const affiliate = await this.affiliateRepository.findOne({ where: { id: referral.affiliateId } });
-            if (affiliate) {
-                affiliate.balance = Number(affiliate.balance) + commissionAmount;
-                affiliate.totalEarnings = Number(affiliate.totalEarnings) + commissionAmount;
-                await this.affiliateRepository.save(affiliate);
+            if (monthsPassed <= validityMonths) {
+                let commissionAmount = 0;
+                if (settings.commissionType === 'percent') {
+                   commissionAmount = Number(plan.price) * (parseFloat(settings.commissionRate) / 100);
+                } else {
+                   commissionAmount = parseFloat(settings.commissionRate);
+                }
+                
+                referral.status = ReferralStatus.CONVERTED;
+                referral.commissionAmount = commissionAmount;
+                await this.referralRepository.save(referral);
+
+                const affiliate = await this.affiliateRepository.findOne({ where: { id: referral.affiliateId } });
+                if (affiliate) {
+                    affiliate.balance = Number(affiliate.balance) + commissionAmount;
+                    affiliate.totalEarnings = Number(affiliate.totalEarnings) + commissionAmount;
+                    await this.affiliateRepository.save(affiliate);
+                }
+            } else {
+                // Expired referral
+                referral.status = ReferralStatus.EXPIRED;
+                await this.referralRepository.save(referral);
             }
         }
         // ------------------------------

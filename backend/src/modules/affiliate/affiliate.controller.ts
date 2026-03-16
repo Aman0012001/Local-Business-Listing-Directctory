@@ -92,4 +92,12 @@ export class AffiliateController {
     async adminGetAffiliates() {
         return this.affiliateService.adminGetAllAffiliates();
     }
+
+    @Patch('admin/settings')
+    @UseGuards(RolesGuard)
+    @Roles(UserRole.SUPERADMIN, UserRole.ADMIN)
+    @ApiOperation({ summary: 'Admin: Update affiliate program settings' })
+    async adminUpdateSettings(@Body() settings: { commissionRate: string; checkinReward: string; expiryDate: string }) {
+        return this.affiliateService.adminUpdateSettings(settings);
+    }
 }

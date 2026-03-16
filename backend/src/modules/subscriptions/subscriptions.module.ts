@@ -11,6 +11,7 @@ import { User } from '../../entities/user.entity';
 import { Affiliate } from '../../entities/affiliate.entity';
 import { AffiliateReferral } from '../../entities/referral.entity';
 import { SubscriptionsSeederService } from './subscriptions-seeder.service';
+import { AffiliateModule } from '../affiliate/affiliate.module';
 
 @Module({
     imports: [
@@ -23,6 +24,7 @@ import { SubscriptionsSeederService } from './subscriptions-seeder.service';
             Affiliate,
             AffiliateReferral,
         ]),
+        AffiliateModule,
     ],
     controllers: [SubscriptionsController],
     providers: [SubscriptionsService, SubscriptionsSeederService, SubscriptionCronService],

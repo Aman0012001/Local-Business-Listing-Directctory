@@ -11,6 +11,7 @@ import { Vendor } from '../../entities/vendor.entity';
 import { SearchModule } from '../search/search.module';
 import { DemandModule } from '../demand/demand.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { AffiliateModule } from '../affiliate/affiliate.module';
 
 @Module({
     imports: [
@@ -22,9 +23,10 @@ import { NotificationsModule } from '../notifications/notifications.module';
             Category,
             Vendor,
         ]),
+        NotificationsModule,
         SearchModule,
         DemandModule,
-        NotificationsModule,
+        AffiliateModule,
     ],
     controllers: [BusinessesController],
     providers: [BusinessesService],

@@ -414,7 +414,10 @@ export const api = {
         getStats: () => fetcher<any>('/affiliate/stats'),
         getReferrals: () => fetcher<any[]>('/affiliate/referrals'),
         trackClick: (code: string) => fetcher(`/affiliate/track-click?code=${code}`, { method: 'POST' }),
-        checkIn: (dto: any) => fetcher('/affiliate/check-in', { method: 'POST', body: JSON.stringify(dto) }),
+        checkIn: (businessId: string, referralCode?: string) => fetcher(`/businesses/${businessId}/check-in`, { 
+            method: 'POST', 
+            body: JSON.stringify({ referralCode }) 
+        }),
         requestPayout: (data: { amount: number; method: string; details: string }) => fetcher('/affiliate/payouts', {
             method: 'POST',
             body: JSON.stringify(data),
@@ -428,6 +431,11 @@ export const api = {
             body: JSON.stringify(data),
         }),
         adminGetAffiliates: () => fetcher<any[]>('/affiliate/admin/affiliates'),
+        getSettings: () => fetcher<any>('/affiliate/settings'),
+        adminUpdateSettings: (data: any) => fetcher('/affiliate/admin/settings', {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        }),
     },
     subscriptions: {
         getPlans: () => fetcher<any[]>('/subscriptions/plans'),
