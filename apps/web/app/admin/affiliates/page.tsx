@@ -335,33 +335,22 @@ export default function AdminAffiliatesPage() {
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2">Offer Validity Duration</label>
-                                            <select 
-                                                value={settings.validityMonths}
-                                                onChange={(e) => setSettings({...settings, validityMonths: e.target.value})}
-                                                className="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900 outline-none font-black text-base"
-                                            >
-                                                <option value="1">1 Month</option>
-                                                <option value="2">2 Months</option>
-                                                <option value="3">3 Months</option>
-                                                <option value="6">6 Months</option>
-                                                <option value="12">1 Year</option>
-                                                <option value="1200">Lifetime</option>
-                                            </select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2">Settings Expiry Date</label>
-                                            <input
-                                                type="date"
-                                                value={settings.expiryDate}
-                                                onChange={(e) => setSettings({ ...settings, expiryDate: e.target.value })}
-                                                className="w-full px-6 py-5 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900 outline-none font-black"
-                                            />
-                                        </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2">Offer Validity Duration</label>
+                                        <select 
+                                            value={settings.validityMonths}
+                                            onChange={(e) => setSettings({...settings, validityMonths: e.target.value})}
+                                            className="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900 outline-none font-black text-base"
+                                        >
+                                            <option value="1">1 Month</option>
+                                            <option value="2">2 Months</option>
+                                            <option value="3">3 Months</option>
+                                            <option value="6">6 Months</option>
+                                            <option value="12">1 Year</option>
+                                            <option value="1200">Lifetime</option>
+                                        </select>
+                                        <p className="text-[10px] text-slate-400 font-medium pl-2 italic">How long a referred user remains eligible for rewards from the date they sign up.</p>
                                     </div>
-                                    <p className="text-[10px] text-slate-400 font-medium pl-2 italic">Offer Validity: How long a referred user remains eligible. Expiry: When these settings themselves expire.</p>
                                 </div>
 
                                 <button

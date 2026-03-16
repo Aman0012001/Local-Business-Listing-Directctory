@@ -1,6 +1,6 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Not, In } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { SubscriptionPlan, SubscriptionPlanType } from '../../entities/subscription-plan.entity';
 
@@ -27,7 +27,7 @@ export class SubscriptionsSeederService implements OnModuleInit {
         const plans = [
             {
                 id: '00000000-0000-0000-0000-000000000001',
-                name: 'Free Starter',
+                name: 'Free',
                 planType: SubscriptionPlanType.FREE,
                 description: 'Essential tools for small local businesses starting out.',
                 price: 0,
@@ -38,38 +38,26 @@ export class SubscriptionsSeederService implements OnModuleInit {
                 isActive: true,
             },
             {
-                id: '00000000-0000-0000-0000-000000000002',
-                name: 'Professional',
-                planType: SubscriptionPlanType.BASIC,
-                description: 'Everything you need to dominate your local market.',
-                price: 49,
-                billingCycle: 'monthly',
-                features: ["10 Business Listings", "Priority Discovery", "Featured Badge", "Unlimited Photos", "WhatsApp Integration", "Lead Exports"],
-                maxListings: 10,
-                isFeatured: true,
-                isActive: true,
-            },
-            {
                 id: '00000000-0000-0000-0000-000000000003',
-                name: 'Enterprise',
+                name: 'Premium',
                 planType: SubscriptionPlanType.PREMIUM,
-                description: 'For multi-location brands and high-volume agencies.',
-                price: 199,
+                description: 'Everything you need to dominate your local market.',
+                price: 2000,
                 billingCycle: 'monthly',
-                features: ["Unlimited Listings", "Global Featured Banner", "API Access", "Dedicated Manager", "Custom Analytics"],
+                features: ["Unlimited Listings", "Priority Discovery", "Featured Badge", "Unlimited Photos", "WhatsApp Integration", "Lead Exports"],
                 maxListings: 999,
-                isFeatured: false,
+                isFeatured: true,
                 isActive: true,
             },
         ];
 
+        // Seeding / Updating
         for (const planData of plans) {
             const existing = await this.planRepository.findOne({
                 where: { planType: planData.planType }
             });
 
             if (existing) {
-                // Update existing plan but keep stripePriceId if manually changed
                 this.logger.log(`Updating plan: ${planData.name}`);
                 await this.planRepository.update(existing.id, {
                     ...planData,
@@ -80,6 +68,13 @@ export class SubscriptionsSeederService implements OnModuleInit {
                 await this.planRepository.save(plan);
             }
         }
+
+        // Deactivate others
+        const activeTypes = plans.map(p => p.planType);
+        await this.planRepository.update(
+            { planType: Not(In(activeTypes)) },
+            { isActive: false }
+        );
 
         this.logger.log('✅ Subscription plans seeding completed.');
     }

@@ -56,6 +56,8 @@ function SearchResults() {
                     api.demand.logSearch({
                         keyword: query || categorySlug,
                         city: city || undefined,
+                        latitude: latitude ? Number(latitude) : undefined,
+                        longitude: longitude ? Number(longitude) : undefined,
                     }).catch(err => console.error('Demand logging failed:', err));
                 }
             } catch (err) {

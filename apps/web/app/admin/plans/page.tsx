@@ -227,7 +227,7 @@ export default function AdminPlansPage() {
 
                         <div className="mb-8">
                             <div className="flex items-baseline gap-1">
-                                <span className="text-4xl font-black text-slate-900">${plan.price}</span>
+                                <span className="text-4xl font-black text-slate-900">PKR {plan.price}</span>
                                 <span className="text-slate-400 font-bold text-sm">/{plan.billingCycle}</span>
                             </div>
                             <p className="text-slate-500 font-bold text-sm mt-3 leading-relaxed">
@@ -339,13 +339,11 @@ export default function AdminPlansPage() {
                                             className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-200 font-bold text-slate-900"
                                         >
                                             <option value="free">Free</option>
-                                            <option value="basic">Basic</option>
                                             <option value="premium">Premium</option>
-                                            <option value="enterprise">Enterprise</option>
                                         </select>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Price ($)</label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Price (PKR)</label>
                                         <input
                                             required
                                             type="number"

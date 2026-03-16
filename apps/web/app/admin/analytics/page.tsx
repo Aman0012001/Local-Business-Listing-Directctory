@@ -51,11 +51,18 @@ export default function SearchAnalyticsPage() {
         }
     };
 
-    // Check if Google Maps API is already loaded (e.g., by another component)
+    // Check if Google Maps API is already loaded
     useEffect(() => {
-        if (typeof window !== 'undefined' && window.google && window.google.maps && window.google.maps.visualization) {
-            setMapLoaded(true);
-        }
+        const checkMap = () => {
+            if (typeof window !== 'undefined' && window.google?.maps?.visualization) {
+                setMapLoaded(true);
+            } else {
+                // Poll every 500ms until GMaps is ready
+                const timer = setTimeout(checkMap, 500);
+                return () => clearTimeout(timer);
+            }
+        };
+        return checkMap();
     }, []);
 
     useEffect(() => {
@@ -257,6 +264,20 @@ export default function SearchAnalyticsPage() {
                         <div className="flex flex-col items-center gap-4">
                             <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
                             <p className="font-bold text-slate-900 tracking-tight">Updating Heatmap...</p>
+                        </div>
+                    </div>
+                )}
+
+                {!loading && heatmapData.length === 0 && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="bg-white/90 backdrop-blur-md px-10 py-12 rounded-[3rem] shadow-2xl border border-slate-100 text-center max-w-sm pointer-events-auto">
+                            <div className="w-16 h-16 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                                <MapIcon className="w-8 h-8 text-slate-300" />
+                            </div>
+                            <h3 className="text-xl font-black text-slate-900 mb-2">No Demand Data Found</h3>
+                            <p className="text-slate-500 font-bold text-sm leading-relaxed">
+                                We haven't captured any search locations for this filter yet. Try a different keyword or check back later!
+                            </p>
                         </div>
                     </div>
                 )}

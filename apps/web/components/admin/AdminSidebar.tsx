@@ -17,6 +17,7 @@ import {
     LayoutGrid,
     Activity,
     Receipt,
+    MapPin,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getImageUrl } from '../../lib/api';
@@ -26,6 +27,7 @@ const menuItems = [
     { name: 'Overview', icon: LayoutDashboard, href: '/admin', badge: null },
     { name: 'Users', icon: Users, href: '/admin/users', badge: null },
     { name: 'Categories', icon: LayoutGrid, href: '/admin/categories', badge: null },
+    { name: 'Cities', icon: MapPin, href: '/admin/cities', badge: null },
     { name: 'Businesses', icon: ListTree, href: '/admin/businesses', badge: null },
     { name: 'Listings Approval', icon: ShieldAlert, href: '/admin/listings', badge: null },
     { name: 'Plans', icon: CreditCard, href: '/admin/plans', badge: null },

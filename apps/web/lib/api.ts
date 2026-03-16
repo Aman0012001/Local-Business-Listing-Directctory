@@ -179,6 +179,22 @@ export const api = {
     cities: {
         getPopular: () => fetcher<City[]>('/cities/popular'),
         getAll: () => fetcher<City[]>('/cities'),
+        // Admin endpoints
+        adminCreate: (data: any) => fetcher<City>('/cities/admin', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+        adminList: (page = 1, limit = 10, search = '') => {
+            const query = new URLSearchParams({
+                page: String(page),
+                limit: String(limit),
+                search
+            }).toString();
+            return fetcher<{ data: City[], total: number }>(`/cities/admin?${query}`);
+        },
+        adminDelete: (id: string) => fetcher<void>(`/cities/admin/${id}`, {
+            method: 'DELETE',
+        }),
     },
     reviews: {
         findAll: (params: any = {}) => {
