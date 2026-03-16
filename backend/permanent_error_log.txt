@@ -198,3 +198,15 @@ Stack: QueryFailedError: Connection terminated unexpectedly
     at async BusinessesService.search (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:327:27)
 Details: {"query":"SELECT COUNT(DISTINCT(\"listing\".\"id\")) AS \"cnt\" FROM \"businesses\" \"listing\" LEFT JOIN \"categories\" \"category\" ON \"category\".\"id\"=\"listing\".\"category_id\"  LEFT JOIN \"vendors\" \"vendor\" ON \"vendor\".\"id\"=\"listing\".\"vendor_id\"  LEFT JOIN \"users\" \"user\" ON \"user\".\"id\"=\"vendor\".\"user_id\"  LEFT JOIN \"business_hours\" \"businessHours\" ON \"businessHours\".\"business_id\"=\"listing\".\"id\"  LEFT JOIN \"business_amenities\" \"businessAmenities\" ON \"businessAmenities\".\"business_id\"=\"listing\".\"id\"  LEFT JOIN \"amenities\" \"amenity\" ON \"amenity\".\"id\"=\"businessAmenities\".\"amenity_id\" WHERE \"listing\".\"status\" IN ($1, $2)","parameters":["pending","approved"],"driverError":{}}
 
+[2026-03-16T14:26:16.455Z] NotificationsService Constructor Called
+[2026-03-16T14:49:23.234Z] NotificationsService Constructor Called
+[2026-03-16T14:49:41.545Z] NotificationsService Constructor Called
+[2026-03-16T15:32:39.075Z] NotificationsService Constructor Called
+[2026-03-16T15:32:49.276Z] NotificationsService Constructor Called
+[2026-03-16T15:33:26.725Z] NotificationsService Constructor Called
+[2026-03-16T15:34:14.367Z] NotificationsService Constructor Called
+[2026-03-16T15:45:22.243Z] NotificationsService Constructor Called
+[2026-03-16T15:46:57.915Z] NotificationsService Constructor Called
+[2026-03-16T15:47:15.968Z] NotificationsService Constructor Called
+[2026-03-16T15:50:22.820Z] NotificationsService Constructor Called
+[2026-03-16T16:44:49.948Z] NotificationsService Constructor Called

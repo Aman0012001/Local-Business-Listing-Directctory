@@ -161,6 +161,8 @@ export default function AddListingPage() {
     }, [formData]);
 
     const updateLocationFromCoords = (lat: number, lng: number) => {
+        setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
+
         if (!(window as any).google) return;
         const geocoder = new (window as any).google.maps.Geocoder();
         geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
@@ -202,8 +204,6 @@ export default function AddListingPage() {
                     city: city || prev.city,
                     state: state || prev.state,
                     pincode: pincode || prev.pincode,
-                    latitude: lat,
-                    longitude: lng,
                 }));
             }
         });
@@ -256,11 +256,17 @@ export default function AddListingPage() {
                 title: "Drag to set location",
             });
 
-            markerRef.current.addListener("dragend", () => {
-                const pos = markerRef.current.position;
-                if (!pos) return;
-                const lat = typeof pos.lat === 'function' ? pos.lat() : pos.lat;
-                const lng = typeof pos.lng === 'function' ? pos.lng() : pos.lng;
+            markerRef.current.addListener("dragend", (e: any) => {
+                let lat: number, lng: number;
+                if (e && e.latLng) {
+                    lat = typeof e.latLng.lat === 'function' ? e.latLng.lat() : e.latLng.lat;
+                    lng = typeof e.latLng.lng === 'function' ? e.latLng.lng() : e.latLng.lng;
+                } else {
+                    const pos = markerRef.current.position;
+                    if (!pos) return;
+                    lat = typeof pos.lat === 'function' ? pos.lat() : pos.lat;
+                    lng = typeof pos.lng === 'function' ? pos.lng() : pos.lng;
+                }
                 updateLocationFromCoords(lat, lng);
             });
 
@@ -1499,163 +1505,6 @@ export default function AddListingPage() {
                             </div>
                         </div>
 
-                        {/* Offer / Banner Ads */}
-                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
-                                        <Tag className="w-4 h-4 text-orange-500" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-black text-slate-900">Offer / Banner Ad</h3>
-                                        <p className="text-[11px] text-slate-400 font-medium">Promote a special deal on your listing</p>
-                                    </div>
-                                </div>
-                                {/* Toggle Switch */}
-                                <button
-                                    type="button"
-                                    onClick={() => setFormData(prev => ({ ...prev, hasOffer: !prev.hasOffer }))}
-                                    className={`relative w-12 h-6 rounded-full transition-colors ${formData.hasOffer ? 'bg-orange-500' : 'bg-slate-200'}`}
-                                >
-                                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${formData.hasOffer ? 'translate-x-6' : 'translate-x-0'}`} />
-                                </button>
-                            </div>
-
-                            {formData.hasOffer ? (
-                                <div className="p-6 space-y-5">
-                                    {/* Offer Badge */}
-                                    <div>
-                                        <label className={labelClass}>
-                                            <Tag className="w-3 h-3 inline mr-1.5 text-orange-500" />
-                                            Offer Badge <span className="text-orange-500">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="offerBadge"
-                                            value={formData.offerBadge}
-                                            onChange={handleChange}
-                                            placeholder="e.g. 30% OFF · Free Delivery · Grand Opening"
-                                            maxLength={60}
-                                            className={inputClass}
-                                        />
-                                        <p className="text-xs text-slate-400 mt-1">Short promo label shown on the listing card</p>
-                                    </div>
-
-                                    {/* Offer Title */}
-                                    <div>
-                                        <label className={labelClass}>Offer Title</label>
-                                        <input
-                                            type="text"
-                                            name="offerTitle"
-                                            value={formData.offerTitle}
-                                            onChange={handleChange}
-                                            placeholder="e.g. Grand Opening Sale — This Weekend Only!"
-                                            maxLength={150}
-                                            className={inputClass}
-                                        />
-                                    </div>
-
-                                    {/* Offer Description */}
-                                    <div>
-                                        <label className={labelClass}>Offer Description</label>
-                                        <textarea
-                                            name="offerDescription"
-                                            value={formData.offerDescription}
-                                            onChange={handleChange}
-                                            rows={3}
-                                            placeholder="Details about the deal — terms, conditions, what's included..."
-                                            className={`${inputClass} resize-none`}
-                                        />
-                                    </div>
-
-                                    {/* Expiry Date */}
-                                    <div>
-                                        <label className={labelClass}>Offer Expiry Date</label>
-                                        <input
-                                            type="date"
-                                            name="offerExpiresAt"
-                                            value={formData.offerExpiresAt}
-                                            onChange={handleChange}
-                                            min={new Date().toISOString().split('T')[0]}
-                                            className={inputClass}
-                                        />
-                                    </div>
-
-                                    {/* Banner Image Upload */}
-                                    <div>
-                                        <label className={labelClass}>
-                                            <ImagePlus className="w-3 h-3 inline mr-1.5 text-orange-500" />
-                                            Banner Image <span className="text-slate-400 font-medium text-xs">(optional)</span>
-                                        </label>
-                                        {formData.offerBannerUrl ? (
-                                            <div className="relative rounded-2xl overflow-hidden bg-slate-100 aspect-[3/1]">
-                                                <img src={formData.offerBannerUrl} alt="Offer banner" className="w-full h-full object-cover" />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setFormData(prev => ({ ...prev, offerBannerUrl: '' }))}
-                                                    className="absolute top-3 right-3 w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 shadow-lg"
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <label className="block cursor-pointer group">
-                                                <div className="rounded-2xl border-2 border-dashed border-slate-200 hover:border-orange-300 bg-slate-50 hover:bg-orange-50/20 transition-all p-8 flex flex-col items-center gap-3">
-                                                    <ImagePlus className="w-8 h-8 text-slate-300 group-hover:text-orange-400 transition-colors" />
-                                                    <div className="text-center">
-                                                        <p className="font-black text-sm text-slate-400 group-hover:text-orange-500">Upload Banner Image</p>
-                                                        <p className="text-xs text-slate-300 mt-0.5">Recommended 1200×400 · PNG, JPG</p>
-                                                    </div>
-                                                </div>
-                                                <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    className="hidden"
-                                                    onChange={async e => {
-                                                        const file = e.target.files?.[0];
-                                                        if (!file) return;
-                                                        setLoading(true);
-                                                        try {
-                                                            const res = await api.listings.uploadImage(file);
-                                                            setFormData(prev => ({ ...prev, offerBannerUrl: res.url }));
-                                                        } catch { setError('Banner upload failed'); } finally { setLoading(false); }
-                                                    }}
-                                                />
-                                            </label>
-                                        )}
-                                    </div>
-
-                                    {/* Live Preview Card */}
-                                    {(formData.offerBadge || formData.offerTitle) && (
-                                        <div>
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Preview</p>
-                                            <div className="bg-gradient-to-r from-orange-500 to-rose-500 rounded-2xl p-5 text-white shadow-lg shadow-orange-500/20">
-                                                {formData.offerBannerUrl && (
-                                                    <img src={formData.offerBannerUrl} className="w-full rounded-xl mb-4 object-cover max-h-28" alt="banner" />
-                                                )}
-                                                <div>
-                                                    {formData.offerBadge && (
-                                                        <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur rounded-full text-xs font-black uppercase tracking-wider mb-2">
-                                                            🏷️ {formData.offerBadge}
-                                                        </span>
-                                                    )}
-                                                    {formData.offerTitle && <h4 className="font-black text-lg leading-tight mb-1">{formData.offerTitle}</h4>}
-                                                    {formData.offerDescription && <p className="text-sm text-white/80">{formData.offerDescription}</p>}
-                                                    {formData.offerExpiresAt && (
-                                                        <p className="text-xs text-white/60 mt-2 font-bold">⏳ Expires: {new Date(formData.offerExpiresAt).toLocaleDateString()}</p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="px-6 py-8 text-center text-slate-400">
-                                    <Tag className="w-8 h-8 mx-auto mb-2 opacity-20" />
-                                    <p className="text-sm font-bold">Toggle on to add a special offer or promo banner</p>
-                                </div>
-                            )}
-                        </div>
 
                         {/* ── Social Media Links ───────────────────────────── */}
                         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">

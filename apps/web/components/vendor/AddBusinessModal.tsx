@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Loader2, Store, MapPin, Phone, TextQuote, Layers, Sparkles, Plus, Check, Hash, Share2, Globe, MessageSquare, Navigation, ChevronDown } from 'lucide-react';
+import { X, Loader2, Store, MapPin, Phone, TextQuote, Layers, Sparkles, Plus, Check, Hash, Share2, Globe, MessageSquare, Navigation, ChevronDown, Tag, ImagePlus } from 'lucide-react';
 import { api, getImageUrl } from '../../lib/api';
 import { Category, Business, City } from '../../types/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -52,7 +52,13 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
         coverImageUrl: '',
         images: [] as string[],
         amenityIds: [] as string[],
-        metaKeywords: ''
+        metaKeywords: '',
+        hasOffer: false,
+        offerTitle: '',
+        offerDescription: '',
+        offerBadge: '',
+        offerExpiresAt: '',
+        offerBannerUrl: ''
     });
 
     const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
@@ -134,12 +140,16 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
         };
     }, []);
 
-    const updateLocationFromCoords = (lat: number, lng: number) => {
-        if (!(window as any).google) return;
-        const geocoder = new (window as any).google.maps.Geocoder();
-        geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
-            if (status === "OK" && results[0]) {
-                const place = results[0];
+    const updateLocationFromCoords = async (lat: number, lng: number) => {
+        setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
+        
+        try {
+            if (!(window as any).google) return;
+            const geocoder = new (window as any).google.maps.Geocoder();
+            const response = await geocoder.geocode({ location: { lat, lng } });
+
+            if (response.results?.[0]) {
+                const place = response.results[0];
                 let city = '';
                 let state = '';
                 let pincode = '';
@@ -168,11 +178,11 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                     city: city || prev.city,
                     state: state || prev.state,
                     pincode: pincode || prev.pincode,
-                    latitude: lat,
-                    longitude: lng,
                 }));
             }
-        });
+        } catch (error) {
+            console.error("Geocoding failed:", error);
+        }
     };
 
     const initAutocomplete = () => {
@@ -197,11 +207,17 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                 title: "Drag to set location",
             });
 
-            markerRef.current.addListener("dragend", () => {
-                const pos = markerRef.current.position;
-                if (!pos) return;
-                const lat = typeof pos.lat === 'function' ? pos.lat() : pos.lat;
-                const lng = typeof pos.lng === 'function' ? pos.lng() : pos.lng;
+            markerRef.current.addListener("dragend", (e: any) => {
+                let lat: number, lng: number;
+                if (e && e.latLng) {
+                    lat = typeof e.latLng.lat === 'function' ? e.latLng.lat() : e.latLng.lat;
+                    lng = typeof e.latLng.lng === 'function' ? e.latLng.lng() : e.latLng.lng;
+                } else {
+                    const pos = markerRef.current.position;
+                    if (!pos) return;
+                    lat = typeof pos.lat === 'function' ? pos.lat() : pos.lat;
+                    lng = typeof pos.lng === 'function' ? pos.lng() : pos.lng;
+                }
                 updateLocationFromCoords(lat, lng);
             });
 
@@ -353,7 +369,13 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                 coverImageUrl: business.coverImageUrl || '',
                 images: business.images || [],
                 amenityIds: business.businessAmenities?.map(ba => ba.amenity.id) || [],
-                metaKeywords: (business as any).metaKeywords || ''
+                metaKeywords: (business as any).metaKeywords || '',
+                hasOffer: (business as any).hasOffer || false,
+                offerTitle: (business as any).offerTitle || '',
+                offerDescription: (business as any).offerDescription || '',
+                offerBadge: (business as any).offerBadge || '',
+                offerExpiresAt: (business as any).offerExpiresAt ? new Date((business as any).offerExpiresAt).toISOString().split('T')[0] : '',
+                offerBannerUrl: (business as any).offerBannerUrl || ''
             });
             // Pre-fill gallery previews
             setGalleryPreviews(business.images || []);
@@ -834,6 +856,7 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                                                         />
                                                     </div>
                                                 </div>
+
                                             </motion.div>
                                         )}
 
@@ -883,7 +906,7 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                                                             return (
                                                                 <div key={link.platform} className="flex items-center gap-2 group/link">
                                                                     <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white" style={{ backgroundColor: platform.color }}>{platform.emoji}</div>
-                                                                    <input type="url" value={link.url} onChange={e => updateSocialUrl(link.platform, e.target.value)} placeholder={platform.placeholder} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
+                                                                    <input type="url" value={link.url || ''} onChange={e => updateSocialUrl(link.platform, e.target.value)} placeholder={platform.placeholder} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
                                                                     <button type="button" onClick={() => removeSocialLink(link.platform)} className="w-10 h-10 rounded-xl bg-slate-50 hover:bg-red-50 text-slate-400 flex items-center justify-center"><X className="w-4 h-4" /></button>
                                                                 </div>
                                                             );

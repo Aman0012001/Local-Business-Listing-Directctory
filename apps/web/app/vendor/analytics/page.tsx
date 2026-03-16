@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { api, getImageUrl } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
-import { BarChart, TrendingUp, Eye, Phone, Heart, Star, ChevronRight, Loader2 } from 'lucide-react';
+import { BarChart, TrendingUp, Eye, Phone, Heart, Star, ChevronRight, Loader2, Lock } from 'lucide-react';
 import PerformanceChart from '../../../components/vendor/PerformanceChart';
 import Link from 'next/link';
 
@@ -12,6 +12,10 @@ export default function VendorAnalyticsPage() {
     const [stats, setStats] = useState<any>(null);
     const [listings, setListings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+    const features = activeSub?.plan?.dashboardFeatures || {};
+    const isVendor = user?.role === 'vendor';
 
     useEffect(() => {
         const fetchAnalytics = async () => {
@@ -39,6 +43,23 @@ export default function VendorAnalyticsPage() {
             <div className="flex flex-col items-center justify-center min-h-[60vh]">
                 <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
                 <p className="text-slate-400 font-bold uppercase tracking-widest text-xs animate-pulse">Loading Analytics...</p>
+            </div>
+        );
+    }
+
+    if (isVendor && !features.showAnalytics) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100">
+                <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mb-6">
+                    <Lock className="w-10 h-10" />
+                </div>
+                <h2 className="text-3xl font-black text-slate-900 mb-3">Premium Feature</h2>
+                <p className="text-slate-500 max-w-md mx-auto mb-8 font-bold leading-relaxed">
+                    Detailed analytics and performance insights are only available on higher-tier plans. Upgrade to track your growth!
+                </p>
+                <Link href="/vendor/subscription" className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black tracking-tight hover:bg-black transition-all active:scale-95 shadow-xl shadow-slate-200">
+                    Upgrade My Plan
+                </Link>
             </div>
         );
     }

@@ -5,9 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Megaphone, Plus, Pencil, Trash2, X, CheckCircle2,
     Loader2, Tag, Calendar, Clock, ImagePlus, Store,
-    AlertTriangle, ChevronLeft, ChevronRight, Sparkles
+    AlertTriangle, ChevronLeft, ChevronRight, Sparkles, Lock
 } from 'lucide-react';
 import { api } from '../../../lib/api';
+import { useAuth } from '../../../context/AuthContext';
+import Link from 'next/link';
 
 type OfferType = 'offer' | 'event';
 type OfferStatus = 'active' | 'scheduled' | 'expired';
@@ -50,6 +52,7 @@ const emptyForm = {
 };
 
 export default function VendorOffersPage() {
+    const { user } = useAuth();
     const [offers, setOffers] = useState<OfferItem[]>([]);
     const [businesses, setBusinesses] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -66,7 +69,15 @@ export default function VendorOffersPage() {
     const [meta, setMeta] = useState<any>(null);
     const fileRef = useRef<HTMLInputElement>(null);
 
+    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+    const features = activeSub?.plan?.dashboardFeatures || {};
+    const isVendor = user?.role === 'vendor';
+
     const loadOffers = async (p = 1) => {
+        if (isVendor && !features.showOffers) {
+            setLoading(false);
+            return;
+        }
         setLoading(true);
         try {
             const res = await api.offers.getMy(p, 10);
@@ -80,6 +91,7 @@ export default function VendorOffersPage() {
     };
 
     const loadBusinesses = async () => {
+        if (isVendor && !features.showOffers) return;
         try {
             const res = await api.listings.getMyListings({ limit: 100 });
             setBusinesses(res.data || []);
@@ -87,9 +99,38 @@ export default function VendorOffersPage() {
     };
 
     useEffect(() => {
+        if (user && isVendor && !features.showOffers) {
+            setLoading(false);
+            return;
+        }
         loadOffers(1);
         loadBusinesses();
-    }, []);
+    }, [user, isVendor, features.showOffers]);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+            </div>
+        );
+    }
+
+    if (isVendor && !features.showOffers) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100 mt-10">
+                <div className="w-20 h-20 bg-orange-50 text-orange-600 rounded-3xl flex items-center justify-center mb-6">
+                    <Lock className="w-10 h-10" />
+                </div>
+                <h2 className="text-3xl font-black text-slate-900 mb-3">Offers & Events</h2>
+                <p className="text-slate-500 max-w-md mx-auto mb-8 font-bold leading-relaxed">
+                    Promoting your business with special offers and events is a premium feature. Upgrade your plan to reach more customers!
+                </p>
+                <Link href="/vendor/subscription" className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black tracking-tight hover:bg-black transition-all active:scale-95 shadow-xl shadow-slate-200">
+                    Upgrade My Plan
+                </Link>
+            </div>
+        );
+    }
 
     const openCreate = () => {
         setForm(emptyForm);

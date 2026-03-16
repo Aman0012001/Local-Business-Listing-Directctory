@@ -91,6 +91,9 @@ export default function GenericDashboard() {
         fetchDashboardData();
     }, [user, isVendor, isAdmin]);
 
+    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+    const features = activeSub?.plan?.dashboardFeatures || {};
+
     const vendorStats = [
         {
             label: 'Total Listings',
@@ -99,27 +102,27 @@ export default function GenericDashboard() {
             color: 'bg-gradient-to-br from-[#3366CC] to-[#1144AA]',
             shadow: 'shadow-blue-500/20'
         },
-        {
+        ...(features.showAnalytics ? [{
             label: 'Total Views',
             value: stats?.totalViews || '0',
             icon: Heart,
             color: 'bg-gradient-to-br from-[#33AA88] to-[#118866]',
             shadow: 'shadow-emerald-500/20'
-        },
-        {
+        }] : []),
+        ...(features.showLeads ? [{
             label: 'New Leads',
             value: String(newLeadsCount),
             icon: MessageSquare,
             color: 'bg-gradient-to-br from-[#FFAA33] to-[#FF8811]',
             shadow: 'shadow-orange-500/20'
-        },
-        {
+        }] : []),
+        ...(features.showReviews ? [{
             label: 'Total Reviews',
             value: stats?.totalReviews || recentReviews.length || '0',
             icon: Star,
             color: 'bg-gradient-to-br from-[#FF6644] to-[#EE4422]',
             shadow: 'shadow-red-500/20'
-        },
+        }] : []),
     ];
 
     const userStats = [
@@ -209,7 +212,7 @@ export default function GenericDashboard() {
                 <div className="lg:col-span-8 space-y-10">
 
                     {/* Performance Insights (Vendor Only) */}
-                    {(isVendor || isAdmin) && (
+                    {(isVendor || isAdmin) && features.showAnalytics && (
                         <div className="space-y-6">
                             <div className="flex items-center justify-between px-2">
                                 <h3 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
@@ -304,11 +307,11 @@ export default function GenericDashboard() {
                         title={isVendor || isAdmin ? "Recent Reviews" : "My Recent Reviews"}
                     />
 
-                    {isVendor && (
+                    {isVendor && features.showDemand && (
                         <VendorHotDemandWidget insights={demandInsights} loading={loading} />
                     )}
 
-                    {isVendor && (
+                    {isVendor && features.showQueries && (
                         <section className="bg-white rounded-[16px] p-8 border border-black  shadow-slate-200/20">
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-3">

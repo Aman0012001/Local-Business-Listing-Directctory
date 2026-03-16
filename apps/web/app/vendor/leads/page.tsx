@@ -5,9 +5,11 @@ import { api } from '../../../lib/api';
 import {
     Phone, Mail, MessageSquare, Globe, Download, Filter,
     RefreshCw, TrendingUp, Users, CheckCircle, XCircle,
-    PhoneCall, ChevronDown, Search, Eye, ChevronLeft, ChevronRight, Loader2
+    PhoneCall, ChevronDown, Search, Eye, ChevronLeft, ChevronRight, Loader2, Lock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../../context/AuthContext';
+import Link from 'next/link';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type LeadStatus = 'new' | 'contacted' | 'converted' | 'lost';
@@ -182,6 +184,7 @@ function LeadDetailModal({ lead, onClose, onStatusChange }: {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function VendorLeadsPage() {
+    const { user } = useAuth();
     const [leads, setLeads] = useState<Lead[]>([]);
     const [stats, setStats] = useState<Record<string, number>>({});
     const [loading, setLoading] = useState(true);
@@ -197,7 +200,15 @@ export default function VendorLeadsPage() {
     const [filterStatus, setFilterStatus] = useState('');
     const [filterType, setFilterType] = useState('');
 
+    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+    const features = activeSub?.plan?.dashboardFeatures || {};
+    const isVendor = user?.role === 'vendor';
+
     const fetchLeads = useCallback(async (silent = false) => {
+        if (!user || (isVendor && !features.showLeads)) {
+            setLoading(false); // Ensure loading is false if feature is not available
+            return;
+        }
         if (!silent) setLoading(true); else setRefreshing(true);
         try {
             const params: any = { page, limit: LIMIT };
@@ -231,9 +242,15 @@ export default function VendorLeadsPage() {
             setLoading(false);
             setRefreshing(false);
         }
-    }, [page, filterStatus, filterType]);
+    }, [user, isVendor, features.showLeads, page, filterStatus, filterType]);
 
-    useEffect(() => { fetchLeads(); }, [fetchLeads]);
+    useEffect(() => {
+        if (user && isVendor && !features.showLeads) {
+            setLoading(false);
+            return;
+        }
+        fetchLeads();
+    }, [user, isVendor, features.showLeads, fetchLeads]);
 
     const handleStatusChange = async (id: string, status: LeadStatus) => {
         try {
@@ -259,6 +276,32 @@ export default function VendorLeadsPage() {
             exportToCSV(all.data || []);
         } catch (e) { console.error('Download failed:', e); }
     };
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
+                <p className="text-slate-400 font-bold text-sm">Loading leads…</p>
+            </div>
+        );
+    }
+
+    if (isVendor && !features.showLeads) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100 mt-20">
+                <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center mb-6">
+                    <Lock className="w-10 h-10" />
+                </div>
+                <h2 className="text-3xl font-black text-slate-900 mb-3">Lead Management</h2>
+                <p className="text-slate-500 max-w-md mx-auto mb-8 font-bold leading-relaxed">
+                    Connecting with customers via leads and enquiries is a premium feature. Upgrade your plan to start receiving business leads!
+                </p>
+                <Link href="/vendor/subscription" className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black tracking-tight hover:bg-black transition-all active:scale-95 shadow-xl shadow-slate-200">
+                    Upgrade My Plan
+                </Link>
+            </div>
+        );
+    }
 
     const filtered = leads.filter(l => {
         if (!search) return true;
@@ -331,12 +374,7 @@ export default function VendorLeadsPage() {
 
             {/* Table */}
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                {loading ? (
-                    <div className="flex flex-col items-center justify-center py-24 gap-4">
-                        <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
-                        <p className="text-slate-400 font-bold text-sm">Loading leads…</p>
-                    </div>
-                ) : filtered.length === 0 ? (
+                {filtered.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-24 gap-3">
                         <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center">
                             <Users className="w-8 h-8 text-slate-300" />

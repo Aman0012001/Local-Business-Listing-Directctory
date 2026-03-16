@@ -18,6 +18,7 @@ interface AuthContextType {
     register: (userData: any) => Promise<void>;
     logout: () => void;
     updateUser: (userData: any) => void;
+    syncProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -162,7 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return (
         <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-            <AuthContext.Provider value={{ user, loading, login, googleLogin, register, logout, updateUser }}>
+            <AuthContext.Provider value={{ user, loading, login, googleLogin, register, logout, updateUser, syncProfile }}>
                 {children}
             </AuthContext.Provider>
         </GoogleOAuthProvider>

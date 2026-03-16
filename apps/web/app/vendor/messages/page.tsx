@@ -6,9 +6,11 @@ import {
     Send, Mail, Phone, Clock, Search, RefreshCw,
     CheckCircle, XCircle, PhoneCall, TrendingUp,
     ChevronLeft, ChevronRight, X, MessageSquare,
-    Filter, ChevronDown, Loader2, Users, Eye
+    Filter, ChevronDown, Loader2, Users, Eye, Lock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../../context/AuthContext';
+import Link from 'next/link';
 
 // ─── Types ─────────────────────────────────────────────────────────────
 type EnquiryStatus = 'new' | 'contacted' | 'converted' | 'lost';
@@ -124,7 +126,7 @@ function EnquiryDetailModal({ enquiry, onClose, onStatusChange }: {
                         <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Quick Actions</p>
                         <div className="flex gap-2 flex-wrap">
                             {enquiry.email && (
-                                <a href={`mailto:${enquiry.email}?subject=Re: Your Enquiry`}
+                                <a href={`mailto:${enquiry.email}?subject=Re: Your Query`}
                                     className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 hover:border-blue-400 hover:text-blue-600 transition-all shadow-sm">
                                     <Mail className="w-4 h-4" /> Reply via Email
                                 </a>
@@ -178,6 +180,7 @@ function StatCard({ label, value, color }: { label: string; value: number; color
 const LIMIT = 15;
 
 export default function VendorEnquiriesPage() {
+    const { user } = useAuth();
     const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
     const [stats, setStats] = useState<Record<string, number>>({});
     const [total, setTotal] = useState(0);
@@ -189,7 +192,15 @@ export default function VendorEnquiriesPage() {
     const [search, setSearch] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
 
+    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+    const features = activeSub?.plan?.dashboardFeatures || {};
+    const isVendor = user?.role === 'vendor';
+
     const fetchEnquiries = useCallback(async (silent = false) => {
+        if (!user || (isVendor && !features.showQueries)) {
+            setLoading(false);
+            return;
+        }
         if (!silent) setLoading(true); else setRefreshing(true);
         try {
             const params: any = { page, limit: LIMIT, type: 'chat' };
@@ -218,9 +229,41 @@ export default function VendorEnquiriesPage() {
             setLoading(false);
             setRefreshing(false);
         }
-    }, [page, filterStatus]);
+    }, [user, isVendor, features.showQueries, page, filterStatus]);
 
-    useEffect(() => { fetchEnquiries(); }, [fetchEnquiries]);
+    useEffect(() => {
+        if (user && isVendor && !features.showQueries) {
+            setLoading(false);
+            return;
+        }
+        fetchEnquiries();
+    }, [user, isVendor, features.showQueries, fetchEnquiries]);
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <div className="w-12 h-12 border-4 border-violet-600/20 border-t-violet-600 rounded-full animate-spin" />
+                <p className="text-slate-400 font-bold text-sm">Loading queries…</p>
+            </div>
+        );
+    }
+
+    if (isVendor && !features.showQueries) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100 mt-20">
+                <div className="w-20 h-20 bg-violet-50 text-violet-600 rounded-3xl flex items-center justify-center mb-6">
+                    <Lock className="w-10 h-10" />
+                </div>
+                <h2 className="text-3xl font-black text-slate-900 mb-3">Customer Queries</h2>
+                <p className="text-slate-500 max-w-md mx-auto mb-8 font-bold leading-relaxed">
+                    Direct messaging and customer enquiries are premium features. Upgrade your plan to start chatting with potential customers!
+                </p>
+                <Link href="/vendor/subscription" className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black tracking-tight hover:bg-black transition-all active:scale-95 shadow-xl shadow-slate-200">
+                    Upgrade My Plan
+                </Link>
+            </div>
+        );
+    }
 
     const handleStatusChange = async (id: string, status: EnquiryStatus) => {
         try {
@@ -249,7 +292,7 @@ export default function VendorEnquiriesPage() {
                         <div className="w-10 h-10 bg-gradient-to-br from-violet-100 to-blue-100 rounded-2xl flex items-center justify-center">
                             <Send className="w-5 h-5 text-violet-600" />
                         </div>
-                        <h1 className="text-4xl font-black text-slate-900 tracking-tight">Enquiries</h1>
+                        <h1 className="text-4xl font-black text-slate-900 tracking-tight">Queries</h1>
                         {stats.new > 0 && (
                             <span className="px-3 py-1 bg-violet-600 text-white text-xs font-black rounded-full animate-pulse">
                                 {stats.new} New
@@ -258,7 +301,7 @@ export default function VendorEnquiriesPage() {
                     </div>
                     <p className="text-slate-400 font-bold mt-1 ml-[52px]">Direct messages from customers on your listings</p>
                 </div>
-                <button id="refresh-enquiries-btn" onClick={() => fetchEnquiries(true)} disabled={refreshing}
+                <button id="refresh-queries-btn" onClick={() => fetchEnquiries(true)} disabled={refreshing}
                     className="p-3 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-slate-900 hover:border-slate-300 transition-all shadow-sm self-start">
                     <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
                 </button>
@@ -276,13 +319,13 @@ export default function VendorEnquiriesPage() {
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 mb-6 flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input id="enquiry-search" type="text" placeholder="Search by name, email, or message…"
+                    <input id="query-search" type="text" placeholder="Search by name, email, or message…"
                         value={search} onChange={e => setSearch(e.target.value)}
                         className="w-full pl-10 pr-4 py-2.5 text-sm font-medium bg-slate-50 rounded-xl border border-transparent focus:border-violet-400 focus:bg-white outline-none transition-all" />
                 </div>
                 <div className="relative">
                     <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                    <select id="enquiry-status-filter" value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}
+                    <select id="query-status-filter" value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}
                         className="pl-9 pr-8 py-2.5 text-sm font-bold bg-slate-50 rounded-xl border border-transparent focus:border-violet-400 outline-none appearance-none cursor-pointer">
                         <option value="">All Statuses</option>
                         {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
@@ -296,7 +339,7 @@ export default function VendorEnquiriesPage() {
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-24 gap-4">
                         <div className="w-12 h-12 border-4 border-violet-600/20 border-t-violet-600 rounded-full animate-spin" />
-                        <p className="text-slate-400 font-bold text-sm">Loading enquiries…</p>
+                        <p className="text-slate-400 font-bold text-sm">Loading queries…</p>
                     </div>
                 ) : filtered.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-24 gap-4">
@@ -304,7 +347,7 @@ export default function VendorEnquiriesPage() {
                             <MessageSquare className="w-10 h-10 text-violet-300" />
                         </div>
                         <div className="text-center">
-                            <p className="text-slate-700 font-black text-lg">No enquiries yet</p>
+                            <p className="text-slate-700 font-black text-lg">No queries yet</p>
                             <p className="text-slate-400 text-sm mt-1">When customers send you a message from your listing, it will appear here</p>
                         </div>
                     </div>

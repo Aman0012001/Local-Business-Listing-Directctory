@@ -6,9 +6,11 @@ import {
     MessageSquare, Pencil, Trash2, X, CheckCircle2,
     Loader2, Star, Calendar, Clock, Store,
     AlertTriangle, ChevronLeft, ChevronRight, Send,
-    User as UserIcon, MessageCircle
+    User as UserIcon, MessageCircle, Lock
 } from 'lucide-react';
 import { api } from '../../../lib/api';
+import { useAuth } from '../../../context/AuthContext';
+import Link from 'next/link';
 
 interface CommentItem {
     id: string;
@@ -25,6 +27,7 @@ const inputClass = "w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded
 const labelClass = "block text-xs font-black uppercase tracking-widest text-slate-400 mb-2";
 
 export default function VendorCommentsPage() {
+    const { user } = useAuth();
     const [comments, setComments] = useState<CommentItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [replying, setReplying] = useState(false);
@@ -37,7 +40,15 @@ export default function VendorCommentsPage() {
     const [meta, setMeta] = useState<any>(null);
     const [deleteReplyId, setDeleteReplyId] = useState<string | null>(null);
 
+    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+    const features = activeSub?.plan?.dashboardFeatures || {};
+    const isVendor = user?.role === 'vendor';
+
     const loadComments = async (p = 1) => {
+        if (isVendor && !features.showReviews) {
+            setLoading(false);
+            return;
+        }
         setLoading(true);
         try {
             const res = await api.comments.getVendorComments(p, 10);
@@ -51,8 +62,37 @@ export default function VendorCommentsPage() {
     };
 
     useEffect(() => {
+        if (user && isVendor && !features.showReviews) {
+            setLoading(false);
+            return;
+        }
         loadComments(1);
-    }, []);
+    }, [user, isVendor, features.showReviews]);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-32">
+                <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
+            </div>
+        );
+    }
+
+    if (isVendor && !features.showReviews) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100 mt-20">
+                <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mb-6">
+                    <Lock className="w-10 h-10" />
+                </div>
+                <h2 className="text-3xl font-black text-slate-900 mb-3">Customer Reviews</h2>
+                <p className="text-slate-500 max-w-md mx-auto mb-8 font-bold leading-relaxed">
+                    Managing and replying to customer reviews is a premium feature. Upgrade your plan to build trust with your customers!
+                </p>
+                <Link href="/vendor/subscription" className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black tracking-tight hover:bg-black transition-all active:scale-95 shadow-xl shadow-slate-200">
+                    Upgrade My Plan
+                </Link>
+            </div>
+        );
+    }
 
     const openReply = (comment: CommentItem) => {
         setActiveComment(comment);

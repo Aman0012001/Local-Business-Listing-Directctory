@@ -46,12 +46,11 @@ export default function Sidebar() {
         { name: 'Add Listing', icon: Plus, href: '/vendor/add-listing', badge: null },
         { name: 'Leads', icon: Phone, href: '/vendor/leads', badge: null },
         { name: 'Offers & Events', icon: Megaphone, href: '/vendor/offers', badge: null },
-        { name: 'Comments', icon: MessageSquare, href: '/vendor/comments', badge: null },
+        { name: 'Reviews', icon: Star, href: '/vendor/comments', badge: null },
         { name: 'Analytics', icon: BarChart, href: '/vendor/analytics', badge: null },
         { name: 'Saved', icon: Heart, href: '/vendor/saved', badge: null },
         { name: 'Following', icon: Bell, href: '/vendor/following', badge: null },
-        { name: 'Reviews', icon: Star, href: '/vendor/reviews', badge: null },
-        { name: 'Enquiries', icon: Send, href: '/vendor/messages', badge: newEnquiryCount > 0 ? String(newEnquiryCount) : null },
+        { name: 'Queries', icon: Send, href: '/vendor/messages', badge: newEnquiryCount > 0 ? String(newEnquiryCount) : null },
         { name: 'Demand Insights', icon: TrendingUp, href: '/vendor/demand', badge: null },
         { name: 'Subscription & Billing', icon: CreditCard, href: '/vendor/subscription', badge: null },
         { name: 'Notifications', icon: Bell, href: '/vendor/notifications', badge: null },
@@ -96,13 +95,39 @@ export default function Sidebar() {
                     .filter(item => {
                         const isVendorOrAdmin = user?.role === 'vendor' || user?.role === 'admin' || user?.role === 'superadmin';
                         if (!isVendorOrAdmin) {
-                            return ['Dashboard', 'Saved', 'Following', 'Notifications', 'Settings', 'Reviews'].includes(item.name);
+                            return ['Dashboard', 'Saved', 'Following', 'Notifications', 'Settings'].includes(item.name);
                         }
+
+                        // Superadmin/Admin see everything
+                        if (user?.role === 'superadmin' || user?.role === 'admin') return true;
+
+                        // Vendor feature access control
+                        if (user?.role === 'vendor') {
+                            // Find active subscription
+                            const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+                            const features = activeSub?.plan?.dashboardFeatures || {};
+
+                            // Map menu item names to feature IDs
+                            const featureMap: Record<string, string> = {
+                                'Analytics': 'showAnalytics',
+                                'Leads': 'showLeads',
+                                'Offers & Events': 'showOffers',
+                                'Demand Insights': 'showDemand',
+                                'Queries': 'showQueries',
+                                'Reviews': 'showReviews'
+                            };
+
+                            const featureId = featureMap[item.name];
+                            if (featureId) {
+                                return !!features[featureId];
+                            }
+                        }
+
                         return true;
                     })
                     .map((item) => {
                         const isActive = pathname === item.href;
-                        const isEnquiries = item.name === 'Enquiries';
+                        const isEnquiries = item.name === 'Queries';
                         return (
                             <Link
                                 key={item.name}

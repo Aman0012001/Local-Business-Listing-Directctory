@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
-import { TrendingUp, Activity, MapPin, Loader2, BarChart2 } from 'lucide-react';
+import { TrendingUp, Activity, MapPin, Loader2, BarChart2, Lock } from 'lucide-react';
+import Link from 'next/link';
 
 export default function VendorDemandPage() {
     const { user } = useAuth();
@@ -11,6 +12,10 @@ export default function VendorDemandPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+    const features = activeSub?.plan?.dashboardFeatures || {};
+    const isVendor = user?.role === 'vendor';
 
     useEffect(() => {
         // Try to get actual location, fallback to a default if blocked or failing
@@ -53,6 +58,32 @@ export default function VendorDemandPage() {
         }
     };
 
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh]">
+                <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
+                <p className="text-slate-500 font-medium animate-pulse">Analyzing local market data...</p>
+            </div>
+        );
+    }
+
+    if (isVendor && !features.showDemand) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100">
+                <div className="w-20 h-20 bg-orange-50 text-[#FF7A30] rounded-3xl flex items-center justify-center mb-6">
+                    <Lock className="w-10 h-10" />
+                </div>
+                <h2 className="text-3xl font-black text-slate-900 mb-3">Hot Demand Insights</h2>
+                <p className="text-slate-500 max-w-md mx-auto mb-8 font-bold leading-relaxed">
+                    Real-time market demand data and trending keywords are premium features. Upgrade your plan to see what customers are searching for!
+                </p>
+                <Link href="/vendor/subscription" className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black tracking-tight hover:bg-black transition-all active:scale-95 shadow-xl shadow-slate-200">
+                    Upgrade My Plan
+                </Link>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-8 pb-20">
             {/* Header */}
@@ -71,12 +102,7 @@ export default function VendorDemandPage() {
                 </p>
             </div>
 
-            {loading ? (
-                <div className="flex flex-col items-center justify-center py-32 space-y-4 bg-white rounded-3xl border border-slate-100 shadow-sm">
-                    <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
-                    <p className="text-slate-500 font-medium animate-pulse">Analyzing local market data...</p>
-                </div>
-            ) : error ? (
+            {error ? (
                 <div className="p-8 bg-red-50 border border-red-100 rounded-3xl text-center">
                     <p className="text-red-600 font-medium">{error}</p>
                     <button

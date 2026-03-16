@@ -19,6 +19,11 @@ export class CreatePlanDto {
     @IsEnum(SubscriptionPlanType)
     planType: SubscriptionPlanType;
 
+    @ApiPropertyOptional({ example: 'Unlimited listings for high-volume vendors' })
+    @IsOptional()
+    @IsString()
+    description?: string;
+
     @ApiProperty({ example: 499.00 })
     @IsNumber()
     price: number;
@@ -27,11 +32,6 @@ export class CreatePlanDto {
     @IsString()
     billingCycle: string;
 
-    @ApiProperty({ example: ['Priority Support', 'Featured Listing', 'Extended Analytics'] })
-    @IsArray()
-    @IsString({ each: true })
-    features: string[];
-
     @ApiProperty({ example: 5 })
     @IsNumber()
     maxListings: number;
@@ -39,7 +39,16 @@ export class CreatePlanDto {
     @ApiProperty({ default: false })
     @IsOptional()
     @IsBoolean()
-    isSponsored?: boolean = false;
+    isFeatured?: boolean = false;
+
+    @ApiPropertyOptional({ example: { showAnalytics: true, showLeads: true } })
+    @IsOptional()
+    dashboardFeatures?: Record<string, boolean> = {};
+
+    @ApiPropertyOptional({ default: true })
+    @IsOptional()
+    @IsBoolean()
+    isActive?: boolean = true;
 }
 
 export class UpdatePlanDto {
@@ -55,6 +64,11 @@ export class UpdatePlanDto {
 
     @ApiPropertyOptional()
     @IsOptional()
+    @IsString()
+    description?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
     @IsNumber()
     price?: number;
 
@@ -62,12 +76,6 @@ export class UpdatePlanDto {
     @IsOptional()
     @IsString()
     billingCycle?: string;
-
-    @ApiPropertyOptional()
-    @IsOptional()
-    @IsArray()
-    @IsString({ each: true })
-    features?: string[];
 
     @ApiPropertyOptional()
     @IsOptional()
@@ -79,10 +87,9 @@ export class UpdatePlanDto {
     @IsBoolean()
     isFeatured?: boolean;
 
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ example: { showAnalytics: true, showLeads: true } })
     @IsOptional()
-    @IsBoolean()
-    isSponsored?: boolean;
+    dashboardFeatures?: Record<string, boolean>;
 
     @ApiPropertyOptional()
     @IsOptional()

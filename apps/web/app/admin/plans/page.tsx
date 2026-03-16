@@ -18,11 +18,10 @@ interface Plan {
     description: string;
     price: string | number;
     billingCycle: string;
-    features: string[];
     maxListings: number;
     isFeatured: boolean;
-    isSponsored: boolean;
     isActive: boolean;
+    dashboardFeatures: Record<string, boolean>;
 }
 
 export default function AdminPlansPage() {
@@ -40,11 +39,17 @@ export default function AdminPlansPage() {
         description: '',
         price: 0,
         billingCycle: 'monthly',
-        features: [''],
         maxListings: 1,
         isFeatured: false,
-        isSponsored: false,
-        isActive: true
+        isActive: true,
+        dashboardFeatures: {
+            showAnalytics: false,
+            showOffers: false,
+            showLeads: false,
+            showDemand: false,
+            showQueries: false,
+            showReviews: false
+        }
     });
 
     useEffect(() => {
@@ -72,11 +77,17 @@ export default function AdminPlansPage() {
                 description: plan.description || '',
                 price: Number(plan.price),
                 billingCycle: plan.billingCycle,
-                features: plan.features.length > 0 ? plan.features : [''],
                 maxListings: plan.maxListings,
                 isFeatured: plan.isFeatured,
-                isSponsored: plan.isSponsored,
-                isActive: plan.isActive
+                isActive: plan.isActive,
+                dashboardFeatures: plan.dashboardFeatures || {
+                    showAnalytics: false,
+                    showOffers: false,
+                    showLeads: false,
+                    showDemand: false,
+                    showQueries: false,
+                    showReviews: false
+                }
             });
         } else {
             setEditingPlan(null);
@@ -86,11 +97,17 @@ export default function AdminPlansPage() {
                 description: '',
                 price: 0,
                 billingCycle: 'monthly',
-                features: [''],
                 maxListings: 1,
                 isFeatured: false,
-                isSponsored: false,
-                isActive: true
+                isActive: true,
+                dashboardFeatures: {
+                    showAnalytics: false,
+                    showOffers: false,
+                    showLeads: false,
+                    showDemand: false,
+                    showQueries: false,
+                    showReviews: false
+                }
             });
         }
         setModalOpen(true);
@@ -99,8 +116,7 @@ export default function AdminPlansPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
-        const filteredFeatures = formData.features.filter(f => f.trim() !== '');
-        const payload = { ...formData, features: filteredFeatures };
+        const payload = { ...formData };
 
         try {
             if (editingPlan) {
@@ -137,23 +153,6 @@ export default function AdminPlansPage() {
         } catch (err) {
             console.error('Toggle failed', err);
         }
-    };
-
-    const handleAddFeature = () => {
-        setFormData(prev => ({ ...prev, features: [...prev.features, ''] }));
-    };
-
-    const handleRemoveFeature = (index: number) => {
-        setFormData(prev => ({
-            ...prev,
-            features: prev.features.filter((_, i) => i !== index)
-        }));
-    };
-
-    const handleFeatureChange = (index: number, value: string) => {
-        const newFeatures = [...formData.features];
-        newFeatures[index] = value;
-        setFormData(prev => ({ ...prev, features: newFeatures }));
     };
 
     const getPlanIcon = (type: string) => {
@@ -237,15 +236,6 @@ export default function AdminPlansPage() {
                         </div>
 
                         <div className="space-y-3 mb-8 flex-grow">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-300 pb-2 border-b border-slate-50">Included Features</p>
-                            {plan.features.map((feature, i) => (
-                                <div key={i} className="flex items-start gap-3">
-                                    <div className="mt-1 w-4 h-4 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
-                                        <Check className="w-2.5 h-2.5 text-emerald-500 stroke-[3]" />
-                                    </div>
-                                    <span className="text-slate-600 font-bold text-sm leading-tight">{feature}</span>
-                                </div>
-                            ))}
                             <div className="flex items-center gap-3 pt-2">
                                 <div className="w-4 h-4 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
                                     <Layers className="w-2.5 h-2.5 text-blue-500" />
@@ -366,6 +356,18 @@ export default function AdminPlansPage() {
                                         />
                                     </div>
                                     <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Billing Cycle</label>
+                                        <select
+                                            value={formData.billingCycle}
+                                            onChange={e => setFormData(prev => ({ ...prev, billingCycle: e.target.value }))}
+                                            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-200 font-bold text-slate-900"
+                                        >
+                                            <option value="monthly">Monthly</option>
+                                            <option value="quarterly">Quarterly</option>
+                                            <option value="yearly">Yearly</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Max Listings</label>
                                         <input
                                             required
@@ -386,40 +388,6 @@ export default function AdminPlansPage() {
                                             placeholder="Short catchy description..."
                                         />
                                     </div>
-
-                                    <div className="md:col-span-2 space-y-4 pt-4 border-t border-slate-50">
-                                        <div className="flex items-center justify-between">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Plan Features</label>
-                                            <button
-                                                type="button"
-                                                onClick={handleAddFeature}
-                                                className="text-xs font-black text-rose-500 hover:text-rose-600 flex items-center gap-1"
-                                            >
-                                                <Plus className="w-3 h-3" /> Add Feature
-                                            </button>
-                                        </div>
-                                        <div className="grid grid-cols-1 gap-3">
-                                            {formData.features.map((feature, index) => (
-                                                <div key={index} className="flex gap-2">
-                                                    <input
-                                                        type="text"
-                                                        value={feature}
-                                                        onChange={e => handleFeatureChange(index, e.target.value)}
-                                                        className="flex-grow px-6 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-200 font-bold text-sm"
-                                                        placeholder="e.g. Priority Support"
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleRemoveFeature(index)}
-                                                        className="w-12 h-12 rounded-xl bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-500 flex items-center justify-center transition-colors"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
                                     <div className="md:col-span-2 flex flex-wrap gap-6 pt-6 border-t border-slate-50">
                                         <label className="flex items-center gap-3 cursor-pointer group">
                                             <div className="relative">
@@ -434,20 +402,40 @@ export default function AdminPlansPage() {
                                             </div>
                                             <span className="text-xs font-black text-slate-600 uppercase tracking-widest">Featured Plan</span>
                                         </label>
+                                    </div>
 
-                                        <label className="flex items-center gap-3 cursor-pointer group">
-                                            <div className="relative">
-                                                <input
-                                                    type="checkbox"
-                                                    className="sr-only"
-                                                    checked={formData.isSponsored}
-                                                    onChange={e => setFormData(prev => ({ ...prev, isSponsored: e.target.checked }))}
-                                                />
-                                                <div className={`w-10 h-6 rounded-full transition-colors ${formData.isSponsored ? 'bg-amber-500' : 'bg-slate-200'}`} />
-                                                <div className={`absolute left-1 top-1 w-4 h-4 rounded-full bg-white transition-transform ${formData.isSponsored ? 'translate-x-4' : ''}`} />
-                                            </div>
-                                            <span className="text-xs font-black text-slate-600 uppercase tracking-widest">Sponsored</span>
-                                        </label>
+                                    <div className="md:col-span-2 space-y-4 pt-6 border-t border-slate-50">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Dashboard Features (Visible to Vendor)</label>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {[
+                                                { id: 'showAnalytics', label: 'Analytics & Reports' },
+                                                { id: 'showLeads', label: 'Business Leads' },
+                                                { id: 'showOffers', label: 'Offers & Events' },
+                                                { id: 'showDemand', label: 'Demand Insights' },
+                                                { id: 'showQueries', label: 'Direct Queries' },
+                                                { id: 'showReviews', label: 'Review Management' },
+                                            ].map((feature) => (
+                                                <label key={feature.id} className="flex items-center gap-3 cursor-pointer group bg-slate-50/50 p-4 rounded-2xl hover:bg-slate-50 transition-colors">
+                                                    <div className="relative">
+                                                        <input
+                                                            type="checkbox"
+                                                            className="sr-only"
+                                                            checked={formData.dashboardFeatures[feature.id as keyof typeof formData.dashboardFeatures]}
+                                                            onChange={e => setFormData(prev => ({
+                                                                ...prev,
+                                                                dashboardFeatures: {
+                                                                    ...prev.dashboardFeatures,
+                                                                    [feature.id]: e.target.checked
+                                                                }
+                                                            }))}
+                                                        />
+                                                        <div className={`w-10 h-6 rounded-full transition-colors ${formData.dashboardFeatures[feature.id as keyof typeof formData.dashboardFeatures] ? 'bg-blue-600' : 'bg-slate-200'}`} />
+                                                        <div className={`absolute left-1 top-1 w-4 h-4 rounded-full bg-white transition-transform ${formData.dashboardFeatures[feature.id as keyof typeof formData.dashboardFeatures] ? 'translate-x-4' : ''}`} />
+                                                    </div>
+                                                    <span className="text-xs font-black text-slate-600 uppercase tracking-widest">{feature.label}</span>
+                                                </label>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
 

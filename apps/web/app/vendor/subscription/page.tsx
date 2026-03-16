@@ -18,11 +18,10 @@ interface Plan {
     description: string;
     price: number | string;
     billingCycle: string;
-    features: string[];
     maxListings: number;
     isFeatured: boolean;
-    isSponsored: boolean;
     isActive: boolean;
+    dashboardFeatures: Record<string, boolean>;
 }
 
 interface Subscription {
@@ -133,7 +132,7 @@ function InvoiceModal({ invoiceId, onClose, user }: { invoiceId: string; onClose
                             {/* Invoice Header */}
                             <div className="flex items-start justify-between mb-10">
                                 <div>
-                                    <div className="logo text-2xl font-black text-orange-500 mb-1">BizDirectory</div>
+                                    <div className="logo text-2xl font-black text-orange-500 mb-1">naampata</div>
                                     <p className="text-xs text-slate-400 font-bold">Business Listings Platform</p>
                                 </div>
                                 <div className="text-right">
@@ -207,7 +206,7 @@ function InvoiceModal({ invoiceId, onClose, user }: { invoiceId: string; onClose
 
                             {/* Footer note */}
                             <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-                                <p className="text-xs text-slate-400 font-bold">Thank you for your business! For queries, contact support@bizdirectory.com</p>
+                                <p className="text-xs text-slate-400 font-bold">Thank you for your business! For queries, contact support@naampata.com</p>
                             </div>
                         </div>
                     )}
@@ -282,13 +281,17 @@ function PlanCard({ plan, isActive, currentPrice, onSelect, loading }: { plan: P
             </div>
 
             <div className="space-y-2.5 flex-1 mb-6">
-                {plan.features.map((f, i) => (
-                    <div key={i} className="flex items-start gap-2.5">
-                        <div className="mt-0.5 w-4 h-4 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
-                            <Check className="w-2.5 h-2.5 text-emerald-500 stroke-[3]" />
+                {plan.dashboardFeatures && Object.entries(plan.dashboardFeatures).map(([key, enabled]) => (
+                    enabled && (
+                        <div key={key} className="flex items-start gap-2.5">
+                            <div className="mt-0.5 w-4 h-4 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                                <Check className="w-2.5 h-2.5 text-emerald-500 stroke-[3]" />
+                            </div>
+                            <span className="text-slate-600 font-bold text-sm leading-tight text-capitalize">
+                                {key.replace('show', '').replace(/([A-Z])/g, ' $1').trim()}
+                            </span>
                         </div>
-                        <span className="text-slate-600 font-bold text-sm leading-tight">{f}</span>
-                    </div>
+                    )
                 ))}
                 <div className="flex items-center gap-2.5 pt-1">
                     <div className="w-4 h-4 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
@@ -327,7 +330,7 @@ function PlanCard({ plan, isActive, currentPrice, onSelect, loading }: { plan: P
 
 /* ─── Main Page ─────────────────────────────────────────────────────────── */
 export default function VendorSubscriptionPage() {
-    const { user } = useAuth();
+    const { user, syncProfile } = useAuth();
     const [plans, setPlans] = useState<Plan[]>([]);
     const [activeSub, setActiveSub] = useState<Subscription | null>(null);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -381,6 +384,7 @@ export default function VendorSubscriptionPage() {
             }
             setTimeout(() => setSuccessMsg(''), 4000);
             await fetchAll();
+            await syncProfile();
         } catch (err: any) {
             alert(err.message || 'Failed to switch plan');
         } finally {
