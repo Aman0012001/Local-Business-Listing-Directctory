@@ -1,10 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
-import { SearchLog } from '../../entities/search-log.entity';
-import { NotificationLog } from '../../entities/notification-log.entity';
-import { Listing } from '../../entities/business.entity';
-import { Vendor } from '../../entities/vendor.entity';
+import { SearchLog, NotificationLog, Listing, City, Vendor } from '../../entities';
 import { NotificationsService } from '../notifications/notifications.service';
 
 export interface DemandInsight {
@@ -29,6 +26,8 @@ export class DemandService {
         private notificationLogRepo: Repository<NotificationLog>,
         @InjectRepository(Listing)
         private listingRepo: Repository<Listing>,
+        @InjectRepository(City)
+        private cityRepo: Repository<City>,
         private notificationsService: NotificationsService,
     ) { }
 
@@ -42,8 +41,27 @@ export class DemandService {
         userAgent?: string;
         ipAddress?: string;
     }) {
+        let { latitude, longitude } = data;
+
+        // Fallback to city coordinates if lat/lng missing
+        if ((!latitude || !longitude) && data.city) {
+            try {
+                const city = await this.cityRepo.findOne({
+                    where: { name: data.city }
+                });
+                if (city?.latitude && city?.longitude) {
+                    latitude = Number(city.latitude);
+                    longitude = Number(city.longitude);
+                }
+            } catch (error) {
+                this.logger.error(`Failed to fetch city coordinates for fallback: ${data.city}`, error);
+            }
+        }
+
         const log = this.searchLogRepository.create({
             ...data,
+            latitude,
+            longitude,
             normalizedKeyword: data.keyword?.toLowerCase().trim() || 'all',
         });
         return this.searchLogRepository.save(log);

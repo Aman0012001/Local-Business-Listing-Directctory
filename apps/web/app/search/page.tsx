@@ -251,7 +251,11 @@ function SearchResults() {
                                     {city ? (
                                         <>
                                             <MapPin className="w-8 h-8 text-orange-500 flex-shrink-0" />
-                                            Businesses in <span className="text-orange-500">{city}</span>
+                                            {query ? (
+                                                <>Results for <span className="text-orange-500">"{query}"</span> in <span className="text-orange-500">{city}</span></>
+                                            ) : (
+                                                <>Businesses in <span className="text-orange-500">{city}</span></>
+                                            )}
                                         </>
                                     ) : query ? (
                                         `Results for "${query}"`

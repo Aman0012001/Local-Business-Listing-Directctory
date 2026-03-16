@@ -589,3 +589,6 @@ Error: Connection terminated due to connection timeout
 [2026-03-15T19:10:24.168Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
 [2026-03-15T19:10:25.385Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
 [2026-03-15T19:10:25.810Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-16T21:14:07.585Z] findBySlug: hair-salon-mmp8acr9 (User: Public)
+[2026-03-16T21:14:11.957Z] findBySlug: hair-salon-mmp8acr9 - Found in DB. Status: approved
+[2026-03-16T21:14:12.366Z] findBySlug: hair-salon-mmp8acr9 - SUCCESS
