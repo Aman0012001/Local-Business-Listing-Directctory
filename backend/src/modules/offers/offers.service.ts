@@ -127,7 +127,7 @@ export class OffersService {
         }
 
         if (categoryId) {
-            qb.andWhere('b.category_id = :categoryId', { categoryId });
+            qb.andWhere('b.categoryId = :categoryId', { categoryId });
         }
 
         if (isFeatured !== undefined) {

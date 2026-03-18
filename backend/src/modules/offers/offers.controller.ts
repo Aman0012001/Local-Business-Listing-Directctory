@@ -12,6 +12,8 @@ import {
     HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { CacheInterceptor } from '@nestjs/cache-manager';
+import { UseInterceptors } from '@nestjs/common';
 import { OffersService } from './offers.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { UpdateOfferDto } from './dto/update-offer.dto';
@@ -31,6 +33,7 @@ export class OffersController {
 
     /** Public search for offers and events */
     @Public()
+    @UseInterceptors(CacheInterceptor)
     @Get('public/search')
     async findAllPublic(@Query() dto: SearchOfferDto) {
         return this.offersService.findAllPublic(dto);
@@ -96,6 +99,7 @@ export class OffersController {
     // ─── Public Endpoint ─────────────────────────────────────────────────────
 
     @Public()
+    @UseInterceptors(CacheInterceptor)
     @Get('business/:businessId/offers')
     @ApiOperation({ summary: 'Get active/scheduled offers for a business (Public)' })
     @ApiResponse({ status: 200, description: 'Business offers' })
@@ -104,6 +108,7 @@ export class OffersController {
     }
 
     @Public()
+    @UseInterceptors(CacheInterceptor)
     @Get('public/:id')
     @ApiOperation({ summary: 'Get a single offer or event by ID (Public)' })
     @ApiResponse({ status: 200, description: 'Offer details' })

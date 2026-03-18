@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CacheModule } from '@nestjs/cache-manager';
+import { redisStore } from 'cache-manager-redis-yet';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -37,10 +38,19 @@ import { join } from 'path';
             envFilePath: ['.env.local', '.env'],
         }),
         ScheduleModule.forRoot(),
-        CacheModule.register({
+        CacheModule.registerAsync({
             isGlobal: true,
-            ttl: 300, // 5 minutes
-            max: 1000, // maximum number of items in cache
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: async (configService: ConfigService) => ({
+                store: await redisStore({
+                    socket: {
+                        host: configService.get('REDIS_HOST') || 'localhost',
+                        port: parseInt(configService.get('REDIS_PORT')) || 6379,
+                    },
+                    ttl: configService.get('REDIS_TTL') ? parseInt(configService.get('REDIS_TTL')) * 1000 : 600 * 1000,
+                }),
+            }),
         }),
 
         // Database

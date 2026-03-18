@@ -350,3 +350,16 @@ Details: {"errno":-4062,"code":"ENETUNREACH","syscall":"connect","address":"66.3
 [2026-03-18T00:23:00.481Z] NotificationsService Constructor Called
 [2026-03-18T00:23:00.498Z] NotificationsService Constructor Called
 [2026-03-18T00:23:00.745Z] NotificationsService Constructor Called
+[2026-03-18T00:26:14.314Z] NotificationsService Constructor Called
+[2026-03-18T00:33:53.369Z] NotificationsService Constructor Called
+[Search ERROR] 2026-03-18T00:35:39.838Z: deadlock detected
+Stack: QueryFailedError: deadlock detected
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.executeCountQuery (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3101:25)
+    at async SelectQueryBuilder.getCount (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1786:29)
+    at async BusinessesService.search (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:326:27)
+Details: {"query":"SELECT COUNT(DISTINCT(\"listing\".\"id\")) AS \"cnt\" FROM \"businesses\" \"listing\" LEFT JOIN \"categories\" \"category\" ON \"category\".\"id\"=\"listing\".\"category_id\"  LEFT JOIN \"vendors\" \"vendor\" ON \"vendor\".\"id\"=\"listing\".\"vendor_id\"  LEFT JOIN \"users\" \"user\" ON \"user\".\"id\"=\"vendor\".\"user_id\"  LEFT JOIN \"business_hours\" \"businessHours\" ON \"businessHours\".\"business_id\"=\"listing\".\"id\"  LEFT JOIN \"business_amenities\" \"businessAmenities\" ON \"businessAmenities\".\"business_id\"=\"listing\".\"id\"  LEFT JOIN \"amenities\" \"amenity\" ON \"amenity\".\"id\"=\"businessAmenities\".\"amenity_id\" WHERE \"listing\".\"status\" IN ($1, $2) AND \"listing\".\"is_featured\" = $3","parameters":["pending","approved",true],"driverError":{"length":330,"name":"error","severity":"ERROR","code":"40P01","detail":"Process 39158 waits for AccessShareLock on relation 16705 of database 16384; blocked by process 39144.\nProcess 39144 waits for AccessExclusiveLock on relation 16581 of database 16384; blocked by process 39158.","hint":"See server log for query details.","position":"165","file":"deadlock.c","line":"1130","routine":"DeadLockReport"},"length":330,"severity":"ERROR","code":"40P01","detail":"Process 39158 waits for AccessShareLock on relation 16705 of database 16384; blocked by process 39144.\nProcess 39144 waits for AccessExclusiveLock on relation 16581 of database 16384; blocked by process 39158.","hint":"See server log for query details.","position":"165","file":"deadlock.c","line":"1130","routine":"DeadLockReport"}
+
+[2026-03-18T00:36:40.039Z] NotificationsService Constructor Called
