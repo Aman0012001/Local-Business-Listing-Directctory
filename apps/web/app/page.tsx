@@ -153,7 +153,7 @@ export default function HomePage() {
                 (position) => {
                     const { latitude, longitude } = position.coords;
                     setUserLocation({lat: latitude, lng: longitude});
-                    if ((window as any).google && (window as any).google.maps) {
+                    if ((window as any).google && (window as any).google.maps && (window as any).google.maps.Geocoder) {
                         const geocoder = new (window as any).google.maps.Geocoder();
                         geocoder.geocode({ location: { lat: latitude, lng: longitude } }, (results: any, status: any) => {
                             if (status === "OK" && results[0]) {

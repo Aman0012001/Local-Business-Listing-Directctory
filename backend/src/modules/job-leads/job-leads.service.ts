@@ -52,36 +52,78 @@ export class JobLeadsService {
     }
 
     private async broadcastLead(lead: JobLead) {
-        // Find vendors who have a business in this category and optionally city
+        // Find vendors who have a business in this category
         const query = this.listingRepository
             .createQueryBuilder('listing')
             .innerJoinAndSelect('listing.vendor', 'vendor')
             .where('listing.categoryId = :categoryId', { categoryId: lead.categoryId })
             .andWhere('listing.status = :status', { status: 'approved' });
 
-        if (lead.city) {
-            query.andWhere('listing.city ILIKE :city', { city: `%${lead.city}%` });
+        // If lead has coordinates, we can do proximity matching
+        // Otherwise fallback to city matching
+        if (lead.latitude && lead.longitude) {
+            this.logger.log(`Broadcasting lead ${lead.id} using geo-proximity: ${lead.latitude}, ${lead.longitude}`);
+            // Use Haversine formula in SQL if possible, or filter in memory if listings are few
+            // For now, let's filter in memory for better cross-DB compatibility unless there are thousands of vendors
+            const listings = await query.getMany();
+            
+            const radius = 20; // 20km radius for "nearest"
+            const matchedListings = listings.filter(l => {
+                if (!l.latitude || !l.longitude) return false;
+                const dist = this.calculateDistance(
+                    Number(lead.latitude), 
+                    Number(lead.longitude), 
+                    Number(l.latitude), 
+                    Number(l.longitude)
+                );
+                return dist <= radius;
+            });
+
+            const vendorUserIds = [...new Set(matchedListings.map(l => l.vendor.userId))];
+            await this.notifyVendors(lead, vendorUserIds);
+        } else {
+            if (lead.city) {
+                query.andWhere('listing.city ILIKE :city', { city: `%${lead.city}%` });
+            }
+            const listings = await query.getMany();
+            const vendorUserIds = [...new Set(listings.map(l => l.vendor.userId))];
+            await this.notifyVendors(lead, vendorUserIds);
         }
+    }
 
-        const listings = await query.getMany();
-        const vendorUserIds = [...new Set(listings.map(l => l.vendor.userId))];
-
-        // Notify each vendor
+    private async notifyVendors(lead: JobLead, vendorUserIds: string[]) {
+        this.logger.log(`Notifying ${vendorUserIds.length} vendors for lead ${lead.id}`);
         for (const vendorUserId of vendorUserIds) {
             this.notificationsGateway.sendToUser(vendorUserId, 'new_job_lead', {
                 leadId: lead.id,
                 title: lead.title,
-                category: lead.categoryId, // Could be improved to send name
+                category: lead.categoryId,
                 city: lead.city,
                 createdAt: lead.createdAt,
             });
         }
-        
-        // Update status to BROADCASTED if any vendors found
+
         if (vendorUserIds.length > 0) {
             lead.status = JobLeadStatus.BROADCASTED;
             await this.jobLeadRepository.save(lead);
         }
+    }
+
+    private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+        const R = 6371; // Radius of the earth in km
+        const dLat = this.deg2rad(lat2 - lat1);
+        const dLon = this.deg2rad(lon2 - lon1);
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const d = R * c; // Distance in km
+        return d;
+    }
+
+    private deg2rad(deg: number): number {
+        return deg * (Math.PI / 180);
     }
 
     async getLeadsForVendor(userId: string): Promise<JobLead[]> {

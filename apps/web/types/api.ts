@@ -156,6 +156,8 @@ export interface JobLead {
     location?: string;
     budget?: number;
     status: JobLeadStatus;
+    latitude?: number;
+    longitude?: number;
     createdAt: string;
     responses?: JobLeadResponse[];
 }

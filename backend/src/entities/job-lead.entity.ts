@@ -48,6 +48,12 @@ export class JobLead {
     @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
     budget: number;
 
+    @Column({ type: 'decimal', precision: 10, scale: 8, nullable: true })
+    latitude: number;
+
+    @Column({ type: 'decimal', precision: 11, scale: 8, nullable: true })
+    longitude: number;
+
     @Column({
         type: 'enum',
         enum: JobLeadStatus,

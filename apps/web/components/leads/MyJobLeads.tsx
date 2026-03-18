@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import { JobLead, JobLeadResponse } from '../../types/api';
 import { formatDistanceToNow } from 'date-fns';
+import { Megaphone, MessageSquare, CheckCircle2, Clock, MapPin, Phone, User, ArrowRight, Loader2 } from 'lucide-react';
 
 export default function MyJobLeads() {
     const [leads, setLeads] = useState<JobLead[]>([]);
@@ -18,7 +19,7 @@ export default function MyJobLeads() {
         try {
             setLoading(true);
             const data = await api.jobLeads.getMyLeads();
-            setLeads(data);
+            setLeads(data || []);
         } catch (err: any) {
             console.error('Failed to fetch my leads', err);
         } finally {
@@ -26,41 +27,74 @@ export default function MyJobLeads() {
         }
     };
 
-    if (loading) return <div className="text-center py-12">Loading your requests...</div>;
+    if (loading) return (
+        <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
+            <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Loading your broadcasts...</p>
+        </div>
+    );
 
     return (
-        <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">My Job Requests</h2>
+        <div className="space-y-8">
+            <div className="flex justify-between items-center px-2">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+                        <Megaphone className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-black text-slate-900 tracking-tight">My Broadcasts</h2>
+                        <p className="text-xs text-slate-400 font-bold">Manage your active service requests</p>
+                    </div>
+                </div>
+            </div>
 
             {leads.length === 0 ? (
-                <div className="bg-white p-12 rounded-2xl border border-gray-100 text-center">
-                    <p className="text-gray-500 mb-4">You haven't posted any job requests yet.</p>
-                    <a href="/job-leads" className="text-primary-600 font-bold hover:underline">Post a job now</a>
+                <div className="bg-slate-50/50 p-20 rounded-[32px] border-2 border-dashed border-slate-100 text-center">
+                    <div className="w-20 h-20 bg-white text-slate-200 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+                        <Megaphone className="w-10 h-10" />
+                    </div>
+                    <h3 className="text-xl font-black text-slate-900 mb-2">No active broadcasts</h3>
+                    <p className="text-slate-400 font-medium max-w-sm mx-auto mb-8">Need a pro? Send a broadcast and get responses from nearby experts instantly.</p>
+                    <a href="/job-leads" className="inline-flex items-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition-all active:scale-95 shadow-lg shadow-blue-500/20">
+                        Start New Broadcast <ArrowRight className="w-4 h-4" />
+                    </a>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 gap-6">
                     {leads.map(lead => (
                         <div 
                             key={lead.id} 
-                            className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                            className="bg-white p-8 rounded-[32px] border-2 border-slate-50 shadow-sm hover:shadow-xl hover:border-blue-100 transition-all cursor-pointer group"
                             onClick={() => setSelectedLead(lead)}
                         >
-                            <div className="flex justify-between items-start mb-2">
-                                <h3 className="font-bold text-gray-900">{lead.title}</h3>
-                                <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${
-                                    lead.status === 'closed' ? 'bg-gray-100 text-gray-600' : 'bg-primary-50 text-primary-600'
-                                }`}>
-                                    {lead.status}
-                                </span>
+                            <div className="flex justify-between items-start mb-6">
+                                <div>
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                                            {lead.category?.name || 'General'}
+                                        </span>
+                                        <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${
+                                            lead.status === 'closed' ? 'bg-slate-100 text-slate-400' : 'bg-emerald-50 text-emerald-600'
+                                        }`}>
+                                            {lead.status === 'open' ? 'Live & Active' : lead.status}
+                                        </span>
+                                    </div>
+                                    <h3 className="text-xl font-black text-slate-900 group-hover:text-blue-600 transition-colors leading-tight tracking-tight">{lead.title}</h3>
+                                </div>
+                                <div className="p-3 bg-slate-50 rounded-2xl text-slate-300 group-hover:bg-blue-50 group-hover:text-blue-600 transition-all">
+                                    <ArrowRight className="w-5 h-5" />
+                                </div>
                             </div>
-                            <p className="text-sm text-gray-500 mb-4">
-                                Posted {formatDistanceToNow(new Date(lead.createdAt), { addSuffix: true })}
-                            </p>
-                            <div className="flex items-center text-sm font-semibold text-primary-600">
-                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                                </svg>
-                                {lead.responses?.length || 0} Responses from Vendors
+                            
+                            <div className="flex items-center gap-6 pt-6 border-t border-slate-50">
+                                <div className="flex items-center gap-2 text-[10px] text-slate-400 font-black uppercase tracking-widest">
+                                    <Clock className="w-3.5 h-3.5" />
+                                    {formatDistanceToNow(new Date(lead.createdAt), { addSuffix: true })}
+                                </div>
+                                <div className="flex items-center gap-2 text-[10px] text-blue-600 font-black uppercase tracking-widest bg-blue-50 px-3 py-1.5 rounded-full">
+                                    <MessageSquare className="w-3.5 h-3.5" />
+                                    {lead.responses?.length || 0} Expert Responses
+                                </div>
                             </div>
                         </div>
                     ))}
@@ -69,54 +103,66 @@ export default function MyJobLeads() {
 
             {/* Responses Modal */}
             {selectedLead && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
-                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
+                    <div className="bg-white rounded-[40px] w-full max-w-2xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col animate-in slide-in-from-bottom-10 duration-500">
+                        <div className="p-10 pb-6 border-b border-slate-50 flex justify-between items-start bg-slate-50/30">
                             <div>
-                                <h3 className="font-bold text-gray-900 text-xl">{selectedLead.title}</h3>
-                                <p className="text-sm text-gray-500">Vendor Responses</p>
+                                <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest mb-3 inline-block">Expert Responses for</span>
+                                <h3 className="font-black text-slate-900 text-2xl tracking-tight leading-tight">{selectedLead.title}</h3>
                             </div>
-                            <button onClick={() => setSelectedLead(null)} className="text-gray-400 hover:text-gray-600">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l18 18" />
-                                </svg>
+                            <button 
+                                onClick={() => setSelectedLead(null)} 
+                                className="p-3 bg-white rounded-2xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all border border-slate-100"
+                            >
+                                <X className="w-6 h-6" />
                             </button>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                        
+                        <div className="flex-1 overflow-y-auto p-10 space-y-8 custom-scrollbar">
                             {selectedLead.responses && selectedLead.responses.length > 0 ? (
                                 selectedLead.responses.map(resp => (
-                                    <div key={resp.id} className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div className="flex items-center space-x-3">
-                                                <div className="w-10 h-10 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center font-bold">
-                                                    {resp.vendor?.businessName?.charAt(0) || 'V'}
+                                    <div key={resp.id} className="bg-white p-8 rounded-[32px] border-2 border-slate-50 hover:border-blue-100 transition-all shadow-sm">
+                                        <div className="flex justify-between items-start mb-6">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-14 h-14 bg-blue-600 text-white rounded-[20px] flex items-center justify-center font-black text-xl shadow-lg shadow-blue-200">
+                                                    {resp.vendor?.businessName?.charAt(0) || 'B'}
                                                 </div>
                                                 <div>
-                                                    <h4 className="font-bold text-gray-900">{resp.vendor?.businessName}</h4>
-                                                    <p className="text-xs text-gray-500">{formatDistanceToNow(new Date(resp.createdAt), { addSuffix: true })}</p>
+                                                    <h4 className="font-black text-slate-900 text-lg leading-tight mb-1">{resp.vendor?.businessName}</h4>
+                                                    <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                                                        <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Verified Expert
+                                                        <span>•</span>
+                                                        {formatDistanceToNow(new Date(resp.createdAt), { addSuffix: true })}
+                                                    </div>
                                                 </div>
                                             </div>
                                             {resp.price && (
                                                 <div className="text-right">
-                                                    <p className="text-xs text-gray-400 uppercase font-bold">Offer Price</p>
-                                                    <p className="text-lg font-black text-primary-600">PKR {resp.price.toLocaleString()}</p>
+                                                    <p className="text-[10px] text-slate-300 uppercase font-black tracking-widest mb-1">Expert Quote</p>
+                                                    <p className="text-2xl font-black text-blue-600 tracking-tighter">PKR {resp.price.toLocaleString()}</p>
                                                 </div>
                                             )}
                                         </div>
-                                        <p className="text-gray-700 leading-relaxed italic">"{resp.message}"</p>
-                                        <div className="mt-6 flex space-x-3">
-                                            <button className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 rounded-xl transition-all">
-                                                Contact Vendor
+
+                                        <div className="bg-slate-50/50 p-6 rounded-2xl mb-8 relative">
+                                            <div className="absolute -top-3 left-6 px-2 bg-white text-[9px] font-black text-slate-300 uppercase tracking-widest border border-slate-50 rounded">Expert Message</div>
+                                            <p className="text-slate-600 font-medium leading-relaxed italic">"{resp.message}"</p>
+                                        </div>
+
+                                        <div className="flex gap-4">
+                                            <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-blue-500/20 active:scale-[0.98] flex items-center justify-center gap-2">
+                                                <Phone className="w-4 h-4" /> Contact Business Now
                                             </button>
-                                            <button className="px-4 py-2 border border-gray-200 hover:bg-white rounded-xl text-gray-600 font-bold transition-all">
+                                            <button className="px-6 py-4 bg-slate-50 text-slate-400 hover:text-red-500 hover:bg-red-50 font-black rounded-2xl transition-all active:scale-[0.95]">
                                                 Decline
                                             </button>
                                         </div>
                                     </div>
                                 ))
                             ) : (
-                                <div className="text-center py-12 text-gray-400">
-                                    <p>No responses yet. We're waiting for vendors to send their quotes.</p>
+                                <div className="text-center py-20 text-slate-300 bg-slate-50/30 rounded-[40px] border-2 border-dashed border-slate-100">
+                                    <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4 opacity-20" />
+                                    <p className="font-black uppercase tracking-[0.2em] text-[10px]">Awaiting Expert Responses...</p>
                                 </div>
                             )}
                         </div>
@@ -126,3 +172,9 @@ export default function MyJobLeads() {
         </div>
     );
 }
+
+const X = ({ className }: { className?: string }) => (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l18 18" />
+    </svg>
+);

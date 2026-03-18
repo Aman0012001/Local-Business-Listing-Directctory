@@ -32,4 +32,14 @@ export class CreateJobLeadDto {
     @Min(0)
     @IsOptional()
     budget?: number;
+
+    @ApiPropertyOptional({ example: 24.8607 })
+    @IsNumber()
+    @IsOptional()
+    latitude?: number;
+
+    @ApiPropertyOptional({ example: 67.0011 })
+    @IsNumber()
+    @IsOptional()
+    longitude?: number;
 }

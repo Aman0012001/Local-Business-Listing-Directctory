@@ -51,7 +51,7 @@ interface UsePushNotificationsReturn {
     error: string | null;
 }
 
-export function usePushNotifications(userId?: string): UsePushNotificationsReturn {
+export function usePushNotifications(userId?: string, shouldAutoSubscribe: boolean = false): UsePushNotificationsReturn {
     const supported =
         typeof window !== 'undefined' &&
         'serviceWorker' in navigator &&
@@ -129,6 +129,13 @@ export function usePushNotifications(userId?: string): UsePushNotificationsRetur
             setLoading(false);
         }
     }, [supported]);
+
+    // Auto-subscribe if requested and permission is still default
+    useEffect(() => {
+        if (shouldAutoSubscribe && supported && userId && permission === 'default' && !loading && !isSubscribed) {
+            subscribe();
+        }
+    }, [shouldAutoSubscribe, supported, userId, permission, loading, isSubscribed, subscribe]);
 
     return { supported, permission, isSubscribed, subscribe, loading, error };
 }

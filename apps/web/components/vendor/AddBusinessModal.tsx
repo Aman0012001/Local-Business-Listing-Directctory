@@ -151,6 +151,22 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
     }, [formData]);
 
     useEffect(() => {
+        if (typeof window !== 'undefined' && (window as any).google && (window as any).google.maps && (window as any).google.maps.marker && (window as any).google.maps.places) {
+            setMapLoaded(true);
+            return;
+        }
+
+        const interval = setInterval(() => {
+            if (typeof window !== 'undefined' && (window as any).google && (window as any).google.maps && (window as any).google.maps.marker && (window as any).google.maps.places) {
+                setMapLoaded(true);
+                clearInterval(interval);
+            }
+        }, 500);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    useEffect(() => {
         (window as any).gm_authFailure = () => {
             console.error('Google Maps authentication failed - check API Key.');
             setMapError(true);
@@ -164,7 +180,7 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
         setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
         
         try {
-            if (!(window as any).google) return;
+            if (!(window as any).google || !(window as any).google.maps || !(window as any).google.maps.Geocoder) return;
             const geocoder = new (window as any).google.maps.Geocoder();
             const response = await geocoder.geocode({ location: { lat, lng } });
 
@@ -206,7 +222,7 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
     };
 
     const initAutocomplete = () => {
-        if (!mapLoaded || !(window as any).google || !addressInputRef.current || !mapContainerRef.current) return;
+        if (!mapLoaded || !(window as any).google || !(window as any).google.maps || !(window as any).google.maps.Map || !addressInputRef.current || !mapContainerRef.current) return;
 
         const defaultCenter = { lat: formData.latitude, lng: formData.longitude };
 

@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { Menu, ChevronDown, MapPin, User as UserIcon, LogOut, X, Search, Building2, Globe, Bell, Check, Trash2, BellRing, Megaphone } from 'lucide-react';
@@ -14,7 +16,7 @@ export default function Navbar() {
     const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
     // ── Web Push Notifications ───────────────────────────────────────
-    const { supported: pushSupported, permission: pushPermission, isSubscribed: pushSubscribed, subscribe: enablePush, loading: pushLoading } = usePushNotifications(user?.id);
+    const { supported: pushSupported, permission: pushPermission, isSubscribed: pushSubscribed, subscribe: enablePush, loading: pushLoading } = usePushNotifications(user?.id, true);
 
     // ── Notifications ───────────────────────────────────────────────
     const [notifications, setNotifications] = useState<any[]>([]);
@@ -235,6 +237,15 @@ export default function Navbar() {
                                                         <div className="flex flex-col">
                                                             <span className="text-sm font-bold text-slate-900">Offer & Events</span>
                                                             <span className="text-[10px] text-slate-400 font-medium italic">Best deals & local events</span>
+                                                        </div>
+                                                    </Link>
+                                                    <Link href="/job-leads" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
+                                                        <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-500">
+                                                            <Megaphone className="w-4 h-4" />
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-bold text-slate-900">Broadcast Request</span>
+                                                            <span className="text-[10px] text-slate-400 font-medium italic">Get quotes from experts</span>
                                                         </div>
                                                     </Link>
                                                     <Link href="/search" className="mt-2 text-center py-2 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-900 border-t border-slate-50 pt-3">

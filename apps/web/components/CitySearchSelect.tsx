@@ -50,7 +50,7 @@ export default function CitySearchSelect({ cities, value, onChange, placeholder 
                 const { latitude, longitude } = position.coords;
                 
                 // Use Google Maps Geocoding if script is loaded
-                if ((window as any).google && (window as any).google.maps) {
+                if ((window as any).google && (window as any).google.maps && (window as any).google.maps.Geocoder) {
                     const geocoder = new (window as any).google.maps.Geocoder();
                     geocoder.geocode({ location: { lat: latitude, lng: longitude } }, (results: any, status: any) => {
                         if (status === "OK" && results[0]) {
