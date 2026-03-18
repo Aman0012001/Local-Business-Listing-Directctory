@@ -284,7 +284,9 @@ const OffersEventsContent = () => {
                                 <OfferCard 
                                     key={offer.id} 
                                     offer={offer} 
-                                    onEnquire={() => openEnquiry(offer)}
+                                    onEnquire={() => {
+                                        router.push(`/offers-events/${offer.id}`);
+                                    }}
                                 />
                             ))}
                         </div>

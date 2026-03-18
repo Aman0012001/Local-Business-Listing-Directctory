@@ -175,22 +175,5 @@ export class BusinessesController {
         return this.searchService.reindexAll();
     }
 
-    @Post(':id/check-in')
-    @ApiOperation({ summary: 'Check-in to a business' })
-    @ApiBody({
-        schema: {
-            type: 'object',
-            properties: {
-                referralCode: { type: 'string', description: 'Optional referral code' },
-                note: { type: 'string' }
-            }
-        }
-    })
-    async checkIn(
-        @Param('id', ParseUuidPipe) id: string,
-        @Body() body: { referralCode?: string },
-        @CurrentUser() user: User,
-    ) {
-        return this.affiliateService.processCheckInReward(user.id, id, body.referralCode);
-    }
+
 }

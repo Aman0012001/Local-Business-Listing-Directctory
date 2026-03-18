@@ -4,7 +4,6 @@ import { AffiliateService } from './affiliate.service';
 import { AffiliateController } from './affiliate.controller';
 import { Affiliate } from '../../entities/affiliate.entity';
 import { AffiliateReferral } from '../../entities/referral.entity';
-import { BusinessCheckIn } from '../../entities/check-in.entity';
 import { Payout } from '../../entities/payout.entity';
 import { User } from '../../entities/user.entity';
 import { SystemSetting } from '../../entities/system-setting.entity';
@@ -14,7 +13,6 @@ import { SystemSetting } from '../../entities/system-setting.entity';
         TypeOrmModule.forFeature([
             Affiliate,
             AffiliateReferral,
-            BusinessCheckIn,
             Payout,
             User,
             SystemSetting

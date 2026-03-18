@@ -18,6 +18,7 @@ import { Notification } from '../../entities/notification.entity';
 import { Subscription } from '../../entities/subscription.entity';
 import { CommentReply } from '../../entities/comment-reply.entity';
 import { SearchModule } from '../search/search.module';
+import { SearchLog } from '../../entities/search-log.entity';
 
 @Module({
     imports: [
@@ -36,6 +37,7 @@ import { SearchModule } from '../search/search.module';
             Notification,
             Subscription,
             CommentReply,
+            SearchLog,
         ]),
         SearchModule,
     ],

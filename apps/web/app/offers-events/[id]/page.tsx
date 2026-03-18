@@ -1,0 +1,29 @@
+import { api } from '../../../lib/api';
+import OfferEventDetailClient from './OfferEventDetailClient';
+
+export const dynamic = 'force-static';
+export const dynamicParams = false;
+
+export async function generateStaticParams() {
+    try {
+        const response = await api.offers.search({ limit: 50 });
+        const offers = response.data || [];
+        
+        const params = offers
+            .filter((o: any) => o && (o.id || o._id))
+            .map((offer: any) => ({
+                id: String(offer.id || offer._id),
+            }));
+            
+        return params.length > 0 ? params : [{ id: 'test-offer' }];
+    } catch (error) {
+        console.error('Failed to generate static params for offers:', error);
+        return [{ id: 'test-offer' }];
+    }
+}
+
+export default async function OfferEventDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    // We can also extract ID here and pass it down, but the client component uses useParams.
+    // Just rendering the client component is fine.
+    return <OfferEventDetailClient />;
+}

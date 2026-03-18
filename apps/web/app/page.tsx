@@ -7,6 +7,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import BusinessCard from '../components/BusinessCard';
 import DynamicIcon from '../components/DynamicIcon';
+import OfferCard from '../components/OfferCard';
 import { api, getImageUrl } from '../lib/api';
 import Link from 'next/link';
 import { Category, Business, City } from '../types/api';
@@ -28,10 +29,12 @@ export default function HomePage() {
     const [popularCities, setPopularCities] = useState<City[]>([]);
     const [categoriesList, setCategoriesList] = useState<Category[]>([]);
     const [citiesList, setCitiesList] = useState<City[]>([]);
+    const [latestOffers, setLatestOffers] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCity, setSelectedCity] = useState('');
     const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
     const [mapReady, setMapReady] = useState(false);
+    const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
 
 
     const [loading, setLoading] = useState(true);
@@ -64,7 +67,8 @@ export default function HomePage() {
                     api.cities.getPopular(),
                     api.categories.getAll(),
                     api.cities.getAll(),
-                    api.comments.getPublic(1, 15)
+                    api.comments.getPublic(1, 15),
+                    api.offers.search({ limit: 4 })
                 ]);
 
                 const getValue = (result: PromiseSettledResult<any>, fallback: any) =>
@@ -76,6 +80,7 @@ export default function HomePage() {
                 const allCats = getValue(results[3], []);
                 const allCities = getValue(results[4], []);
                 const commentsData = getValue(results[5], { data: [] });
+                const offersData = getValue(results[6], { data: [] });
 
                 setCategories(cats || []);
                 setFeaturedBusinesses(featured?.data || []);
@@ -86,6 +91,7 @@ export default function HomePage() {
                 setCategoriesList(allCats || []);
                 setCitiesList(allCities || []);
                 setStatsComments(commentsData?.data || []);
+                setLatestOffers(offersData?.data || []);
 
             } catch (err) {
                 console.error('CRITICAL: Unexpected error in loadInitialData:', err);
@@ -112,6 +118,10 @@ export default function HomePage() {
         const params = new URLSearchParams();
         if (searchQuery.trim()) params.append('q', searchQuery);
         if (selectedCity) params.append('city', selectedCity);
+        if (userLocation) {
+            params.append('latitude', String(userLocation.lat));
+            params.append('longitude', String(userLocation.lng));
+        }
         window.location.href = `/search?${params.toString()}`;
     };
 
@@ -138,6 +148,7 @@ export default function HomePage() {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     const { latitude, longitude } = position.coords;
+                    setUserLocation({lat: latitude, lng: longitude});
                     if ((window as any).google && (window as any).google.maps) {
                         const geocoder = new (window as any).google.maps.Geocoder();
                         geocoder.geocode({ location: { lat: latitude, lng: longitude } }, (results: any, status: any) => {
@@ -394,9 +405,9 @@ export default function HomePage() {
                                 />
                             </motion.div>
                         )) : (
-                            Array(12).fill(0).map((_, i) => (
-                                <div key={i} className="bg-white h-[400px] rounded-3xl shadow-sm animate-pulse border border-slate-100" />
-                            ))
+                            <div className="col-span-full py-12 text-center bg-white rounded-3xl border border-slate-100">
+                                <p className="text-slate-500 font-bold">No featured businesses available at the moment.</p>
+                            </div>
                         )}
                     </div>
 
@@ -472,6 +483,46 @@ export default function HomePage() {
                             <h3 className="text-2xl font-black mb-4">3. Contact & Connect</h3>
                             <p className="text-slate-500 font-medium leading-relaxed">Reach out directly to your chosen business in seconds.</p>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Special Offers & Events */}
+            <section className="py-24 bg-slate-50/50">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="flex items-center justify-center gap-6 mb-16 text-center">
+                        <div className="h-[1px] bg-slate-200 w-24 md:w-48" />
+                        <h2 className="text-4xl font-extrabold text-[#112D4E] tracking-tight whitespace-nowrap">Offers & Events</h2>
+                        <div className="h-[1px] bg-slate-200 w-24 md:w-48" />
+                    </div>
+
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                        {latestOffers.length > 0 ? latestOffers.map((offer, idx) => (
+                            <motion.div
+                                key={offer.id}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                whileInView={{ opacity: 1, scale: 1 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: (idx % 4) * 0.1 }}
+                            >
+                                <OfferCard
+                                    offer={offer}
+                                    onEnquire={() => {
+                                        window.location.href = `/offers-events/${offer.id}`;
+                                    }}
+                                />
+                            </motion.div>
+                        )) : (
+                            <div className="col-span-full py-12 text-center bg-white rounded-3xl border border-slate-100">
+                                <p className="text-slate-500 font-bold">More offers and events coming soon from our trusted vendors.</p>
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="mt-16 text-center">
+                        <Link href="/offers-events" className="text-orange-500 font-bold hover:gap-4 transition-all inline-flex items-center gap-2 text-lg">
+                            View All Offers & Events <ArrowRight className="w-5 h-5" />
+                        </Link>
                     </div>
                 </div>
             </section>

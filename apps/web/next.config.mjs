@@ -20,10 +20,6 @@ const nextConfig = {
     // Enable trailing slash for static hosting compatibility
     trailingSlash: true,
 
-    // Improve build stability
-    eslint: {
-        ignoreDuringBuilds: true,
-    },
 
     typescript: {
         ignoreBuildErrors: false,

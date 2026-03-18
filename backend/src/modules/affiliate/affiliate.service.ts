@@ -8,7 +8,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Affiliate } from '../../entities/affiliate.entity';
 import { AffiliateReferral, ReferralStatus, ReferralType } from '../../entities/referral.entity';
-import { BusinessCheckIn } from '../../entities/check-in.entity';
 import { Payout, PayoutStatus } from '../../entities/payout.entity';
 import { User } from '../../entities/user.entity';
 import { SystemSetting } from '../../entities/system-setting.entity';
@@ -21,8 +20,6 @@ export class AffiliateService {
         private affiliateRepository: Repository<Affiliate>,
         @InjectRepository(AffiliateReferral)
         private referralRepository: Repository<AffiliateReferral>,
-        @InjectRepository(BusinessCheckIn)
-        private checkInRepository: Repository<BusinessCheckIn>,
         @InjectRepository(Payout)
         private payoutRepository: Repository<Payout>,
         @InjectRepository(User)
@@ -239,69 +236,5 @@ export class AffiliateService {
         };
     }
 
-    async processCheckInReward(userId: string, businessId: string, referralCode?: string) {
-        // 1. Find the referral
-        let referral: AffiliateReferral | undefined;
 
-        if (referralCode) {
-            const affiliate = await this.affiliateRepository.findOne({ where: { referralCode } });
-            if (!affiliate) return null;
-
-            // Check if this user was already referred by someone else
-            referral = await this.referralRepository.findOne({
-                where: { referredUserId: userId, status: ReferralStatus.PENDING }
-            });
-
-            if (!referral) {
-                // Create a new referral for this check-in if one doesn't exist
-                referral = this.referralRepository.create({
-                    affiliateId: affiliate.id,
-                    referredUserId: userId,
-                    type: ReferralType.SIGNUP, // Defaulting to signup type or adding special check-in type
-                    status: ReferralStatus.PENDING
-                });
-                referral = await this.referralRepository.save(referral);
-            }
-        } else {
-            // Check if user has an existing pending referral
-            referral = await this.referralRepository.findOne({
-                where: { referredUserId: userId, status: ReferralStatus.PENDING }
-            });
-        }
-
-        if (!referral) return null;
-
-        // 2. Add the check-in record
-        const checkIn = this.checkInRepository.create({
-            userId,
-            businessId,
-            referralId: referral.id
-        });
-        await this.checkInRepository.save(checkIn);
-
-        // 3. Process Reward
-        const settings = await this.getSettings();
-        
-        // Validity Check
-        const monthsPassed = (Date.now() - referral.createdAt.getTime()) / (1000 * 60 * 60 * 24 * 30);
-        const validityMonths = parseFloat(settings.validityMonths) || 2;
-
-        if (monthsPassed <= validityMonths) {
-            let rewardAmount = parseFloat(settings.checkinReward) || 5;
-            // Note: percent check-in reward usually doesn't make sense unless there's a base value, 
-            // but we'll stick to 'fixed' for check-ins as per standard practice, or allow it as a flat amount.
-            
-            // Credit Affiliate
-            const affiliate = await this.affiliateRepository.findOne({ where: { id: referral.affiliateId } });
-            if (affiliate) {
-                affiliate.balance = Number(affiliate.balance) + rewardAmount;
-                affiliate.totalEarnings = Number(affiliate.totalEarnings) + rewardAmount;
-                await this.affiliateRepository.save(affiliate);
-            }
-            
-            return { success: true, rewardAmount };
-        }
-
-        return { success: false, reason: 'Validity expired' };
-    }
 }

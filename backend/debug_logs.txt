@@ -592,3 +592,27 @@ Error: Connection terminated due to connection timeout
 [2026-03-16T21:14:07.585Z] findBySlug: hair-salon-mmp8acr9 (User: Public)
 [2026-03-16T21:14:11.957Z] findBySlug: hair-salon-mmp8acr9 - Found in DB. Status: approved
 [2026-03-16T21:14:12.366Z] findBySlug: hair-salon-mmp8acr9 - SUCCESS
+[2026-03-17T23:42:10.439Z] findBySlug: hair-salon-mmp8acr9 (User: vendore@gmail.com)
+[2026-03-17T23:42:11.515Z] findBySlug: hair-salon-mmp8acr9 - Found in DB. Status: approved
+[2026-03-17T23:42:11.911Z] findBySlug: hair-salon-mmp8acr9 - SUCCESS
+[2026-03-17T23:42:12.367Z] findBySlug: hair-salon-mmp8acr9 (User: vendore@gmail.com)
+[2026-03-17T23:42:13.378Z] findBySlug: hair-salon-mmp8acr9 - Found in DB. Status: approved
+[2026-03-17T23:42:13.776Z] findBySlug: hair-salon-mmp8acr9 - SUCCESS
+[2026-03-17T23:46:19.749Z] findBySlug: hair-salon-mmp8acr9 (User: vendore@gmail.com)
+[2026-03-17T23:46:21.038Z] findBySlug: hair-salon-mmp8acr9 - Found in DB. Status: approved
+[2026-03-17T23:46:21.450Z] findBySlug: hair-salon-mmp8acr9 - SUCCESS
+[2026-03-17T23:59:53.948Z] findBySlug: hair-salon-mmp8acr9 (User: vendore@gmail.com)
+[2026-03-17T23:59:57.940Z] findBySlug: hair-salon-mmp8acr9 - Found in DB. Status: approved
+[2026-03-17T23:59:58.366Z] findBySlug: hair-salon-mmp8acr9 - SUCCESS
+[2026-03-18T00:09:24.224Z] findBySlug: hair-salon-mmp8acr9 (User: vendore@gmail.com)
+[2026-03-18T00:09:25.453Z] findBySlug: hair-salon-mmp8acr9 - Found in DB. Status: approved
+[2026-03-18T00:09:25.868Z] findBySlug: hair-salon-mmp8acr9 - SUCCESS
+[2026-03-18T00:09:29.375Z] findBySlug: hair-salon-mmp8acr9 (User: vendore@gmail.com)
+[2026-03-18T00:09:30.576Z] findBySlug: hair-salon-mmp8acr9 - Found in DB. Status: approved
+[2026-03-18T00:09:30.964Z] findBySlug: hair-salon-mmp8acr9 - SUCCESS
+[2026-03-18T00:11:19.130Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: vendore@gmail.com)
+[2026-03-18T00:11:20.286Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-18T00:11:20.287Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-18T00:11:20.700Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: vendore@gmail.com)
+[2026-03-18T00:11:21.679Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-18T00:11:21.680Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS

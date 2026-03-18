@@ -33,6 +33,17 @@ export class AdminController {
         return this.adminService.getGlobalStats();
     }
 
+    @Get('heatmap-data')
+    @Roles(UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Get search heatmap data for super admin' })
+    @ApiResponse({ status: 200, description: 'Heatmap data retrieved successfully' })
+    getHeatmapData(
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string
+    ) {
+        return this.adminService.getHeatmapData(startDate, endDate);
+    }
+
     @Patch('business/:id/moderate')
     @ApiOperation({ summary: 'Approve, reject, or suspend a business' })
     @ApiResponse({ status: 200, description: 'Business status updated' })

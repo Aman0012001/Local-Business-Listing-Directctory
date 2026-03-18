@@ -102,4 +102,13 @@ export class OffersController {
     findByBusiness(@Param('businessId') businessId: string) {
         return this.offersService.findPublicByBusiness(businessId);
     }
+
+    @Public()
+    @Get('public/:id')
+    @ApiOperation({ summary: 'Get a single offer or event by ID (Public)' })
+    @ApiResponse({ status: 200, description: 'Offer details' })
+    @ApiResponse({ status: 404, description: 'Offer not found' })
+    findOnePublic(@Param('id') id: string) {
+        return this.offersService.findOnePublic(id);
+    }
 }

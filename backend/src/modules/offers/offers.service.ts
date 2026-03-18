@@ -204,6 +204,20 @@ export class OffersService {
             .slice(0, 6);
     }
 
+    /** Public: get a single offer/event by ID */
+    async findOnePublic(id: string): Promise<OfferEvent> {
+        const offer = await this.offerRepository.findOne({
+            where: { id, isActive: true },
+            relations: ['business', 'business.category'],
+        });
+
+        if (!offer) {
+            throw new NotFoundException('Offer or Event not found');
+        }
+
+        return this.computeStatus(offer);
+    }
+
     /** Cron / scheduled task: mark expired offers */
     async expireStaleOffers(): Promise<number> {
         const now = new Date();

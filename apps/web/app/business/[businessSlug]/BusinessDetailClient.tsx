@@ -95,8 +95,7 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
     const [enquiryError, setEnquiryError] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [pendingAction, setPendingAction] = useState<'call' | 'whatsapp' | null>(null);
-    const [isCheckingIn, setIsCheckingIn] = useState(false);
-    const [checkInDone, setCheckInDone] = useState(false);
+
 
     // Lightbox state
     const [showLightbox, setShowLightbox] = useState(false);
@@ -400,28 +399,7 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
         }
     };
 
-    const handleCheckIn = async () => {
-        if (!user) {
-            alert('Please login to check-in.');
-            return;
-        }
-        if (!business) return;
 
-        setIsCheckingIn(true);
-        try {
-            const refCode = new URLSearchParams(window.location.search).get('ref') || sessionStorage.getItem('referralCode');
-            await api.affiliate.checkIn(
-                business.id,
-                refCode || undefined
-            );
-            setCheckInDone(true);
-            // Optional: Show some success animation or toast
-        } catch (err: any) {
-            console.error('Check-in failed:', err);
-        } finally {
-            setIsCheckingIn(false);
-        }
-    };
 
     if (loading) return <div className="min-h-screen bg-white"><Navbar /><div className="max-w-7xl mx-auto px-4 py-20 text-center text-slate-400">Loading business details...</div></div>;
 
@@ -600,14 +578,7 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                     )}
                                 </button>
 
-                                <button
-                                    onClick={handleCheckIn}
-                                    disabled={isCheckingIn || checkInDone}
-                                    className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-sm transition-all shadow-lg active:scale-95 ${checkInDone ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-500/20'}`}
-                                >
-                                    {isCheckingIn ? <Loader2 className="w-4 h-4 animate-spin" /> : checkInDone ? <CheckCircle2 className="w-4 h-4" /> : <Footprints className="w-4 h-4" />}
-                                    {checkInDone ? 'Checked In' : 'Check In'}
-                                </button>
+
                             </div>
                         </div>
 

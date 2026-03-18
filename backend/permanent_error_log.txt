@@ -262,3 +262,75 @@ Details: {"query":"SELECT COUNT(DISTINCT(\"listing\".\"id\")) AS \"cnt\" FROM \"
 [2026-03-16T22:21:27.675Z] NotificationsService Constructor Called
 [2026-03-16T22:29:35.786Z] NotificationsService Constructor Called
 [2026-03-16T22:41:37.244Z] NotificationsService Constructor Called
+[2026-03-17T14:23:08.228Z] NotificationsService Constructor Called
+[Search ERROR] 2026-03-17T14:26:38.636Z: Connection terminated due to connection timeout
+Stack: Error: Connection terminated due to connection timeout
+    at Client._connectionCallback (E:\localweb\Local-Business-Listing-Directctory\node_modules\pg-pool\index.js:262:17)
+    at Connection.<anonymous> (E:\localweb\Local-Business-Listing-Directctory\node_modules\pg\lib\client.js:190:18)
+    at Object.onceWrapper (node:events:622:28)
+    at Connection.emit (node:events:508:28)
+    at Socket.<anonymous> (E:\localweb\Local-Business-Listing-Directctory\node_modules\pg\lib\connection.js:61:12)
+    at Socket.emit (node:events:520:35)
+    at TCP.<anonymous> (node:net:346:12)
+Details: {}
+
+[Comments ERROR] 2026-03-17T15:11:10.404Z: connect ECONNABORTED 66.33.22.240:45505
+Stack: Error: connect ECONNABORTED 66.33.22.240:45505
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+Details: {"errno":-4079,"code":"ECONNABORTED","syscall":"connect","address":"66.33.22.240","port":45505}
+
+[Search ERROR] 2026-03-17T15:11:10.515Z: connect ECONNABORTED 66.33.22.240:45505
+Stack: Error: connect ECONNABORTED 66.33.22.240:45505
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+Details: {"errno":-4079,"code":"ECONNABORTED","syscall":"connect","address":"66.33.22.240","port":45505}
+
+[Search ERROR] 2026-03-17T15:50:41.550Z: connect ENETUNREACH 66.33.22.240:45505
+Stack: Error: connect ENETUNREACH 66.33.22.240:45505
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+Details: {"errno":-4062,"code":"ENETUNREACH","syscall":"connect","address":"66.33.22.240","port":45505}
+
+[Comments ERROR] 2026-03-17T15:50:41.908Z: connect ENETUNREACH 66.33.22.240:45505
+Stack: Error: connect ENETUNREACH 66.33.22.240:45505
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+Details: {"errno":-4062,"code":"ENETUNREACH","syscall":"connect","address":"66.33.22.240","port":45505}
+
+[2026-03-17T16:57:00.418Z] NotificationsService Constructor Called
+[2026-03-17T23:22:06.723Z] NotificationsService Constructor Called
+[2026-03-17T23:34:24.044Z] NotificationsService Constructor Called
+[2026-03-17T23:44:01.295Z] NotificationsService Constructor Called
+[2026-03-17T23:45:57.897Z] NotificationsService Constructor Called
+[2026-03-17T23:47:52.629Z] NotificationsService Constructor Called
+[2026-03-17T23:48:11.081Z] NotificationsService Constructor Called
+[2026-03-17T23:49:14.806Z] NotificationsService Constructor Called
+[2026-03-17T23:50:20.373Z] NotificationsService Constructor Called
+[2026-03-17T23:50:56.162Z] NotificationsService Constructor Called
+[2026-03-17T23:54:19.091Z] NotificationsService Constructor Called
+[2026-03-17T23:54:19.159Z] NotificationsService Constructor Called
+[2026-03-17T23:54:19.172Z] NotificationsService Constructor Called
+[2026-03-17T23:54:19.175Z] NotificationsService Constructor Called
+[2026-03-17T23:54:19.221Z] NotificationsService Constructor Called
+[2026-03-17T23:54:19.276Z] NotificationsService Constructor Called
+[2026-03-17T23:54:32.331Z] NotificationsService Constructor Called
+[2026-03-17T23:54:32.385Z] NotificationsService Constructor Called
+[2026-03-17T23:54:32.402Z] NotificationsService Constructor Called
+[2026-03-17T23:54:32.440Z] NotificationsService Constructor Called
+[2026-03-17T23:54:32.444Z] NotificationsService Constructor Called
+[2026-03-17T23:54:32.471Z] NotificationsService Constructor Called
+[2026-03-17T23:58:19.960Z] NotificationsService Constructor Called
+[2026-03-17T23:58:19.970Z] NotificationsService Constructor Called
+[2026-03-17T23:58:20.003Z] NotificationsService Constructor Called
+[2026-03-17T23:58:20.189Z] NotificationsService Constructor Called
+[2026-03-17T23:58:20.190Z] NotificationsService Constructor Called
+[2026-03-17T23:58:20.373Z] NotificationsService Constructor Called
+[2026-03-17T23:58:39.160Z] NotificationsService Constructor Called
+[2026-03-17T23:58:39.257Z] NotificationsService Constructor Called
+[2026-03-17T23:58:39.267Z] NotificationsService Constructor Called
+[2026-03-17T23:58:39.420Z] NotificationsService Constructor Called
+[2026-03-17T23:58:39.420Z] NotificationsService Constructor Called
+[2026-03-17T23:58:39.493Z] NotificationsService Constructor Called
+[2026-03-18T00:09:12.319Z] NotificationsService Constructor Called
+[2026-03-18T00:09:12.703Z] NotificationsService Constructor Called
+[2026-03-18T00:09:12.770Z] NotificationsService Constructor Called
+[2026-03-18T00:09:13.004Z] NotificationsService Constructor Called
+[2026-03-18T00:09:13.246Z] NotificationsService Constructor Called
+[2026-03-18T00:09:13.287Z] NotificationsService Constructor Called

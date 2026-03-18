@@ -12,7 +12,6 @@ import { User } from './user.entity';
 
 export enum ReferralType {
     SUBSCRIPTION = 'subscription',
-    CHECKIN = 'checkin',
     SIGNUP = 'signup',
 }
 

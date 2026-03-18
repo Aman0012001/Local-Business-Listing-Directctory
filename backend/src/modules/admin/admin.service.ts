@@ -16,11 +16,9 @@ import { Comment as BusinessComment } from '../../entities/comment.entity';
 import { Notification } from '../../entities/notification.entity';
 import { Subscription } from '../../entities/subscription.entity';
 import { CommentReply } from '../../entities/comment-reply.entity';
+import { createPaginatedResponse, calculateSkip } from '../../common/utils/pagination.util';
+import { SearchLog } from '../../entities/search-log.entity';
 import { SearchService } from '../search/search.service';
-import {
-    createPaginatedResponse,
-    calculateSkip,
-} from '../../common/utils/pagination.util';
 
 @Injectable()
 export class AdminService {
@@ -53,6 +51,8 @@ export class AdminService {
         private subscriptionRepository: Repository<Subscription>,
         @InjectRepository(CommentReply)
         private commentReplyRepository: Repository<CommentReply>,
+        @InjectRepository(SearchLog)
+        private searchLogRepository: Repository<SearchLog>,
         private searchService: SearchService,
     ) { }
 
@@ -110,6 +110,33 @@ export class AdminService {
             totalReviews: reviewCount,
             totalRevenue: parseFloat(revenue?.total || '0'),
         };
+    }
+
+    /**
+     * Get Search Heatmap Data
+     */
+    async getHeatmapData(startDate?: string, endDate?: string) {
+        const query = this.searchLogRepository.createQueryBuilder('log')
+            .select(['log.keyword AS keyword', 'log.latitude AS latitude', 'log.longitude AS longitude', 'COUNT(log.id) AS count'])
+            .where('log.latitude IS NOT NULL')
+            .andWhere('log.longitude IS NOT NULL')
+            .groupBy('log.keyword, log.latitude, log.longitude');
+
+        if (startDate) {
+            query.andWhere('log.searchedAt >= :startDate', { startDate: new Date(startDate) });
+        }
+        if (endDate) {
+            query.andWhere('log.searchedAt <= :endDate', { endDate: new Date(endDate) });
+        }
+
+        const rawData = await query.getRawMany();
+
+        return rawData.map(item => ({
+            keyword: item.keyword,
+            latitude: parseFloat(item.latitude),
+            longitude: parseFloat(item.longitude),
+            weight: parseInt(item.count, 10),
+        }));
     }
 
     /**

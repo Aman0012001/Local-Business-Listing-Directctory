@@ -403,6 +403,12 @@ export const api = {
             method: 'PATCH',
             body: JSON.stringify(settings),
         }),
+        getHeatmapData: (startDate?: string, endDate?: string) => {
+            const params = new URLSearchParams();
+            if (startDate) params.append('startDate', startDate);
+            if (endDate) params.append('endDate', endDate);
+            return fetcher<any[]>(`/admin/heatmap-data?${params.toString()}`);
+        },
         plans: {
             getAll: () => fetcher<any[]>('/subscriptions/plans/admin'),
             getById: (id: string) => fetcher<any>(`/subscriptions/plans/${id}`),
@@ -430,10 +436,7 @@ export const api = {
         getStats: () => fetcher<any>('/affiliate/stats'),
         getReferrals: () => fetcher<any[]>('/affiliate/referrals'),
         trackClick: (code: string) => fetcher(`/affiliate/track-click?code=${code}`, { method: 'POST' }),
-        checkIn: (businessId: string, referralCode?: string) => fetcher(`/businesses/${businessId}/check-in`, { 
-            method: 'POST', 
-            body: JSON.stringify({ referralCode }) 
-        }),
+
         requestPayout: (data: { amount: number; method: string; details: string }) => fetcher('/affiliate/payouts', {
             method: 'POST',
             body: JSON.stringify(data),
@@ -476,6 +479,7 @@ export const api = {
         }),
     },
     offers: {
+        getById: (id: string) => fetcher<any>(`/offers/public/${id}`),
         create: (data: any) => fetcher<any>('/offers', {
             method: 'POST',
             body: JSON.stringify(data),
