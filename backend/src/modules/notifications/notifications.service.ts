@@ -104,13 +104,23 @@ export class NotificationsService {
 
     /** Get all notifications for a user, newest first */
     async findAllForUser(userId: string) {
-        const [notifications, total] = await this.notificationRepo.findAndCount({
-            where: { userId },
-            order: { createdAt: 'DESC' },
-            take: 50,
-        });
-        const unreadCount = notifications.filter(n => !n.isRead).length;
-        return { notifications, total, unreadCount };
+        try {
+            const [notifications, total] = await this.notificationRepo.findAndCount({
+                where: { userId },
+                order: { createdAt: 'DESC' },
+                take: 50,
+            });
+            const unreadCount = notifications.filter(n => !n.isRead).length;
+            return { notifications, total, unreadCount };
+        } catch (error) {
+            try {
+                const fs = require('fs');
+                const path = require('path');
+                const logPath = path.join(process.cwd(), 'permanent_error_log.txt');
+                fs.appendFileSync(logPath, `[${new Date().toISOString()}] findAllForUser ERROR for user ${userId}: ${error.message}\nStack: ${error.stack}\n`);
+            } catch (e) {}
+            throw error;
+        }
     }
 
     /** Mark a single notification as read */

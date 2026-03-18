@@ -16,10 +16,31 @@ export class NotificationsController {
     @Get()
     @UseGuards(JwtAuthGuard)
     async findAll(@CurrentUser() user: User) {
-        const result = await this.notificationsService.findAllForUser(user.id);
-        // Return a plain object to avoid potential serialization/circular issues
-        // with the Notification entity class-transformer decorators.
-        return JSON.parse(JSON.stringify(result));
+        try {
+            if (!user || !user.id) {
+                console.error('[NotificationsController] No user found in request');
+                throw new Error('User not found in request context');
+            }
+            const result = await this.notificationsService.findAllForUser(user.id);
+            // Ensuring we don't have circular references by being explicit
+            return {
+                notifications: result.notifications.map(n => ({
+                    id: n.id,
+                    title: n.title,
+                    message: n.message,
+                    type: n.type,
+                    data: n.data,
+                    isRead: n.isRead,
+                    readAt: n.readAt,
+                    createdAt: n.createdAt
+                })),
+                total: result.total,
+                unreadCount: result.unreadCount
+            };
+        } catch (error) {
+            console.error(`[NotificationsController] Error finding notifications for user ${user?.id}:`, error);
+            throw error;
+        }
     }
 
     @Patch(':id/read')

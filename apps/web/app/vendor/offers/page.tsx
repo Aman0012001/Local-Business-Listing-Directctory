@@ -24,6 +24,8 @@ interface OfferItem {
     startDate?: string;
     endDate?: string;
     expiryDate?: string;
+    highlights?: string[];
+    terms?: string[];
     status: OfferStatus;
     businessId: string;
     business?: { id: string; title: string };
@@ -49,6 +51,8 @@ const emptyForm = {
     startDate: '',
     endDate: '',
     expiryDate: '',
+    highlights: [] as string[],
+    terms: [] as string[],
 };
 
 export default function VendorOffersPage() {
@@ -64,7 +68,7 @@ export default function VendorOffersPage() {
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [deleting, setDeleting] = useState(false);
     const [imageUploading, setImageUploading] = useState(false);
-    const [form, setForm] = useState(emptyForm);
+    const [form, setForm] = useState<typeof emptyForm>(emptyForm);
     const [page, setPage] = useState(1);
     const [meta, setMeta] = useState<any>(null);
     const fileRef = useRef<HTMLInputElement>(null);
@@ -150,6 +154,8 @@ export default function VendorOffersPage() {
             startDate: offer.startDate ? offer.startDate.slice(0, 16) : '',
             endDate: offer.endDate ? offer.endDate.slice(0, 16) : '',
             expiryDate: offer.expiryDate ? offer.expiryDate.slice(0, 16) : '',
+            highlights: offer.highlights || [],
+            terms: offer.terms || [],
         });
         setEditingId(offer.id);
         setShowModal(true);
@@ -184,6 +190,8 @@ export default function VendorOffersPage() {
                 imageUrl: form.imageUrl || undefined,
                 offerBadge: form.offerBadge || undefined,
                 description: form.description || undefined,
+                highlights: form.highlights.filter(h => h.trim() !== ''),
+                terms: form.terms.filter(t => t.trim() !== ''),
             };
             if (editingId) {
                 await api.offers.update(editingId, payload);
@@ -511,8 +519,80 @@ export default function VendorOffersPage() {
                                     </div>
                                 </div>
 
+                                {/* Highlights */}
+                                <div className="pt-4 border-t border-slate-50">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <label className={labelClass + " !mb-0"}>Offer Highlights</label>
+                                        <button type="button" 
+                                            onClick={() => setForm(p => ({ ...p, highlights: [...(p.highlights || []), ''] }))}
+                                            className="text-xs font-black text-orange-500 hover:text-orange-600 flex items-center gap-1"
+                                        >
+                                            <Plus className="w-3.5 h-3.5" /> Add Highlight
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {(form.highlights || []).map((h: string, i: number) => (
+                                            <div key={i} className="flex gap-2">
+                                                <input value={h}
+                                                    onChange={e => {
+                                                        const nh = [...(form.highlights || [])];
+                                                        nh[i] = e.target.value;
+                                                        setForm(p => ({ ...p, highlights: nh }));
+                                                    }}
+                                                    placeholder="e.g. Free Welcome Drink"
+                                                    className={inputClass} />
+                                                <button type="button" 
+                                                    onClick={() => setForm(p => ({ ...p, highlights: (form.highlights || []).filter((_, idx) => idx !== i) }))}
+                                                    className="w-11 h-11 shrink-0 rounded-xl bg-slate-50 border border-slate-200 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        {(form.highlights || []).length === 0 && (
+                                            <p className="text-xs text-slate-400 italic">No highlights added. These appear as a checklist on the details page.</p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Terms & Conditions */}
+                                <div className="pt-4 border-t border-slate-50">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <label className={labelClass + " !mb-0"}>Terms & Conditions</label>
+                                        <button type="button" 
+                                            onClick={() => setForm(p => ({ ...p, terms: [...(p.terms || []), ''] }))}
+                                            className="text-xs font-black text-orange-500 hover:text-orange-600 flex items-center gap-1"
+                                        >
+                                            <Plus className="w-3.5 h-3.5" /> Add Term
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {(form.terms || []).map((t: string, i: number) => (
+                                            <div key={i} className="flex gap-2">
+                                                <input value={t}
+                                                    onChange={e => {
+                                                        const nt = [...(form.terms || [])];
+                                                        nt[i] = e.target.value;
+                                                        setForm(p => ({ ...p, terms: nt }));
+                                                    }}
+                                                    placeholder="e.g. Valid on dine-in only"
+                                                    className={inputClass} />
+                                                <button type="button" 
+                                                    onClick={() => setForm(p => ({ ...p, terms: (form.terms || []).filter((_, idx) => idx !== i) }))}
+                                                    className="w-11 h-11 shrink-0 rounded-xl bg-slate-50 border border-slate-200 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        {(form.terms || []).length === 0 && (
+                                            <p className="text-xs text-slate-400 italic">No specific terms added.</p>
+                                        )}
+                                    </div>
+                                </div>
+
                                 {/* Image Upload */}
-                                <div>
+                                <div className="pt-4 border-t border-slate-50">
                                     <label className={labelClass}>Offer Image (optional)</label>
                                     {form.imageUrl ? (
                                         <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 aspect-[3/1]">

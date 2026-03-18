@@ -191,9 +191,14 @@ export const api = {
     cities: {
         getPopular: () => fetcher<City[]>('/cities/popular'),
         getAll: () => fetcher<City[]>('/cities'),
+        getSupportedCountries: () => fetcher<{ country: string; cityCount: number }[]>('/cities/supported-countries'),
         // Admin endpoints
         adminCreate: (data: any) => fetcher<City>('/cities/admin', {
             method: 'POST',
+            body: JSON.stringify(data),
+        }),
+        adminUpdate: (id: string, data: any) => fetcher<City>(`/cities/admin/${id}`, {
+            method: 'PATCH',
             body: JSON.stringify(data),
         }),
         adminList: (page = 1, limit = 10, search = '') => {
@@ -206,6 +211,11 @@ export const api = {
         },
         adminDelete: (id: string) => fetcher<void>(`/cities/admin/${id}`, {
             method: 'DELETE',
+        }),
+        bulkImport: (country = 'Pakistan') => fetcher<{ count: number, total: number }>('/cities/admin/bulk-import', {
+            method: 'POST',
+            body: JSON.stringify({ country }),
+            timeout: 60000,
         }),
     },
     reviews: {
@@ -436,6 +446,12 @@ export const api = {
                 method: 'DELETE',
             }),
         },
+        globalSearch: (q: string) => fetcher<{ 
+            businesses: any[], 
+            users: any[], 
+            categories: any[], 
+            cities: any[] 
+        }>(`/admin/search/global?q=${encodeURIComponent(q)}`),
     },
     notifications: {
         getAll: () => fetcher('/notifications'),

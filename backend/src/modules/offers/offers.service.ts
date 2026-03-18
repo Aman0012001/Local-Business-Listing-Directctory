@@ -218,7 +218,7 @@ export class OffersService {
     async findOnePublic(id: string): Promise<OfferEvent> {
         const offer = await this.offerRepository.findOne({
             where: { id, isActive: true },
-            relations: ['business', 'business.category'],
+            relations: ['business', 'business.category', 'business.vendor'],
         });
 
         if (!offer) {

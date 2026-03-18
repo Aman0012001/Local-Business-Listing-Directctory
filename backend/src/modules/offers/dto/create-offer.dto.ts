@@ -56,4 +56,14 @@ export class CreateOfferDto {
     @IsOptional()
     @IsDateString()
     expiryDate?: string;
+
+    @ApiPropertyOptional({ example: ['Free Delivery', 'Buy 1 Get 1'] })
+    @IsOptional()
+    @IsString({ each: true })
+    highlights?: string[];
+
+    @ApiPropertyOptional({ example: ['Valid only on weekends', 'Cannot be combined with other offers'] })
+    @IsOptional()
+    @IsString({ each: true })
+    terms?: string[];
 }

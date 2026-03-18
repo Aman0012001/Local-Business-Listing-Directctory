@@ -129,6 +129,22 @@ export default function HomePage() {
         window.location.href = `/search?${params.toString()}`;
     };
 
+    // Debounced search logging for "Live Search" heatmap
+    useEffect(() => {
+        if (!searchQuery.trim() || searchQuery.length < 3) return;
+
+        const timer = setTimeout(() => {
+            api.demand.logSearch({
+                keyword: searchQuery,
+                city: selectedCity || undefined,
+                latitude: userLocation?.lat,
+                longitude: userLocation?.lng,
+            }).catch(err => console.error('Live demand logging failed:', err));
+        }, 2000); // 2 second debounce
+
+        return () => clearTimeout(timer);
+    }, [searchQuery, selectedCity, userLocation]);
+
     // Detect when Google Maps API is ready
     useEffect(() => {
         if ((window as any).google) {
@@ -234,14 +250,13 @@ export default function HomePage() {
                             Search, compare & contact the best services near you — fast and reliable.
                         </p>
                     </motion.div>
-
                     {/* Search Bar Container */}
                     <motion.div
                         ref={searchRef}
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.2, duration: 0.5 }}
-                        className="relative z-[70] max-w-4xl mx-auto bg-white/10 backdrop-blur-md   p-2 border border-white/20 flex flex-col md:flex-row items-stretch gap-2" style={{ borderRadius: "10px" }}
+                        className="relative z-[70] max-w-5xl mx-auto flex flex-col md:flex-row items-stretch gap-3 drop-shadow-2xl"
                     >
                         <div className="flex-1 relative z-50">
                             <CitySearchSelect
@@ -253,7 +268,7 @@ export default function HomePage() {
 
                         <div className="flex-[1.5] relative z-50">
                             <div className="relative h-full">
-                                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-400 z-10" />
+                                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10" />
                                 <input
                                     type="text"
                                     placeholder="Search categories or businesses..."
@@ -264,15 +279,16 @@ export default function HomePage() {
                                     }}
                                     onFocus={() => setIsSuggestionsOpen(true)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                    className="w-full pl-16 pr-8 py-6 bg-white text-slate-900 placeholder-slate-400  border-0 focus:ring-2 focus:ring-[#FF7A30] text-xl font-semibold outline-none transition-all shadow-inner" style={{ borderRadius: "10px" }}
+                                    className="w-full pl-14 pr-8 py-5 bg-white text-slate-900 placeholder:text-slate-400 border-none outline-none transition-all shadow-sm focus:ring-2 focus:ring-orange-500 font-bold text-lg" 
+                                    style={{ borderRadius: "12px" }}
                                 />
                             </div>
 
                             {isSuggestionsOpen && (filteredCategories.length > 0 || filteredCities.length > 0) && (
                                 <motion.div
                                     initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="absolute top-full left-0 right-0 mt-3 bg-white  border border-slate-100 py-4 z-[100] max-h-[500px] overflow-y-auto" style={{ borderRadius: "10px" }}
+                                    animate={{ opacity: 1, y: 4 }}
+                                    className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 py-4 z-[100] max-h-[400px] overflow-y-auto shadow-2xl rounded-b-[12px]"
                                 >
                                     {filteredCategories.length > 0 && (
                                         <div className="px-6 py-2">
@@ -285,7 +301,7 @@ export default function HomePage() {
                                                         setIsSuggestionsOpen(false);
                                                         window.location.href = `/search?category=${cat.slug}`;
                                                     }}
-                                                    className="w-full px-4 py-3 text-left hover:bg-blue-50/50 rounded-xl text-slate-700 font-bold transition-all flex items-center justify-between group"
+                                                    className="w-full px-4 py-3 text-left hover:bg-slate-50 rounded-xl text-slate-700 font-bold transition-all flex items-center justify-between group"
                                                 >
                                                     <div className="flex items-center gap-4">
                                                         <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-[#FF7A30] group-hover:scale-110 transition-transform">
@@ -310,7 +326,7 @@ export default function HomePage() {
                                                         setIsSuggestionsOpen(false);
                                                         window.location.href = `/search?city=${encodeURIComponent(city.name)}`;
                                                     }}
-                                                    className="w-full px-4 py-3 text-left hover:bg-blue-50/50 rounded-xl text-slate-700 font-bold transition-all flex items-center justify-between group"
+                                                    className="w-full px-4 py-3 text-left hover:bg-slate-50 rounded-xl text-slate-700 font-bold transition-all flex items-center justify-between group"
                                                 >
                                                     <div className="flex items-center gap-4">
                                                         <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
@@ -329,12 +345,14 @@ export default function HomePage() {
 
                         <button
                             onClick={handleSearch}
-                            className="bg-[#FF7A30] hover:bg-[#E86920] text-white px-12 py-5  font-black text-xl transition-all  active:scale-95 flex items-center justify-center  group shrink-0" style={{ borderRadius: "10px" }}
+                            className="bg-[#FF7A30] hover:bg-[#E86920] text-white px-10 py-5 font-bold text-xl transition-all shadow-sm active:scale-95 flex items-center justify-center group shrink-0" 
+                            style={{ borderRadius: "12px" }}
                         >
-                            <Search className="w-6 h-6 me-3 group-hover:scale-110 transition-transform" />
+                            <Search className="w-6 h-6 me-3" />
                             Search
                         </button>
                     </motion.div>
+
 
                     <div className="mt-12 flex flex-wrap justify-center gap-4 md:gap-8 text-white/95">
                         {categories.slice(0, 4).map(cat => (

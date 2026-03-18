@@ -19,6 +19,9 @@ import { Subscription } from '../../entities/subscription.entity';
 import { CommentReply } from '../../entities/comment-reply.entity';
 import { SearchModule } from '../search/search.module';
 import { SearchLog } from '../../entities/search-log.entity';
+import { AdminSearchController } from './admin-search.controller';
+import { Category } from '../../entities/category.entity';
+import { City } from '../../entities/city.entity';
 
 @Module({
     imports: [
@@ -38,10 +41,12 @@ import { SearchLog } from '../../entities/search-log.entity';
             Subscription,
             CommentReply,
             SearchLog,
+            Category,
+            City,
         ]),
         SearchModule,
     ],
-    controllers: [AdminController],
+    controllers: [AdminController, AdminSearchController],
     providers: [AdminService],
     exports: [AdminService],
 })

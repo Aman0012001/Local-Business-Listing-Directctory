@@ -2,13 +2,25 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-    Plus, Search, RefreshCw, Loader2, Trash2,
+    Plus, Search, RefreshCw, Loader2, Trash2, Edit2,
     MapPin, Globe, Building2, Star, XCircle,
-    CheckCircle2, Navigation, MapIcon, Globe2
+    CheckCircle2, Navigation, MapIcon, AlertTriangle,
+    Eye, EyeOff, Download, ChevronDown, Globe2
 } from 'lucide-react';
 import { api } from '../../../lib/api';
 import { City } from '../../../types/api';
 import { motion, AnimatePresence } from 'framer-motion';
+
+const COUNTRY_FLAGS: Record<string, string> = {
+    'Pakistan': '🇵🇰',
+    'India': '🇮🇳',
+    'UAE': '🇦🇪',
+    'Saudi Arabia': '🇸🇦',
+    'UK': '🇬🇧',
+    'USA': '🇺🇸',
+    'Canada': '🇨🇦',
+    'Australia': '🇦🇺',
+};
 
 export default function AdminCitiesPage() {
     const [cities, setCities] = useState<City[]>([]);
@@ -18,16 +30,33 @@ export default function AdminCitiesPage() {
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const [limit] = useState(10);
-    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
+    // Modals
+    const [isGoogleImportOpen, setIsGoogleImportOpen] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedCity, setSelectedCity] = useState<City | null>(null);
 
-    // Google Places Autocomplete refs
+    // Supported countries for bulk import
+    const [supportedCountries, setSupportedCountries] = useState<{ country: string; cityCount: number }[]>([]);
+    const [selectedBulkCountry, setSelectedBulkCountry] = useState('Pakistan');
+    const [isBulkImporting, setIsBulkImporting] = useState(false);
+
+    // Google Places Autocomplete
     const autocompleteInputRef = useRef<HTMLInputElement>(null);
     const [selectedPlace, setSelectedPlace] = useState<any>(null);
-    const [importData, setImportData] = useState({
+    const [googleImportData, setGoogleImportData] = useState({ isPopular: false, displayOrder: 0 });
+
+    // Create / Edit form
+    const [formData, setFormData] = useState({
+        name: '',
+        state: '',
+        country: 'Pakistan',
+        description: '',
         isPopular: false,
-        displayOrder: 0
+        displayOrder: 0,
     });
 
     const fetchCities = useCallback(async () => {
@@ -43,63 +72,116 @@ export default function AdminCitiesPage() {
         }
     }, [page, limit, search]);
 
-    useEffect(() => {
-        fetchCities();
-    }, [fetchCities]);
+    useEffect(() => { fetchCities(); }, [fetchCities]);
 
-    // Initialize Google Places Autocomplete
+    // Load supported countries on mount
     useEffect(() => {
-        if (isImportModalOpen && typeof window !== 'undefined' && window.google) {
+        api.cities.getSupportedCountries().then(setSupportedCountries).catch(() => {});
+    }, []);
+
+    // Google Places Autocomplete init
+    useEffect(() => {
+        if (isGoogleImportOpen && typeof window !== 'undefined' && (window as any).google) {
             const timer = setTimeout(() => {
                 if (!autocompleteInputRef.current) return;
-
-                const autocomplete = new window.google.maps.places.Autocomplete(autocompleteInputRef.current, {
+                const autocomplete = new (window as any).google.maps.places.Autocomplete(autocompleteInputRef.current, {
                     types: ['(cities)'],
                 });
-
                 autocomplete.addListener('place_changed', () => {
                     const place = autocomplete.getPlace();
-                    if (place.address_components) {
-                        setSelectedPlace(place);
-                    }
+                    if (place.address_components) setSelectedPlace(place);
                 });
             }, 100);
             return () => clearTimeout(timer);
         }
-    }, [isImportModalOpen]);
+    }, [isGoogleImportOpen]);
 
-    const handleImport = async (e: React.FormEvent) => {
+    // ---- Handlers ----
+
+    const handleGoogleImport = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedPlace) return;
-
-        setActionLoading('import');
+        setActionLoading('google-import');
         try {
-            const addressComponents = selectedPlace.address_components;
-            const cityName = addressComponents.find((c: any) => c.types.includes('locality'))?.long_name ||
-                addressComponents.find((c: any) => c.types.includes('administrative_area_level_2'))?.long_name;
-            const state = addressComponents.find((c: any) => c.types.includes('administrative_area_level_1'))?.long_name;
-            const country = addressComponents.find((c: any) => c.types.includes('country'))?.long_name;
-
+            const components = selectedPlace.address_components;
+            const cityName = components.find((c: any) => c.types.includes('locality'))?.long_name
+                || components.find((c: any) => c.types.includes('administrative_area_level_2'))?.long_name;
+            const state = components.find((c: any) => c.types.includes('administrative_area_level_1'))?.long_name;
+            const country = components.find((c: any) => c.types.includes('country'))?.long_name;
             if (!cityName) throw new Error('Could not determine city name from selection.');
-
-            const cityData = {
+            await api.cities.adminCreate({
                 name: cityName,
                 state: state || '',
                 country: country || 'Pakistan',
-                isPopular: importData.isPopular,
-                displayOrder: importData.displayOrder,
-                heroImageUrl: selectedPlace.photos?.[0]?.getUrl() || ''
-            };
-
-            await api.cities.adminCreate(cityData);
+                isPopular: googleImportData.isPopular,
+                displayOrder: googleImportData.displayOrder,
+                heroImageUrl: selectedPlace.photos?.[0]?.getUrl() || '',
+            });
             await fetchCities();
-            setIsImportModalOpen(false);
+            setIsGoogleImportOpen(false);
             setSelectedPlace(null);
-            setImportData({ isPopular: false, displayOrder: 0 });
+            setGoogleImportData({ isPopular: false, displayOrder: 0 });
         } catch (err: any) {
             alert(err.message || 'Failed to import city');
         } finally {
             setActionLoading(null);
+        }
+    };
+
+    const handleCreate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setActionLoading('create');
+        try {
+            await api.cities.adminCreate(formData);
+            await fetchCities();
+            setIsCreateModalOpen(false);
+            resetForm();
+        } catch (err: any) {
+            alert(err.message || 'Failed to create city');
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const handleUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedCity) return;
+        setActionLoading('update');
+        try {
+            await api.cities.adminUpdate(selectedCity.id, formData);
+            await fetchCities();
+            setIsEditModalOpen(false);
+            resetForm();
+        } catch (err: any) {
+            alert(err.message || 'Failed to update city');
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const handleTogglePopular = async (city: City) => {
+        setActionLoading(city.id);
+        try {
+            await api.cities.adminUpdate(city.id, { isPopular: !city.isPopular });
+            setCities(prev => prev.map(c => c.id === city.id ? { ...c, isPopular: !c.isPopular } : c));
+        } catch (err: any) {
+            alert(err.message || 'Failed to update city');
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const handleBulkImport = async () => {
+        setIsBulkImporting(true);
+        try {
+            const result = await api.cities.bulkImport(selectedBulkCountry);
+            alert(`✅ Successfully imported ${result.count} new cities from ${selectedBulkCountry}! (${result.total} total in dataset, ${result.total - result.count} already existed)`);
+            await fetchCities();
+            setIsBulkImportOpen(false);
+        } catch (err: any) {
+            alert(err.message || 'Bulk import failed');
+        } finally {
+            setIsBulkImporting(false);
         }
     };
 
@@ -118,6 +200,24 @@ export default function AdminCitiesPage() {
         }
     };
 
+    const openEditModal = (city: City) => {
+        setSelectedCity(city);
+        setFormData({
+            name: city.name,
+            state: city.state || '',
+            country: city.country || 'Pakistan',
+            description: city.description || '',
+            isPopular: city.isPopular || false,
+            displayOrder: city.displayOrder || 0,
+        });
+        setIsEditModalOpen(true);
+    };
+
+    const resetForm = () => {
+        setFormData({ name: '', state: '', country: 'Pakistan', description: '', isPopular: false, displayOrder: 0 });
+        setSelectedCity(null);
+    };
+
     const totalPages = Math.ceil(total / limit);
 
     return (
@@ -130,23 +230,41 @@ export default function AdminCitiesPage() {
                         Import and manage cities available for business listings.
                     </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                     <button
                         onClick={fetchCities}
                         className="flex items-center justify-center p-3 bg-slate-100 hover:bg-slate-200 rounded-2xl text-slate-600 transition-all"
+                        title="Refresh"
                     >
                         <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
                     </button>
+                    {/* Bulk Import */}
                     <button
-                        onClick={() => setIsImportModalOpen(true)}
-                        className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white hover:bg-red-700 rounded-2xl font-bold transition-all shadow-lg shadow-red-600/20 active:scale-95"
+                        onClick={() => setIsBulkImportOpen(true)}
+                        className="flex items-center gap-2 px-5 py-3 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-2xl font-bold transition-all"
                     >
-                        <Plus className="w-5 h-5" /> Import City
+                        <Download className="w-5 h-5" />
+                        Bulk Import
+                    </button>
+                    {/* Google Import */}
+                    <button
+                        onClick={() => setIsGoogleImportOpen(true)}
+                        className="flex items-center gap-2 px-5 py-3 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-2xl font-bold transition-all"
+                    >
+                        <MapIcon className="w-5 h-5" />
+                        Google Import
+                    </button>
+                    {/* Add City */}
+                    <button
+                        onClick={() => { resetForm(); setIsCreateModalOpen(true); }}
+                        className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white hover:bg-slate-800 rounded-2xl font-bold transition-all shadow-slate-900/20 active:scale-95"
+                    >
+                        <Plus className="w-5 h-5" /> Add City
                     </button>
                 </div>
             </div>
 
-            {/* Search toolbar */}
+            {/* Search */}
             <div className="relative">
                 <div className="absolute left-5 top-1/2 -translate-y-1/2">
                     <Search className="w-5 h-5 text-slate-400" />
@@ -155,21 +273,22 @@ export default function AdminCitiesPage() {
                     type="text"
                     placeholder="Search cities by name..."
                     value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    className="w-full pl-14 pr-6 h-16 rounded-[24px] border border-slate-200 bg-white text-slate-900 font-medium focus:outline-none focus:ring-4 focus:ring-red-500/5 placeholder:text-slate-400 text-base shadow-sm transition-all"
+                    onChange={e => { setSearch(e.target.value); setPage(1); }}
+                    className="w-full pl-14 pr-6 h-16 rounded-[24px] border border-slate-200 bg-white text-slate-900 font-medium focus:outline-none focus:ring-4 focus:ring-slate-100 placeholder:text-slate-400 text-base shadow-sm transition-all"
                 />
             </div>
 
-            {/* Cities Table */}
-            <div className="bg-white rounded-[28px] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden text-sans">
+            {/* Table */}
+            <div className="bg-white rounded-[28px] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-50/50 border-b border-slate-100">
                                 <th className="px-8 py-6 text-[11px] font-black uppercase tracking-widest text-slate-400">City</th>
-                                <th className="px-8 py-6 text-[11px] font-black uppercase tracking-widest text-slate-400">State/Region</th>
+                                <th className="px-8 py-6 text-[11px] font-black uppercase tracking-widest text-slate-400">State / Region</th>
                                 <th className="px-8 py-6 text-[11px] font-black uppercase tracking-widest text-slate-400">Country</th>
                                 <th className="px-8 py-6 text-[11px] font-black uppercase tracking-widest text-slate-400">Popular</th>
+                                <th className="px-8 py-6 text-[11px] font-black uppercase tracking-widest text-slate-400">Created</th>
                                 <th className="px-8 py-6 text-[11px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
                             </tr>
                         </thead>
@@ -177,18 +296,18 @@ export default function AdminCitiesPage() {
                             <AnimatePresence mode='popLayout'>
                                 {loading && cities.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="py-24 text-center">
-                                            <Loader2 className="w-10 h-10 animate-spin text-red-600 mx-auto" />
+                                        <td colSpan={6} className="py-24 text-center">
+                                            <Loader2 className="w-10 h-10 animate-spin text-slate-200 mx-auto" />
                                         </td>
                                     </tr>
                                 ) : cities.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="py-24 text-center">
-                                            <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6 text-sans">
+                                        <td colSpan={6} className="py-24 text-center">
+                                            <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
                                                 <MapPin className="w-10 h-10 text-slate-200" />
                                             </div>
-                                            <h3 className="text-xl font-black text-slate-900 text-sans">No cities found</h3>
-                                            <p className="text-slate-400 font-medium mt-2 text-sans">Import some cities to get started.</p>
+                                            <h3 className="text-xl font-black text-slate-900">No cities found</h3>
+                                            <p className="text-slate-400 font-medium mt-2">Use Bulk Import or Add City to get started.</p>
                                         </td>
                                     </tr>
                                 ) : (
@@ -201,46 +320,74 @@ export default function AdminCitiesPage() {
                                             transition={{ delay: idx * 0.03 }}
                                             className="group border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors"
                                         >
+                                            {/* City */}
                                             <td className="px-8 py-6">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shadow-inner overflow-hidden flex-shrink-0">
-                                                        {city.imageUrl ? (
-                                                            <img src={city.imageUrl} className="w-full h-full object-cover" alt="" />
+                                                    <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-inner overflow-hidden flex-shrink-0">
+                                                        {city.heroImageUrl ? (
+                                                            <img src={city.heroImageUrl} className="w-full h-full object-cover" alt="" />
                                                         ) : (
                                                             <Building2 className="w-6 h-6" />
                                                         )}
                                                     </div>
                                                     <div>
                                                         <p className="font-black text-slate-900 text-base">{city.name}</p>
-                                                        <p className="text-xs text-slate-400 font-bold uppercase tracking-tight tracking-wider">{city.slug}</p>
+                                                        <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">{city.slug}</p>
                                                     </div>
                                                 </div>
                                             </td>
+                                            {/* State */}
                                             <td className="px-8 py-6">
-                                                <span className="text-sm text-slate-600 font-bold">{city.state || 'N/A'}</span>
+                                                <span className="text-sm text-slate-600 font-bold">{city.state || <span className="text-slate-300">—</span>}</span>
                                             </td>
+                                            {/* Country */}
                                             <td className="px-8 py-6">
                                                 <div className="flex items-center gap-2">
-                                                    <Globe className="w-4 h-4 text-slate-300" />
+                                                    <span className="text-lg">{COUNTRY_FLAGS[city.country] || '🌍'}</span>
                                                     <span className="text-sm text-slate-600 font-bold">{city.country}</span>
                                                 </div>
                                             </td>
+                                            {/* Popular toggle */}
                                             <td className="px-8 py-6">
-                                                {(city as any).isPopular ? (
-                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-600 border border-amber-100 text-[10px] font-black uppercase tracking-wider">
-                                                        <Star className="w-3 h-3 fill-current" /> Popular
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-xs text-slate-300 font-bold">—</span>
-                                                )}
-                                            </td>
-                                            <td className="px-8 py-6 text-right">
                                                 <button
-                                                    onClick={() => { setSelectedCity(city); setIsDeleteModalOpen(true); }}
-                                                    className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-red-600 hover:border-red-600 transition-all shadow-sm group-hover:scale-105 active:scale-95"
+                                                    onClick={() => handleTogglePopular(city)}
+                                                    disabled={actionLoading === city.id}
+                                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all ${city.isPopular
+                                                        ? 'bg-amber-50 text-amber-700 border-amber-100 hover:bg-amber-100'
+                                                        : 'bg-slate-100 text-slate-400 border-slate-200 hover:bg-slate-200'}`}
                                                 >
-                                                    <Trash2 className="w-4 h-4" />
+                                                    {actionLoading === city.id ? (
+                                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                                    ) : (
+                                                        <>
+                                                            <Star className={`w-3 h-3 ${city.isPopular ? 'fill-current' : ''}`} />
+                                                            {city.isPopular ? 'Popular' : 'Normal'}
+                                                        </>
+                                                    )}
                                                 </button>
+                                            </td>
+                                            {/* Created At */}
+                                            <td className="px-8 py-6">
+                                                <span className="text-sm text-slate-500 font-medium">
+                                                    {city.createdAt ? new Date(city.createdAt).toLocaleDateString() : '—'}
+                                                </span>
+                                            </td>
+                                            {/* Actions */}
+                                            <td className="px-8 py-6 text-right">
+                                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button
+                                                        onClick={() => openEditModal(city)}
+                                                        className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-900 hover:border-slate-900 transition-all shadow-sm"
+                                                    >
+                                                        <Edit2 className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => { setSelectedCity(city); setIsDeleteModalOpen(true); }}
+                                                        className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-red-600 hover:border-red-600 transition-all shadow-sm"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </motion.tr>
                                     ))
@@ -257,18 +404,25 @@ export default function AdminCitiesPage() {
                             Showing <span className="text-slate-900 font-bold">{(page - 1) * limit + 1}</span> to <span className="text-slate-900 font-bold">{Math.min(page * limit, total)}</span> of <span className="text-slate-900 font-bold">{total}</span> cities
                         </p>
                         <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setPage(p => Math.max(1, p - 1))}
-                                disabled={page === 1}
-                                className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-all font-sans"
-                            >
+                            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+                                className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-all">
                                 Previous
                             </button>
-                            <button
-                                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                                disabled={page === totalPages}
-                                className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-all font-sans"
-                            >
+                            <div className="flex items-center gap-1">
+                                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                    .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                                    .map((p, i, arr) => (
+                                        <React.Fragment key={p}>
+                                            {i > 0 && arr[i - 1] !== p - 1 && <span className="text-slate-400">...</span>}
+                                            <button onClick={() => setPage(p)}
+                                                className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${page === p ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+                                                {p}
+                                            </button>
+                                        </React.Fragment>
+                                    ))}
+                            </div>
+                            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+                                className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-all">
                                 Next
                             </button>
                         </div>
@@ -276,31 +430,118 @@ export default function AdminCitiesPage() {
                 )}
             </div>
 
-            {/* Import City Modal */}
+            {/* ============================================================ */}
+            {/* BULK IMPORT MODAL — Country Dropdown                         */}
+            {/* ============================================================ */}
             <AnimatePresence>
-                {isImportModalOpen && (
+                {isBulkImportOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-white rounded-[28px] p-8 max-w-lg w-full shadow-2xl"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between mb-8">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
+                                        <Download className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Bulk Import Cities</h2>
+                                        <p className="text-sm text-slate-400 font-medium">Import all cities for a country at once</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => setIsBulkImportOpen(false)} className="text-slate-400 hover:text-slate-900 transition-colors">
+                                    <XCircle className="w-8 h-8" />
+                                </button>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Select Country</label>
+                                    <div className="relative">
+                                        <select
+                                            value={selectedBulkCountry}
+                                            onChange={e => setSelectedBulkCountry(e.target.value)}
+                                            className="w-full h-16 pl-14 pr-6 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 font-bold transition-all appearance-none cursor-pointer text-slate-900"
+                                        >
+                                            {(supportedCountries.length > 0 ? supportedCountries : Object.keys(COUNTRY_FLAGS).map(c => ({ country: c, cityCount: 0 }))).map(({ country, cityCount }) => (
+                                                <option key={country} value={country}>
+                                                    {COUNTRY_FLAGS[country]} {country} {cityCount > 0 ? `(${cityCount} cities)` : ''}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-2xl pointer-events-none">
+                                            {COUNTRY_FLAGS[selectedBulkCountry] || '🌍'}
+                                        </div>
+                                        <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                            <ChevronDown className="w-5 h-5" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Preview */}
+                                {supportedCountries.find(c => c.country === selectedBulkCountry) && (
+                                    <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl flex items-center gap-3">
+                                        <Globe2 className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                                        <div>
+                                            <p className="text-sm font-black text-blue-900">
+                                                {supportedCountries.find(c => c.country === selectedBulkCountry)?.cityCount} cities will be imported
+                                            </p>
+                                            <p className="text-xs text-blue-600 font-medium mt-0.5">
+                                                Already-existing cities will be skipped automatically.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <button
+                                    onClick={handleBulkImport}
+                                    disabled={isBulkImporting}
+                                    className="w-full h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-sm flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-blue-600/20"
+                                >
+                                    {isBulkImporting
+                                        ? <><Loader2 className="w-5 h-5 animate-spin" /> Importing cities...</>
+                                        : <><Download className="w-5 h-5" /> Import All {selectedBulkCountry} Cities</>
+                                    }
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* ============================================================ */}
+            {/* GOOGLE IMPORT MODAL                                          */}
+            {/* ============================================================ */}
+            <AnimatePresence>
+                {isGoogleImportOpen && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md">
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="bg-white rounded-[28px] p-8 max-w-lg w-full shadow-2xl relative overflow-hidden"
+                            className="bg-white rounded-[28px] p-8 max-w-lg w-full shadow-2xl"
                             onClick={e => e.stopPropagation()}
                         >
                             <div className="flex items-center justify-between mb-8">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-600">
+                                    <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
                                         <MapIcon className="w-6 h-6" />
                                     </div>
-                                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Import New City</h2>
+                                    <div>
+                                        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Import from Google</h2>
+                                        <p className="text-sm text-slate-400 font-medium">Search and import any city worldwide</p>
+                                    </div>
                                 </div>
-                                <button onClick={() => { setIsImportModalOpen(false); setSelectedPlace(null); }} className="text-slate-400 hover:text-slate-900 transition-colors">
+                                <button onClick={() => { setIsGoogleImportOpen(false); setSelectedPlace(null); }} className="text-slate-400 hover:text-slate-900 transition-colors">
                                     <XCircle className="w-8 h-8" />
                                 </button>
                             </div>
 
-                            <form onSubmit={handleImport} className="space-y-6">
-                                {/* Google Places Search */}
+                            <form onSubmit={handleGoogleImport} className="space-y-6">
                                 <div className="space-y-2">
                                     <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Search City (powered by Google)</label>
                                     <div className="relative">
@@ -309,7 +550,7 @@ export default function AdminCitiesPage() {
                                             required
                                             type="text"
                                             placeholder="Enter city name..."
-                                            className="w-full h-16 pl-14 pr-6 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-red-500/5 font-bold transition-all text-base"
+                                            className="w-full h-16 pl-14 pr-6 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/10 font-bold transition-all text-base"
                                         />
                                         <div className="absolute left-5 top-1/2 -translate-y-1/2">
                                             <Search className="w-5 h-5 text-slate-400" />
@@ -319,7 +560,7 @@ export default function AdminCitiesPage() {
                                         <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center gap-3">
                                             <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                                             <div>
-                                                <p className="text-sm font-black text-emerald-900 leading-tight">Selected City Detected</p>
+                                                <p className="text-sm font-black text-emerald-900">City Selected</p>
                                                 <p className="text-xs font-bold text-emerald-600">{selectedPlace.formatted_address}</p>
                                             </div>
                                         </div>
@@ -329,34 +570,24 @@ export default function AdminCitiesPage() {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Display Order</label>
-                                        <input
-                                            type="number"
-                                            value={importData.displayOrder}
-                                            onChange={e => setImportData({ ...importData, displayOrder: Number(e.target.value) })}
-                                            className="w-full h-14 px-5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-red-500/5 font-bold transition-all"
-                                        />
+                                        <input type="number" value={googleImportData.displayOrder}
+                                            onChange={e => setGoogleImportData({ ...googleImportData, displayOrder: Number(e.target.value) })}
+                                            className="w-full h-14 px-5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/10 font-bold transition-all" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Promote</label>
-                                        <button
-                                            type="button"
-                                            onClick={() => setImportData({ ...importData, isPopular: !importData.isPopular })}
-                                            className={`w-full h-14 px-5 rounded-2xl border flex items-center justify-center gap-2 font-bold transition-all ${importData.isPopular
-                                                ? 'bg-amber-50 border-amber-200 text-amber-600'
-                                                : 'bg-slate-50 border-slate-200 text-slate-400'}`}
-                                        >
-                                            <Star className={`w-4 h-4 ${importData.isPopular ? 'fill-current' : ''}`} />
-                                            {importData.isPopular ? 'Popular City' : 'Mark Popular'}
+                                        <button type="button"
+                                            onClick={() => setGoogleImportData({ ...googleImportData, isPopular: !googleImportData.isPopular })}
+                                            className={`w-full h-14 px-5 rounded-2xl border flex items-center justify-center gap-2 font-bold transition-all ${googleImportData.isPopular ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
+                                            <Star className={`w-4 h-4 ${googleImportData.isPopular ? 'fill-current' : ''}`} />
+                                            {googleImportData.isPopular ? 'Popular' : 'Mark Popular'}
                                         </button>
                                     </div>
                                 </div>
 
-                                <button
-                                    type="submit"
-                                    disabled={!selectedPlace || !!actionLoading}
-                                    className="w-full h-16 bg-slate-900 text-white rounded-2xl font-black text-sm flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-slate-900/10"
-                                >
-                                    {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Navigation className="w-5 h-5" />}
+                                <button type="submit" disabled={!selectedPlace || !!actionLoading}
+                                    className="w-full h-16 bg-slate-900 text-white rounded-2xl font-black text-sm flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-slate-900/10">
+                                    {actionLoading === 'google-import' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Navigation className="w-5 h-5" />}
                                     Import City to Database
                                 </button>
                             </form>
@@ -365,7 +596,108 @@ export default function AdminCitiesPage() {
                 )}
             </AnimatePresence>
 
-            {/* Delete Modal */}
+            {/* ============================================================ */}
+            {/* CREATE / EDIT MODAL                                          */}
+            {/* ============================================================ */}
+            <AnimatePresence>
+                {(isCreateModalOpen || isEditModalOpen) && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-white rounded-[28px] p-8 max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between mb-8">
+                                <h2 className="text-2xl font-black text-slate-900">
+                                    {isEditModalOpen ? 'Edit City' : 'Add New City'}
+                                </h2>
+                                <button onClick={() => { setIsCreateModalOpen(false); setIsEditModalOpen(false); resetForm(); }} className="text-slate-300 hover:text-slate-900 transition-colors">
+                                    <XCircle className="w-8 h-8" />
+                                </button>
+                            </div>
+
+                            <form onSubmit={isEditModalOpen ? handleUpdate : handleCreate} className="space-y-5">
+                                {/* City Name */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">City Name *</label>
+                                    <input required type="text" placeholder="e.g., Lahore"
+                                        value={formData.name}
+                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                        className="w-full h-14 px-5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-slate-100 font-bold transition-all" />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    {/* State */}
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">State / Province</label>
+                                        <input type="text" placeholder="e.g., Punjab"
+                                            value={formData.state}
+                                            onChange={e => setFormData({ ...formData, state: e.target.value })}
+                                            className="w-full h-14 px-5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-slate-100 font-bold transition-all" />
+                                    </div>
+                                    {/* Country */}
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Country</label>
+                                        <div className="relative">
+                                            <select value={formData.country}
+                                                onChange={e => setFormData({ ...formData, country: e.target.value })}
+                                                className="w-full h-14 px-5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-slate-100 font-bold transition-all appearance-none cursor-pointer">
+                                                {Object.keys(COUNTRY_FLAGS).map(c => <option key={c} value={c}>{COUNTRY_FLAGS[c]} {c}</option>)}
+                                                <option value="Other">🌍 Other</option>
+                                            </select>
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                                <ChevronDown className="w-4 h-4" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Description */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Description</label>
+                                    <textarea rows={3} placeholder="Brief description of this city..."
+                                        value={formData.description}
+                                        onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                        className="w-full p-5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-slate-100 font-bold transition-all resize-none" />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    {/* Display Order */}
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Display Order</label>
+                                        <input type="number" value={formData.displayOrder}
+                                            onChange={e => setFormData({ ...formData, displayOrder: Number(e.target.value) })}
+                                            className="w-full h-14 px-5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-slate-100 font-bold transition-all" />
+                                    </div>
+                                    {/* Popular */}
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Popular City</label>
+                                        <button type="button"
+                                            onClick={() => setFormData({ ...formData, isPopular: !formData.isPopular })}
+                                            className={`w-full h-14 px-5 rounded-2xl border flex items-center justify-center gap-2 font-bold transition-all ${formData.isPopular ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
+                                            <Star className={`w-4 h-4 ${formData.isPopular ? 'fill-current' : ''}`} />
+                                            {formData.isPopular ? 'Popular' : 'Mark Popular'}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="pt-2">
+                                    <button type="submit" disabled={!!actionLoading}
+                                        className="w-full h-16 bg-slate-900 text-white rounded-[20px] font-black text-sm flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50">
+                                        {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : isEditModalOpen ? 'Save Changes' : 'Add City'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* ============================================================ */}
+            {/* DELETE MODAL                                                  */}
+            {/* ============================================================ */}
             <AnimatePresence>
                 {isDeleteModalOpen && selectedCity && (
                     <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md">
@@ -376,25 +708,20 @@ export default function AdminCitiesPage() {
                             className="bg-white rounded-[28px] p-10 max-w-md w-full shadow-2xl text-center"
                         >
                             <div className="w-20 h-20 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                                <XCircle className="w-10 h-10" />
+                                <AlertTriangle className="w-10 h-10" />
                             </div>
                             <h3 className="text-2xl font-black text-slate-900 tracking-tight">Remove City?</h3>
                             <p className="text-slate-500 font-medium mt-3 leading-relaxed">
-                                Are you sure you want to remove <span className="text-slate-900 font-black">"{selectedCity.name}"</span>?
+                                You are about to remove <span className="text-slate-900 font-black">"{selectedCity.name}"</span>.
                                 Businesses listed in this city may become harder to find.
                             </p>
                             <div className="flex gap-4 mt-10">
-                                <button
-                                    onClick={() => { setIsDeleteModalOpen(false); setSelectedCity(null); }}
-                                    className="flex-1 h-14 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95"
-                                >
+                                <button onClick={() => { setIsDeleteModalOpen(false); setSelectedCity(null); }}
+                                    className="flex-1 h-14 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95">
                                     Cancel
                                 </button>
-                                <button
-                                    onClick={handleDelete}
-                                    disabled={!!actionLoading}
-                                    className="flex-1 h-14 bg-red-600 text-white rounded-2xl font-black hover:bg-red-700 transition-all shadow-lg shadow-red-600/20 active:scale-95 disabled:opacity-50"
-                                >
+                                <button onClick={handleDelete} disabled={!!actionLoading}
+                                    className="flex-1 h-14 bg-red-600 text-white rounded-2xl font-black hover:bg-red-700 transition-all shadow-lg shadow-red-600/20 active:scale-95 disabled:opacity-50">
                                     {actionLoading === 'delete' ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Yes, Delete'}
                                 </button>
                             </div>

@@ -22,16 +22,22 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     }
 
     async validate(payload: JwtPayload): Promise<User> {
-        const { sub: userId } = payload;
+        try {
+            const { sub: userId } = payload;
 
-        const user = await this.userRepository.findOne({
-            where: { id: userId, isActive: true },
-        });
+            const user = await this.userRepository.findOne({
+                where: { id: userId, isActive: true },
+            });
 
-        if (!user) {
-            throw new UnauthorizedException('User not found or inactive');
+            if (!user) {
+                throw new UnauthorizedException('User not found or inactive');
+            }
+
+            return user;
+        } catch (error) {
+            console.error(`[JwtStrategy] Validation failed for payload ${JSON.stringify(payload)}:`, error.message);
+            // If it's not already a 401, it's likely a DB error causing a 500
+            throw error;
         }
-
-        return user;
     }
 }

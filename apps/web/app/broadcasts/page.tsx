@@ -11,7 +11,7 @@ export default function BroadcastsPage() {
     return (
         <main className="min-h-screen bg-[#FDFDFF]">
             <Navbar />
-            
+
             {/* Animated Background Elements */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
                 <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-100/30 blur-[120px] rounded-full" />
@@ -20,7 +20,7 @@ export default function BroadcastsPage() {
 
             <div className="max-w-6xl mx-auto px-4 py-20 md:py-32">
                 <div className="text-center mb-24 relative">
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5 }}
@@ -28,8 +28,8 @@ export default function BroadcastsPage() {
                     >
                         <Zap className="w-4 h-4 fill-blue-600" /> Advanced Neural Matching
                     </motion.div>
-                    
-                    <motion.h1 
+
+                    <motion.h1
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: 0.1 }}
@@ -37,8 +37,8 @@ export default function BroadcastsPage() {
                     >
                         Beam Your <span className="text-blue-600">Signal.</span>
                     </motion.h1>
-                    
-                    <motion.p 
+
+                    <motion.p
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: 0.2 }}
@@ -54,7 +54,7 @@ export default function BroadcastsPage() {
                         { step: "02", title: "Broadcast Live", desc: "We ping verified experts in your immediate radius.", icon: Megaphone, color: "orange" },
                         { step: "03", title: "Instant Quotes", desc: "Compare responses and hire the perfect professional.", icon: CheckCircle2, color: "emerald" },
                     ].map((item, idx) => (
-                        <motion.div 
+                        <motion.div
                             key={idx}
                             initial={{ opacity: 0, y: 40 }}
                             whileInView={{ opacity: 1, y: 0 }}
@@ -74,15 +74,15 @@ export default function BroadcastsPage() {
                     ))}
                 </div>
 
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
-                    className="max-w-4xl mx-auto bg-white/70 backdrop-blur-3xl p-4 md:p-12 rounded-[64px] border border-white shadow-[0_64px_128px_-32px_rgba(0,0,0,0.08)] relative"
+                    className="max-w-4xl mx-auto bg-white/70 backdrop-blur-3xl p-4 md:p-12 rounded-[24px] border border-white shadow-[0_64px_128px_-32px_rgba(0,0,0,0.08)] relative"
                 >
                     <div className="absolute -top-12 -left-12 w-32 h-32 bg-blue-600 rounded-full blur-[70px] opacity-10" />
                     <div className="absolute -bottom-12 -right-12 w-32 h-32 bg-orange-600 rounded-full blur-[70px] opacity-10" />
-                    
+
                     <div className="relative">
                         <BroadcastRequestForm />
                     </div>

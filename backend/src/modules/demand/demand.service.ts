@@ -46,9 +46,11 @@ export class DemandService {
         // Fallback to city coordinates if lat/lng missing
         if ((!latitude || !longitude) && data.city) {
             try {
-                const city = await this.cityRepo.findOne({
-                    where: { name: data.city }
-                });
+                const city = await this.cityRepo.createQueryBuilder('city')
+                    .where('LOWER(city.name) = LOWER(:cityName)', { cityName: data.city })
+                    .orWhere('LOWER(city.slug) = LOWER(:cityName)', { cityName: data.city })
+                    .getOne();
+                
                 if (city?.latitude && city?.longitude) {
                     latitude = Number(city.latitude);
                     longitude = Number(city.longitude);

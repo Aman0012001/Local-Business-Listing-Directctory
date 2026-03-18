@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import VendorHotDemandWidget from '../../components/vendor/VendorHotDemandWidget';
 import VendorLeadsInbox from '../../../components/leads/VendorLeadsInbox';
 import MyJobLeads from '../../../components/leads/MyJobLeads';
+import MyInquiries from '../../../components/leads/MyInquiries';
 
 export default function GenericDashboard() {
     const { user, updateUser } = useAuth();
@@ -24,6 +25,7 @@ export default function GenericDashboard() {
     const [leads, setLeads] = useState<any[]>([]);
     const [newLeadsCount, setNewLeadsCount] = useState(0);
     const [enquiries, setEnquiries] = useState<any[]>([]);
+    const [followedBusinesses, setFollowedBusinesses] = useState<Business[]>([]);
     const [demandInsights, setDemandInsights] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -37,12 +39,14 @@ export default function GenericDashboard() {
                 setLoading(true);
 
                 // Common data for everyone
-                const [userProfile, favoritesData] = await Promise.all([
+                const [userProfile, favoritesData, followsData] = await Promise.all([
                     api.users.getProfile(),
-                    api.users.getFavorites()
+                    api.users.getFavorites(),
+                    api.follows.myFollows()
                 ]);
 
                 setSavedBusinesses(favoritesData.data || []);
+                setFollowedBusinesses(followsData.data || []);
 
                 if (isVendor || isAdmin) {
                     // Vendor/Admin specific data
@@ -219,8 +223,13 @@ export default function GenericDashboard() {
                             <VendorLeadsInbox />
                         </div>
                     ) : (
-                        <div className="bg-white rounded-[16px] p-8 sm:p-10 border border-black shadow-slate-200/20">
-                            <MyJobLeads />
+                        <div className="space-y-10">
+                            <div className="bg-white rounded-[16px] p-8 sm:p-10 border border-black shadow-slate-200/20">
+                                <MyInquiries />
+                            </div>
+                            <div className="bg-white rounded-[16px] p-8 sm:p-10 border border-black shadow-slate-200/20">
+                                <MyJobLeads />
+                            </div>
                         </div>
                     )}
 
@@ -278,6 +287,47 @@ export default function GenericDashboard() {
                             )}
                         </div>
                     </section>
+
+                    {/* Followed Businesses Section */}
+                    <section className="bg-white rounded-[16px] p-8 sm:p-10 border border-black  shadow-slate-200/20 relative overflow-hidden group">
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-blue-50 rounded-[16px] flex items-center justify-center text-blue-600 shadow-inner border border-blue-100/50">
+                                    <Bell className="w-6 h-6" />
+                                </div>
+                                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Following</h3>
+                            </div>
+                            <Link href="/vendor/following" className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-all group/link">
+                                Manage Alerts <ChevronRight className="w-4 h-4 transition-transform group-hover/link:translate-x-1" />
+                            </Link>
+                        </div>
+
+                        <div className="grid sm:grid-cols-2 gap-6">
+                            {followedBusinesses.length > 0 ? (
+                                followedBusinesses.slice(0, 4).map((biz) => (
+                                    <Link key={biz.id} href={`/business/${biz.slug}`} className="flex items-center gap-5 p-4 rounded-[16px] bg-slate-50 border border-transparent hover:border-blue-500/20 hover:bg-white hover: transition-all group/item">
+                                        <div className="w-16 h-16 rounded-[16px] overflow-hidden flex-shrink-0 shadow-md">
+                                            <img src={getImageUrl((biz as any).coverImageUrl || (biz as any).images?.[0]) || 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=400'} alt={biz.title} className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-500" />
+                                        </div>
+                                        <div className="overflow-hidden">
+                                            <h4 className="font-black text-slate-900 truncate group-hover/item:text-blue-600 transition-colors">{(biz as any).title}</h4>
+                                            <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                                                <span className="truncate">{biz.category?.name || 'Local'}</span>
+                                                <span className="text-slate-200">•</span>
+                                                <span className="truncate">{biz.city || 'Location'}</span>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                ))
+                            ) : (
+                                <div className="col-span-full text-center py-10 bg-slate-50 rounded-[16px] border border-dashed border-slate-200">
+                                    <p className="text-slate-400 font-bold italic">You aren't following any businesses yet.</p>
+                                    <Link href="/search" className="inline-block mt-4 text-xs font-black text-blue-600 uppercase tracking-widest">Discover Now</Link>
+                                </div>
+                            )}
+                        </div>
+                    </section>
+
 
                     {/* Pending Vendor CTA if no stats (Admin Only?) - Skipping for now to focus on User Dashboard */}
                 </div>

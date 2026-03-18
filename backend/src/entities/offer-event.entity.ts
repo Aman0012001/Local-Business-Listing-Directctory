@@ -80,6 +80,12 @@ export class OfferEvent {
     @Index()
     isFeatured: boolean;
 
+    @Column({ type: 'jsonb', nullable: true, default: '[]' })
+    highlights: string[];
+
+    @Column({ type: 'jsonb', nullable: true, default: '[]' })
+    terms: string[];
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 

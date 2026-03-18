@@ -7,8 +7,8 @@ const sharedPoolOptions = {
     min: 2,
     // Kill idle connections after 30s to avoid hitting remote DB limits
     idleTimeoutMillis: 30000,
-    // Wait up to 10s for a free connection from the pool
-    connectionTimeoutMillis: 10000,
+    // Wait up to 30s for a free connection from the pool (increased from 10s)
+    connectionTimeoutMillis: 30000,
     // TCP keepalive: prevents connections from being silently dropped by the remote server
     keepAlives: 1,
     keepAlivesIdle: 30,

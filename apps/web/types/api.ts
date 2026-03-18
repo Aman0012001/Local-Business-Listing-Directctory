@@ -19,9 +19,19 @@ export interface City {
     name: string;
     slug: string;
     state?: string;
-    country?: string;
-    imageUrl?: string;
+    country: string;
+    description?: string;
+    heroImageUrl?: string;
+    imageUrl?: string;        // alias kept for backward compat
+    isPopular: boolean;
+    displayOrder: number;
+    metaTitle?: string;
+    metaDescription?: string;
+    latitude?: number;
+    longitude?: number;
     businessCount?: number;
+    createdAt: string;
+    updatedAt?: string;
 }
 
 export interface BusinessHours {
@@ -143,6 +153,23 @@ export enum JobLeadStatus {
     BROADCASTED = 'broadcasted',
     RESPONDED = 'responded',
     CLOSED = 'closed',
+}
+
+export interface OfferEvent {
+    id: string;
+    title: string;
+    description: string;
+    type: OfferType;
+    offerBadge?: string;
+    imageUrl?: string;
+    startDate?: string;
+    endDate?: string;
+    expiryDate?: string;
+    highlights?: string[];
+    terms?: string[];
+    businessId: string;
+    business?: Business;
+    createdAt: string;
 }
 
 export interface JobLead {

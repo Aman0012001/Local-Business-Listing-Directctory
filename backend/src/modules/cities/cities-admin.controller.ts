@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, Delete, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Delete, Param, Patch, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { CitiesService } from './cities.service';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -33,9 +33,22 @@ export class CitiesAdminController {
         return this.citiesService.findAllAdmin(Number(page || 1), Number(limit || 10), search);
     }
 
+    @Patch(':id')
+    @ApiOperation({ summary: 'Update city (Admin only)' })
+    update(@Param('id') id: string, @Body() data: any) {
+        return this.citiesService.update(id, data);
+    }
+
     @Delete(':id')
     @ApiOperation({ summary: 'Delete city (Admin only)' })
     remove(@Param('id') id: string) {
         return this.citiesService.remove(id);
+    }
+
+    @Post('bulk-import')
+    @ApiOperation({ summary: 'Bulk import cities by country (Admin only)' })
+    bulkImport(@Body() body: { country?: string }) {
+        const country = body?.country || 'Pakistan';
+        return this.citiesService.bulkImportByCountry(country);
     }
 }

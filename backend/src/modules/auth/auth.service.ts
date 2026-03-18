@@ -272,10 +272,16 @@ export class AuthService {
      * Mark user as online (heartbeat ping)
      */
     async markOnline(userId: string): Promise<void> {
-        await this.userRepository.update(userId, {
-            isOnline: true,
-            lastActiveAt: new Date(),
-        });
+        try {
+            await this.userRepository.update(userId, {
+                isOnline: true,
+                lastActiveAt: new Date(),
+            });
+        } catch (error) {
+            this.logger.error(`Failed to mark user ${userId} as online: ${error.message}`, error.stack);
+            // Optionally rethrow or handle silently depending on requirements
+            throw error; 
+        }
     }
 
     /**

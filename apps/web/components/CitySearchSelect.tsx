@@ -92,31 +92,31 @@ export default function CitySearchSelect({ cities, value, onChange, placeholder 
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className={`w-full flex items-center justify-between px-8 py-6 bg-white border-4 transition-all duration-300 group ${
-                    isOpen ? 'border-blue-600 rounded-[28px] shadow-2xl shadow-blue-100' : 'border-slate-50 rounded-[24px] hover:border-slate-100'
+                className={`w-full flex items-center justify-between px-6 py-4 bg-white transition-all duration-300 group shadow-sm ${
+                    isOpen ? 'rounded-t-[12px] ring-2 ring-orange-500' : 'rounded-[12px] hover:shadow-md'
                 }`}
             >
                 <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-2xl transition-colors ${value ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-300'}`}>
-                        <MapPin className="w-6 h-6" />
+                    <div className={`p-2.5 rounded-xl transition-colors ${value ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-300'}`}>
+                        <MapPin className="w-5 h-5" />
                     </div>
                     <div className="text-left">
-                        <span className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Your Area</span>
-                        <span className={`text-xl font-black truncate block ${!value ? 'text-slate-300' : 'text-slate-900'}`}>
+                        <span className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0">Your Area</span>
+                        <span className={`text-lg font-bold truncate block leading-tight ${!value ? 'text-slate-300' : 'text-slate-900'}`}>
                             {value || placeholder}
                         </span>
                     </div>
                 </div>
-                <ChevronDown className={`w-6 h-6 text-slate-300 transition-transform duration-500 ${isOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                <ChevronDown className={`w-5 h-5 text-slate-300 transition-transform duration-500 ${isOpen ? 'rotate-180 text-orange-500' : ''}`} />
             </button>
 
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
-                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 8, scale: 1 }}
-                        exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        className="absolute z-[100] top-full left-0 right-0 bg-white/80 backdrop-blur-2xl border-2 border-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col max-h-[500px] rounded-[32px] ring-1 ring-slate-200/50"
+                        initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 4, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                        className="absolute z-[100] top-full left-0 right-0 bg-white border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[400px] rounded-b-[12px]"
                     >
                         {/* Auto-detect button */}
                         <div className="p-6 pb-2">
