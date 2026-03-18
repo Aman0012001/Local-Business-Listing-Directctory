@@ -19,8 +19,8 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User, UserRole } from '../../entities/user.entity';
 import { ParseUuidPipe } from '../../common/pipes/parse-uuid.pipe';
 
-@ApiTags('job-leads')
-@Controller('job-leads')
+@ApiTags('broadcasts')
+@Controller('broadcasts')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class JobLeadsController {
     constructor(private readonly jobLeadsService: JobLeadsService) { }

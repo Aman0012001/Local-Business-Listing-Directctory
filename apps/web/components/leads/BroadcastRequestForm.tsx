@@ -76,7 +76,7 @@ export default function BroadcastRequestForm({ onSuccess }: BroadcastRequestForm
         setError(null);
 
         try {
-            await api.jobLeads.create({
+            await api.broadcasts.create({
                 ...formData,
                 budget: formData.budget ? parseFloat(formData.budget) : undefined,
                 latitude: formData.latitude ?? undefined,

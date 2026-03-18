@@ -6,7 +6,7 @@ import { Megaphone, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 
-export default function VendorJobLeadsPage() {
+export default function VendorBroadcastsPage() {
     return (
         <div className="min-h-screen pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Header */}

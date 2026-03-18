@@ -53,7 +53,7 @@ export default function Sidebar() {
         { name: 'Queries', icon: Send, href: '/vendor/messages', badge: newEnquiryCount > 0 ? String(newEnquiryCount) : null },
         { name: 'Demand Insights', icon: TrendingUp, href: '/vendor/demand', badge: null },
         { name: 'Subscription & Billing', icon: CreditCard, href: '/vendor/subscription', badge: null },
-        { name: 'Broadcast Feed', icon: Megaphone, href: '/vendor/job-leads', badge: 'New' },
+        { name: 'Broadcast Feed', icon: Megaphone, href: '/vendor/broadcasts', badge: 'New' },
         { name: 'Notifications', icon: Bell, href: '/vendor/notifications', badge: null },
         { name: 'Settings', icon: Settings, href: '/vendor/settings', badge: null },
     ];

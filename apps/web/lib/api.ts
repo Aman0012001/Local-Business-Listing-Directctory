@@ -47,14 +47,26 @@ async function fetcher<T>(endpoint: string, options?: FetcherOptions): Promise<T
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-            if (response.status !== 401) {
+            const error = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
+            
+            if (response.status === 401) {
+                // Handle invalid/expired token globally
+                if (typeof window !== 'undefined') {
+                    console.error('[api.ts] Unauthorized! Clearing token...');
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    // Force refresh to trigger AuthContext redirect if needed, 
+                    // or just let the app handle it via useAuth
+                    window.location.href = '/login?error=expired';
+                }
+            } else {
                 console.error(`[api.ts] API Error on ${endpoint}:`, response.status, response.statusText);
             }
+
             if (options?.silent && response.status === 404) {
                 console.warn(`[api.ts] Silent 404 on ${endpoint}`);
                 return [] as any;
             }
-            const error = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
             throw new Error(`[${endpoint}] ${error.message || 'API request failed'}`);
         }
 
@@ -556,12 +568,12 @@ export const api = {
         myFollows: (page = 1, limit = 20) =>
             fetcher<{ data: Business[]; meta: any }>(`/follows/my?page=${page}&limit=${limit}`),
     },
-    jobLeads: {
-        create: (data: any) => fetcher<any>('/job-leads', { method: 'POST', body: JSON.stringify(data) }),
-        getMyLeads: () => fetcher<any[]>('/job-leads/my-leads'),
-        getVendorInbox: () => fetcher<any[]>('/job-leads/vendor/inbox'),
-        respond: (id: string, data: any) => fetcher<any>(`/job-leads/${id}/respond`, { method: 'POST', body: JSON.stringify(data) }),
-        getResponses: (id: string) => fetcher<any[]>(`/job-leads/${id}/responses`),
+    broadcasts: {
+        create: (data: any) => fetcher<any>('/broadcasts', { method: 'POST', body: JSON.stringify(data) }),
+        getMyLeads: () => fetcher<any[]>('/broadcasts/my-leads'),
+        getVendorInbox: () => fetcher<any[]>('/broadcasts/vendor/inbox'),
+        respond: (id: string, data: any) => fetcher<any>(`/broadcasts/${id}/respond`, { method: 'POST', body: JSON.stringify(data) }),
+        getResponses: (id: string) => fetcher<any[]>(`/broadcasts/${id}/responses`),
     },
 };
 

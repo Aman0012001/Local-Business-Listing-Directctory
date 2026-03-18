@@ -239,7 +239,7 @@ export default function Navbar() {
                                                             <span className="text-[10px] text-slate-400 font-medium italic">Best deals & local events</span>
                                                         </div>
                                                     </Link>
-                                                    <Link href="/job-leads" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
+                                                    <Link href="/broadcasts" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
                                                         <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-500">
                                                             <Megaphone className="w-4 h-4" />
                                                         </div>
