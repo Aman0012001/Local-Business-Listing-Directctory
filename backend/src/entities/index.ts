@@ -41,3 +41,6 @@ export * from './system-setting.entity';
 export * from './offer-event.entity';
 export * from './comment.entity';
 export * from './comment-reply.entity';
+// Job Leads
+export * from './job-lead.entity';
+export * from './job-lead-response.entity';

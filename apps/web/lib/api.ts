@@ -556,5 +556,12 @@ export const api = {
         myFollows: (page = 1, limit = 20) =>
             fetcher<{ data: Business[]; meta: any }>(`/follows/my?page=${page}&limit=${limit}`),
     },
+    jobLeads: {
+        create: (data: any) => fetcher<any>('/job-leads', { method: 'POST', body: JSON.stringify(data) }),
+        getMyLeads: () => fetcher<any[]>('/job-leads/my-leads'),
+        getVendorInbox: () => fetcher<any[]>('/job-leads/vendor/inbox'),
+        respond: (id: string, data: any) => fetcher<any>(`/job-leads/${id}/respond`, { method: 'POST', body: JSON.stringify(data) }),
+        getResponses: (id: string) => fetcher<any[]>(`/job-leads/${id}/responses`),
+    },
 };
 

@@ -138,3 +138,42 @@ export enum OfferType {
     OFFER = 'offer',
     EVENT = 'event',
 }
+export enum JobLeadStatus {
+    OPEN = 'open',
+    BROADCASTED = 'broadcasted',
+    RESPONDED = 'responded',
+    CLOSED = 'closed',
+}
+
+export interface JobLead {
+    id: string;
+    userId: string;
+    categoryId: string;
+    category?: Category;
+    title: string;
+    description: string;
+    city?: string;
+    location?: string;
+    budget?: number;
+    status: JobLeadStatus;
+    createdAt: string;
+    responses?: JobLeadResponse[];
+}
+
+export interface JobLeadResponse {
+    id: string;
+    jobLeadId: string;
+    vendorId: string;
+    vendor?: {
+        id: string;
+        businessName: string;
+        user?: {
+            fullName: string;
+            avatarUrl?: string;
+        }
+    };
+    message: string;
+    price?: number;
+    status: 'pending' | 'accepted' | 'rejected';
+    createdAt: string;
+}

@@ -27,6 +27,7 @@ import { CommentsModule } from './modules/comments/comments.module';
 import { DemandModule } from './modules/demand/demand.module';
 import { FollowsModule } from './modules/follows/follows.module';
 import { AffiliateModule } from './modules/affiliate/affiliate.module';
+import { JobLeadsModule } from './modules/job-leads/job-leads.module';
 
 import { join } from 'path';
 
@@ -42,15 +43,28 @@ import { join } from 'path';
             isGlobal: true,
             imports: [ConfigModule],
             inject: [ConfigService],
-            useFactory: async (configService: ConfigService) => ({
-                store: await redisStore({
-                    socket: {
-                        host: configService.get('REDIS_HOST') || 'localhost',
-                        port: parseInt(configService.get('REDIS_PORT')) || 6379,
-                    },
-                    ttl: configService.get('REDIS_TTL') ? parseInt(configService.get('REDIS_TTL')) * 1000 : 600 * 1000,
-                }),
-            }),
+            useFactory: async (configService: ConfigService) => {
+                const redisEnabled = configService.get('REDIS_ENABLED') === 'true';
+                const ttl = configService.get('REDIS_TTL') ? parseInt(configService.get('REDIS_TTL')) * 1000 : 600 * 1000;
+
+                if (!redisEnabled) {
+                    return { ttl };
+                }
+
+                try {
+                    const store = await redisStore({
+                        socket: {
+                            host: configService.get('REDIS_HOST') || 'localhost',
+                            port: parseInt(configService.get('REDIS_PORT')) || 6379,
+                        },
+                        ttl,
+                    });
+                    return { store, ttl };
+                } catch (error) {
+                    console.error('Failed to initialize Redis store, falling back to memory:', error.message);
+                    return { ttl };
+                }
+            },
         }),
 
         // Database
@@ -93,6 +107,7 @@ import { join } from 'path';
         DemandModule,
         FollowsModule,
         AffiliateModule,
+        JobLeadsModule,
     ],
     providers: [
         {

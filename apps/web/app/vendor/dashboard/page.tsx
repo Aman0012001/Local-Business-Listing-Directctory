@@ -12,6 +12,8 @@ import { api, getImageUrl } from '../../../lib/api';
 import { Business, Review } from '../../../types/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import VendorHotDemandWidget from '../../components/vendor/VendorHotDemandWidget';
+import VendorLeadsInbox from '../../../components/leads/VendorLeadsInbox';
+import MyJobLeads from '../../../components/leads/MyJobLeads';
 
 export default function GenericDashboard() {
     const { user, updateUser } = useAuth();
@@ -210,6 +212,17 @@ export default function GenericDashboard() {
             <div className="grid lg:grid-cols-12 gap-10 items-start">
                 {/* Left Column - 8/12 width */}
                 <div className="lg:col-span-8 space-y-10">
+
+                    {/* Job Leads Section */}
+                    {isVendor || isAdmin ? (
+                        <div className="bg-white rounded-[16px] p-8 sm:p-10 border border-black shadow-slate-200/20">
+                            <VendorLeadsInbox />
+                        </div>
+                    ) : (
+                        <div className="bg-white rounded-[16px] p-8 sm:p-10 border border-black shadow-slate-200/20">
+                            <MyJobLeads />
+                        </div>
+                    )}
 
                     {/* Performance Insights (Vendor Only) */}
                     {(isVendor || isAdmin) && features.showAnalytics && (
