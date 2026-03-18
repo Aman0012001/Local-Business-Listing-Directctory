@@ -44,6 +44,16 @@ export class SearchOfferDto {
     @IsEnum(OfferType)
     type?: OfferType;
 
+    @ApiPropertyOptional({ example: 'uuid' })
+    @IsOptional()
+    @IsString()
+    categoryId?: string;
+
+    @ApiPropertyOptional({ example: true })
+    @IsOptional()
+    @Type(() => Boolean)
+    isFeatured?: boolean;
+
     @ApiPropertyOptional({ example: 10 })
     @IsOptional()
     @Type(() => Number)

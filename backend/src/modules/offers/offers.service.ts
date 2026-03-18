@@ -101,7 +101,7 @@ export class OffersService {
 
     /** Public search for offers and events with filters */
     async findAllPublic(dto: SearchOfferDto) {
-        const { query, city, latitude, longitude, radius, type, limit = 10, page = 1 } = dto;
+        const { query, city, latitude, longitude, radius, type, categoryId, isFeatured, limit = 10, page = 1 } = dto;
         const skip = (Number(page) - 1) * Number(limit);
 
         const qb = this.offerRepository.createQueryBuilder('o')
@@ -126,6 +126,14 @@ export class OffersService {
             qb.andWhere('o.type = :type', { type });
         }
 
+        if (categoryId) {
+            qb.andWhere('b.category_id = :categoryId', { categoryId });
+        }
+
+        if (isFeatured !== undefined) {
+            qb.andWhere('o.isFeatured = :isFeatured', { isFeatured });
+        }
+
         if (latitude && longitude) {
             const formula = `earth_distance(ll_to_earth(b.latitude, b.longitude), ll_to_earth(:lat, :lng))`;
             qb.addSelect(`${formula} / 1000`, 'distance');
@@ -135,9 +143,11 @@ export class OffersService {
                 const radiusInMeters = radius * 1000;
                 qb.andWhere(`${formula} <= :radiusInMeters`, { radiusInMeters });
             }
-            qb.orderBy('distance', 'ASC');
+            qb.orderBy('o.isFeatured', 'DESC');
+            qb.addOrderBy('distance', 'ASC');
         } else {
-            qb.orderBy('o.createdAt', 'DESC');
+            qb.orderBy('o.isFeatured', 'DESC');
+            qb.addOrderBy('o.createdAt', 'DESC');
         }
 
         const [offers, total] = await qb
@@ -229,6 +239,35 @@ export class OffersService {
             .andWhere('status != :expired', { expired: OfferStatus.EXPIRED })
             .execute();
         return result.affected || 0;
+    }
+
+    /** Admin: Toggle featured status */
+    async toggleFeatured(id: string, isFeatured: boolean): Promise<OfferEvent> {
+        const offer = await this.offerRepository.findOne({ where: { id } });
+        if (!offer) throw new NotFoundException('Offer not found');
+        offer.isFeatured = isFeatured;
+        return this.offerRepository.save(offer);
+    }
+
+    /** Admin: Get all offers for management */
+    async findAllForAdmin(page = 1, limit = 20) {
+        const skip = (Number(page) - 1) * Number(limit);
+        const [offers, total] = await this.offerRepository.findAndCount({
+            relations: ['business', 'vendor', 'vendor.user'],
+            order: { createdAt: 'DESC' },
+            skip,
+            take: Number(limit),
+        });
+
+        return {
+            data: offers.map(o => this.computeStatus(o)),
+            meta: {
+                total,
+                page: Number(page),
+                limit: Number(limit),
+                totalPages: Math.ceil(total / Number(limit)),
+            },
+        };
     }
 }
 

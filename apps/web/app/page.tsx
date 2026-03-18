@@ -30,6 +30,7 @@ export default function HomePage() {
     const [categoriesList, setCategoriesList] = useState<Category[]>([]);
     const [citiesList, setCitiesList] = useState<City[]>([]);
     const [latestOffers, setLatestOffers] = useState<any[]>([]);
+    const [featuredOffers, setFeaturedOffers] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCity, setSelectedCity] = useState('');
     const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
@@ -68,7 +69,8 @@ export default function HomePage() {
                     api.categories.getAll(),
                     api.cities.getAll(),
                     api.comments.getPublic(1, 15),
-                    api.offers.search({ limit: 4 })
+                    api.offers.search({ limit: 4 }),
+                    api.offers.search({ isFeatured: true, limit: 4 })
                 ]);
 
                 const getValue = (result: PromiseSettledResult<any>, fallback: any) =>
@@ -81,6 +83,7 @@ export default function HomePage() {
                 const allCities = getValue(results[4], []);
                 const commentsData = getValue(results[5], { data: [] });
                 const offersData = getValue(results[6], { data: [] });
+                const featuredOffersData = getValue(results[7], { data: [] });
 
                 setCategories(cats || []);
                 setFeaturedBusinesses(featured?.data || []);
@@ -92,6 +95,7 @@ export default function HomePage() {
                 setCitiesList(allCities || []);
                 setStatsComments(commentsData?.data || []);
                 setLatestOffers(offersData?.data || []);
+                setFeaturedOffers(featuredOffersData?.data || []);
 
             } catch (err) {
                 console.error('CRITICAL: Unexpected error in loadInitialData:', err);
@@ -448,6 +452,48 @@ export default function HomePage() {
                     )}
                 </div>
             </section>
+
+            {/* Featured Deals Section */}
+            {featuredOffers.length > 0 && (
+                <section className="py-24 bg-white overflow-hidden relative">
+                    <div className="absolute top-0 right-0 w-1/3 h-full bg-orange-50/30 -skew-x-12 translate-x-1/2 pointer-events-none" />
+                    <div className="max-w-7xl mx-auto px-4 relative z-10">
+                        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
+                            <div>
+                                <div className="flex items-center gap-3 text-orange-600 font-black uppercase tracking-[0.3em] text-[10px] mb-4">
+                                    <Sparkles className="w-4 h-4" />
+                                    Premium Selection
+                                </div>
+                                <h2 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tighter leading-none">
+                                    Featured <span className="text-orange-500">Deals.</span>
+                                </h2>
+                            </div>
+                            <p className="max-w-md text-slate-500 font-bold text-lg leading-relaxed">
+                                Hand-picked exclusive offers and events from our top-tier verified vendors across Pakistan.
+                            </p>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                            {featuredOffers.map((offer, idx) => (
+                                <motion.div
+                                    key={offer.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: idx * 0.1 }}
+                                >
+                                    <OfferCard
+                                        offer={offer}
+                                        onEnquire={() => {
+                                            window.location.href = `/offers-events/${offer.id}`;
+                                        }}
+                                    />
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            )}
 
             {/* How It Works Section */}
             <section className="py-24 bg-white">

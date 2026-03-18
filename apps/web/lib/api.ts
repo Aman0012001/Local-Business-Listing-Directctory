@@ -493,6 +493,12 @@ export const api = {
         remove: (id: string) => fetcher<void>(`/offers/${id}`, {
             method: 'DELETE',
         }),
+        // Admin
+        adminGetAll: (page = 1, limit = 20) => fetcher<{ data: any[]; meta: any }>(`/offers/admin/all?page=${page}&limit=${limit}`),
+        adminToggleFeatured: (id: string, isFeatured: boolean) => fetcher(`/offers/admin/${id}/feature`, {
+            method: 'PATCH',
+            body: JSON.stringify({ isFeatured }),
+        }),
         getByBusiness: (businessId: string) =>
             fetcher<any[]>(`/offers/business/${businessId}/offers`),
         search: (params: Record<string, string | number | boolean | undefined | null>) => {

@@ -76,6 +76,10 @@ export class OfferEvent {
     @Column({ name: 'is_active', default: true })
     isActive: boolean;
 
+    @Column({ name: 'is_featured', default: false })
+    @Index()
+    isFeatured: boolean;
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 

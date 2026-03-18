@@ -4,9 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { Business, Category, City } from '@/types/api';
 import BusinessCard from '@/components/BusinessCard';
+import OfferCard from '@/components/OfferCard';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { LayoutGrid, List, Filter, ChevronRight, Star, ShieldCheck, Search, MapPin, Activity } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 
 interface CategoryDetailClientProps {
@@ -20,6 +22,8 @@ export default function CategoryDetailClient({ slug }: CategoryDetailClientProps
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [sortBy, setSortBy] = useState<string>('relevance');
+    const [categoryOffers, setCategoryOffers] = useState<any[]>([]);
+    const [offersLoading, setOffersLoading] = useState(false);
 
     const [error, setError] = useState<string | null>(null);
     const [filters, setFilters] = useState({
@@ -66,6 +70,20 @@ export default function CategoryDetailClient({ slug }: CategoryDetailClientProps
                 };
                 const searchRes = await api.listings.search(searchParams);
                 setBusinesses(searchRes.data);
+
+                // Load category offers
+                try {
+                    setOffersLoading(true);
+                    const offersRes = await api.offers.search({ 
+                        categoryId: catData.id,
+                        limit: 4 
+                    });
+                    setCategoryOffers(offersRes.data);
+                } catch (err) {
+                    console.error('Failed to load category offers:', err);
+                } finally {
+                    setOffersLoading(false);
+                }
             } catch (err: any) {
                 console.error('[CategoryDetail] Fetch error:', err);
                 setError(err.message || 'Failed to fetch data');
@@ -154,6 +172,37 @@ export default function CategoryDetailClient({ slug }: CategoryDetailClientProps
                     </div>
                 </div>
             </div>
+
+            {/* Category Specific Offers */}
+            <AnimatePresence>
+                {categoryOffers.length > 0 && (
+                    <div className="bg-slate-50 py-20 border-b border-slate-100">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex items-center gap-4 mb-12">
+                                <div className="h-px w-12 bg-orange-200" />
+                                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-orange-500">
+                                    Exclusive {category.name} Deals
+                                </h2>
+                            </div>
+                            
+                            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                                {categoryOffers.map((offer) => (
+                                    <motion.div
+                                        key={offer.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                    >
+                                        <OfferCard 
+                                            offer={offer} 
+                                            onEnquire={() => window.location.href = `/offers-events/${offer.id}`}
+                                        />
+                                    </motion.div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
                 <div className="flex flex-col lg:grid lg:grid-cols-12 gap-16">

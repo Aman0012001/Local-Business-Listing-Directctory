@@ -111,4 +111,26 @@ export class OffersController {
     findOnePublic(@Param('id') id: string) {
         return this.offersService.findOnePublic(id);
     }
+
+    // ─── Admin Endpoints ─────────────────────────────────────────────────────
+
+    @Get('admin/all')
+    @Roles(UserRole.ADMIN)
+    @ApiOperation({ summary: 'Get all offers for admin management' })
+    findAllAdmin(
+        @Query('page') page?: number,
+        @Query('limit') limit?: number,
+    ) {
+        return this.offersService.findAllForAdmin(page, limit);
+    }
+
+    @Patch('admin/:id/feature')
+    @Roles(UserRole.ADMIN)
+    @ApiOperation({ summary: 'Toggle featured status of an offer' })
+    toggleFeatured(
+        @Param('id') id: string,
+        @Body('isFeatured') isFeatured: boolean,
+    ) {
+        return this.offersService.toggleFeatured(id, isFeatured);
+    }
 }
