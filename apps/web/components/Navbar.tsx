@@ -131,9 +131,6 @@ export default function Navbar() {
                             <Link href="/" className="relative text-[#2D3E50] font-bold text-[15px] px-4 py-2 rounded-xl hover:bg-slate-50 transition-all hover:text-[#FF7A30]">
                                 Home
                             </Link>
-                            <Link href="/affiliate" className="relative text-[#2D3E50]/70 font-bold text-[15px] px-4 py-2 rounded-xl hover:bg-slate-50 transition-all hover:text-[#FF7A30]">
-                                Affiliate
-                            </Link>
 
                             {/* Categories Dropdown */}
                             <div

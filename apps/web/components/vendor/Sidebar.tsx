@@ -21,6 +21,7 @@ import {
     TrendingUp,
     BarChart,
     CreditCard,
+    Gift,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getImageUrl, api } from '../../lib/api';
@@ -55,6 +56,7 @@ export default function Sidebar() {
         { name: 'Subscription & Billing', icon: CreditCard, href: '/vendor/subscription', badge: null },
         { name: 'Broadcast Feed', icon: Megaphone, href: '/vendor/broadcasts', badge: 'New' },
         { name: 'Notifications', icon: Bell, href: '/vendor/notifications', badge: null },
+        { name: 'Affiliate', icon: Gift, href: '/vendor/affiliate', badge: 'Rewards' },
         { name: 'Settings', icon: Settings, href: '/vendor/settings', badge: null },
     ];
 

@@ -1,62 +1,95 @@
+"use client";
+
 import React from 'react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import JobPostForm from '../../components/leads/BroadcastRequestForm';
+import BroadcastRequestForm from '../../components/leads/BroadcastRequestForm';
+import { Megaphone, Sparkles, CheckCircle2, Zap, Target } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function BroadcastsPage() {
     return (
-        <main className="min-h-screen bg-slate-50">
+        <main className="min-h-screen bg-[#FDFDFF]">
             <Navbar />
             
-            <div className="max-w-4xl mx-auto px-4 py-16 md:py-24">
-                <div className="text-center mb-16 animate-in fade-in slide-in-from-top-4 duration-700">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-4">
-                        <Megaphone className="w-3 h-3" /> Real-time Matching
-                    </div>
-                    <h1 className="text-5xl md:text-7xl font-black text-slate-900 mb-6 tracking-tight leading-[0.95]">
-                        Broadcast Your <span className="text-blue-600">Request.</span>
-                    </h1>
-                    <p className="text-lg text-slate-500 font-medium max-w-2xl mx-auto leading-relaxed">
-                        Need a pro in a hurry? Send a live broadcast to nearby qualified experts and get instant responses with real quotes.
-                    </p>
+            {/* Animated Background Elements */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-100/30 blur-[120px] rounded-full" />
+                <div className="absolute bottom-[20%] right-[-5%] w-[30%] h-[30%] bg-orange-50/50 blur-[100px] rounded-full" />
+            </div>
+
+            <div className="max-w-6xl mx-auto px-4 py-20 md:py-32">
+                <div className="text-center mb-24 relative">
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                        className="inline-flex items-center gap-3 px-5 py-2 bg-white border border-slate-100 shadow-sm text-blue-600 rounded-full text-[10px] font-black uppercase tracking-[0.3em] mb-10"
+                    >
+                        <Zap className="w-4 h-4 fill-blue-600" /> Advanced Neural Matching
+                    </motion.div>
+                    
+                    <motion.h1 
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.1 }}
+                        className="text-6xl md:text-[110px] font-black text-slate-900 mb-10 tracking-tight leading-[0.85]"
+                    >
+                        Beam Your <span className="text-blue-600">Signal.</span>
+                    </motion.h1>
+                    
+                    <motion.p 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.2 }}
+                        className="text-xl md:text-2xl text-slate-500 font-medium max-w-2xl mx-auto leading-relaxed"
+                    >
+                        Connect with top-tier local experts instantly. Our real-time broadcast system handles the search so you don't have to.
+                    </motion.p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-                    <div className="bg-white p-8 rounded-[32px] border-2 border-slate-50 shadow-sm transition-all hover:shadow-xl hover:scale-[1.02]">
-                        <div className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center font-black text-lg mb-6 shadow-lg shadow-blue-200">
-                            1
-                        </div>
-                        <h3 className="font-black text-slate-900 mb-2 tracking-tight">Details</h3>
-                        <p className="text-sm text-slate-400 font-bold leading-relaxed">Tell us what you need and share your location for precision matching.</p>
-                    </div>
-                    <div className="bg-white p-8 rounded-[32px] border-2 border-slate-50 shadow-sm transition-all hover:shadow-xl hover:scale-[1.02]">
-                        <div className="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center font-black text-lg mb-6 shadow-lg shadow-emerald-200">
-                            2
-                        </div>
-                        <h3 className="font-black text-slate-900 mb-2 tracking-tight">Broadcast</h3>
-                        <p className="text-sm text-slate-400 font-bold leading-relaxed">We beam your request to the top verified experts in your immediate area.</p>
-                    </div>
-                    <div className="bg-white p-8 rounded-[32px] border-2 border-slate-50 shadow-sm transition-all hover:shadow-xl hover:scale-[1.02]">
-                        <div className="w-12 h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center font-black text-lg mb-6 shadow-lg shadow-slate-200">
-                            3
-                        </div>
-                        <h3 className="font-black text-slate-900 mb-2 tracking-tight">Connect</h3>
-                        <p className="text-sm text-slate-400 font-bold leading-relaxed">Compare quotes and choose the expert that fits your needs best.</p>
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-32">
+                    {[
+                        { step: "01", title: "Define Need", desc: "Tell us exactly what service you're looking for.", icon: Target, color: "blue" },
+                        { step: "02", title: "Broadcast Live", desc: "We ping verified experts in your immediate radius.", icon: Megaphone, color: "orange" },
+                        { step: "03", title: "Instant Quotes", desc: "Compare responses and hire the perfect professional.", icon: CheckCircle2, color: "emerald" },
+                    ].map((item, idx) => (
+                        <motion.div 
+                            key={idx}
+                            initial={{ opacity: 0, y: 40 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.5, delay: idx * 0.1 }}
+                            className="group bg-white p-12 rounded-[48px] border-2 border-slate-50 shadow-xl shadow-slate-200/20 transition-all hover:shadow-2xl hover:border-blue-100 relative overflow-hidden"
+                        >
+                            <div className={`w-16 h-16 bg-${item.color}-500 text-white rounded-[24px] flex items-center justify-center font-black text-xl mb-10 shadow-lg shadow-${item.color}-200 relative z-10`}>
+                                <item.icon className="w-8 h-8" />
+                            </div>
+                            <h3 className="text-2xl font-black text-slate-900 mb-4 tracking-tight relative z-10">{item.title}</h3>
+                            <p className="text-slate-400 font-bold leading-relaxed relative z-10">{item.desc}</p>
+                            <span className="absolute top-8 right-12 text-7xl font-black text-slate-50 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
+                                {item.step}
+                            </span>
+                        </motion.div>
+                    ))}
                 </div>
 
-                <div className="max-w-3xl mx-auto bg-white p-10 rounded-[40px] border-2 border-slate-50 shadow-2xl shadow-slate-200/50">
-                    <JobPostForm />
-                </div>
+                <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    className="max-w-4xl mx-auto bg-white/70 backdrop-blur-3xl p-4 md:p-12 rounded-[64px] border border-white shadow-[0_64px_128px_-32px_rgba(0,0,0,0.08)] relative"
+                >
+                    <div className="absolute -top-12 -left-12 w-32 h-32 bg-blue-600 rounded-full blur-[70px] opacity-10" />
+                    <div className="absolute -bottom-12 -right-12 w-32 h-32 bg-orange-600 rounded-full blur-[70px] opacity-10" />
+                    
+                    <div className="relative">
+                        <BroadcastRequestForm />
+                    </div>
+                </motion.div>
             </div>
 
             <Footer />
         </main>
     );
 }
-
-const Megaphone = ({ className }: { className?: string }) => (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
-    </svg>
-);

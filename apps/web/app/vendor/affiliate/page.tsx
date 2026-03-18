@@ -7,10 +7,8 @@ import {
     Gift, Timer, AlertCircle, ChevronRight, Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { api } from '../../lib/api';
-import { useAuth } from '../../context/AuthContext';
-import Navbar from '../../components/Navbar';
-import Footer from '../../components/Footer';
+import { api } from '../../../lib/api';
+import { useAuth } from '../../../context/AuthContext';
 
 export default function AffiliateDashboard() {
     const { user } = useAuth();
@@ -114,11 +112,8 @@ export default function AffiliateDashboard() {
 
     if (loading && user) {
         return (
-            <div className="min-h-screen bg-slate-50">
-                <Navbar />
-                <div className="flex items-center justify-center py-20">
-                    <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
-                </div>
+            <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
             </div>
         );
     }
@@ -126,9 +121,7 @@ export default function AffiliateDashboard() {
 
     if (!stats && !loading) {
         return (
-            <div className="min-h-screen bg-white">
-                <Navbar />
-                <main className="max-w-4xl mx-auto px-4 py-20 text-center">
+            <main className="max-w-4xl mx-auto px-4 py-20 text-center">
                     <div className="w-24 h-24 bg-orange-50 rounded-[28px] flex items-center justify-center mx-auto mb-8">
                         <Gift className="w-12 h-12 text-orange-500" />
                     </div>
@@ -165,18 +158,14 @@ export default function AffiliateDashboard() {
                             </div>
                             <h3 className="font-black text-slate-900 mb-2">3. Get Paid</h3>
                             <p className="text-sm text-slate-500 font-medium">Earn credit directly into your wallet for every conversion.</p>
-                        </div>
                     </div>
-                </main>
-                <Footer />
-            </div>
+                </div>
+            </main>
         );
     }
 
     return (
-        <div className="min-h-screen bg-slate-50">
-            <Navbar />
-            <main className="max-w-7xl mx-auto px-4 py-12">
+        <div className="max-w-7xl mx-auto px-4 py-12">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
                     <div>
                         <div className="flex items-center gap-2 mb-4">
@@ -317,9 +306,7 @@ export default function AffiliateDashboard() {
                             <button className="px-6 py-3 bg-white text-blue-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-50 transition-all relative z-10 shadow-lg">Contact Support</button>
                         </div>
                     </div>
-                </div>
-
-                {/* Payout Modal */}
+                </div>                {/* Payout Modal */}
                 <AnimatePresence>
                     {showPayoutModal && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -400,8 +387,6 @@ export default function AffiliateDashboard() {
                         </div>
                     )}
                 </AnimatePresence>
-            </main>
-            <Footer />
         </div>
     );
 }
