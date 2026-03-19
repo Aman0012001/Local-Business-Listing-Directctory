@@ -18,6 +18,7 @@ export default function AffiliateDashboard() {
     const [settings, setSettings] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [joining, setJoining] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
     const [copySuccess, setCopySuccess] = useState(false);
 
     // Payout Form State
@@ -28,6 +29,7 @@ export default function AffiliateDashboard() {
     const [submittingPayout, setSubmittingPayout] = useState(false);
 
     useEffect(() => {
+        setIsMounted(true);
         if (user) {
             loadData();
         }
@@ -103,7 +105,7 @@ export default function AffiliateDashboard() {
     };
 
     const copyLink = () => {
-        if (!stats?.referralCode) return;
+        if (!isMounted || !stats?.referralCode) return;
         const link = `${window.location.origin}/?ref=${stats.referralCode}`;
         navigator.clipboard.writeText(link);
         setCopySuccess(true);
@@ -178,7 +180,7 @@ export default function AffiliateDashboard() {
 
                     <div className="p-1 bg-white rounded-2xl border border-slate-200 flex gap-2 w-full md:w-[450px]">
                         <div className="flex-1 px-4 py-3 text-sm font-bold text-slate-500 truncate">
-                            {typeof window !== 'undefined' ? `${window.location.origin}/?ref=${stats?.referralCode}` : ''}
+                            {isMounted && stats?.referralCode ? `${window.location.origin}/?ref=${stats.referralCode}` : 'Loading link...'}
                         </div>
                         <button
                             onClick={copyLink}

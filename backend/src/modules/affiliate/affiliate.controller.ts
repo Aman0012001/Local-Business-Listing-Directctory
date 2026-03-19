@@ -93,6 +93,20 @@ export class AffiliateController {
         return this.affiliateService.adminGetAllAffiliates();
     }
 
+    @Get('settings')
+    @ApiOperation({ summary: 'Get affiliate program settings' })
+    async getSettings() {
+        return this.affiliateService.getSettings();
+    }
+
+    @Get('admin/settings')
+    @UseGuards(RolesGuard)
+    @Roles(UserRole.SUPERADMIN, UserRole.ADMIN)
+    @ApiOperation({ summary: 'Admin: Get affiliate program settings' })
+    async adminGetSettings() {
+        return this.affiliateService.getSettings();
+    }
+
     @Patch('admin/settings')
     @UseGuards(RolesGuard)
     @Roles(UserRole.SUPERADMIN, UserRole.ADMIN)

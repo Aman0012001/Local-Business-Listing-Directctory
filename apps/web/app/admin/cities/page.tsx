@@ -7,7 +7,7 @@ import {
     CheckCircle2, Navigation, MapIcon, AlertTriangle,
     Eye, EyeOff, Download, ChevronDown, Globe2
 } from 'lucide-react';
-import { api } from '../../../lib/api';
+import { api, getImageUrl } from '../../../lib/api';
 import { City } from '../../../types/api';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -57,6 +57,7 @@ export default function AdminCitiesPage() {
         description: '',
         isPopular: false,
         displayOrder: 0,
+        heroImageUrl: '',
     });
 
     const fetchCities = useCallback(async () => {
@@ -123,6 +124,21 @@ export default function AdminCitiesPage() {
             setGoogleImportData({ isPopular: false, displayOrder: 0 });
         } catch (err: any) {
             alert(err.message || 'Failed to import city');
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setActionLoading('upload');
+        try {
+            const response = await api.listings.uploadImage(file);
+            setFormData(prev => ({ ...prev, heroImageUrl: response.url }));
+        } catch (err: any) {
+            alert(err.message || 'Failed to upload image');
         } finally {
             setActionLoading(null);
         }
@@ -209,12 +225,13 @@ export default function AdminCitiesPage() {
             description: city.description || '',
             isPopular: city.isPopular || false,
             displayOrder: city.displayOrder || 0,
+            heroImageUrl: city.heroImageUrl || '',
         });
         setIsEditModalOpen(true);
     };
 
     const resetForm = () => {
-        setFormData({ name: '', state: '', country: 'Pakistan', description: '', isPopular: false, displayOrder: 0 });
+        setFormData({ name: '', state: '', country: 'Pakistan', description: '', isPopular: false, displayOrder: 0, heroImageUrl: '' });
         setSelectedCity(null);
     };
 
@@ -325,7 +342,7 @@ export default function AdminCitiesPage() {
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-inner overflow-hidden flex-shrink-0">
                                                         {city.heroImageUrl ? (
-                                                            <img src={city.heroImageUrl} className="w-full h-full object-cover" alt="" />
+                                                            <img src={getImageUrl(city.heroImageUrl) || ""} className="w-full h-full object-cover" alt="" />
                                                         ) : (
                                                             <Building2 className="w-6 h-6" />
                                                         )}
@@ -626,6 +643,39 @@ export default function AdminCitiesPage() {
                                         value={formData.name}
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
                                         className="w-full h-14 px-5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-slate-100 font-bold transition-all" />
+                                </div>
+
+                                {/* Hero Image Upload */}
+                                <div className="space-y-4">
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">City Image</label>
+                                    <div className="flex gap-4 items-start">
+                                        {formData.heroImageUrl && (
+                                            <div className="relative w-32 h-32 rounded-2xl overflow-hidden border-2 border-slate-100 flex-shrink-0 group">
+                                                <img 
+                                                    src={getImageUrl(formData.heroImageUrl) || ""} 
+                                                    className="w-full h-full object-cover" 
+                                                    alt="Preview" 
+                                                />
+                                                <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                                                    <RefreshCw className="w-5 h-5 text-white" />
+                                                    <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                                                </label>
+                                            </div>
+                                        )}
+                                        <label className={`flex-1 flex flex-col items-center justify-center h-32 border-2 border-dashed rounded-2xl transition-all cursor-pointer ${formData.heroImageUrl ? 'bg-slate-50/50 border-slate-200' : 'bg-slate-50 hover:bg-slate-100 border-slate-200 hover:border-slate-300'}`}>
+                                            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                                            {actionLoading === 'upload' ? (
+                                                <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+                                            ) : (
+                                                <div className="flex flex-col items-center gap-2 text-slate-400">
+                                                    <Plus className="w-6 h-6" />
+                                                    <p className="text-[10px] font-black uppercase tracking-wider">
+                                                        {formData.heroImageUrl ? 'Change Image' : 'Upload City Image'}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </label>
+                                    </div>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">

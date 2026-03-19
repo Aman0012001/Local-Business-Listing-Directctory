@@ -374,3 +374,23 @@ Details: {"query":"SELECT COUNT(DISTINCT(\"listing\".\"id\")) AS \"cnt\" FROM \"
 [2026-03-18T08:52:49.321Z] NotificationsService Constructor Called
 [2026-03-18T08:53:00.325Z] NotificationsService Constructor Called
 [2026-03-18T09:19:50.245Z] NotificationsService Constructor Called
+[2026-03-18T15:15:03.306Z] NotificationsService Constructor Called
+[2026-03-18T15:24:46.434Z] NotificationsService Constructor Called
+[2026-03-18T15:25:08.881Z] NotificationsService Constructor Called
+[2026-03-18T15:39:38.916Z] NotificationsService Constructor Called
+[2026-03-18T15:40:47.092Z] NotificationsService Constructor Called
+[2026-03-18T15:41:12.005Z] NotificationsService Constructor Called
+[2026-03-18T15:45:52.573Z] NotificationsService Constructor Called
+[2026-03-18T16:23:27.321Z] NotificationsService Constructor Called
+[2026-03-18T16:23:36.258Z] NotificationsService Constructor Called
+[2026-03-18T16:26:54.349Z] NotificationsService Constructor Called
+[2026-03-19T03:08:56.927Z] NotificationsService Constructor Called
+[2026-03-19T07:33:13.945Z] findAllForUser ERROR for user 832842d8-6ffb-4251-a662-6c66ff5ed496: Connection terminated unexpectedly
+Stack: QueryFailedError: Connection terminated unexpectedly
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3614:26)
+    at async SelectQueryBuilder.getManyAndCount (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1874:36)
+    at async NotificationsService.findAllForUser (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\notifications\notifications.service.ts:108:44)
+    at async NotificationsController.findAll (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\notifications\notifications.controller.ts:24:28)

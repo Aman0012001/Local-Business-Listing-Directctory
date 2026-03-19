@@ -81,7 +81,7 @@ export class AffiliateService {
             where: { user: { id: userId } },
         });
 
-        if (!affiliate) throw new NotFoundException('Affiliate not found');
+        if (!affiliate) return [];
 
         return this.referralRepository.find({
             where: { affiliateId: affiliate.id },
@@ -128,7 +128,7 @@ export class AffiliateService {
             where: { user: { id: userId } },
         });
 
-        if (!affiliate) throw new NotFoundException('Affiliate not found');
+        if (!affiliate) return [];
 
         return this.payoutRepository.find({
             where: { affiliateId: affiliate.id },

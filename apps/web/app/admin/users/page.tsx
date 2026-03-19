@@ -320,11 +320,12 @@ export default function AdminUsersPage() {
                                                     className="absolute right-0 top-11 z-50 bg-white rounded-2xl shadow-2xl shadow-slate-900/10 border border-slate-100 py-2 w-52 overflow-hidden"
                                                 >
                                                     <button
-                                                        onClick={() => handleDelete(user.id)}
-                                                        className="flex items-center gap-3 w-full px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors"
+                                                        onClick={() => toggleStatus(user.id, user.isActive)}
+                                                        className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-bold transition-colors ${user.isActive ? 'text-red-600 hover:bg-red-50' : 'text-emerald-600 hover:bg-emerald-50'
+                                                            }`}
                                                     >
-                                                        <Trash2 className="w-4 h-4" />
-                                                        Delete User
+                                                        {user.isActive ? <ShieldOff className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
+                                                        {user.isActive ? 'Block User' : 'Unblock User'}
                                                     </button>
                                                 </motion.div>
                                             )}

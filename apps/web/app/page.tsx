@@ -601,7 +601,7 @@ export default function HomePage() {
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
-                        {popularCities.slice(0, 5).map((city, idx) => (
+                        {popularCities.slice(0, 10).map((city, idx) => (
                             <motion.div
                                 key={city.id}
                                 initial={{ opacity: 0, scale: 0.9 }}
@@ -611,7 +611,7 @@ export default function HomePage() {
                             >
                                 <Link href={`/search?city=${city.name}`} className="relative h-48 rounded-2xl overflow-hidden block group shadow-lg">
                                     <img
-                                        src={getImageUrl(city.imageUrl) || 'https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&q=80&w=400'}
+                                        src={getImageUrl(city.heroImageUrl || city.imageUrl) || 'https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&q=80&w=400'}
                                         alt={city.name}
                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 brightness-75 group-hover:brightness-90"
                                     />

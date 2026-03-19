@@ -67,6 +67,11 @@ async function bootstrap() {
             const isAllowed = allowedOrigins.some((allowed) => {
                 if (allowed === '*') return true;
                 if (allowed === origin) return true;
+                
+                // Allow all local development origins dynamically
+                if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+                    return true;
+                }
 
                 if (
                     allowed.includes('up.railway.app') &&
