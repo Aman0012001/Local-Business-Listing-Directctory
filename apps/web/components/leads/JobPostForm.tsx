@@ -47,7 +47,7 @@ export default function JobPostForm({ onSuccess }: JobPostFormProps) {
         setError(null);
 
         try {
-            await api.jobLeads.create({
+            await api.broadcasts.create({
                 ...formData,
                 budget: formData.budget ? parseFloat(formData.budget) : undefined,
             });

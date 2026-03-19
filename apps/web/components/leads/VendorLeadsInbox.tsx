@@ -21,7 +21,7 @@ export default function VendorLeadsInbox() {
     const fetchLeads = async () => {
         try {
             setLoading(true);
-            const data = await api.jobLeads.getVendorInbox();
+            const data = await api.broadcasts.getVendorInbox();
             setLeads(data);
         } catch (err: any) {
             setError(err.message || 'Failed to fetch leads');
@@ -36,7 +36,7 @@ export default function VendorLeadsInbox() {
 
         setSubmitting(true);
         try {
-            await api.jobLeads.respond(selectedLead.id, {
+            await api.broadcasts.respond(selectedLead.id, {
                 message: responseMessage,
                 price: responsePrice ? parseFloat(responsePrice) : undefined,
             });
