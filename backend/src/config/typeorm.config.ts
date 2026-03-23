@@ -2,20 +2,18 @@ import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 const sharedPoolOptions = {
-    // Pool size: keep it moderate for a remote DB
-    max: 15,
+    // Moderate pool size to avoid hitting remote DB connection limits
+    max: 10,
     min: 2,
-    // Kill idle connections after 30s to avoid hitting remote DB limits
+    // Idle timeout: keep it low (30s) to free up remote resources
     idleTimeoutMillis: 30000,
-    // Wait up to 30s for a free connection from the pool (increased from 10s)
+    // Connection timeout: increased to 30s to allow for network latency
     connectionTimeoutMillis: 30000,
-    // TCP keepalive: prevents connections from being silently dropped by the remote server
-    keepAlives: 1,
-    keepAlivesIdle: 30,
-    keepAlivesInterval: 5,
-    keepAlivesCount: 5,
-    // Automatically re-establish connections that have been closed by the server
-    allowExitOnIdle: false,
+    // Fail fast on initial connection attempts (routing/ENETUNREACH)
+    connectTimeout: 10000,
+    // TCP keepalive: prevents connections from being silently dropped
+    keepAlives: true,
+    application_name: 'listings_local_dev',
 };
 
 export const typeOrmConfig = (

@@ -1,4 +1,4 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Inject, forwardRef, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Notification } from '../../entities/notification.entity';
@@ -17,6 +17,8 @@ export interface CreateNotificationDto {
 
 @Injectable()
 export class NotificationsService {
+    private readonly logger = new Logger(NotificationsService.name);
+
     constructor(
         @InjectRepository(Notification)
         private notificationRepo: Repository<Notification>,
@@ -113,13 +115,16 @@ export class NotificationsService {
             const unreadCount = notifications.filter(n => !n.isRead).length;
             return { notifications, total, unreadCount };
         } catch (error) {
+            // Log the error but return empty data to prevent 500 crashes during network instability
             try {
                 const fs = require('fs');
                 const path = require('path');
                 const logPath = path.join(process.cwd(), 'permanent_error_log.txt');
-                fs.appendFileSync(logPath, `[${new Date().toISOString()}] findAllForUser ERROR for user ${userId}: ${error.message}\nStack: ${error.stack}\n`);
+                fs.appendFileSync(logPath, `[${new Date().toISOString()}] findAllForUser FALLBACK for user ${userId}: ${error.message}\n`);
             } catch (e) {}
-            throw error;
+            
+            this.logger.error(`Database connection error in findAllForUser: ${error.message}`);
+            return { notifications: [], total: 0, unreadCount: 0 };
         }
     }
 
