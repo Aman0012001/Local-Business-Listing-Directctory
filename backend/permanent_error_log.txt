@@ -394,3 +394,4 @@ Stack: QueryFailedError: Connection terminated unexpectedly
     at async SelectQueryBuilder.getManyAndCount (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1874:36)
     at async NotificationsService.findAllForUser (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\notifications\notifications.service.ts:108:44)
     at async NotificationsController.findAll (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\notifications\notifications.controller.ts:24:28)
+[2026-03-23T07:18:00.608Z] NotificationsService Constructor Called
