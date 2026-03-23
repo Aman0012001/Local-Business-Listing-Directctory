@@ -3,7 +3,7 @@
 import React from 'react';
 import { JobLead } from '../../types/api';
 import { formatDistanceToNow } from 'date-fns';
-import { MapPin, Clock, DollarSign, Megaphone, Send, User } from 'lucide-react';
+import { MapPin, Clock, DollarSign, Megaphone, Send, User, CheckCircle2 } from 'lucide-react';
 
 interface BroadcastCardProps {
     lead: JobLead;
@@ -93,15 +93,14 @@ export default function BroadcastCard({ lead, onRespond }: BroadcastCardProps) {
                 </div>
                 <button
                     onClick={() => onRespond(lead)}
-                    disabled={lead.hasResponded}
                     className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-black text-xs transition-all active:scale-95 shadow-lg ${
                         lead.hasResponded 
-                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none' 
+                        ? 'bg-slate-50 text-slate-600 hover:bg-slate-100 shadow-none' 
                         : 'bg-slate-900 text-white hover:bg-blue-600 shadow-slate-200'
                     }`}
                 >
-                    <span>{lead.hasResponded ? 'Response Sent' : 'Send Proposal'}</span>
-                    {!lead.hasResponded && <Send className="w-3.5 h-3.5" />}
+                    <span>{lead.hasResponded ? 'View Proposal' : 'Send Proposal'}</span>
+                    {!lead.hasResponded ? <Send className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
                 </button>
             </div>
         </div>

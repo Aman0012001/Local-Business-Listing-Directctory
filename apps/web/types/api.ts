@@ -194,6 +194,7 @@ export interface JobLead {
         email: string;
         phone?: string;
     };
+    myResponse?: JobLeadResponse;
 }
 
 export interface JobLeadResponse {

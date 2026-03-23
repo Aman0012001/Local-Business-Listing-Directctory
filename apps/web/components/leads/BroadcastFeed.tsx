@@ -19,6 +19,16 @@ export default function BroadcastFeed() {
         fetchLeads();
     }, []);
 
+    useEffect(() => {
+        if (selectedLead?.myResponse) {
+            setResponseMessage(selectedLead.myResponse.message);
+            setResponsePrice(selectedLead.myResponse.price?.toString() || '');
+        } else {
+            setResponseMessage('');
+            setResponsePrice('');
+        }
+    }, [selectedLead]);
+
     const fetchLeads = async () => {
         try {
             setLoading(true);
@@ -180,15 +190,17 @@ export default function BroadcastFeed() {
 
                             <button
                                 type="submit"
-                                disabled={submitting}
+                                disabled={submitting || selectedLead.hasResponded}
                                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-6 rounded-3xl transition-all flex items-center justify-center gap-3 shadow-2xl shadow-blue-500/20 active:scale-[0.98] disabled:opacity-50"
                             >
                                 {submitting ? (
                                     <Loader2 className="w-6 h-6 animate-spin" />
                                 ) : (
                                     <>
-                                        <span className="uppercase tracking-[0.2em] text-sm">Send Proposal Now</span>
-                                        <Send className="w-5 h-5" />
+                                        <span className="uppercase tracking-[0.2em] text-sm">
+                                            {selectedLead.hasResponded ? 'Proposal Already Sent' : 'Send Proposal Now'}
+                                        </span>
+                                        {selectedLead.hasResponded ? <CheckCircle2 className="w-5 h-5" /> : <Send className="w-5 h-5" />}
                                     </>
                                 )}
                             </button>

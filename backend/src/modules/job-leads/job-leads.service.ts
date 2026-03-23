@@ -175,14 +175,15 @@ export class JobLeadsService {
 
             const leads = await query.orderBy('lead.createdAt', 'DESC').getMany();
             
-            // Map to include hasResponded virtual flag
+            // Map to include hasResponded virtual flag and the vendor's response
             const leadsWithFlag = leads.map(lead => {
-                const hasResponded = lead.responses && lead.responses.length > 0;
+                const myResponse = lead.responses && lead.responses.length > 0 ? lead.responses[0] : null;
                 // Delete responses to keep payload light
                 delete lead.responses;
                 return {
                     ...lead,
-                    hasResponded
+                    hasResponded: !!myResponse,
+                    myResponse
                 };
             });
 
