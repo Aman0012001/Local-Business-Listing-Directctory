@@ -35,20 +35,49 @@ export default function BroadcastFeed() {
         e.preventDefault();
         if (!selectedLead) return;
 
+        // Final guard against already responded
+        if (selectedLead.hasResponded) {
+            alert('You have already responded to this lead.');
+            setSelectedLead(null);
+            return;
+        }
+
         setSubmitting(true);
         const priceValue = parseFloat(responsePrice);
+        const leadId = selectedLead.id;
+
         try {
-            await api.broadcasts.respond(selectedLead.id, {
+            await api.broadcasts.respond(leadId, {
                 message: responseMessage,
                 price: !isNaN(priceValue) ? priceValue : undefined,
             });
+            
+            // Optimistically update local state to reflect the response
+            setLeads(currentLeads => 
+                currentLeads.map(l => 
+                    l.id === leadId ? { ...l, hasResponded: true } : l
+                )
+            );
+
             setSelectedLead(null);
             setResponseMessage('');
             setResponsePrice('');
+            // Optional: fetchLeads() in background to stay in sync with server counts
             fetchLeads();
         } catch (err: any) {
             console.error('Response submission failed:', err);
-            alert(err.message || 'Failed to send response. Please check your connection and try again.');
+            // Check if backend already had this response
+            if (err.message && String(err.message).includes('Already responded')) {
+                setLeads(currentLeads => 
+                    currentLeads.map(l => 
+                        l.id === leadId ? { ...l, hasResponded: true } : l
+                    )
+                );
+                alert('You have already responded to this lead.');
+                setSelectedLead(null);
+            } else {
+                alert(err.message || 'Failed to send response. Please check your connection and try again.');
+            }
         } finally {
             setSubmitting(false);
         }
