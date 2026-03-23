@@ -22,6 +22,8 @@ import {
     BarChart,
     CreditCard,
     Gift,
+    UserPlus,
+    Zap,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getImageUrl, api } from '../../lib/api';
@@ -50,12 +52,12 @@ export default function Sidebar() {
         { name: 'Reviews', icon: Star, href: '/vendor/comments', badge: null },
         { name: 'Analytics', icon: BarChart, href: '/vendor/analytics', badge: null },
         { name: 'Saved', icon: Heart, href: '/vendor/saved', badge: null },
-        { name: 'Following', icon: Bell, href: '/vendor/following', badge: null },
+        { name: 'Following', icon: UserPlus, href: '/vendor/following', badge: null },
         { name: 'Queries', icon: Send, href: '/vendor/messages', badge: newEnquiryCount > 0 ? String(newEnquiryCount) : null },
         { name: 'Demand Insights', icon: TrendingUp, href: '/vendor/demand', badge: null },
         { name: 'Subscription & Billing', icon: CreditCard, href: '/vendor/subscription', badge: null },
         { name: 'Broadcast Feed', icon: Megaphone, href: '/vendor/broadcasts', badge: 'New' },
-        { name: 'My Broadcasts', icon: Megaphone, href: '/vendor/my-broadcasts', badge: null },
+        { name: 'My Broadcasts', icon: Zap, href: '/vendor/my-broadcasts', badge: null },
         { name: 'Notifications', icon: Bell, href: '/vendor/notifications', badge: null },
         { name: 'Affiliate', icon: Gift, href: '/vendor/affiliate', badge: 'Rewards' },
         { name: 'Settings', icon: Settings, href: '/vendor/settings', badge: null },

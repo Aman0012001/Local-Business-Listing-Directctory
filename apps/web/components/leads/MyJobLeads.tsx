@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import { JobLead, JobLeadResponse } from '../../types/api';
 import { formatDistanceToNow } from 'date-fns';
-import { Megaphone, MessageSquare, CheckCircle2, Clock, MapPin, Phone, User, ArrowRight, Loader2 } from 'lucide-react';
+import { Megaphone, MessageSquare, CheckCircle2, Clock, MapPin, Phone, User, ArrowRight, Loader2, Zap } from 'lucide-react';
 
 export default function MyJobLeads() {
     const [leads, setLeads] = useState<JobLead[]>([]);
@@ -39,7 +39,7 @@ export default function MyJobLeads() {
             <div className="flex justify-between items-center px-2">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
-                        <Megaphone className="w-5 h-5" />
+                        <Zap className="w-5 h-5" />
                     </div>
                     <div>
                         <h2 className="text-2xl font-black text-slate-900 tracking-tight">My Broadcasts</h2>
