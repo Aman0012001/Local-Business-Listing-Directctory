@@ -47,7 +47,8 @@ export default function BroadcastFeed() {
             setResponsePrice('');
             fetchLeads();
         } catch (err: any) {
-            alert(err.message || 'Failed to send response');
+            console.error('Response submission failed:', err);
+            alert(err.message || 'Failed to send response. Please check your connection and try again.');
         } finally {
             setSubmitting(false);
         }

@@ -60,7 +60,7 @@ async function fetcher<T>(endpoint: string, options?: FetcherOptions): Promise<T
                     window.location.href = '/login?error=expired';
                 }
             } else {
-                console.error(`[api.ts] API Error on ${endpoint}:`, response.status, response.statusText, error);
+                console.error(`[api.ts] API Error on ${endpoint}:`, response.status, response.statusText, JSON.stringify(error, null, 2));
             }
 
             if (options?.silent && response.status === 404) {

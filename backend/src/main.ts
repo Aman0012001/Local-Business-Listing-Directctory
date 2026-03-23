@@ -8,6 +8,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { Reflector } from '@nestjs/core';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import helmet from 'helmet';
 import * as compression from 'compression';
 
@@ -119,6 +120,8 @@ async function bootstrap() {
             },
         }),
     );
+
+    app.useGlobalFilters(new HttpExceptionFilter());
 
     /**
      * -----------------------
