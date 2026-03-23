@@ -187,6 +187,7 @@ export interface JobLead {
     longitude?: number;
     createdAt: string;
     responses?: JobLeadResponse[];
+    hasResponded?: boolean;
 }
 
 export interface JobLeadResponse {

@@ -55,17 +55,22 @@ export default function BroadcastCard({ lead, onRespond }: BroadcastCardProps) {
 
             <div className="flex items-center justify-between pt-4 border-t border-slate-50">
                 <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${lead.status === 'open' ? 'bg-emerald-500 animate-pulse' : 'bg-blue-500'}`} />
+                    <div className={`w-2 h-2 rounded-full ${lead.hasResponded ? 'bg-indigo-500' : lead.status === 'open' ? 'bg-emerald-500 animate-pulse' : 'bg-blue-500'}`} />
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                        {lead.status === 'open' ? 'Live Broadcast' : lead.status}
+                        {lead.hasResponded ? 'Proposal Sent' : lead.status === 'open' ? 'Live Broadcast' : lead.status}
                     </span>
                 </div>
                 <button
                     onClick={() => onRespond(lead)}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-xl font-black text-xs hover:bg-blue-600 transition-all active:scale-95 shadow-lg shadow-slate-200"
+                    disabled={lead.hasResponded}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-black text-xs transition-all active:scale-95 shadow-lg ${
+                        lead.hasResponded 
+                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none' 
+                        : 'bg-slate-900 text-white hover:bg-blue-600 shadow-slate-200'
+                    }`}
                 >
-                    <span>Send Proposal</span>
-                    <Send className="w-3.5 h-3.5" />
+                    <span>{lead.hasResponded ? 'Response Sent' : 'Send Proposal'}</span>
+                    {!lead.hasResponded && <Send className="w-3.5 h-3.5" />}
                 </button>
             </div>
         </div>

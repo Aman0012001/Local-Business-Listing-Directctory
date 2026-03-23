@@ -162,6 +162,7 @@ export class JobLeadsService {
             const query = this.jobLeadRepository
                 .createQueryBuilder('lead')
                 .leftJoinAndSelect('lead.category', 'category')
+                .leftJoinAndSelect('lead.responses', 'responses', 'responses.vendorId = :vendorId', { vendorId: vendor.id })
                 .where('lead.categoryId IN (:...categoryIds)', { categoryIds })
                 .andWhere('lead.status IN (:...statuses)', { 
                     statuses: [JobLeadStatus.OPEN, JobLeadStatus.BROADCASTED, JobLeadStatus.RESPONDED] 
@@ -172,8 +173,20 @@ export class JobLeadsService {
             }
 
             const leads = await query.orderBy('lead.createdAt', 'DESC').getMany();
+            
+            // Map to include hasResponded virtual flag
+            const leadsWithFlag = leads.map(lead => {
+                const hasResponded = lead.responses && lead.responses.length > 0;
+                // Delete responses to keep payload light
+                delete lead.responses;
+                return {
+                    ...lead,
+                    hasResponded
+                };
+            });
+
             this.logger.log(`Found ${leads.length} relevant leads for vendor ${vendor.id}`);
-            return leads;
+            return leadsWithFlag as any;
         } catch (error) {
             this.logger.error(`Error in getLeadsForVendor for user ${userId}: ${error.message}`, error.stack);
             throw error;
@@ -181,15 +194,22 @@ export class JobLeadsService {
     }
 
     async submitResponse(vendorUserId: string, leadId: string, dto: CreateJobResponseDto): Promise<JobLeadResponse> {
+        this.logger.log(`Vendor ${vendorUserId} responding to lead ${leadId} with price ${dto.price}`);
         const vendor = await this.vendorRepository.findOne({ where: { userId: vendorUserId } });
-        if (!vendor) throw new ForbiddenException('Not a vendor');
+        if (!vendor) {
+            this.logger.warn(`User ${vendorUserId} is not a vendor`);
+            throw new ForbiddenException('Not a vendor');
+        }
 
         const lead = await this.jobLeadRepository.findOne({ where: { id: leadId }, relations: ['user'] });
         if (!lead) throw new NotFoundException('Lead not found');
 
         // Check if already responded
         const existing = await this.responseRepository.findOne({ where: { jobLeadId: leadId, vendorId: vendor.id } });
-        if (existing) throw new BadRequestException('Already responded to this lead');
+        if (existing) {
+            this.logger.warn(`Vendor ${vendor.id} already responded to lead ${leadId}`);
+            throw new BadRequestException('Already responded to this lead');
+        }
 
         const response = this.responseRepository.create({
             jobLeadId: leadId,

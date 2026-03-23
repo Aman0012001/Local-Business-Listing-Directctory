@@ -36,10 +36,11 @@ export default function BroadcastFeed() {
         if (!selectedLead) return;
 
         setSubmitting(true);
+        const priceValue = parseFloat(responsePrice);
         try {
             await api.broadcasts.respond(selectedLead.id, {
                 message: responseMessage,
-                price: responsePrice ? parseFloat(responsePrice) : undefined,
+                price: !isNaN(priceValue) ? priceValue : undefined,
             });
             setSelectedLead(null);
             setResponseMessage('');
