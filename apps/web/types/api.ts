@@ -188,6 +188,12 @@ export interface JobLead {
     createdAt: string;
     responses?: JobLeadResponse[];
     hasResponded?: boolean;
+    user?: {
+        id: string;
+        fullName: string;
+        email: string;
+        phone?: string;
+    };
 }
 
 export interface JobLeadResponse {
@@ -197,9 +203,13 @@ export interface JobLeadResponse {
     vendor?: {
         id: string;
         businessName: string;
+        businessPhone?: string;
+        businessEmail?: string;
         user?: {
+            id: string;
             fullName: string;
             avatarUrl?: string;
+            phone?: string;
         }
     };
     message: string;

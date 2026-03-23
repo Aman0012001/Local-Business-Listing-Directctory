@@ -162,6 +162,7 @@ export class JobLeadsService {
             const query = this.jobLeadRepository
                 .createQueryBuilder('lead')
                 .leftJoinAndSelect('lead.category', 'category')
+                .leftJoinAndSelect('lead.user', 'user')
                 .leftJoinAndSelect('lead.responses', 'responses', 'responses.vendorId = :vendorId', { vendorId: vendor.id })
                 .where('lead.categoryId IN (:...categoryIds)', { categoryIds })
                 .andWhere('lead.status IN (:...statuses)', { 
@@ -244,7 +245,7 @@ export class JobLeadsService {
 
         return this.responseRepository.find({
             where: { jobLeadId: leadId },
-            relations: ['vendor'],
+            relations: ['vendor', 'vendor.user'],
             order: { createdAt: 'DESC' },
         });
     }
@@ -252,7 +253,7 @@ export class JobLeadsService {
     async getMyLeads(userId: string): Promise<JobLead[]> {
         return this.jobLeadRepository.find({
             where: { userId },
-            relations: ['category', 'responses', 'responses.vendor'],
+            relations: ['category', 'user', 'responses', 'responses.vendor', 'responses.vendor.user'],
             order: { createdAt: 'DESC' },
         });
     }

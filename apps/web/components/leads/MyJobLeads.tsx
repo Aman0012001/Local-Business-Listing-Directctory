@@ -150,7 +150,19 @@ export default function MyJobLeads() {
                                         </div>
 
                                         <div className="flex gap-4">
-                                            <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-blue-500/20 active:scale-[0.98] flex items-center justify-center gap-2">
+                                            <button 
+                                                onClick={() => {
+                                                    const phone = resp.vendor?.businessPhone || resp.vendor?.user?.phone;
+                                                    if (phone) {
+                                                        const cleanPhone = phone.replace(/\s+/g, '');
+                                                        const waNumber = cleanPhone.startsWith('+') ? cleanPhone.substring(1) : cleanPhone;
+                                                        window.open(`https://wa.me/${waNumber}`, '_blank');
+                                                    } else {
+                                                        alert('No contact phone available for this expert.');
+                                                    }
+                                                }}
+                                                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-blue-500/20 active:scale-[0.98] flex items-center justify-center gap-2"
+                                            >
                                                 <Phone className="w-4 h-4" /> Contact Business Now
                                             </button>
                                             <button className="px-6 py-4 bg-slate-50 text-slate-400 hover:text-red-500 hover:bg-red-50 font-black rounded-2xl transition-all active:scale-[0.95]">
