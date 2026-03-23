@@ -7,6 +7,7 @@ import { Map as MapIcon, RefreshCcw, Navigation, Search, Layers, Sliders, Info, 
 export default function SearchHeatmapPage() {
     const [heatmapData, setHeatmapData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [mapLoaded, setMapLoaded] = useState(false);
@@ -22,11 +23,13 @@ export default function SearchHeatmapPage() {
 
     const fetchHeatmapData = async () => {
         setLoading(true);
+        setError(null);
         try {
             const data = await api.admin.getHeatmapData(startDate || undefined, endDate || undefined);
-            setHeatmapData(data);
-        } catch (error) {
-            console.error('Failed to fetch heatmap data:', error);
+            setHeatmapData(Array.isArray(data) ? data : []);
+        } catch (err: any) {
+            console.error('Failed to fetch heatmap data:', err);
+            setError(err?.message || 'Failed to load heatmap data. Check your permissions.');
         } finally {
             setLoading(false);
         }
@@ -114,6 +117,17 @@ export default function SearchHeatmapPage() {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-700 pb-20">
+            {/* Error Banner */}
+            {error && (
+                <div className="flex items-start gap-4 bg-red-50 border border-red-200 text-red-700 px-6 py-5 rounded-2xl">
+                    <div className="w-5 h-5 mt-0.5 flex-shrink-0 rounded-full bg-red-200 flex items-center justify-center text-red-700 font-black text-xs">!</div>
+                    <div>
+                        <p className="font-black text-sm">Heatmap API Error</p>
+                        <p className="text-sm font-medium mt-0.5 text-red-600">{error}</p>
+                    </div>
+                    <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-700 font-black text-lg leading-none">&times;</button>
+                </div>
+            )}
             {/* Header Section */}
             <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-8">
                 <div>

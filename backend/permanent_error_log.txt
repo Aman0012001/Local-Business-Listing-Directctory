@@ -395,3 +395,5 @@ Stack: QueryFailedError: Connection terminated unexpectedly
     at async NotificationsService.findAllForUser (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\notifications\notifications.service.ts:108:44)
     at async NotificationsController.findAll (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\notifications\notifications.controller.ts:24:28)
 [2026-03-23T07:18:00.608Z] NotificationsService Constructor Called
+[2026-03-23T09:08:14.701Z] NotificationsService Constructor Called
+[2026-03-23T09:08:23.982Z] NotificationsService Constructor Called

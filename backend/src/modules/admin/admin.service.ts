@@ -117,10 +117,13 @@ export class AdminService {
      */
     async getHeatmapData(startDate?: string, endDate?: string) {
         const query = this.searchLogRepository.createQueryBuilder('log')
-            .select(['log.latitude AS latitude', 'log.longitude AS longitude', 'COUNT(log.id) AS count'])
+            .select('log.latitude', 'latitude')
+            .addSelect('log.longitude', 'longitude')
+            .addSelect('COUNT(log.id)', 'count')
             .where('log.latitude IS NOT NULL')
             .andWhere('log.longitude IS NOT NULL')
-            .groupBy('log.latitude, log.longitude');
+            .groupBy('log.latitude')
+            .addGroupBy('log.longitude');
 
         if (startDate) {
             query.andWhere('log.searchedAt >= :startDate', { startDate: new Date(startDate) });
@@ -134,7 +137,7 @@ export class AdminService {
         return rawData.map(item => ({
             latitude: parseFloat(item.latitude),
             longitude: parseFloat(item.longitude),
-            weight: parseInt(item.count, 10),
+            weight: parseInt(item.count, 10) || 1,
         }));
     }
 
