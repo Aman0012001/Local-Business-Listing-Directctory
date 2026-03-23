@@ -45,13 +45,6 @@ export default function BroadcastFeed() {
         e.preventDefault();
         if (!selectedLead) return;
 
-        // Final guard against already responded
-        if (selectedLead.hasResponded) {
-            alert('You have already responded to this lead.');
-            setSelectedLead(null);
-            return;
-        }
-
         setSubmitting(true);
         const priceValue = parseFloat(responsePrice);
         const leadId = selectedLead.id;
@@ -61,10 +54,10 @@ export default function BroadcastFeed() {
                 message: responseMessage,
                 price: !isNaN(priceValue) ? priceValue : undefined,
             });
-            
+
             // Optimistically update local state to reflect the response
-            setLeads(currentLeads => 
-                currentLeads.map(l => 
+            setLeads(currentLeads =>
+                currentLeads.map(l =>
                     l.id === leadId ? { ...l, hasResponded: true } : l
                 )
             );
@@ -78,12 +71,12 @@ export default function BroadcastFeed() {
             console.error('Response submission failed:', err);
             // Check if backend already had this response
             if (err.message && String(err.message).includes('Already responded')) {
-                setLeads(currentLeads => 
-                    currentLeads.map(l => 
+                // If somehow frontend was out of sync, just handle it gracefully
+                setLeads(currentLeads =>
+                    currentLeads.map(l =>
                         l.id === leadId ? { ...l, hasResponded: true } : l
                     )
                 );
-                alert('You have already responded to this lead.');
                 setSelectedLead(null);
             } else {
                 alert(err.message || 'Failed to send response. Please check your connection and try again.');
@@ -112,7 +105,7 @@ export default function BroadcastFeed() {
                         <p className="text-xs text-slate-400 font-bold">Real-time requests from nearby customers</p>
                     </div>
                 </div>
-                <button 
+                <button
                     onClick={fetchLeads}
                     className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all active:scale-95"
                     title="Refresh Feed"
@@ -132,10 +125,10 @@ export default function BroadcastFeed() {
             ) : (
                 <div className="grid grid-cols-1 gap-6">
                     {leads.map(lead => (
-                        <BroadcastCard 
-                            key={lead.id} 
-                            lead={lead} 
-                            onRespond={setSelectedLead} 
+                        <BroadcastCard
+                            key={lead.id}
+                            lead={lead}
+                            onRespond={setSelectedLead}
                         />
                     ))}
                 </div>
@@ -144,14 +137,14 @@ export default function BroadcastFeed() {
             {/* Response Modal */}
             {selectedLead && (
                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
-                    <div className="bg-white rounded-[40px] w-full max-w-lg overflow-hidden shadow-2xl animate-in slide-in-from-bottom-10 duration-500">
+                    <div className="bg-white rounded-[24px] w-full max-w-lg overflow-hidden shadow-2xl animate-in slide-in-from-bottom-10 duration-500">
                         <div className="p-10 pb-0 flex justify-between items-start">
                             <div className="max-w-[80%]">
                                 <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest mb-3 inline-block">Responding To</span>
                                 <h3 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">{selectedLead.title}</h3>
                             </div>
-                            <button 
-                                onClick={() => setSelectedLead(null)} 
+                            <button
+                                onClick={() => setSelectedLead(null)}
                                 className="p-3 bg-slate-50 rounded-2xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
                             >
                                 <X className="w-5 h-5" />
@@ -170,7 +163,7 @@ export default function BroadcastFeed() {
                                     onChange={(e) => setResponseMessage(e.target.value)}
                                 />
                             </div>
-                            
+
                             <div>
                                 <label className="block text-sm font-black text-slate-700 mb-3 uppercase tracking-widest text-[10px]">Price Estimate (PKR)</label>
                                 <div className="relative group">
@@ -190,7 +183,7 @@ export default function BroadcastFeed() {
 
                             <button
                                 type="submit"
-                                disabled={submitting || selectedLead.hasResponded}
+                                disabled={submitting}
                                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-6 rounded-3xl transition-all flex items-center justify-center gap-3 shadow-2xl shadow-blue-500/20 active:scale-[0.98] disabled:opacity-50"
                             >
                                 {submitting ? (
@@ -198,9 +191,9 @@ export default function BroadcastFeed() {
                                 ) : (
                                     <>
                                         <span className="uppercase tracking-[0.2em] text-sm">
-                                            {selectedLead.hasResponded ? 'Proposal Already Sent' : 'Send Proposal Now'}
+                                            {selectedLead.hasResponded ? 'Update My Proposal' : 'Send Proposal Now'}
                                         </span>
-                                        {selectedLead.hasResponded ? <CheckCircle2 className="w-5 h-5" /> : <Send className="w-5 h-5" />}
+                                        <Send className="w-5 h-5" />
                                     </>
                                 )}
                             </button>

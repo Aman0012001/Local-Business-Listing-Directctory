@@ -206,11 +206,24 @@ export class JobLeadsService {
         const lead = await this.jobLeadRepository.findOne({ where: { id: leadId }, relations: ['user'] });
         if (!lead) throw new NotFoundException('Lead not found');
 
-        // Check if already responded
+        // Check if already responded - If so, update it
         const existing = await this.responseRepository.findOne({ where: { jobLeadId: leadId, vendorId: vendor.id } });
         if (existing) {
-            this.logger.warn(`Vendor ${vendor.id} already responded to lead ${leadId}`);
-            throw new BadRequestException('Already responded to this lead');
+            this.logger.log(`Vendor ${vendor.id} updating response to lead ${leadId}`);
+            existing.message = dto.message;
+            existing.price = dto.price;
+            existing.status = JobResponseStatus.PENDING;
+            const updatedResponse = await this.responseRepository.save(existing);
+
+            // Notify user about the update
+            this.notificationsGateway.sendToUser(lead.userId, 'lead_response_updated', {
+                leadId: lead.id,
+                responseId: updatedResponse.id,
+                vendorName: vendor.businessName,
+                price: updatedResponse.price,
+            });
+
+            return updatedResponse;
         }
 
         const response = this.responseRepository.create({
