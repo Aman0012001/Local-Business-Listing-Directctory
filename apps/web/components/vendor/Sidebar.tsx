@@ -55,6 +55,7 @@ export default function Sidebar() {
         { name: 'Demand Insights', icon: TrendingUp, href: '/vendor/demand', badge: null },
         { name: 'Subscription & Billing', icon: CreditCard, href: '/vendor/subscription', badge: null },
         { name: 'Broadcast Feed', icon: Megaphone, href: '/vendor/broadcasts', badge: 'New' },
+        { name: 'My Broadcasts', icon: Megaphone, href: '/vendor/my-broadcasts', badge: null },
         { name: 'Notifications', icon: Bell, href: '/vendor/notifications', badge: null },
         { name: 'Affiliate', icon: Gift, href: '/vendor/affiliate', badge: 'Rewards' },
         { name: 'Settings', icon: Settings, href: '/vendor/settings', badge: null },
@@ -98,7 +99,7 @@ export default function Sidebar() {
                     .filter(item => {
                         const isVendorOrAdmin = user?.role === 'vendor' || user?.role === 'admin' || user?.role === 'superadmin';
                         if (!isVendorOrAdmin) {
-                            return ['Dashboard', 'Saved', 'Following', 'Notifications', 'Settings'].includes(item.name);
+                            return ['Dashboard', 'Saved', 'Following', 'My Broadcasts', 'Notifications', 'Settings'].includes(item.name);
                         }
 
                         // Superadmin/Admin see everything
