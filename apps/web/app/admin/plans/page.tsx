@@ -274,7 +274,7 @@ export default function AdminPlansPage() {
                 ))}
 
                 {/* Create Card Prompt */}
-                <button
+                {/* <button
                     onClick={() => handleOpenModal()}
                     className="group border-4 border-dashed border-slate-100 rounded-[20px] flex flex-col items-center justify-center p-12 hover:border-slate-200 hover:bg-slate-50/50 transition-all min-h-[400px]"
                 >
@@ -283,7 +283,7 @@ export default function AdminPlansPage() {
                     </div>
                     <span className="text-lg font-black text-slate-900">Add Another Tier</span>
                     <p className="text-slate-400 font-bold text-sm mt-2 text-center">New monetization strategy?</p>
-                </button>
+                </button> */}
             </div>
 
             {/* Modal */}
