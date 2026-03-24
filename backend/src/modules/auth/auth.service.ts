@@ -14,6 +14,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { User, UserRole } from '../../entities/user.entity';
 import { Affiliate } from '../../entities/affiliate.entity';
 import { AffiliateReferral } from '../../entities/referral.entity';
+import { Vendor } from '../../entities/vendor.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { GoogleAuthDto } from './dto/google-auth.dto';
@@ -35,6 +36,8 @@ export class AuthService {
         private affiliateRepository: Repository<Affiliate>,
         @InjectRepository(AffiliateReferral)
         private referralRepository: Repository<AffiliateReferral>,
+        @InjectRepository(Vendor)
+        private vendorRepository: Repository<Vendor>,
     ) { }
 
     /**
@@ -70,6 +73,13 @@ export class AuthService {
 
         // Auto-create affiliate record for vendors
         if (savedUser.role === UserRole.VENDOR) {
+            const vendor = this.vendorRepository.create({
+                userId: savedUser.id,
+                isVerified: false,
+            });
+            await this.vendorRepository.save(vendor);
+            this.logger.log(`Auto-created vendor profile for user ${savedUser.id}`);
+
             const affiliate = this.affiliateRepository.create({
                 user: savedUser,
                 referralCode: nanoid(10),
@@ -242,6 +252,36 @@ export class AuthService {
                 await this.userRepository.save(user);
                 this.logger.log(`[GoogleAuth] Marked existing Google user as online: ${email}`);
             }
+
+            // Fix for Vendor Role Upgrade via Google Login
+            if (dto.role === UserRole.VENDOR && user.role === UserRole.USER) {
+                this.logger.log(`[GoogleAuth] Upgrading existing user ${email} from USER to VENDOR`);
+                user.role = UserRole.VENDOR;
+                await this.userRepository.save(user);
+
+                // Auto-create vendor and affiliate records for the newly upgraded vendor
+                try {
+                    const vendor = this.vendorRepository.create({
+                        userId: user.id,
+                        isVerified: false,
+                    });
+                    await this.vendorRepository.save(vendor);
+                    this.logger.log(`[GoogleAuth] Auto-created vendor profile for upgraded user`);
+                } catch (err: any) {
+                    if (err.code !== '23505') this.logger.error('Failed to create vendor profile', err);
+                }
+
+                try {
+                    const affiliate = this.affiliateRepository.create({
+                        user: user,
+                        referralCode: nanoid(10),
+                    });
+                    await this.affiliateRepository.save(affiliate);
+                    this.logger.log(`[GoogleAuth] Auto-created affiliate profile for upgraded user`);
+                } catch (err: any) {
+                    if (err.code !== '23505') this.logger.error('Failed to create affiliate record', err);
+                }
+            }
         } else {
             // Create new user from Google profile
             const newUser = this.userRepository.create({
@@ -261,6 +301,13 @@ export class AuthService {
 
             // Auto-create affiliate record for vendors
             if (user.role === UserRole.VENDOR) {
+                const vendor = this.vendorRepository.create({
+                    userId: user.id,
+                    isVerified: false,
+                });
+                await this.vendorRepository.save(vendor);
+                this.logger.log(`[GoogleAuth] Auto-created vendor profile for user ${user.id}`);
+
                 const affiliate = this.affiliateRepository.create({
                     user: user,
                     referralCode: nanoid(10),

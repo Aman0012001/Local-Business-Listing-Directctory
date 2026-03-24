@@ -9,10 +9,11 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { User } from '../../entities/user.entity';
 import { Affiliate } from '../../entities/affiliate.entity';
 import { AffiliateReferral } from '../../entities/referral.entity';
+import { Vendor } from '../../entities/vendor.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([User, Affiliate, AffiliateReferral]),
+        TypeOrmModule.forFeature([User, Affiliate, AffiliateReferral, Vendor]),
         PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.registerAsync({
             imports: [ConfigModule],

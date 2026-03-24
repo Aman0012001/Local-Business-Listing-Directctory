@@ -55,13 +55,36 @@ export class VendorsService {
      * Get current vendor profile
      */
     async getProfile(userId: string): Promise<Vendor> {
-        const vendor = await this.vendorRepository.findOne({
+        let vendor = await this.vendorRepository.findOne({
             where: { userId },
             relations: ['businesses', 'subscriptions'],
         });
 
         if (!vendor) {
-            throw new NotFoundException('Vendor profile not found');
+            console.log(`[VendorsService] No vendor record found for user ${userId} in getProfile — creating one`);
+            const user = await this.userRepository.findOne({ where: { id: userId } });
+            if (user && user.role === UserRole.VENDOR) {
+                vendor = this.vendorRepository.create({
+                    userId,
+                    isVerified: false,
+                });
+                try {
+                    await this.vendorRepository.save(vendor);
+                } catch (err: any) {
+                    if (err.code === '23505' || err.message?.includes('duplicate key')) {
+                        console.log(`[VendorsService] Handled concurrent creation for ${userId}`);
+                    } else {
+                        throw err;
+                    }
+                }
+                
+                return this.vendorRepository.findOne({
+                    where: { userId },
+                    relations: ['businesses', 'subscriptions'],
+                });
+            } else {
+                throw new NotFoundException('Vendor profile not found and user is not a vendor');
+            }
         }
 
         return vendor;

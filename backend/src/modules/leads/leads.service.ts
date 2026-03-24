@@ -90,12 +90,24 @@ export class LeadsService {
         const { page = 1, limit = 20, businessId, type, status } = getLeadsDto;
         const skip = calculateSkip(page, limit);
 
-        const vendor = await this.vendorRepository.findOne({
+        let vendor = await this.vendorRepository.findOne({
             where: { userId },
         });
 
         if (!vendor) {
-            throw new ForbiddenException('Only vendors can view their leads');
+            const userUser = await this.vendorRepository.manager.findOne(User, { where: { id: userId }, select: ['id', 'role'] });
+            if (userUser && userUser.role === UserRole.VENDOR) {
+                const newVendor = this.vendorRepository.create({ userId, isVerified: false });
+                try {
+                    await this.vendorRepository.save(newVendor);
+                } catch (err: any) {
+                    if (err.code !== '23505' && !err.message?.includes('duplicate key')) throw err;
+                }
+                vendor = await this.vendorRepository.findOne({ where: { userId } });
+            }
+            if (!vendor) {
+                throw new ForbiddenException('Only vendors can view their leads');
+            }
         }
 
         const queryBuilder = this.leadRepository
@@ -232,12 +244,24 @@ export class LeadsService {
      * Get basic stats for a vendor
      */
     async getVendorLeadStats(userId: string) {
-        const vendor = await this.vendorRepository.findOne({
+        let vendor = await this.vendorRepository.findOne({
             where: { userId },
         });
 
         if (!vendor) {
-            throw new ForbiddenException('Only vendors can view stats');
+            const userUser = await this.vendorRepository.manager.findOne(User, { where: { id: userId }, select: ['id', 'role'] });
+            if (userUser && userUser.role === UserRole.VENDOR) {
+                const newVendor = this.vendorRepository.create({ userId, isVerified: false });
+                try {
+                    await this.vendorRepository.save(newVendor);
+                } catch (err: any) {
+                    if (err.code !== '23505' && !err.message?.includes('duplicate key')) throw err;
+                }
+                vendor = await this.vendorRepository.findOne({ where: { userId } });
+            }
+            if (!vendor) {
+                throw new ForbiddenException('Only vendors can view stats');
+            }
         }
 
         const stats = await this.leadRepository

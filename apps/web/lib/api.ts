@@ -324,6 +324,10 @@ export const api = {
             method: 'PATCH',
             body: JSON.stringify(profileData),
         }),
+        becomeVendor: (data: { businessName: string, businessPhone: string }) => fetcher<any>('/vendors/become-vendor', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
         getByCity: (city: string) => fetcher<any>(`/vendors/by-city?city=${encodeURIComponent(city)}`),
         getPublicProfile: (id: string) => fetcher<any>(`/vendors/${id}/public`),
     },
