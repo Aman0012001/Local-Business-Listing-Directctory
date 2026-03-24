@@ -11,4 +11,9 @@ export class GoogleAuthDto {
     @IsString()
     @IsOptional()
     role?: string;
+
+    @ApiProperty({ description: 'Optional referral code', required: false })
+    @IsString()
+    @IsOptional()
+    referralCode?: string;
 }

@@ -367,7 +367,7 @@ export const api = {
             method: 'POST',
             body: JSON.stringify(userData),
         }),
-        googleLogin: (data: { credential: string, role?: string }) => fetcher<any>('/auth/google', {
+        googleLogin: (data: { credential: string; role?: string; referralCode?: string }) => fetcher<any>('/auth/google', {
             method: 'POST',
             body: JSON.stringify(data),
         }),

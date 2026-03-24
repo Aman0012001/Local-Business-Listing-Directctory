@@ -14,7 +14,7 @@ interface AuthContextType {
     user: any | null;
     loading: boolean;
     login: (credentials: any) => Promise<void>;
-    googleLogin: (credential: string, role?: string) => Promise<void>;
+    googleLogin: (credential: string, role?: string, referralCode?: string) => Promise<void>;
     register: (userData: any) => Promise<void>;
     logout: () => void;
     updateUser: (userData: any) => void;
@@ -140,8 +140,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         redirectUser(response.user);
     };
 
-    const googleLogin = async (credential: string, role?: string) => {
-        const response = await api.auth.googleLogin({ credential, role });
+    const googleLogin = async (credential: string, role?: string, referralCode?: string) => {
+        const response = await api.auth.googleLogin({ credential, role, referralCode });
         localStorage.setItem('token', response.tokens.accessToken);
         localStorage.setItem('user', JSON.stringify(response.user));
         setUser(response.user);

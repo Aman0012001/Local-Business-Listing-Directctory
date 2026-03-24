@@ -37,7 +37,7 @@ function RegisterForm() {
             setLoading(true);
             setError('');
             try {
-                await googleLogin(tokenResponse.access_token, selectedRole);
+                await googleLogin(tokenResponse.access_token, selectedRole, referralCode);
             } catch (err: any) {
                 setError(err.message || 'Google registration failed. Please try again.');
             } finally {

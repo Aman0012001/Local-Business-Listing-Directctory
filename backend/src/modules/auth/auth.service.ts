@@ -141,20 +141,7 @@ export class AuthService {
 
         // Handle referral if provided
         if (registerDto.referralCode && savedUser.role === UserRole.VENDOR) {
-            const affiliate = await this.affiliateRepository.findOne({
-                where: { referralCode: registerDto.referralCode }
-            });
-
-            if (affiliate) {
-                const referral = this.referralRepository.create({
-                    affiliateId: affiliate.id,
-                    referredUserId: savedUser.id,
-                    type: 'signup' as any,
-                    status: 'pending' as any,
-                });
-                await this.referralRepository.save(referral);
-                this.logger.log(`Created PENDING referral for user ${savedUser.id} from affiliate ${affiliate.id}`);
-            }
+            await this.handleReferral(registerDto.referralCode, savedUser.id);
         }
 
         // Broadcast new vendor notification to all users
@@ -401,6 +388,11 @@ export class AuthService {
             delete user.password;
         }
 
+        // Handle referral if provided (for new or upgraded vendors)
+        if (dto.referralCode && user.role === UserRole.VENDOR) {
+            await this.handleReferral(dto.referralCode, user.id);
+        }
+
         return { user, tokens };
     }
 
@@ -492,5 +484,38 @@ export class AuthService {
         }
 
         return user;
+    }
+
+    /**
+     * Handle referral tracking
+     */
+    private async handleReferral(referralCode: string, referredUserId: string): Promise<void> {
+        try {
+            const affiliate = await this.affiliateRepository.findOne({
+                where: { referralCode }
+            });
+
+            if (affiliate) {
+                // Check if referral already exists to avoid duplicates
+                const existingReferral = await this.referralRepository.findOne({
+                    where: { referredUserId }
+                });
+
+                if (!existingReferral) {
+                    const referral = this.referralRepository.create({
+                        affiliateId: affiliate.id,
+                        referredUserId: referredUserId,
+                        type: 'signup' as any,
+                        status: 'pending' as any,
+                    });
+                    await this.referralRepository.save(referral);
+                    this.logger.log(`[Referral] Created PENDING referral for user ${referredUserId} from affiliate ${affiliate.id}`);
+                }
+            } else {
+                this.logger.warn(`[Referral] Invalid referral code provided: ${referralCode}`);
+            }
+        } catch (error) {
+            this.logger.error(`[Referral] Failed to process referral: ${error.message}`);
+        }
     }
 }
