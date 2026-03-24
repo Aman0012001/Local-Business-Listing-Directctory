@@ -119,8 +119,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const redirectUser = (user: any) => {
         if (user.role === 'admin' || user.role === 'superadmin') {
             router.push('/admin');
-        } else {
+        } else if (user.role === 'vendor') {
             router.push('/vendor/dashboard');
+        } else {
+            // Regular users go to home page
+            router.push('/');
         }
     };
 
@@ -132,6 +135,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Immediately mark online in DB
         api.auth.ping().catch(() => {});
         startPing();
+        // Sync profile to ensure full data (relations like subscriptions)
+        await syncProfile();
         redirectUser(response.user);
     };
 
@@ -143,6 +148,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Immediately mark online in DB
         api.auth.ping().catch(() => {});
         startPing();
+        // Sync profile to ensure full data (relations like subscriptions)
+        await syncProfile();
         redirectUser(response.user);
     };
 
@@ -152,6 +159,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('user', JSON.stringify(response.user));
         setUser(response.user);
         startPing();
+        // Sync profile to ensure full data (relations like subscriptions)
+        await syncProfile();
         redirectUser(response.user);
     };
 

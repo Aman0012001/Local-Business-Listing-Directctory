@@ -289,9 +289,17 @@ export class SubscriptionsService {
         const vendor = await this.vendorRepository.findOne({ where: { userId } });
         if (!vendor) throw new ForbiddenException('Vendor not found');
 
+        // Find the most relevant subscription: ACTIVE first, then PENDING
         return this.subscriptionRepository.findOne({
-            where: { vendorId: vendor.id, status: SubscriptionStatus.ACTIVE },
+            where: [
+                { vendorId: vendor.id, status: SubscriptionStatus.ACTIVE },
+                { vendorId: vendor.id, status: SubscriptionStatus.PENDING }
+            ],
             relations: ['plan'],
+            order: { 
+                status: 'ASC', // 'ACTIVE' comes before 'PENDING' alphabetically
+                createdAt: 'DESC' 
+            }
         });
     }
 

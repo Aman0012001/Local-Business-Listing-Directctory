@@ -109,24 +109,7 @@ export default function Sidebar() {
 
                         // Vendor feature access control
                         if (user?.role === 'vendor') {
-                            // Find active subscription
-                            const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
-                            const features = activeSub?.plan?.dashboardFeatures || {};
-
-                            // Map menu item names to feature IDs
-                            const featureMap: Record<string, string> = {
-                                'Analytics': 'showAnalytics',
-                                'Leads': 'showLeads',
-                                'Offers & Events': 'showOffers',
-                                'Demand Insights': 'showDemand',
-                                'Queries': 'showQueries',
-                                'Reviews': 'showReviews'
-                            };
-
-                            const featureId = featureMap[item.name];
-                            if (featureId) {
-                                return !!features[featureId];
-                            }
+                            return true; // Always show all features to allow discovery and Upsell pages
                         }
 
                         return true;

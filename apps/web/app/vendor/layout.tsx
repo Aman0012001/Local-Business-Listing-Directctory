@@ -20,19 +20,34 @@ export default function VendorLayout({
 
     useEffect(() => {
         if (!loading) {
-            // Check if vendor has active subscription
-            if (user?.role === 'vendor') {
-                const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+            if (!user) {
+                // Not logged in — send to login
+                router.replace('/login');
+                // Don't keep spinner after redirect
+                setIsChecking(false);
+            } else if (user.role === 'vendor') {
+                const activeSubscription = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
                 
-                // If no active sub and NOT already on subscription page, redirect
-                if (!activeSub && pathname !== '/vendor/subscription') {
+                // If no ACTIVE sub and NOT already on a free/essential page, redirect to subscription
+                const freePages = [
+                    '/vendor/subscription', // The billing/plan selection page
+                    '/vendor/affiliate',    // Explicitly requested as free
+                    '/vendor/settings',     // Account profile management
+                    '/vendor/notifications' // System alerts
+                ];
+                const isFreePage = freePages.includes(pathname);
+                
+                if (!activeSubscription && !isFreePage) {
                     router.replace('/vendor/subscription');
+                    // KEEP isChecking true to prevent rendering the restricted page
                 } else {
+                    // Either they have a plan, or they are on a free page - safe to show
                     setIsChecking(false);
                 }
             } else {
-                // Not a vendor (maybe regular user), let them pass
-                setIsChecking(false);
+                // Logged in but NOT a vendor (regular user) — send to home
+                router.replace('/');
+                // KEEP isChecking true while redirecting
             }
         }
     }, [user, loading, pathname, router]);

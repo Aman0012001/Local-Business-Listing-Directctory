@@ -7,6 +7,7 @@ import {
     AlertTriangle, FileText, Download, X, ChevronRight, Loader2,
     Calendar, Receipt, BadgeCheck, Sparkles, RefreshCw, Eye, ChevronLeft
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { api } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -217,7 +218,8 @@ function InvoiceModal({ invoiceId, onClose, user }: { invoiceId: string; onClose
 }
 
 /* ─── Plan Card ─────────────────────────────────────────────────────────── */
-function PlanCard({ plan, isActive, currentPrice, onSelect, loading }: { plan: Plan; isActive: boolean; currentPrice?: number; onSelect: () => void; loading: boolean }) {
+function PlanCard({ plan, isActive, status, currentPrice, onSelect, loading }: { plan: Plan; isActive: boolean; status?: string; currentPrice?: number; onSelect: () => void; loading: boolean }) {
+// ... (omitting getColor/getIcon for brevity, will provide full replacement)
     const getColor = (type: string) => {
         const colors: Record<string, { bg: string; text: string; border: string; icon: string; accent: string }> = {
             free: { bg: 'bg-slate-50', text: 'text-slate-500', border: 'border-slate-200', icon: 'text-slate-400', accent: 'bg-slate-100' },
@@ -242,26 +244,24 @@ function PlanCard({ plan, isActive, currentPrice, onSelect, loading }: { plan: P
     const planPrice = Number(plan.price);
     const isUpgrade = currentPrice !== undefined && planPrice > currentPrice;
     const isDowngrade = currentPrice !== undefined && planPrice < currentPrice;
+    const isPending = isActive && status === 'pending';
 
     return (
         <motion.div
             whileHover={{ y: -4 }}
             className={`relative rounded-2xl border-2 p-6 flex flex-col transition-all ${isActive
-                ? 'border-orange-400 bg-gradient-to-b from-orange-50 to-white shadow-lg shadow-orange-100'
+                ? isPending 
+                    ? 'border-amber-300 bg-amber-50/30' 
+                    : 'border-orange-400 bg-gradient-to-b from-orange-50 to-white shadow-lg shadow-orange-100'
                 : 'border-slate-100 bg-white hover:border-slate-200 hover:shadow-md'
                 }`}
         >
             {isActive && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-orange-500 text-white text-[10px] font-black uppercase tracking-widest rounded-full whitespace-nowrap">
-                    ✓ Current Plan
+                <div className={`absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 text-white text-[10px] font-black uppercase tracking-widest rounded-full whitespace-nowrap ${isPending ? 'bg-amber-500' : 'bg-orange-500'}`}>
+                    {isPending ? '⌛ Pending' : '✓ Current Plan'}
                 </div>
             )}
-            {plan.isFeatured && !isActive && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-full whitespace-nowrap">
-                    ⭐ Most Popular
-                </div>
-            )}
-
+// ... (skipping features section for brevity, must match exactly)
             <div className="flex items-center gap-3 mb-4">
                 <div className={`w-10 h-10 rounded-xl ${clr.accent} ${clr.icon} flex items-center justify-center`}>
                     {getIcon(plan.planType)}
@@ -305,14 +305,16 @@ function PlanCard({ plan, isActive, currentPrice, onSelect, loading }: { plan: P
                 onClick={onSelect}
                 disabled={isActive || loading}
                 className={`w-full py-3 rounded-xl font-black text-sm transition-all active:scale-[0.97] flex items-center justify-center gap-2 ${isActive
-                    ? 'bg-orange-50 text-orange-500 cursor-default'
+                    ? isPending ? 'bg-amber-100 text-amber-700' : 'bg-orange-50 text-orange-500'
                     : isUpgrade
                         ? 'bg-[#FF7A30] hover:bg-[#E86920] text-white shadow-lg shadow-orange-900/10'
                         : 'bg-slate-900 hover:bg-black text-white shadow-lg shadow-slate-900/10'
-                    } disabled:opacity-60`}
+                    } cursor-default disabled:opacity-80`}
             >
                 {loading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
+                ) : isPending ? (
+                    <><Clock className="w-4 h-4" /> Pending Approval</>
                 ) : isActive ? (
                     <><CheckCircle2 className="w-4 h-4" /> Active</>
                 ) : isUpgrade ? (
@@ -330,7 +332,8 @@ function PlanCard({ plan, isActive, currentPrice, onSelect, loading }: { plan: P
 
 /* ─── Main Page ─────────────────────────────────────────────────────────── */
 export default function VendorSubscriptionPage() {
-    const { user, syncProfile } = useAuth();
+    const { user, loading: authLoading, syncProfile } = useAuth();
+    const router = useRouter();
     const [plans, setPlans] = useState<Plan[]>([]);
     const [activeSub, setActiveSub] = useState<Subscription | null>(null);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -339,6 +342,17 @@ export default function VendorSubscriptionPage() {
     const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
     const [tab, setTab] = useState<'plan' | 'invoices'>('plan');
     const [successMsg, setSuccessMsg] = useState('');
+
+    // Safety-net guard: only vendors can access this page
+    // Wait for auth to finish loading before checking role to avoid premature redirects
+    useEffect(() => {
+        if (authLoading) return; // Don't redirect while auth is still initializing
+        if (!user) {
+            router.replace('/login');
+        } else if (user.role !== 'vendor') {
+            router.replace('/');
+        }
+    }, [user, authLoading, router]);
 
     const fetchAll = async () => {
         setLoadingPage(true);
@@ -453,25 +467,42 @@ export default function VendorSubscriptionPage() {
                 >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isExpiringSoon ? 'bg-red-100' : 'bg-white/10'}`}>
-                                {isExpiringSoon
-                                    ? <AlertTriangle className="w-6 h-6 text-red-500" />
-                                    : <BadgeCheck className="w-6 h-6 text-emerald-400" />
-                                }
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                                isExpiringSoon ? 'bg-red-100' : 
+                                activeSub.status === 'pending' ? 'bg-amber-100' : 'bg-white/10'
+                            }`}>
+                                {isExpiringSoon ? (
+                                    <AlertTriangle className="w-6 h-6 text-red-500" />
+                                ) : activeSub.status === 'pending' ? (
+                                    <Clock className="w-6 h-6 text-amber-500" />
+                                ) : (
+                                    <BadgeCheck className="w-6 h-6 text-emerald-400" />
+                                )}
                             </div>
                             <div>
-                                <p className={`text-xs font-black uppercase tracking-widest mb-1 ${isExpiringSoon ? 'text-red-400' : 'text-slate-400'}`}>
-                                    {isExpiringSoon ? '⚠ Expiring Soon' : 'Active Plan'}
+                                <p className={`text-xs font-black uppercase tracking-widest mb-1 ${
+                                    isExpiringSoon ? 'text-red-400' : 
+                                    activeSub.status === 'pending' ? 'text-amber-500' : 'text-slate-400'
+                                }`}>
+                                    {isExpiringSoon ? '⚠ Expiring Soon' : 
+                                     activeSub.status === 'pending' ? '⌛ Awaiting Admin Approval' : 'Active Plan'}
                                 </p>
                                 <h2 className={`text-xl font-black ${isExpiringSoon ? 'text-red-700' : 'text-white'}`}>
                                     {activeSub.plan?.name}
                                 </h2>
-                                <p className={`text-sm font-bold mt-0.5 ${isExpiringSoon ? 'text-red-500' : 'text-slate-400'}`}>
-                                    {daysLeft !== null && daysLeft > 0
-                                        ? `Expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''} · ${new Date(activeSub.endDate).toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' })}`
-                                        : `Expires: ${new Date(activeSub.endDate).toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' })}`
-                                    }
-                                </p>
+                                {activeSub.status === 'active' && (
+                                    <p className={`text-sm font-bold mt-0.5 ${isExpiringSoon ? 'text-red-500' : 'text-slate-400'}`}>
+                                        {daysLeft !== null && daysLeft > 0
+                                            ? `Expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''} · ${new Date(activeSub.endDate).toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                                            : `Expires: ${new Date(activeSub.endDate).toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                                        }
+                                    </p>
+                                )}
+                                {activeSub.status === 'pending' && (
+                                    <p className="text-sm font-bold text-amber-400/80 mt-0.5">
+                                        Your payment is under review. Please wait for admin activation.
+                                    </p>
+                                )}
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
@@ -526,6 +557,7 @@ export default function VendorSubscriptionPage() {
                                         key={plan.id}
                                         plan={plan}
                                         isActive={activeSub?.plan?.id === plan.id}
+                                        status={activeSub?.status}
                                         currentPrice={activeSub ? Number(activeSub.plan.price) : undefined}
                                         onSelect={() => handleSelectPlan(plan)}
                                         loading={checkingOut === plan.id}

@@ -136,6 +136,8 @@ export class AuthService {
             .createQueryBuilder('user')
             .addSelect('user.password')
             .leftJoinAndSelect('user.vendor', 'vendor')
+            .leftJoinAndSelect('vendor.subscriptions', 'subscriptions')
+            .leftJoinAndSelect('subscriptions.plan', 'plan')
             .where('user.email = :email AND user.isActive = :isActive', { email, isActive: true })
             .getOne();
 
@@ -231,6 +233,8 @@ export class AuthService {
         let user = await this.userRepository
             .createQueryBuilder('user')
             .leftJoinAndSelect('user.vendor', 'vendor')
+            .leftJoinAndSelect('vendor.subscriptions', 'subscriptions')
+            .leftJoinAndSelect('subscriptions.plan', 'plan')
             .where('user.email = :email', { email })
             .getOne();
 
