@@ -36,7 +36,14 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
             return user;
         } catch (error) {
             console.error(`[JwtStrategy] Validation failed for payload ${JSON.stringify(payload)}:`, error.message);
-            // If it's not already a 401, it's likely a DB error causing a 500
+            
+            // Handle database connection errors gracefully
+            if (error.code === 'ENETUNREACH' || error.code === 'ECONNREFUSED' || error.message.includes('Connection terminated')) {
+                const { ServiceUnavailableException } = require('@nestjs/common');
+                throw new ServiceUnavailableException('Database is currently unreachable. Please check your internet or database status.');
+            }
+            
+            // If it's not already a 401, it might be a DB query error
             throw error;
         }
     }

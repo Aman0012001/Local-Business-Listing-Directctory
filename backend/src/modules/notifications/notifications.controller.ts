@@ -39,6 +39,13 @@ export class NotificationsController {
             };
         } catch (error) {
             console.error(`[NotificationsController] Error finding notifications for user ${user?.id}:`, error);
+            
+            // Handle database connection errors gracefully
+            if (error.code === 'ENETUNREACH' || error.code === 'ECONNREFUSED' || error.message.includes('Connection terminated')) {
+                const { ServiceUnavailableException } = require('@nestjs/common');
+                throw new ServiceUnavailableException('Database is currently unreachable. Please check your internet or database status.');
+            }
+            
             throw error;
         }
     }
