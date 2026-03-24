@@ -261,7 +261,6 @@ function PlanCard({ plan, isActive, status, currentPrice, onSelect, loading }: {
                     {isPending ? '⌛ Pending' : '✓ Current Plan'}
                 </div>
             )}
-// ... (skipping features section for brevity, must match exactly)
             <div className="flex items-center gap-3 mb-4">
                 <div className={`w-10 h-10 rounded-xl ${clr.accent} ${clr.icon} flex items-center justify-center`}>
                     {getIcon(plan.planType)}

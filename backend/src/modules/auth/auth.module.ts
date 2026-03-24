@@ -10,10 +10,12 @@ import { User } from '../../entities/user.entity';
 import { Affiliate } from '../../entities/affiliate.entity';
 import { AffiliateReferral } from '../../entities/referral.entity';
 import { Vendor } from '../../entities/vendor.entity';
+import { Subscription } from '../../entities/subscription.entity';
+import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([User, Affiliate, AffiliateReferral, Vendor]),
+        TypeOrmModule.forFeature([User, Affiliate, AffiliateReferral, Vendor, Subscription, SubscriptionPlan]),
         PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.registerAsync({
             imports: [ConfigModule],

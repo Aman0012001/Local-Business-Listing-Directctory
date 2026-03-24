@@ -276,32 +276,32 @@ export class AffiliateService {
         const commissionRate = parseFloat(settings.commissionRate) || 0;
         const commissionType = settings.commissionType || 'percent';
 
-        // Find the PENDING subscription for this user
+        // Find the newly ACTIVE subscription for this user
         const subscription = await this.subscriptionRepository.findOne({
             where: { 
                 vendorId: referral.referredUserId,
-                status: SubscriptionStatus.PENDING 
+                status: SubscriptionStatus.ACTIVE 
             },
             relationships: { vendor: true },
             order: { createdAt: 'DESC' }
         } as any);
 
         if (!subscription) {
-            // Find any subscription for this vendor that might be pending
-            const anyPendingSub = await this.subscriptionRepository.findOne({
+            // Find any subscription for this vendor that is active
+            const anyActiveSub = await this.subscriptionRepository.findOne({
                 where: { 
                     vendor: { userId: referral.referredUserId },
-                    status: SubscriptionStatus.PENDING 
+                    status: SubscriptionStatus.ACTIVE 
                 },
                 order: { createdAt: 'DESC' }
             });
             
-            if (!anyPendingSub) {
-                throw new BadRequestException('No pending subscription found for this referred user');
+            if (!anyActiveSub) {
+                throw new BadRequestException('No active subscription found for this referred user');
             }
             
             // Use this one if found via relation
-            (subscription as any) = anyPendingSub;
+            (subscription as any) = anyActiveSub;
         }
 
         // 2. Grant 30-day Extension to the Referrer (Affiliate)

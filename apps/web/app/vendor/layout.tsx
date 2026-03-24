@@ -30,12 +30,22 @@ export default function VendorLayout({
                 
                 // If no ACTIVE sub and NOT already on a free/essential page, redirect to subscription
                 const freePages = [
+                    '/vendor/dashboard',    // The central hub, degrades gracefully
                     '/vendor/subscription', // The billing/plan selection page
                     '/vendor/affiliate',    // Explicitly requested as free
                     '/vendor/settings',     // Account profile management
-                    '/vendor/notifications' // System alerts
+                    '/vendor/notifications', // System alerts
+                    '/vendor/leads',        // Has internal lock screen
+                    '/vendor/messages',      // Has internal lock screen
+                    '/vendor/analytics'     // Has internal lock screen
                 ];
-                const isFreePage = freePages.includes(pathname);
+                
+                // Account for Next.js trailing slash variations 
+                const normalizedPathname = pathname.endsWith('/') && pathname !== '/' 
+                    ? pathname.slice(0, -1) 
+                    : pathname;
+                    
+                const isFreePage = freePages.includes(normalizedPathname);
                 
                 if (!activeSubscription && !isFreePage) {
                     router.replace('/vendor/subscription');

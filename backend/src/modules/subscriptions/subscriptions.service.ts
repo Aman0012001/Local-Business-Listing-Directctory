@@ -245,7 +245,7 @@ export class SubscriptionsService {
         const subscription = this.subscriptionRepository.create({
             vendorId: vendor.id,
             planId,
-            status: referral ? SubscriptionStatus.PENDING : SubscriptionStatus.ACTIVE,
+            status: SubscriptionStatus.ACTIVE, // Immediately activate regardless of referral
             startDate: now,
             endDate: endDate,
             amount: plan.price,
@@ -289,17 +289,11 @@ export class SubscriptionsService {
         const vendor = await this.vendorRepository.findOne({ where: { userId } });
         if (!vendor) throw new ForbiddenException('Vendor not found');
 
-        // Find the most relevant subscription: ACTIVE first, then PENDING
+        // Find the active subscription
         return this.subscriptionRepository.findOne({
-            where: [
-                { vendorId: vendor.id, status: SubscriptionStatus.ACTIVE },
-                { vendorId: vendor.id, status: SubscriptionStatus.PENDING }
-            ],
+            where: { vendorId: vendor.id, status: SubscriptionStatus.ACTIVE },
             relations: ['plan'],
-            order: { 
-                status: 'ASC', // 'ACTIVE' comes before 'PENDING' alphabetically
-                createdAt: 'DESC' 
-            }
+            order: { createdAt: 'DESC' }
         });
     }
 

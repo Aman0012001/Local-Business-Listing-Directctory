@@ -15,6 +15,8 @@ import { User, UserRole } from '../../entities/user.entity';
 import { Affiliate } from '../../entities/affiliate.entity';
 import { AffiliateReferral } from '../../entities/referral.entity';
 import { Vendor } from '../../entities/vendor.entity';
+import { Subscription, SubscriptionStatus } from '../../entities/subscription.entity';
+import { SubscriptionPlan, SubscriptionPlanType } from '../../entities/subscription-plan.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { GoogleAuthDto } from './dto/google-auth.dto';
@@ -38,7 +40,50 @@ export class AuthService {
         private referralRepository: Repository<AffiliateReferral>,
         @InjectRepository(Vendor)
         private vendorRepository: Repository<Vendor>,
+        @InjectRepository(Subscription)
+        private subscriptionRepository: Repository<Subscription>,
+        @InjectRepository(SubscriptionPlan)
+        private planRepository: Repository<SubscriptionPlan>,
     ) { }
+
+    /**
+     * Auto-assign the Free plan to a vendor
+     */
+    private async assignFreePlan(vendorId: string): Promise<void> {
+        try {
+            // Find a free plan
+            const freePlan = await this.planRepository.findOne({
+                where: { 
+                    planType: SubscriptionPlanType.FREE,
+                    isActive: true
+                }
+            });
+
+            if (!freePlan) {
+                this.logger.warn(`[GoogleAuth] Cannot auto-assign free plan: No active free plan found.`);
+                return;
+            }
+
+            const now = new Date();
+            const endDate = new Date(now);
+            endDate.setFullYear(now.getFullYear() + 10); // Free plan active for 10 years by default
+
+            const subscription = this.subscriptionRepository.create({
+                vendorId: vendorId,
+                planId: freePlan.id,
+                status: SubscriptionStatus.ACTIVE,
+                startDate: now,
+                endDate: endDate,
+                amount: 0,
+                autoRenew: false,
+            });
+
+            await this.subscriptionRepository.save(subscription);
+            this.logger.log(`[GoogleAuth] Successfully assigned free plan to vendor ${vendorId}.`);
+        } catch (error) {
+            this.logger.error(`[GoogleAuth] Failed to auto-assign free plan to vendor ${vendorId}: ${error.message}`);
+        }
+    }
 
     /**
      * Register a new user
@@ -269,8 +314,11 @@ export class AuthService {
                         userId: user.id,
                         isVerified: false,
                     });
-                    await this.vendorRepository.save(vendor);
+                    const savedVendor = await this.vendorRepository.save(vendor);
                     this.logger.log(`[GoogleAuth] Auto-created vendor profile for upgraded user`);
+
+                    // Auto-assign FREE plan for newly upgraded vendor
+                    await this.assignFreePlan(savedVendor.id);
                 } catch (err: any) {
                     if (err.code !== '23505') this.logger.error('Failed to create vendor profile', err);
                 }
@@ -284,6 +332,14 @@ export class AuthService {
                     this.logger.log(`[GoogleAuth] Auto-created affiliate profile for upgraded user`);
                 } catch (err: any) {
                     if (err.code !== '23505') this.logger.error('Failed to create affiliate record', err);
+                }
+            } else if (user.role === UserRole.VENDOR) {
+                // They are already a vendor. Check if they have an active plan
+                const hasActiveSub = user.vendor?.subscriptions?.some(sub => sub.status === 'active');
+                
+                if (!hasActiveSub && user.vendor) {
+                    this.logger.log(`[GoogleAuth] Existing vendor ${email} lacks an active plan. Auto-assigning FREE plan.`);
+                    await this.assignFreePlan(user.vendor.id);
                 }
             }
         } else {
@@ -309,7 +365,7 @@ export class AuthService {
                     userId: user.id,
                     isVerified: false,
                 });
-                await this.vendorRepository.save(vendor);
+                const savedVendor = await this.vendorRepository.save(vendor);
                 this.logger.log(`[GoogleAuth] Auto-created vendor profile for user ${user.id}`);
 
                 const affiliate = this.affiliateRepository.create({
@@ -318,14 +374,32 @@ export class AuthService {
                 });
                 await this.affiliateRepository.save(affiliate);
                 this.logger.log(`[GoogleAuth] Auto-created affiliate record for vendor ${user.id}`);
+
+                // Auto-assign FREE plan for newly created vendor
+                await this.assignFreePlan(savedVendor.id);
             }
+        }
+
+        // Re-fetch user to ensure all newly created relations (vendor, subscriptions) are fully loaded into memory
+        user = await this.userRepository
+            .createQueryBuilder('user')
+            .leftJoinAndSelect('user.vendor', 'vendor')
+            .leftJoinAndSelect('vendor.subscriptions', 'subscriptions')
+            .leftJoinAndSelect('subscriptions.plan', 'plan')
+            .where('user.id = :id', { id: user.id })
+            .getOne() as User;
+
+        if (!user) {
+            throw new UnauthorizedException('Failed to finalize user data during Google Auth');
         }
 
         // Generate tokens
         const tokens = await this.generateTokens(user);
 
         // Remove sensitive data
-        delete user.password;
+        if (user.password) {
+            delete user.password;
+        }
 
         return { user, tokens };
     }
