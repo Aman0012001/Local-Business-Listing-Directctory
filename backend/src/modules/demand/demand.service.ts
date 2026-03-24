@@ -1,7 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan } from 'typeorm';
+import { Repository, MoreThanOrEqual, Between, MoreThan } from 'typeorm';
 import { SearchLog, NotificationLog, Listing, City, Vendor } from '../../entities';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { ConfigService } from '@nestjs/config';
 import { NotificationsService } from '../notifications/notifications.service';
 
 export interface DemandInsight {
@@ -23,11 +25,12 @@ export class DemandService {
         @InjectRepository(SearchLog)
         private searchLogRepository: Repository<SearchLog>,
         @InjectRepository(NotificationLog)
-        private notificationLogRepo: Repository<NotificationLog>,
+        private notificationLogRepository: Repository<NotificationLog>,
         @InjectRepository(Listing)
-        private listingRepo: Repository<Listing>,
+        private listingRepository: Repository<Listing>,
         @InjectRepository(City)
-        private cityRepo: Repository<City>,
+        private cityRepository: Repository<City>,
+        private configService: ConfigService,
         private notificationsService: NotificationsService,
     ) { }
 
@@ -46,7 +49,7 @@ export class DemandService {
         // Fallback to city coordinates if lat/lng missing
         if ((!latitude || !longitude) && data.city) {
             try {
-                const city = await this.cityRepo.createQueryBuilder('city')
+                const city = await this.cityRepository.createQueryBuilder('city')
                     .where('LOWER(city.name) = LOWER(:cityName)', { cityName: data.city })
                     .orWhere('LOWER(city.slug) = LOWER(:cityName)', { cityName: data.city })
                     .getOne();
@@ -126,6 +129,49 @@ export class DemandService {
         }).sort((a, b) => b.score - a.score).slice(0, 10);
     }
 
+    /**
+     * Get AI-generated summary of demand insights
+     */
+    async getAIInsightsSummary(city?: string): Promise<string> {
+        const insights = await this.getInsights(city);
+        
+        if (insights.length === 0) {
+            return "No significant search patterns detected in the last 24 hours to generate an AI summary.";
+        }
+
+        const apiKey = this.configService.get<string>('GEMINI_API_KEY');
+        if (!apiKey) {
+            this.logger.warn('GEMINI_API_KEY not found in configuration. Skipping AI summary generation.');
+            return "AI summary is currently unavailable. Please configure GEMINI_API_KEY in the environment.";
+        }
+
+        try {
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+            const insightData = insights.map(i => 
+                `- ${i.keyword}: ${i.count1h} searches in last hr, ${i.count24h} in 24hr. Growth: ${i.growth}%. Status: ${i.isTrending ? 'Trending' : 'Stable'}`
+            ).join('\n');
+
+            const prompt = `
+                Analyze the following search demand data for a local business listing platform${city ? ` in ${city}` : ''}:
+                
+                ${insightData}
+                
+                Provide a concise, professional summary of the current market demand. 
+                Identify the hottest categories, any sudden spikes, and provide a single actionable recommendation for platform administrators (e.g., reaching out to specific vendor types).
+                Keep the response under 150 words and use a helpful, insights-driven tone.
+            `;
+
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            return response.text();
+        } catch (error) {
+            this.logger.error(`Error generating AI summary: ${error.message}`);
+            return "Failed to generate AI demand summary at this time.";
+        }
+    }
+
     async getNearbyDemand(lat?: number, lng?: number) {
         // Simplified version for now, could use lat/lng radius in the future
         return this.getInsights();
@@ -163,7 +209,7 @@ export class DemandService {
 
     private async notifyVendorsAboutHotDemand(insight: DemandInsight) {
         // Find vendors in categories matching this keyword
-        const businesses = await this.listingRepo.createQueryBuilder('listing')
+        const businesses = await this.listingRepository.createQueryBuilder('listing')
             .leftJoinAndSelect('listing.vendor', 'vendor')
             .leftJoinAndSelect('listing.category', 'category')
             .where('listing.status = :status', { status: 'approved' })
@@ -181,7 +227,7 @@ export class DemandService {
 
                 // Rate limit: Don't notify for the same "Hot Demand" keyword within 6 hours
                 const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
-                const recentAlert = await this.notificationLogRepo.findOne({
+                const recentAlert = await this.notificationLogRepository.findOne({
                     where: {
                         vendorId: business.vendor.id,
                         keyword: `HOT:${insight.normalizedKeyword}`,
@@ -213,7 +259,7 @@ export class DemandService {
         });
 
         // Log the alert
-        await this.notificationLogRepo.save({
+        await this.notificationLogRepository.save({
             vendorId: vendor.id,
             keyword: `HOT:${insight.normalizedKeyword}`,
             status: 'sent'

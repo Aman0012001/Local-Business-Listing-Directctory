@@ -20,7 +20,7 @@ export default function VendorBroadcastsPage() {
                     <ChevronRight className="w-3 h-3" />
                     <span className="text-slate-900 font-black">Broadcast Feed</span>
                 </div>
-                
+
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div>
                         <h1 className="text-4xl lg:text-6xl font-black text-slate-900 mb-3 tracking-tighter flex items-center gap-4">
@@ -35,7 +35,7 @@ export default function VendorBroadcastsPage() {
             </motion.div>
 
             {/* Main Content */}
-            <div className="bg-slate-50/30 rounded-[40px] p-8 sm:p-12 border-2 border-slate-50">
+            <div className="bg-slate-50/30 rounded-[24px] p-8 sm:p-12 border-2 border-slate-50">
                 <BroadcastFeed />
             </div>
         </div>

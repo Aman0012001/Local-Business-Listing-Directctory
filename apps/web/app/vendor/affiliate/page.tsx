@@ -121,7 +121,7 @@ export default function AffiliateDashboard() {
     }
     // ... [rest of the component logic remains similar but with added UI sections]
 
-    if (!stats && !loading) {
+    if ((!stats || stats.isAffiliate === false) && !loading) {
         return (
             <main className="max-w-4xl mx-auto px-4 py-20 text-center">
                     <div className="w-24 h-24 bg-orange-50 rounded-[28px] flex items-center justify-center mx-auto mb-8">
@@ -192,23 +192,14 @@ export default function AffiliateDashboard() {
                     </div>
                 </div>
 
-                <div className="grid md:grid-cols-4 gap-6 mb-12">
+                <div className="grid md:grid-cols-3 gap-6 mb-12">
                     <div className="p-8 bg-white rounded-[28px] border border-slate-200 shadow-sm">
                         <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-500 mb-6">
-                            <Wallet className="w-6 h-6" />
+                            <Timer className="w-6 h-6" />
                         </div>
                         <div className="space-y-1">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Available Balance</p>
-                            <h3 className="text-3xl font-black text-slate-900">PKR {stats?.balance}</h3>
-                        </div>
-                    </div>
-                    <div className="p-8 bg-white rounded-[28px] border border-slate-200 shadow-sm">
-                        <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-500 mb-6">
-                            <TrendingUp className="w-6 h-6" />
-                        </div>
-                        <div className="space-y-1">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Earnings</p>
-                            <h3 className="text-3xl font-black text-slate-900">PKR {stats?.totalEarnings}</h3>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Plan Extensions Earned</p>
+                            <h3 className="text-3xl font-black text-slate-900">{stats?.convertedReferrals || 0} Months</h3>
                         </div>
                     </div>
                     <div className="p-8 bg-white rounded-[28px] border border-slate-200 shadow-sm">
@@ -217,7 +208,7 @@ export default function AffiliateDashboard() {
                         </div>
                         <div className="space-y-1">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Referrals</p>
-                            <h3 className="text-3xl font-black text-slate-900">{stats?.totalReferrals}</h3>
+                            <h3 className="text-3xl font-black text-slate-900">{stats?.totalReferrals || 0}</h3>
                         </div>
                     </div>
                     <div className="p-8 bg-white rounded-[28px] border border-slate-200 shadow-sm">
@@ -226,7 +217,7 @@ export default function AffiliateDashboard() {
                         </div>
                         <div className="space-y-1">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Conversions</p>
-                            <h3 className="text-3xl font-black text-slate-900">{stats?.convertedReferrals}</h3>
+                            <h3 className="text-3xl font-black text-slate-900">{stats?.convertedReferrals || 0}</h3>
                         </div>
                     </div>
                 </div>
@@ -235,30 +226,27 @@ export default function AffiliateDashboard() {
                     <div className="lg:col-span-2 space-y-6">
                         <div className="bg-white rounded-[28px] border border-slate-200 overflow-hidden">
                             <div className="p-8 border-b border-slate-100 flex items-center justify-between font-black text-slate-900">
-                                <h3 className="text-xl">Payout History</h3>
+                                <h3 className="text-xl">Referral History</h3>
                             </div>
                             <div className="p-4">
-                                {payouts.length > 0 ? (
+                                {referrals.length > 0 ? (
                                     <div className="space-y-2">
-                                        {payouts.map((payout, idx) => (
+                                        {referrals.map((ref, idx) => (
                                             <div key={idx} className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-2xl transition-all">
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400">
-                                                        <Wallet className="w-6 h-6" />
+                                                        <Users className="w-6 h-6" />
                                                     </div>
                                                     <div>
-                                                        <h4 className="text-sm font-black text-slate-900">PKR {payout.amount}</h4>
+                                                        <h4 className="text-sm font-black text-slate-900">{ref.referredUser?.fullName || 'New Vendor'}</h4>
                                                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                                            {new Date(payout.createdAt).toLocaleDateString()} • {payout.paymentMethod}
+                                                            {new Date(ref.createdAt).toLocaleDateString()} • {ref.status}
                                                         </p>
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
-                                                    <span className={`px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${payout.status === 'paid' ? 'bg-emerald-100 text-emerald-600' :
-                                                        payout.status === 'rejected' ? 'bg-red-100 text-red-600' :
-                                                            'bg-orange-100 text-orange-600'
-                                                        }`}>
-                                                        {payout.status}
+                                                    <span className={`px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${ref.status === 'converted' ? 'bg-emerald-100 text-emerald-600' : 'bg-orange-100 text-orange-600'}`}>
+                                                        {ref.status === 'converted' ? '+1 Month Extension' : 'Awaiting Activation'}
                                                     </span>
                                                 </div>
                                             </div>
@@ -269,7 +257,7 @@ export default function AffiliateDashboard() {
                                         <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-100">
                                             <Timer className="w-8 h-8 text-slate-200" />
                                         </div>
-                                        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No payouts yet</p>
+                                        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No referrals yet</p>
                                     </div>
                                 )}
                             </div>
@@ -282,23 +270,17 @@ export default function AffiliateDashboard() {
                             <div className="space-y-6">
                                 <div className="flex gap-4">
                                     <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-orange-400 shrink-0">1</div>
-                                    <p className="text-sm text-slate-300 font-medium">Earn <span className="text-white font-black text-base">{settings?.commissionType === 'percent' ? `${settings?.commissionRate}%` : `PKR ${settings?.commissionRate}`} commission</span> on every premium subscription your referrals buy.</p>
+                                    <p className="text-sm text-slate-300 font-medium">Get <span className="text-white font-black text-base">30 Days Free Plan</span> extension for every business that subscribes using your link.</p>
                                 </div>
                                 <div className="flex gap-4">
                                     <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-blue-400 shrink-0">2</div>
-                                    <p className="text-sm text-slate-300 font-medium">Earn <span className="text-white font-black text-base">PKR {settings?.checkinReward || 5}</span> for every unique business check-in.</p>
+                                    <p className="text-sm text-slate-300 font-medium">Extensions are applied <span className="text-white font-black italic text-base">automatically</span> upon Super Admin activation.</p>
                                 </div>
                                 <div className="flex gap-4">
                                     <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-emerald-400 shrink-0">3</div>
-                                    <p className="text-sm text-slate-300 font-medium">Valid for <span className="text-white font-black">{settings?.validityMonths === '1200' ? 'Lifetime' : `${settings?.validityMonths} months`}</span> from signup. Min payout PKR 500.</p>
+                                    <p className="text-sm text-slate-300 font-medium">Unlimited referrals! Stack up your free months and keep your listing live for <span className="text-white font-black">Zero PKR</span>.</p>
                                 </div>
                             </div>
-                            <button
-                                onClick={() => setShowPayoutModal(true)}
-                                className="w-full mt-10 py-4 bg-orange-500 text-white rounded-2xl font-black text-sm hover:bg-orange-600 transition-all flex items-center justify-center gap-2"
-                            >
-                                Request Payout <ChevronRight className="w-4 h-4" />
-                            </button>
                         </div>
 
                         <div className="p-8 bg-blue-600 rounded-[28px] text-white overflow-hidden relative group">

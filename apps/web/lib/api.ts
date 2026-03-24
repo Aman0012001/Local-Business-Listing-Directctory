@@ -483,6 +483,10 @@ export const api = {
             method: 'PATCH',
             body: JSON.stringify(data),
         }),
+        adminGetReferrals: () => fetcher<any[]>('/affiliate/admin/referrals'),
+        adminActivateReferral: (id: string) => fetcher<any>(`/affiliate/admin/activate-referral/${id}`, {
+            method: 'POST'
+        }),
     },
     subscriptions: {
         getPlans: () => fetcher<any[]>('/subscriptions/plans'),
@@ -568,6 +572,7 @@ export const api = {
     },
     demand: {
         getInsights: (city?: string) => fetcher<any[]>(`/demand/insights${city ? `?city=${city}` : ''}`, { silent: true }),
+        getAISummary: (city?: string) => fetcher<{ summary: string }>(`/demand/summary-ai${city ? `?city=${city}` : ''}`, { silent: true }),
         getNearby: (lat?: number, lng?: number) => fetcher<any[]>(`/demand/nearby${lat !== undefined && lng !== undefined ? `?lat=${lat}&lng=${lng}` : ''}`, { silent: true }),
         getHeatmap: (keyword?: string) => fetcher<any[]>(`/demand/heatmap${keyword ? `?keyword=${keyword}` : ''}`, { silent: true }),
         logSearch: (data: any) => fetcher('/demand/log', { method: 'POST', body: JSON.stringify(data), silent: true }),

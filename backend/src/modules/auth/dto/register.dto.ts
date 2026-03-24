@@ -31,4 +31,9 @@ export class RegisterDto {
     @IsOptional()
     @IsString()
     role?: string = 'user';
+
+    @ApiPropertyOptional({ example: 'REF12345' })
+    @IsOptional()
+    @IsString()
+    referralCode?: string;
 }

@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+// Force reload for ai-summary route registration
 import {
     ValidationPipe,
     VersioningType,

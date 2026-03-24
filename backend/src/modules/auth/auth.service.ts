@@ -12,9 +12,12 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { OAuth2Client } from 'google-auth-library';
 import { User, UserRole } from '../../entities/user.entity';
+import { Affiliate } from '../../entities/affiliate.entity';
+import { AffiliateReferral } from '../../entities/referral.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { GoogleAuthDto } from './dto/google-auth.dto';
+import { nanoid } from 'nanoid';
 import { JwtPayload, JwtTokens } from '../../common/interfaces/jwt-payload.interface';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -28,6 +31,10 @@ export class AuthService {
         private jwtService: JwtService,
         private configService: ConfigService,
         private notificationsService: NotificationsService,
+        @InjectRepository(Affiliate)
+        private affiliateRepository: Repository<Affiliate>,
+        @InjectRepository(AffiliateReferral)
+        private referralRepository: Repository<AffiliateReferral>,
     ) { }
 
     /**
@@ -61,11 +68,39 @@ export class AuthService {
 
         const savedUser = await this.userRepository.save(user);
 
+        // Auto-create affiliate record for vendors
+        if (savedUser.role === UserRole.VENDOR) {
+            const affiliate = this.affiliateRepository.create({
+                user: savedUser,
+                referralCode: nanoid(10),
+            });
+            await this.affiliateRepository.save(affiliate);
+            this.logger.log(`Auto-created affiliate record for vendor ${savedUser.id}`);
+        }
+
         // Generate tokens
         const tokens = await this.generateTokens(savedUser);
 
         // Remove sensitive data
         delete savedUser.password;
+
+        // Handle referral if provided
+        if (registerDto.referralCode && savedUser.role === UserRole.VENDOR) {
+            const affiliate = await this.affiliateRepository.findOne({
+                where: { referralCode: registerDto.referralCode }
+            });
+
+            if (affiliate) {
+                const referral = this.referralRepository.create({
+                    affiliateId: affiliate.id,
+                    referredUserId: savedUser.id,
+                    type: 'signup' as any,
+                    status: 'pending' as any,
+                });
+                await this.referralRepository.save(referral);
+                this.logger.log(`Created PENDING referral for user ${savedUser.id} from affiliate ${affiliate.id}`);
+            }
+        }
 
         // Broadcast new vendor notification to all users
         if (savedUser.role === UserRole.VENDOR) {
@@ -223,6 +258,16 @@ export class AuthService {
             });
             user = await this.userRepository.save(newUser);
             this.logger.log(`[GoogleAuth] Created and marked online new user from Google: ${email}`);
+
+            // Auto-create affiliate record for vendors
+            if (user.role === UserRole.VENDOR) {
+                const affiliate = this.affiliateRepository.create({
+                    user: user,
+                    referralCode: nanoid(10),
+                });
+                await this.affiliateRepository.save(affiliate);
+                this.logger.log(`[GoogleAuth] Auto-created affiliate record for vendor ${user.id}`);
+            }
         }
 
         // Generate tokens

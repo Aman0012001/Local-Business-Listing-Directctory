@@ -254,7 +254,7 @@ export default function AdminVerificationsPage() {
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="bg-white rounded-[3rem] p-10 max-w-2xl w-full shadow-2xl relative overflow-hidden"
+                            className="bg-white rounded-[1rem] p-10 max-w-2xl w-full shadow-2xl relative overflow-hidden"
                             onClick={e => e.stopPropagation()}
                         >
                             <button onClick={() => setSelectedVendor(null)} className="absolute top-8 right-8 text-slate-300 hover:text-slate-900 transition-colors">

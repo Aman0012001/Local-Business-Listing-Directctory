@@ -646,3 +646,6 @@ Error: Connection terminated due to connection timeout
 [2026-03-19T03:09:51.704Z] findBySlug: hair-salon-mmp8acr9 (User: superadmin@example.com)
 [2026-03-19T03:09:52.978Z] findBySlug: hair-salon-mmp8acr9 - Found in DB. Status: approved
 [2026-03-19T03:09:53.458Z] findBySlug: hair-salon-mmp8acr9 - SUCCESS
+[2026-03-23T17:23:48.901Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: aman@gmail.com)
+[2026-03-23T17:23:50.114Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-23T17:23:50.545Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS

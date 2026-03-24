@@ -3,6 +3,7 @@ import {
     NotFoundException,
     BadRequestException,
     ConflictException,
+    Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -11,10 +12,12 @@ import { AffiliateReferral, ReferralStatus, ReferralType } from '../../entities/
 import { Payout, PayoutStatus } from '../../entities/payout.entity';
 import { User } from '../../entities/user.entity';
 import { SystemSetting } from '../../entities/system-setting.entity';
+import { Subscription, SubscriptionStatus } from '../../entities/subscription.entity';
 import { nanoid } from 'nanoid';
 
 @Injectable()
 export class AffiliateService {
+    private readonly logger = new Logger(AffiliateService.name);
     constructor(
         @InjectRepository(Affiliate)
         private affiliateRepository: Repository<Affiliate>,
@@ -26,15 +29,27 @@ export class AffiliateService {
         private userRepository: Repository<User>,
         @InjectRepository(SystemSetting)
         private systemSettingRepository: Repository<SystemSetting>,
+        @InjectRepository(Subscription)
+        private subscriptionRepository: Repository<Subscription>,
     ) { }
 
     async getStats(userId: string) {
-        const affiliate = await this.affiliateRepository.findOne({
+        let affiliate = await this.affiliateRepository.findOne({
             where: { user: { id: userId } },
         });
 
         if (!affiliate) {
-            return { isAffiliate: false };
+            // Check if user is a vendor, if so auto-create
+            const user = await this.userRepository.findOne({ where: { id: userId } });
+            if (user && user.role === 'vendor') {
+                affiliate = this.affiliateRepository.create({
+                    user: { id: userId } as any,
+                    referralCode: nanoid(10),
+                });
+                affiliate = await this.affiliateRepository.save(affiliate);
+            } else {
+                return { isAffiliate: false };
+            }
         }
 
         const referrals = await this.referralRepository.count({
@@ -48,14 +63,12 @@ export class AffiliateService {
         return {
             isAffiliate: true,
             referralCode: affiliate.referralCode,
+            totalReferrals: referrals,
+            convertedReferrals: conversions,
             totalEarnings: affiliate.totalEarnings,
             balance: affiliate.balance,
             totalWithdrawals: affiliate.totalWithdrawals,
-            stats: {
-                referrals,
-                conversions,
-                conversionRate: referrals > 0 ? (conversions / referrals) * 100 : 0,
-            },
+            conversionRate: referrals > 0 ? (conversions / referrals) * 100 : 0,
         };
     }
 
@@ -236,5 +249,98 @@ export class AffiliateService {
         };
     }
 
+    async getReferralStats() {
+        return await this.referralRepository.find({
+            relations: ['affiliate', 'affiliate.user', 'referredUser'],
+            order: { createdAt: 'DESC' }
+        });
+    }
 
+    async adminActivateReferral(referralId: string) {
+        const referral = await this.referralRepository.findOne({
+            where: { id: referralId },
+            relations: ['affiliate', 'referredUser']
+        });
+
+        if (!referral) {
+            throw new NotFoundException('Referral not found');
+        }
+
+        if (referral.status !== ReferralStatus.PENDING) {
+            throw new BadRequestException('Referral is already processed');
+        }
+
+        // 1. Activate the Referral
+        // Get dynamic settings
+        const settings = await this.getSettings();
+        const commissionRate = parseFloat(settings.commissionRate) || 0;
+        const commissionType = settings.commissionType || 'percent';
+
+        // Find the PENDING subscription for this user
+        const subscription = await this.subscriptionRepository.findOne({
+            where: { 
+                vendorId: referral.referredUserId,
+                status: SubscriptionStatus.PENDING 
+            },
+            relationships: { vendor: true },
+            order: { createdAt: 'DESC' }
+        } as any);
+
+        if (!subscription) {
+            // Find any subscription for this vendor that might be pending
+            const anyPendingSub = await this.subscriptionRepository.findOne({
+                where: { 
+                    vendor: { userId: referral.referredUserId },
+                    status: SubscriptionStatus.PENDING 
+                },
+                order: { createdAt: 'DESC' }
+            });
+            
+            if (!anyPendingSub) {
+                throw new BadRequestException('No pending subscription found for this referred user');
+            }
+            
+            // Use this one if found via relation
+            (subscription as any) = anyPendingSub;
+        }
+
+        // 2. Grant 30-day Extension to the Referrer (Affiliate)
+        const referrerId = referral.affiliate.user.id;
+        const referrerActiveSub = await this.subscriptionRepository.findOne({
+            where: { 
+                vendor: { userId: referrerId },
+                status: SubscriptionStatus.ACTIVE 
+            },
+            order: { endDate: 'DESC' }
+        });
+
+        if (referrerActiveSub) {
+            const currentEndDate = new Date(referrerActiveSub.endDate);
+            currentEndDate.setDate(currentEndDate.getDate() + 30);
+            referrerActiveSub.endDate = currentEndDate;
+            await this.subscriptionRepository.save(referrerActiveSub);
+            this.logger.log(`Extended referrer ${referrerId} subscription by 30 days`);
+        }
+
+        // 3. Update Referral Status
+        referral.status = ReferralStatus.CONVERTED;
+        referral.commissionAmount = 0; // No PKR commission anymore
+        referral.type = ReferralType.SUBSCRIPTION;
+        await this.referralRepository.save(referral);
+
+        // 4. Update Affiliate Balance (optional: keep tracking conversions count)
+        const affiliate = referral.affiliate;
+        // We don't update balance/totalEarnings PKR, just keep it as is or log it
+        await this.affiliateRepository.save(affiliate);
+
+        // 5. Activate the Referred Vendor's Subscription
+        subscription.status = SubscriptionStatus.ACTIVE;
+        await this.subscriptionRepository.save(subscription);
+
+        return {
+            success: true,
+            message: 'Referral activated and Referrer plan extended by 30 days',
+            extensionGranted: !!referrerActiveSub
+        };
+    }
 }

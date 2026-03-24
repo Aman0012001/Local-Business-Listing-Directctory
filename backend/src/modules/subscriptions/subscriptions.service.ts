@@ -3,6 +3,7 @@ import {
     NotFoundException,
     BadRequestException,
     ForbiddenException,
+    Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -20,6 +21,7 @@ import { AffiliateService } from '../affiliate/affiliate.service';
 
 @Injectable()
 export class SubscriptionsService {
+    private readonly logger = new Logger(SubscriptionsService.name);
     constructor(
         @InjectRepository(Subscription)
         private subscriptionRepository: Repository<Subscription>,
@@ -231,10 +233,19 @@ export class SubscriptionsService {
         const now = new Date();
         const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
+        // Check for referral
+        const referral = await this.referralRepository.findOne({
+            where: [
+                { referredUserId: vendor.userId, status: ReferralStatus.PENDING, type: ReferralType.SIGNUP },
+                { referredUserId: vendor.userId, status: ReferralStatus.PENDING, type: ReferralType.SUBSCRIPTION }
+            ],
+            order: { createdAt: 'DESC' }
+        });
+
         const subscription = this.subscriptionRepository.create({
             vendorId: vendor.id,
             planId,
-            status: SubscriptionStatus.ACTIVE,
+            status: referral ? SubscriptionStatus.PENDING : SubscriptionStatus.ACTIVE,
             startDate: now,
             endDate: endDate,
             amount: plan.price,
@@ -258,45 +269,13 @@ export class SubscriptionsService {
         await this.transactionRepository.save(transaction);
 
         // --- Affiliate Integration ---
-        const referral = await this.referralRepository.findOne({
-            where: [
-                { referredUserId: vendor.userId, status: ReferralStatus.PENDING, type: ReferralType.SIGNUP },
-                { referredUserId: vendor.userId, status: ReferralStatus.PENDING, type: ReferralType.SUBSCRIPTION }
-            ],
-            order: { createdAt: 'DESC' }
-        });
-
         if (referral) {
-            // Fetch dynamic settings from AffiliateService
-            const settings = await this.affiliateService.getSettings();
+            // Simply update the referral to indicate a subscription attempt happened
+            // Activation and commission award will be handled by Admin
+            referral.type = ReferralType.SUBSCRIPTION;
+            await this.referralRepository.save(referral);
             
-            // Check validity period
-            const monthsPassed = (now.getTime() - referral.createdAt.getTime()) / (1000 * 60 * 60 * 24 * 30);
-            const validityMonths = parseFloat(settings.validityMonths) || 2;
-
-            if (monthsPassed <= validityMonths) {
-                let commissionAmount = 0;
-                if (settings.commissionType === 'percent') {
-                   commissionAmount = Number(plan.price) * (parseFloat(settings.commissionRate) / 100);
-                } else {
-                   commissionAmount = parseFloat(settings.commissionRate);
-                }
-                
-                referral.status = ReferralStatus.CONVERTED;
-                referral.commissionAmount = commissionAmount;
-                await this.referralRepository.save(referral);
-
-                const affiliate = await this.affiliateRepository.findOne({ where: { id: referral.affiliateId } });
-                if (affiliate) {
-                    affiliate.balance = Number(affiliate.balance) + commissionAmount;
-                    affiliate.totalEarnings = Number(affiliate.totalEarnings) + commissionAmount;
-                    await this.affiliateRepository.save(affiliate);
-                }
-            } else {
-                // Expired referral
-                referral.status = ReferralStatus.EXPIRED;
-                await this.referralRepository.save(referral);
-            }
+            this.logger.log(`Affiliate referral ${referral.id} for user ${vendor.userId} is now AWAITING ADMIN ACTIVATION`);
         }
         // ------------------------------
 

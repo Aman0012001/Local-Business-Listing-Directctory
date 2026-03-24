@@ -51,13 +51,13 @@ export default function VendorLeadsInbox() {
         }
     };
 
-    if (loading) return <div className="text-center py-12">Loading job opportunities...</div>;
+    if (loading) return <div className="text-center py-12">Loading Brodcast...</div>;
 
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-900">Job Opportunities</h2>
-                <button 
+                <h2 className="text-2xl font-bold text-gray-900">Brodcast</h2>
+                <button
                     onClick={fetchLeads}
                     className="text-primary-600 hover:text-primary-700 text-sm font-semibold flex items-center"
                 >
@@ -81,10 +81,10 @@ export default function VendorLeadsInbox() {
             ) : (
                 <div className="grid grid-cols-1 gap-4">
                     {leads.map(lead => (
-                        <JobOpportunityCard 
-                            key={lead.id} 
-                            lead={lead} 
-                            onRespond={setSelectedLead} 
+                        <JobOpportunityCard
+                            key={lead.id}
+                            lead={lead}
+                            onRespond={setSelectedLead}
                         />
                     ))}
                 </div>

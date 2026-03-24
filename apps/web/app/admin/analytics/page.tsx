@@ -106,11 +106,11 @@ export default function SearchAnalyticsPage() {
 
             const markers = heatmapData.map(point => {
                 const position = { lat: parseFloat(point.lat), lng: parseFloat(point.lng) };
-                
+
                 // Create custom marker element for search points
                 const markerContainer = document.createElement('div');
                 markerContainer.className = 'w-4 h-4 rounded-full bg-red-600/60 border border-white shadow-lg animate-pulse';
-                
+
                 return new google.maps.marker.AdvancedMarkerElement({
                     map: googleMapRef.current,
                     position,
@@ -127,7 +127,7 @@ export default function SearchAnalyticsPage() {
                     render: ({ count, position }) => {
                         const color = count > 50 ? '#dc2626' : count > 20 ? '#ea580c' : '#2563eb';
                         const size = 30 + Math.min(count / 2, 30);
-                        
+
                         const div = document.createElement('div');
                         div.style.backgroundColor = color;
                         div.style.color = 'white';
@@ -142,7 +142,7 @@ export default function SearchAnalyticsPage() {
                         div.style.border = '3px solid rgba(255,255,255,0.4)';
                         div.style.boxShadow = '0 10px 25px -5px rgba(0,0,0,0.3)';
                         div.textContent = count.toString();
-                        
+
                         return new google.maps.marker.AdvancedMarkerElement({
                             position,
                             content: div,
@@ -226,11 +226,11 @@ export default function SearchAnalyticsPage() {
             <div className="relative">
                 <div
                     ref={mapRef}
-                    className="w-full h-[600px] rounded-[3rem] overflow-hidden border-8 border-white shadow-2xl bg-slate-100"
+                    className="w-full h-[600px] rounded-[1rem] overflow-hidden border-8 border-white shadow-2xl bg-slate-100"
                 />
 
                 {loading && (
-                    <div className="absolute inset-0 bg-white/40 backdrop-blur-sm flex items-center justify-center rounded-[3rem]">
+                    <div className="absolute inset-0 bg-white/40 backdrop-blur-sm flex items-center justify-center rounded-[1rem]">
                         <div className="flex flex-col items-center gap-4">
                             <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
                             <p className="font-bold text-slate-900 tracking-tight">Updating Density Clusters...</p>
@@ -240,7 +240,7 @@ export default function SearchAnalyticsPage() {
 
                 {!loading && heatmapData.length === 0 && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="bg-white/90 backdrop-blur-md px-10 py-12 rounded-[3rem] shadow-2xl border border-slate-100 text-center max-w-sm pointer-events-auto">
+                        <div className="bg-white/90 backdrop-blur-md px-10 py-12 rounded-[1rem] shadow-2xl border border-slate-100 text-center max-w-sm pointer-events-auto">
                             <div className="w-16 h-16 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
                                 <MapIcon className="w-8 h-8 text-slate-300" />
                             </div>

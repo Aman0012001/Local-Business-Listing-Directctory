@@ -14,8 +14,9 @@ export default function AdminAffiliatesPage() {
     const [stats, setStats] = useState<any>(null);
     const [affiliates, setAffiliates] = useState<any[]>([]);
     const [payouts, setPayouts] = useState<any[]>([]);
+    const [referrals, setReferrals] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [tab, setTab] = useState<'payouts' | 'affiliates' | 'settings'>('payouts');
+    const [tab, setTab] = useState<'payouts' | 'affiliates' | 'referrals' | 'settings'>('payouts');
     const [settings, setSettings] = useState({
         commissionRate: '10',
         commissionType: 'percent',
@@ -37,16 +38,18 @@ export default function AdminAffiliatesPage() {
 
     const loadData = async () => {
         try {
-            const [statsData, affiliatesData, payoutsData, settingsData] = await Promise.all([
+            const [statsData, affiliatesData, payoutsData, settingsData, referralsData] = await Promise.all([
                 api.affiliate.adminGetStats(),
                 api.affiliate.adminGetAffiliates(),
                 api.affiliate.adminGetPayouts(),
-                api.affiliate.getSettings()
+                api.affiliate.getSettings(),
+                api.affiliate.adminGetReferrals()
             ]);
             setStats(statsData);
             setAffiliates(affiliatesData as any[]);
             setPayouts(payoutsData as any[]);
             setSettings(settingsData);
+            setReferrals(referralsData as any[]);
         } catch (err) {
             console.error('Failed to load admin affiliate data:', err);
         } finally {
@@ -79,6 +82,20 @@ export default function AdminAffiliatesPage() {
             await loadData();
         } catch (err: any) {
             alert(err.message || 'Failed to update payout status');
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
+    const handleActivateReferral = async (id: string) => {
+        if (!confirm('Are you sure you want to activate this referral and its associated member plan?')) return;
+        setProcessingId(id);
+        try {
+            await api.affiliate.adminActivateReferral(id);
+            alert('Referral and Plan activated successfully!');
+            await loadData();
+        } catch (err: any) {
+            alert(err.message || 'Activation failed');
         } finally {
             setProcessingId(null);
         }
@@ -138,6 +155,12 @@ export default function AdminAffiliatesPage() {
                         className={`flex-1 py-4 rounded-[24px] text-sm font-black transition-all ${tab === 'affiliates' ? 'bg-white text-slate-900 shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}
                     >
                         All Affiliates
+                    </button>
+                    <button
+                        onClick={() => setTab('referrals')}
+                        className={`flex-1 py-4 rounded-[24px] text-sm font-black transition-all ${tab === 'referrals' ? 'bg-white text-slate-900 shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                        Referrals <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full text-[10px]">{referrals.filter(r => r.status === 'pending').length}</span>
                     </button>
                     <button
                         onClick={() => setTab('settings')}
@@ -275,6 +298,86 @@ export default function AdminAffiliatesPage() {
                                 <div className="py-20 text-center">
                                     <Users className="w-12 h-12 text-slate-100 mx-auto mb-4" />
                                     <p className="text-sm font-black text-slate-300 uppercase tracking-widest">No affiliates found</p>
+                                </div>
+                            )}
+                        </div>
+                    ) : tab === 'referrals' ? (
+                        <div className="space-y-4">
+                            {referrals.length > 0 ? (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left">
+                                        <thead>
+                                            <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-6">
+                                                <th className="px-6 py-4">Status</th>
+                                                <th className="px-6 py-4">Referrer (Affiliate)</th>
+                                                <th className="px-6 py-4">Referred Vendor</th>
+                                                <th className="px-6 py-4">Commission</th>
+                                                <th className="px-6 py-4 text-right pr-10">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-50">
+                                            {referrals.map((ref) => (
+                                                <tr key={ref.id} className="group hover:bg-slate-50/50 transition-all">
+                                                    <td className="px-6 py-6">
+                                                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${ref.status === 'converted' ? 'bg-emerald-100 text-emerald-600' :
+                                                                ref.status === 'pending' ? 'bg-blue-100 text-blue-600' :
+                                                                'bg-slate-100 text-slate-500'
+                                                            }`}>
+                                                            {ref.status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-6">
+                                                        <div>
+                                                            <div className="font-black text-slate-900">{ref.affiliate?.user?.fullName || 'Unknown'}</div>
+                                                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{ref.affiliate?.referralCode}</div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-6">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center font-black text-blue-300 text-xs">
+                                                                {ref.referredUser?.fullName?.[0] || 'V'}
+                                                            </div>
+                                                            <div>
+                                                                <div className="font-bold text-slate-800 text-sm">{ref.referredUser?.fullName || 'Unknown Vendor'}</div>
+                                                                <div className="text-[10px] text-slate-400 font-medium italic">{ref.referredUser?.email}</div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-6">
+                                                        <div className="text-sm font-black text-slate-900">PKR {ref.commissionAmount || 0}</div>
+                                                        <div className="text-[9px] text-slate-400 font-bold uppercase">{ref.type || 'Signup'}</div>
+                                                    </td>
+                                                    <td className="px-6 py-6 text-right pr-10">
+                                                        {ref.status === 'pending' ? (
+                                                            <button
+                                                                onClick={() => handleActivateReferral(ref.id)}
+                                                                disabled={processingId === ref.id}
+                                                                className="px-6 py-3 bg-slate-900 text-white rounded-xl font-black text-xs hover:bg-emerald-600 transition-all flex items-center gap-2 ml-auto active:scale-95 shadow-lg shadow-slate-200"
+                                                            >
+                                                                {processingId === ref.id ? (
+                                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                                ) : (
+                                                                    <>
+                                                                        <CheckCircle2 className="w-4 h-4" />
+                                                                        Activate Plan
+                                                                    </>
+                                                                )}
+                                                            </button>
+                                                        ) : (
+                                                            <div className="text-[10px] text-emerald-500 font-black uppercase tracking-widest flex items-center justify-end gap-2">
+                                                                <CheckCircle2 className="w-4 h-4" /> Active
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <div className="py-20 text-center">
+                                    <AlertCircle className="w-12 h-12 text-slate-100 mx-auto mb-4" />
+                                    <p className="text-sm font-black text-slate-300 uppercase tracking-widest">No referral activity tracked yet</p>
                                 </div>
                             )}
                         </div>

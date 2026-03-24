@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Mail, Lock, User, ArrowRight, ShieldCheck, Loader2, Phone } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, ShieldCheck, Loader2, Phone, Megaphone } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { useAuth } from '../../context/AuthContext';
@@ -14,6 +14,7 @@ function RegisterForm() {
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
+    const [referralCode, setReferralCode] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -56,7 +57,8 @@ function RegisterForm() {
                 email,
                 phone,
                 password,
-                role: selectedRole
+                role: selectedRole,
+                referralCode: selectedRole === 'vendor' ? referralCode : undefined
             });
         } catch (err: any) {
             setError(err.message || 'Registration failed. Please try again.');
@@ -170,6 +172,22 @@ function RegisterForm() {
                                     />
                                 </div>
                             </div>
+
+                            {selectedRole === 'vendor' && (
+                                <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-500">
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Referral Code (Optional)</label>
+                                    <div className="relative">
+                                        <Megaphone className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
+                                        <input
+                                            type="text"
+                                            className="w-full pl-14 pr-6 py-4 bg-blue-50/30 border-2 border-transparent focus:border-blue-500/20 focus:bg-white focus:ring-4 focus:ring-blue-500/5 rounded-2xl text-slate-900 font-bold transition-all outline-none uppercase placeholder:normal-case"
+                                            placeholder="Enter your expert's code"
+                                            value={referralCode}
+                                            onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                                        />
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="flex items-start gap-3 px-1">
                                 <div className="mt-1">

@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { 
-    BadgeCheck, Star, Mail, Phone, MapPin, 
+import {
+    BadgeCheck, Star, Mail, Phone, MapPin,
     Calendar, Building2, Globe, ArrowLeft,
     TrendingUp, Award, Clock, Search, Filter,
     Tag, Gift, Ticket, ChevronRight
@@ -150,7 +150,7 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Services</span>
                                     </div>
                                 </div>
-                                
+
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100">
                                         <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
@@ -183,7 +183,7 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
 
             {/* ── Main Content Area ── */}
             <main className="max-w-5xl mx-auto px-6 py-20 pb-32">
-                
+
                 {/* ── Offers & Events Grid (Only if they exist) ── */}
                 {(vendor.offers?.length || 0) > 0 || (vendor.events?.length || 0) > 0 ? (
                     <div className="grid md:grid-cols-2 gap-12 mb-20">
@@ -280,13 +280,13 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
                             <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Professional Showcase</h2>
                             <p className="text-sm font-bold text-slate-400 uppercase tracking-widest leading-none">Discover our verified industry services</p>
                         </div>
-                        
+
                         <div className="flex flex-col sm:flex-row items-center gap-4">
                             {/* Search */}
                             <div className="relative w-full sm:w-64">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     placeholder="Search listings..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -305,11 +305,10 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
                     <div className="flex flex-wrap items-center gap-2 mt-2">
                         <button
                             onClick={() => setActiveCategory(null)}
-                            className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${
-                                !activeCategory 
-                                ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200' 
-                                : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200'
-                            }`}
+                            className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${!activeCategory
+                                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200'
+                                    : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200'
+                                }`}
                         >
                             All Categories
                         </button>
@@ -317,11 +316,10 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
                             <button
                                 key={cat}
                                 onClick={() => setActiveCategory(cat)}
-                                className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${
-                                    activeCategory === cat
-                                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200'
-                                    : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200'
-                                }`}
+                                className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${activeCategory === cat
+                                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200'
+                                        : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200'
+                                    }`}
                             >
                                 {cat}
                             </button>
@@ -331,8 +329,8 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
 
                 <div className="grid sm:grid-cols-2 gap-8">
                     {filteredListings.map((item) => (
-                        <Link 
-                            key={item.id} 
+                        <Link
+                            key={item.id}
                             href={`/business/${item.slug}`}
                             className="group flex flex-col gap-6 bg-white rounded-3xl border border-slate-100 p-3 hover:border-slate-200 transition-all duration-500 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.06)]"
                         >
@@ -359,7 +357,7 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div className="px-5 pb-5 flex flex-col flex-1">
                                 <div className="flex items-start justify-between gap-4 mb-4">
                                     <h3 className="text-xl font-black text-slate-900 group-hover:text-indigo-600 transition-colors leading-tight line-clamp-1">
@@ -386,7 +384,7 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
                 </div>
 
                 {filteredListings.length === 0 && (
-                    <div className="text-center py-24 bg-[#F8FAFC] rounded-[3rem] border border-dashed border-slate-200">
+                    <div className="text-center py-24 bg-[#F8FAFC] rounded-[1rem] border border-dashed border-slate-200">
                         <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm">
                             <Search className="w-10 h-10 text-slate-200" />
                         </div>

@@ -137,10 +137,10 @@ export default function BroadcastRequestForm({ onSuccess }: BroadcastRequestForm
 
     if (success) {
         return (
-            <motion.div 
+            <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="bg-emerald-50 p-12 rounded-[40px] border-2 border-emerald-100 text-center shadow-2xl shadow-emerald-200/50"
+                className="bg-emerald-50 p-12 rounded-[24px] border-2 border-emerald-100 text-center shadow-2xl shadow-emerald-200/50"
             >
                 <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-[32px] flex items-center justify-center mx-auto mb-8 shadow-inner">
                     <CheckCircle2 className="w-12 h-12" />
@@ -170,14 +170,12 @@ export default function BroadcastRequestForm({ onSuccess }: BroadcastRequestForm
             <div className="flex items-center justify-between px-2">
                 {STEPS.map((s, idx) => (
                     <div key={s.id} className="flex flex-col items-center gap-2 flex-1">
-                        <div className={`relative w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-500 ${
-                            idx <= step ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-slate-100 text-slate-400'
-                        }`}>
+                        <div className={`relative w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-500 ${idx <= step ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-slate-100 text-slate-400'
+                            }`}>
                             <s.icon className="w-5 h-5" />
                             {idx < STEPS.length - 1 && (
-                                <div className={`absolute left-full w-full h-[2px] -translate-y-1/2 top-1/2 ml-2 mr-2 transition-colors duration-500 ${
-                                    idx < step ? 'bg-blue-600' : 'bg-slate-100'
-                                }`} style={{ width: 'calc(100% - 16px)' }} />
+                                <div className={`absolute left-full w-full h-[2px] -translate-y-1/2 top-1/2 ml-2 mr-2 transition-colors duration-500 ${idx < step ? 'bg-blue-600' : 'bg-slate-100'
+                                    }`} style={{ width: 'calc(100% - 16px)' }} />
                             )}
                         </div>
                         <span className={`text-[9px] font-black uppercase tracking-widest ${idx <= step ? 'text-blue-600' : 'text-slate-400'}`}>
@@ -291,11 +289,10 @@ export default function BroadcastRequestForm({ onSuccess }: BroadcastRequestForm
                                         type="button"
                                         onClick={detectLocation}
                                         disabled={gettingLocation}
-                                        className={`w-full py-5 rounded-2xl border-4 border-dashed transition-all flex items-center justify-center gap-3 font-black text-sm ${
-                                            formData.latitude 
-                                                ? 'bg-emerald-50 border-emerald-200 text-emerald-600' 
+                                        className={`w-full py-5 rounded-2xl border-4 border-dashed transition-all flex items-center justify-center gap-3 font-black text-sm ${formData.latitude
+                                                ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
                                                 : 'bg-white border-slate-100 text-blue-600 hover:border-blue-200 hover:bg-blue-50/30'
-                                        }`}
+                                            }`}
                                     >
                                         {gettingLocation ? <Loader2 className="w-5 h-5 animate-spin" /> : <Navigation className="w-5 h-5" />}
                                         {formData.latitude ? 'GPS Coordinates Locked' : 'Detect My Location'}
@@ -312,7 +309,7 @@ export default function BroadcastRequestForm({ onSuccess }: BroadcastRequestForm
                                 </div>
                                 <div className="bg-slate-900 rounded-[32px] p-10 text-white shadow-2xl relative overflow-hidden group">
                                     <Megaphone className="absolute -right-8 -bottom-8 w-48 h-48 text-white/5 rotate-12 group-hover:scale-110 transition-transform duration-700" />
-                                    
+
                                     <div className="relative space-y-6">
                                         <div>
                                             <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Service Category</span>
@@ -350,7 +347,7 @@ export default function BroadcastRequestForm({ onSuccess }: BroadcastRequestForm
             {/* Error Message */}
             <AnimatePresence>
                 {error && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
@@ -373,7 +370,7 @@ export default function BroadcastRequestForm({ onSuccess }: BroadcastRequestForm
                         <ChevronLeft className="w-5 h-5" /> Back
                     </button>
                 )}
-                
+
                 {step < STEPS.length - 1 ? (
                     <button
                         type="button"

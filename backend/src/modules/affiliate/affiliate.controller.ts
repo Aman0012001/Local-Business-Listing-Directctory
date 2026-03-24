@@ -93,6 +93,22 @@ export class AffiliateController {
         return this.affiliateService.adminGetAllAffiliates();
     }
 
+    @Get('admin/referrals')
+    @UseGuards(RolesGuard)
+    @Roles(UserRole.SUPERADMIN, UserRole.ADMIN)
+    @ApiOperation({ summary: 'Admin: List all referrals' })
+    async adminGetReferrals() {
+        return this.affiliateService.getReferralStats();
+    }
+
+    @Post('admin/activate-referral/:id')
+    @UseGuards(RolesGuard)
+    @Roles(UserRole.SUPERADMIN, UserRole.ADMIN)
+    @ApiOperation({ summary: 'Admin: Activate a referral and member plan' })
+    async adminActivateReferral(@Param('id') id: string) {
+        return this.affiliateService.adminActivateReferral(id);
+    }
+
     @Get('settings')
     @ApiOperation({ summary: 'Get affiliate program settings' })
     async getSettings() {

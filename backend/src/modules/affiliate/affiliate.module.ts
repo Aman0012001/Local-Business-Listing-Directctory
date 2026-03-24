@@ -7,6 +7,7 @@ import { AffiliateReferral } from '../../entities/referral.entity';
 import { Payout } from '../../entities/payout.entity';
 import { User } from '../../entities/user.entity';
 import { SystemSetting } from '../../entities/system-setting.entity';
+import { Subscription } from '../../entities/subscription.entity';
 
 @Module({
     imports: [
@@ -15,7 +16,8 @@ import { SystemSetting } from '../../entities/system-setting.entity';
             AffiliateReferral,
             Payout,
             User,
-            SystemSetting
+            SystemSetting,
+            Subscription
         ]),
     ],
     controllers: [AffiliateController],
