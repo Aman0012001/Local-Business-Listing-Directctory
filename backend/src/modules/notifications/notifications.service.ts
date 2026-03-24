@@ -103,6 +103,17 @@ export class NotificationsService {
             this.create({ ...dto, userId: sa.id }).catch(() => {});
         }
     }
+    
+    /** Send notification to all Vendors */
+    async notifyAllVendors(dto: Omit<CreateNotificationDto, 'userId'>): Promise<void> {
+        const vendors = await this.userRepo.find({
+            select: ['id'],
+            where: { role: 'vendor' as any },
+        });
+        for (const v of vendors) {
+            this.create({ ...dto, userId: v.id }).catch(() => {});
+        }
+    }
 
     /** Get all notifications for a user, newest first */
     async findAllForUser(userId: string) {

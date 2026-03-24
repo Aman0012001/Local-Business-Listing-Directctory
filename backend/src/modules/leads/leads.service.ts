@@ -70,14 +70,22 @@ export class LeadsService {
             where: { id: listing.vendorId },
         });
 
+        // Notify vendor via persistent notification and Web Push
         if (vendor) {
-            this.notificationsGateway.sendToUser(vendor.userId, 'new_lead', {
-                leadId: savedLead.id,
-                businessName: listing.title,
-                customerName: savedLead.name,
-                type: savedLead.type,
-                createdAt: savedLead.createdAt,
-            });
+            await this.notificationsService.create({
+                userId: vendor.userId,
+                title: '🆕 New Lead Received!',
+                message: `You have a new ${savedLead.type} lead for "${listing.title}" from ${savedLead.name}.`,
+                type: 'new_lead',
+                data: {
+                    leadId: savedLead.id,
+                    businessName: listing.title,
+                    customerName: savedLead.name,
+                    type: savedLead.type,
+                    createdAt: savedLead.createdAt,
+                },
+                link: '/vendor/leads',
+            }).catch(err => console.error('[LeadsService] Push notification failed:', err.message));
         }
 
         return savedLead;

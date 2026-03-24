@@ -2,8 +2,10 @@ import { Controller, Get, Patch, Delete, Post, Param, Body, UseGuards } from '@n
 import { NotificationsService } from './notifications.service';
 import { PushService } from './push.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { User } from '../../entities/user.entity';
+import { User, UserRole } from '../../entities/user.entity';
 import { Public } from '../../common/decorators/public.decorator';
 
 @Controller('notifications')
@@ -89,5 +91,19 @@ export class NotificationsController {
     async unsubscribePush(@CurrentUser() user: User, @Body() body: { endpoint: string }) {
         await this.notificationsService.removePushSubscription(user.id, body.endpoint);
         return { success: true, message: 'Push subscription removed' };
+    }
+
+    /** 🧪 TEST: Send a push notification to any user (Admin only) */
+    @Post('test-push')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    async testPush(@Body() body: { userId: string; title: string; message: string; type?: string }) {
+        const { userId, title, message, type } = body;
+        return await this.notificationsService.create({
+            userId,
+            title: title || '🔔 Test Notification',
+            message: message || 'This is a test push notification from the admin panel.',
+            type: type || 'test',
+        });
     }
 }
