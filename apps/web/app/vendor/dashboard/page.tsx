@@ -5,7 +5,7 @@ import StatsGrid from '../../../components/vendor/StatsGrid';
 import PerformanceChart from '../../../components/vendor/PerformanceChart';
 import RecentReviews from '../../../components/vendor/RecentReviews';
 import MessageCenter from '../../../components/vendor/MessageCenter';
-import { Star, Phone, ChevronRight, ListTree, Heart, MessageSquare, Plus, TrendingUp, Loader2, Bell, CheckCircle2, Send, Clock, Sparkles } from 'lucide-react';
+import { Star, Phone, ChevronRight, ListTree, Heart, MessageSquare, Plus, TrendingUp, Loader2, Bell, CheckCircle2, Send, Clock, Sparkles, Share2, Copy, Gift } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import Link from 'next/link';
 import { api, getImageUrl } from '../../../lib/api';
@@ -27,7 +27,9 @@ export default function GenericDashboard() {
     const [enquiries, setEnquiries] = useState<any[]>([]);
     const [followedBusinesses, setFollowedBusinesses] = useState<Business[]>([]);
     const [demandInsights, setDemandInsights] = useState<any[]>([]);
+    const [affiliateStats, setAffiliateStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [copySuccess, setCopySuccess] = useState(false);
 
     const isVendor = user?.role === 'vendor';
     const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
@@ -50,11 +52,13 @@ export default function GenericDashboard() {
 
                 if (isVendor || isAdmin) {
                     // Vendor/Admin specific data
-                    const [statsData, vendorProfile] = await Promise.all([
+                    const [statsData, vendorProfile, affiliateData] = await Promise.all([
                         api.vendors.getStats(),
-                        api.vendors.getProfile()
+                        api.vendors.getProfile(),
+                        api.affiliate.getStats().catch(() => null)
                     ]);
                     setStats(statsData);
+                    setAffiliateStats(affiliateData);
 
                     if (vendorProfile?.id) {
                         const [reviewsData, leadsData, enquiriesData] = await Promise.all([
@@ -170,6 +174,14 @@ export default function GenericDashboard() {
         comment: r.comment,
         avatar: r.user?.avatarUrl
     }));
+
+    const copyReferralLink = () => {
+        if (!affiliateStats?.referralCode) return;
+        const link = `${window.location.origin}/?ref=${affiliateStats.referralCode}`;
+        navigator.clipboard.writeText(link);
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+    };
 
     if (loading) {
         return (
@@ -447,6 +459,69 @@ export default function GenericDashboard() {
                                         </div>
                                         <p className="text-sm text-slate-400 font-bold">No enquiries yet</p>
                                         <p className="text-xs text-slate-300 mt-1">Customers can enquire from your listing page</p>
+                                    </div>
+                                )}
+                            </div>
+                        </section>
+                    )}
+
+                    {/* Referral Section */}
+                    {isVendor && (
+                        <section className="bg-slate-900 rounded-[16px] p-8 border border-slate-800 shadow-2xl relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
+                            
+                            <div className="relative z-10">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-blue-600/20 rounded-[14px] flex items-center justify-center text-blue-400 border border-blue-500/20">
+                                            <Share2 className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-black text-white tracking-tight">Refer & Earn</h3>
+                                            <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Get 30 Days Free Plan</p>
+                                        </div>
+                                    </div>
+                                    <Link href="/vendor/affiliate" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-white transition-all flex items-center gap-1">
+                                        View Stats <ChevronRight className="w-3 h-3" />
+                                    </Link>
+                                </div>
+
+                                {affiliateStats?.isAffiliate ? (
+                                    <div className="space-y-4">
+                                        <div className="p-4 bg-white/5 border border-white/10 rounded-xl">
+                                            <div className="flex items-center justify-between gap-4">
+                                                <div className="overflow-hidden">
+                                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Your Referral Link</p>
+                                                    <p className="text-xs font-bold text-slate-300 truncate">
+                                                        {typeof window !== 'undefined' ? `${window.location.origin}/?ref=${affiliateStats.referralCode}` : 'Loading...'}
+                                                    </p>
+                                                </div>
+                                                <button 
+                                                    onClick={copyReferralLink}
+                                                    className="flex-shrink-0 p-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all active:scale-95"
+                                                >
+                                                    {copySuccess ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2 px-1">
+                                            <Gift className="w-4 h-4 text-blue-400" />
+                                            <p className="text-[11px] text-slate-400 font-medium">
+                                                Earn <span className="text-white font-black italic">1 month plan extension</span> for every vendor you refer!
+                                            </p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <p className="text-sm text-slate-400 font-medium leading-relaxed">
+                                            Invite other businesses to join and get rewarded with free subscription extensions.
+                                        </p>
+                                        <Link 
+                                            href="/vendor/affiliate"
+                                            className="inline-flex items-center justify-center w-full py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-[14px] font-black text-sm transition-all active:scale-95 shadow-xl shadow-blue-900/20"
+                                        >
+                                            Join Referral Program
+                                        </Link>
                                     </div>
                                 )}
                             </div>
