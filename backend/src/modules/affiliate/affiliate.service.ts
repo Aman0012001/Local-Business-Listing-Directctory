@@ -52,6 +52,11 @@ export class AffiliateService {
             }
         }
 
+        const referredBy = await this.referralRepository.findOne({
+            where: { referredUserId: userId },
+            relations: ['affiliate', 'affiliate.user']
+        });
+
         const referrals = await this.referralRepository.count({
             where: { affiliateId: affiliate.id },
         });
@@ -69,6 +74,8 @@ export class AffiliateService {
             balance: affiliate.balance,
             totalWithdrawals: affiliate.totalWithdrawals,
             conversionRate: referrals > 0 ? (conversions / referrals) * 100 : 0,
+            hasReferrer: !!referredBy,
+            referrerName: referredBy?.affiliate?.user?.fullName,
         };
     }
 
@@ -102,6 +109,42 @@ export class AffiliateService {
             order: { createdAt: 'DESC' },
             take: 20,
         });
+    }
+
+    async applyReferralCode(userId: string, code: string) {
+        // Check if user already has a referrer
+        const existing = await this.referralRepository.findOne({
+            where: { referredUserId: userId }
+        });
+        if (existing) {
+            throw new BadRequestException('You have already been referred');
+        }
+
+        // Find the affiliate with this code
+        const affiliate = await this.affiliateRepository.findOne({
+            where: { referralCode: code },
+            relations: ['user']
+        });
+
+        if (!affiliate) {
+            throw new NotFoundException('Invalid referral code');
+        }
+
+        if (affiliate.user.id === userId) {
+            throw new BadRequestException('You cannot refer yourself');
+        }
+
+        // Create the referral record
+        const referral = this.referralRepository.create({
+            affiliateId: affiliate.id,
+            referredUserId: userId,
+            type: 'signup' as any,
+            status: 'pending' as any,
+        });
+
+        await this.referralRepository.save(referral);
+
+        return { success: true, message: 'Referral code applied successfully' };
     }
 
     // --- Payout Logic ---

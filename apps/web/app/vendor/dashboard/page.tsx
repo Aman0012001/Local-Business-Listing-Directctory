@@ -30,6 +30,9 @@ export default function GenericDashboard() {
     const [affiliateStats, setAffiliateStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [copySuccess, setCopySuccess] = useState(false);
+    const [referralInput, setReferralInput] = useState('');
+    const [isApplying, setIsApplying] = useState(false);
+    const [applyStatus, setApplyStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
     const isVendor = user?.role === 'vendor';
     const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
@@ -181,6 +184,24 @@ export default function GenericDashboard() {
         navigator.clipboard.writeText(link);
         setCopySuccess(true);
         setTimeout(() => setCopySuccess(false), 2000);
+    };
+
+    const handleApplyReferral = async () => {
+        if (!referralInput.trim()) return;
+        setIsApplying(true);
+        setApplyStatus(null);
+        try {
+            const result = await api.affiliate.applyReferral(referralInput.trim());
+            setApplyStatus({ type: 'success', message: result.message });
+            setReferralInput('');
+            // Refresh affiliate stats
+            const updatedStats = await api.affiliate.getStats();
+            setAffiliateStats(updatedStats);
+        } catch (error: any) {
+            setApplyStatus({ type: 'error', message: error.message || 'Invalid referral code' });
+        } finally {
+            setIsApplying(false);
+        }
     };
 
     if (loading) {
@@ -485,6 +506,43 @@ export default function GenericDashboard() {
                                         View Stats <ChevronRight className="w-3 h-3" />
                                     </Link>
                                 </div>
+
+                                {/* Apply Referrer Section (If not referred) */}
+                                {!affiliateStats?.hasReferrer && (
+                                    <div className="mb-6 p-4 bg-blue-600/5 border border-blue-500/20 rounded-xl space-y-3">
+                                        <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Were you referred by someone?</p>
+                                        <div className="flex gap-2">
+                                            <input 
+                                                type="text"
+                                                value={referralInput}
+                                                onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
+                                                placeholder="Enter Expert Code"
+                                                className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500 transition-all"
+                                            />
+                                            <button 
+                                                onClick={handleApplyReferral}
+                                                disabled={isApplying || !referralInput}
+                                                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 text-white text-xs font-black rounded-xl transition-all active:scale-95 flex items-center gap-2"
+                                            >
+                                                {isApplying ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Apply'}
+                                            </button>
+                                        </div>
+                                        {applyStatus && (
+                                            <p className={`text-[10px] font-bold ${applyStatus.type === 'success' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                {applyStatus.message}
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+
+                                {affiliateStats?.hasReferrer && (
+                                    <div className="mb-6 px-4 py-2 bg-emerald-500/5 border border-emerald-500/20 rounded-xl flex items-center gap-2">
+                                        <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                                        <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
+                                            Referred by: <span className="text-white ml-1">{affiliateStats.referrerName || 'Community Expert'}</span>
+                                        </p>
+                                    </div>
+                                )}
 
                                 {affiliateStats?.isAffiliate ? (
                                     <div className="space-y-4">

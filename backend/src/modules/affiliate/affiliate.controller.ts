@@ -41,6 +41,12 @@ export class AffiliateController {
         return this.affiliateService.getReferrals(user.id);
     }
 
+    @Post('apply-referral')
+    @ApiOperation({ summary: 'Apply a referral code to the current user' })
+    async applyReferral(@CurrentUser() user: User, @Body() body: { code: string }) {
+        return this.affiliateService.applyReferralCode(user.id, body.code);
+    }
+
     @Post('payouts')
     @ApiOperation({ summary: 'Request a withdrawal' })
     async requestPayout(

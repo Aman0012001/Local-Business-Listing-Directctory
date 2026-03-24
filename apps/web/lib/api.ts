@@ -468,6 +468,10 @@ export const api = {
         getStats: () => fetcher<any>('/affiliate/stats'),
         getReferrals: () => fetcher<any[]>('/affiliate/referrals'),
         trackClick: (code: string) => fetcher(`/affiliate/track-click?code=${code}`, { method: 'POST' }),
+        applyReferral: (code: string) => fetcher<{ success: boolean; message: string }>('/affiliate/apply-referral', {
+            method: 'POST',
+            body: JSON.stringify({ code }),
+        }),
 
         requestPayout: (data: { amount: number; method: string; details: string }) => fetcher('/affiliate/payouts', {
             method: 'POST',
