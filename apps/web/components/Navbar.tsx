@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { Menu, ChevronDown, MapPin, User as UserIcon, LogOut, X, Search, Building2, Globe, Bell, Check, Trash2, BellRing, Megaphone } from 'lucide-react';
+import { Menu, ChevronDown, MapPin, User as UserIcon, LogOut, X, Search, Building2, Globe, Bell, Check, Trash2, BellRing, Megaphone, MessageSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api, getImageUrl } from '../lib/api';
 import { Category, City } from '../types/api';
@@ -346,6 +346,17 @@ export default function Navbar() {
                                         <BellRing className={`w-3.5 h-3.5 ${pushLoading ? 'animate-bounce' : ''}`} />
                                         {pushLoading ? 'Enabling…' : 'Enable Push'}
                                     </button>
+                                )}
+
+                                {user && (
+                                    <Link
+                                        href="/vendor/chat"
+                                        className="relative p-2.5 rounded-xl text-slate-500 hover:text-[#FF7A30] hover:bg-orange-50 transition-all"
+                                        title="Messages"
+                                    >
+                                        <MessageSquare className="w-5 h-5" />
+                                        {/* Optional: Add unread message count here if available in future */}
+                                    </Link>
                                 )}
 
                                 {/* 🔔 Notification Bell */}

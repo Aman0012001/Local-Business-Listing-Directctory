@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Bell, Search, Users } from 'lucide-react';
+import { Bell, Search, Users, Lock } from 'lucide-react';
 import { api } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
 import BusinessCard from '../../../components/BusinessCard';
@@ -12,6 +12,10 @@ export default function VendorFollowing() {
     const { user } = useAuth();
     const [followedBusinesses, setFollowedBusinesses] = useState<Business[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+    const features = activeSub?.plan?.dashboardFeatures || {};
+    const isVendor = user?.role === 'vendor';
 
     useEffect(() => {
         const fetchFollowed = async () => {
@@ -37,6 +41,23 @@ export default function VendorFollowing() {
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
                 <div className="w-12 h-12 border-4 border-violet-600 border-t-transparent rounded-full animate-spin mb-4" />
                 <p className="text-slate-400 font-bold uppercase tracking-widest">Loading your following...</p>
+            </div>
+        );
+    }
+
+    if (isVendor && !features.showFollowing) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100 mt-20">
+                <div className="w-20 h-20 bg-violet-50 text-violet-600 rounded-3xl flex items-center justify-center mb-6">
+                    <Lock className="w-10 h-10" />
+                </div>
+                <h2 className="text-3xl font-black text-slate-900 mb-3">Following</h2>
+                <p className="text-slate-500 max-w-md mx-auto mb-8 font-bold leading-relaxed">
+                    Connecting and following other businesses is a premium feature. Upgrade your plan to build your professional network!
+                </p>
+                <Link href="/vendor/subscription" className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black tracking-tight hover:bg-black transition-all active:scale-95 shadow-xl shadow-slate-200">
+                    Upgrade My Plan
+                </Link>
             </div>
         );
     }

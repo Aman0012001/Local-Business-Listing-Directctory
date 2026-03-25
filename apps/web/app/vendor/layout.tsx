@@ -47,17 +47,21 @@ export default function VendorLayout({
                     
                 const isFreePage = freePages.includes(normalizedPathname);
                 
-                if (!activeSubscription && !isFreePage) {
+                if (!activeSubscription && !isFreePage && user.role === 'vendor') {
                     router.replace('/vendor/subscription');
                     // KEEP isChecking true to prevent rendering the restricted page
                 } else {
-                    // Either they have a plan, or they are on a free page - safe to show
+                    // Either they have a plan, are on a free page, or are a regular user (who has limited dashboard access)
                     setIsChecking(false);
                 }
+            } else if (user.role === 'user' || user.role === 'customer') {
+                // Regular users are allowed in the "vendor" shell for their own dashboard/chat
+                setIsChecking(false);
+            } else if (user.role === 'admin' || user.role === 'superadmin') {
+                setIsChecking(false);
             } else {
-                // Logged in but NOT a vendor (regular user) — send to home
+                // Not a recognized role - send to home
                 router.replace('/');
-                // KEEP isChecking true while redirecting
             }
         }
     }, [user, loading, pathname, router]);

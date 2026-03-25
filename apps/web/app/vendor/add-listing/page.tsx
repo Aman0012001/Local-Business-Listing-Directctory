@@ -6,11 +6,13 @@ import {
     Loader2, Store, MapPin, Phone, TextQuote, Layers,
     ArrowLeft, CheckCircle, ImagePlus, Building2, Tag,
     FileText, Navigation, Sparkles, X, Images, Check, Plus,
-    ChevronLeft, ChevronRight, Hash, Share2, Globe, Search, ChevronDown, HelpCircle, Trash2
+    ChevronLeft, ChevronRight, Hash, Share2, Globe, Search, ChevronDown, HelpCircle, Trash2, Lock
 } from 'lucide-react';
 import { api, getImageUrl } from '../../../lib/api';
 import { Category, City } from '../../../types/api';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../../context/AuthContext';
+import Link from 'next/link';
 
 const steps = [
     { id: 1, label: 'Business Info', icon: Building2 },
@@ -36,6 +38,7 @@ const SOCIAL_PLATFORMS = [
 ];
 
 export default function AddListingPage() {
+    const { user } = useAuth();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [catsLoading, setCatsLoading] = useState(true);
@@ -59,6 +62,10 @@ export default function AddListingPage() {
     const [mapLoaded, setMapLoaded] = useState(false);
     const [suggestions, setSuggestions] = useState<Category[]>([]);
     const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+    
+    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+    const features = activeSub?.plan?.dashboardFeatures || {};
+    const isVendor = user?.role === 'vendor';
 
     useEffect(() => {
         if (typeof window !== 'undefined' && (window as any).google && (window as any).google.maps && (window as any).google.maps.marker && (window as any).google.maps.places) {
@@ -655,6 +662,23 @@ export default function AddListingPage() {
             setCreatingAmenity(false);
         }
     };
+
+    if (isVendor && !features.canAddListing) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100 mt-20">
+                <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mb-6">
+                    <Lock className="w-10 h-10" />
+                </div>
+                <h2 className="text-3xl font-black text-slate-900 mb-3">Add New Listing</h2>
+                <p className="text-slate-500 max-w-md mx-auto mb-8 font-bold leading-relaxed">
+                    Expanding your business presence by adding new listings is a premium feature. Upgrade your plan to list more branches or services!
+                </p>
+                <Link href="/vendor/subscription" className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black tracking-tight hover:bg-black transition-all active:scale-95 shadow-xl shadow-slate-200">
+                    Upgrade My Plan
+                </Link>
+            </div>
+        );
+    }
 
     if (success) {
         return (

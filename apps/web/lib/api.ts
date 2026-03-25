@@ -425,6 +425,10 @@ export const api = {
             method: 'PATCH',
             body: JSON.stringify({ isVerified }),
         }),
+        updateSearchKeywords: (id: string, keywords: string[]) => fetcher<any>(`/admin/business/${id}/search-keywords`, {
+            method: 'PATCH',
+            body: JSON.stringify({ keywords }),
+        }),
         getVendors: (page = 1, limit = 20, isVerified?: boolean, search?: string) => {
             const params = new URLSearchParams({
                 page: page.toString(),

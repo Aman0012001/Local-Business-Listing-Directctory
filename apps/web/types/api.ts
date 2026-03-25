@@ -100,6 +100,7 @@ export interface Business {
     };
     // SEO / Search
     metaKeywords?: string;
+    searchKeywords?: string[];
     // Offer / Promo
     hasOffer?: boolean;
     offerTitle?: string;

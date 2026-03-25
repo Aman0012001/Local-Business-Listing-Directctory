@@ -110,7 +110,30 @@ export default function Sidebar() {
 
                         // Vendor feature access control
                         if (user?.role === 'vendor') {
-                            return true; // Always show all features to allow discovery and Upsell pages
+                            const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+                            const features = activeSub?.plan?.dashboardFeatures || {};
+
+                            const featureMapping: Record<string, string> = {
+                                'My Listings': 'showListings',
+                                'Add Listing': 'canAddListing',
+                                'Leads': 'showLeads',
+                                'Offers & Events': 'showOffers',
+                                'Reviews': 'showReviews',
+                                'Analytics': 'showAnalytics',
+                                'Saved': 'showSaved',
+                                'Following': 'showFollowing',
+                                'Queries': 'showQueries',
+                                'Live Chat': 'showChat',
+                                'Demand Insights': 'showAnalytics',
+                                'Broadcast Feed': 'showBroadcast',
+                                'My Broadcasts': 'showBroadcast',
+                            };
+
+                            const featureKey = featureMapping[item.name];
+                            if (featureKey) {
+                                return !!features[featureKey];
+                            }
+                            return true; // Show items not in mapping (Dashboard, Subscription, etc.)
                         }
 
                         return true;

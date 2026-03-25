@@ -24,7 +24,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ isOpen, onClose, businessId, bu
     useEffect(() => {
         if (isOpen && businessId && !conversationId) {
             import('../../services/chat.service').then(({ chatApi }) => {
-                chatApi.getOrCreateConversation(businessId).then(conv => {
+                chatApi.getOrCreateConversation(businessId).then((conv: any) => {
                     setConversationId(conv.id);
                 });
             });
@@ -34,9 +34,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ isOpen, onClose, businessId, bu
     // Scroll to bottom
     useEffect(() => {
         if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+            const scrollContainer = scrollRef.current;
+            scrollContainer.scrollTo({
+                top: scrollContainer.scrollHeight,
+                behavior: 'smooth'
+            });
         }
-    }, [messages]);
+    }, [messages, isTyping]);
 
     const handleSend = () => {
         if (!input.trim()) return;
@@ -71,7 +75,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ isOpen, onClose, businessId, bu
                         </div>
                         <div>
                             <h3 className="font-semibold text-sm line-clamp-1">{businessName}</h3>
-                            <p className="text-[10px] text-white/70">Live Chat</p>
+                            <p className="text-[10px] text-white/70 tracking-wide uppercase font-bold">Live Chat</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-full transition-colors">
@@ -82,19 +86,19 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ isOpen, onClose, businessId, bu
                 {/* Messages */}
                 <div 
                     ref={scrollRef}
-                    className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-950/50"
+                    className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-950/50 scroll-smooth"
                 >
-                    {isLoading ? (
+                    {isLoading && messages.length === 0 ? (
                         <div className="h-full flex items-center justify-center">
                             <Loader2 className="w-6 h-6 animate-spin text-primary" />
                         </div>
                     ) : messages.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-2">
-                            <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-2">
-                                <MessageSquare className="w-6 h-6 text-gray-400" />
+                        <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-2 text-slate-400">
+                            <div className="w-16 h-16 bg-white dark:bg-gray-800 rounded-3xl shadow-sm flex items-center justify-center mb-4 transform -rotate-6">
+                                <MessageSquare className="w-8 h-8 text-primary/40" />
                             </div>
-                            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Start a conversation</p>
-                            <p className="text-xs text-gray-500">Ask anything about our services!</p>
+                            <p className="text-sm font-bold text-slate-600 dark:text-slate-300">No messages yet</p>
+                            <p className="text-[11px] leading-relaxed max-w-[180px]">Be the first to say hello! Ask anything about our services.</p>
                         </div>
                     ) : (
                         messages.map((msg, idx) => {

@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { ChatService } from './chat.service';
+import { ChatGateway } from './chat.gateway';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CreateConversationDto } from './dto/chat.dto';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -9,7 +10,10 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 @Controller('chat')
 @UseGuards(JwtAuthGuard)
 export class ChatController {
-    constructor(private readonly chatService: ChatService) {}
+    constructor(
+        private readonly chatService: ChatService,
+        private readonly chatGateway: ChatGateway,
+    ) {}
 
     @Post('conversations')
     @ApiOperation({ summary: 'Get or create a conversation with a business' })
@@ -17,7 +21,14 @@ export class ChatController {
         @Request() req: any,
         @Body() body: CreateConversationDto,
     ) {
-        return this.chatService.getOrCreateConversation(req.user.id, body.businessId);
+        const conversation = await this.chatService.getOrCreateConversation(req.user.id, body.businessId);
+        
+        // Notify vendor in real-time if this is a new conversation
+        if (conversation) {
+            await this.chatGateway.notifyNewConversation(conversation);
+        }
+        
+        return conversation;
     }
 
     @Get('conversations/user')

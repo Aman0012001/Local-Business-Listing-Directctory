@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import StatsGrid from '../../../components/vendor/StatsGrid';
 import PerformanceChart from '../../../components/vendor/PerformanceChart';
 import RecentReviews from '../../../components/vendor/RecentReviews';
 import MessageCenter from '../../../components/vendor/MessageCenter';
-import { Star, Phone, ChevronRight, ListTree, Heart, MessageSquare, Plus, TrendingUp, Loader2, Bell, CheckCircle2, Send, Clock, Sparkles, Share2, Copy, Gift } from 'lucide-react';
+import { Star, ChevronRight, ListTree, Heart, MessageSquare, Plus, TrendingUp, Loader2, Bell, CheckCircle2, Sparkles, Share2, Copy, Gift, Mail } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import Link from 'next/link';
 import { api, getImageUrl } from '../../../lib/api';
@@ -15,8 +16,11 @@ import VendorHotDemandWidget from '../../components/vendor/VendorHotDemandWidget
 import VendorLeadsInbox from '../../../components/leads/VendorLeadsInbox';
 import MyJobLeads from '../../../components/leads/MyJobLeads';
 import MyInquiries from '../../../components/leads/MyInquiries';
+import { chatApi } from '../../../services/chat.service';
+import { useChatSocket } from '../../../hooks/useChat';
 
 export default function GenericDashboard() {
+    const router = useRouter();
     const { user, updateUser } = useAuth();
     const [stats, setStats] = useState<any>(null);
     const [savedBusinesses, setSavedBusinesses] = useState<Business[]>([]);
@@ -33,6 +37,8 @@ export default function GenericDashboard() {
     const [referralInput, setReferralInput] = useState('');
     const [isApplying, setIsApplying] = useState(false);
     const [applyStatus, setApplyStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+    const [conversations, setConversations] = useState<any[]>([]);
+    const { socket } = useChatSocket();
 
     const isVendor = user?.role === 'vendor';
     const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
@@ -94,6 +100,14 @@ export default function GenericDashboard() {
                     });
                 }
 
+                if (isVendor || isAdmin) {
+                    const convs = await chatApi.getVendorConversations() as any[];
+                    setConversations(convs.slice(0, 5));
+                } else if (user) {
+                    const convs = await chatApi.getUserConversations() as any[];
+                    setConversations(convs.slice(0, 5));
+                }
+
             } catch (error) {
                 console.error('Error fetching dashboard data:', error);
             } finally {
@@ -104,6 +118,45 @@ export default function GenericDashboard() {
         fetchDashboardData();
     }, [user, isVendor, isAdmin]);
 
+    // Real-time chat updates
+    useEffect(() => {
+        if (!socket) return;
+
+        const onNewConversation = (conv: any) => {
+            setConversations(prev => {
+                if (prev.find(c => c.id === conv.id)) return prev;
+                return [conv, ...prev].slice(0, 5);
+            });
+        };
+
+        const onConversationUpdated = (update: any) => {
+            setConversations(prev => {
+                const existing = prev.find(c => c.id === update.conversationId);
+                if (existing) {
+                    return prev.map(c =>
+                        c.id === update.conversationId
+                            ? { ...c, lastMessage: update.lastMessage, lastMessageAt: update.lastMessageAt }
+                            : c
+                    ).sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
+                } else {
+                    // If not in list, maybe it's a new one that just got updated
+                    chatApi.getVendorConversations().then((convs: any) => {
+                        setConversations(convs.slice(0, 5));
+                    });
+                    return prev;
+                }
+            });
+        };
+
+        socket.on('newConversation', onNewConversation);
+        socket.on('conversationUpdated', onConversationUpdated);
+
+        return () => {
+            socket.off('newConversation', onNewConversation);
+            socket.off('conversationUpdated', onConversationUpdated);
+        };
+    }, [socket]);
+
     const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
     const features = activeSub?.plan?.dashboardFeatures || {};
 
@@ -113,7 +166,18 @@ export default function GenericDashboard() {
             value: stats?.businessCount || '0',
             icon: ListTree,
             color: 'bg-gradient-to-br from-[#3366CC] to-[#1144AA]',
-            shadow: 'shadow-blue-500/20'
+            shadow: 'shadow-blue-500/20',
+            onClick: () => router.push('/vendor/add-listing'),
+            show: features.showListings !== false // Default to true if not specified
+        },
+        {
+            label: 'Live Chat',
+            value: String(conversations.length),
+            icon: MessageSquare,
+            color: 'bg-gradient-to-br from-indigo-500 to-indigo-700',
+            shadow: 'shadow-indigo-500/20',
+            onClick: () => router.push('/vendor/chat'),
+            show: features.showChat !== false
         },
         ...(features.showAnalytics ? [{
             label: 'Total Views',
@@ -136,7 +200,7 @@ export default function GenericDashboard() {
             color: 'bg-gradient-to-br from-[#FF6644] to-[#EE4422]',
             shadow: 'shadow-red-500/20'
         }] : []),
-    ];
+    ].filter(s => (s as any).show !== false);
 
     const userStats = [
         {
@@ -144,7 +208,16 @@ export default function GenericDashboard() {
             value: String(stats?.savedCount || 0),
             icon: Heart,
             color: 'bg-gradient-to-br from-rose-500 to-rose-700',
-            shadow: 'shadow-rose-500/20'
+            shadow: 'shadow-rose-500/20',
+            onClick: () => router.push('/vendor/saved')
+        },
+        {
+            label: 'Messages',
+            value: String(conversations.length),
+            icon: MessageSquare,
+            color: 'bg-gradient-to-br from-indigo-500 to-indigo-700',
+            shadow: 'shadow-indigo-500/20',
+            onClick: () => router.push('/vendor/chat')
         },
         {
             label: 'Your Reviews',
@@ -233,7 +306,7 @@ export default function GenericDashboard() {
                             {isVendor ? "Here's what's happening with your business today." : "Everything you need to manage your favorite places and feedback."}
                         </p>
                     </div>
-                    {isVendor && (
+                    {((isVendor || isAdmin) ? features.canAddListing : false) && (
                         <Link href="/vendor/add-listing" className="flex items-center gap-2 px-8 py-4 bg-slate-900 text-white rounded-[16px] font-black  shadow-slate-200 hover:scale-105 active:scale-95 transition-all w-fit">
                             <Plus className="w-5 h-5" /> New Listing
                         </Link>
@@ -251,10 +324,12 @@ export default function GenericDashboard() {
                 <div className="lg:col-span-8 space-y-10">
 
                     {/* Job Leads Section */}
-                    {isVendor || isAdmin ? (
-                        <div className="bg-white rounded-[16px] p-8 sm:p-10 border border-black shadow-slate-200/20">
-                            <VendorLeadsInbox />
-                        </div>
+                    {(isVendor || isAdmin) ? (
+                        features.showLeads && (
+                            <div className="bg-white rounded-[16px] p-8 sm:p-10 border border-black shadow-slate-200/20">
+                                <VendorLeadsInbox />
+                            </div>
+                        )
                     ) : (
                         <div className="space-y-10">
                             {/* Upgrade to Vendor CTA */}
@@ -286,7 +361,7 @@ export default function GenericDashboard() {
 
                     {/* Performance Insights (Vendor Only) */}
                     {(isVendor || isAdmin) && features.showAnalytics && (
-                        <div className="space-y-6">
+                        <div className="space-y-6 mb-10">
                             <div className="flex items-center justify-between px-2">
                                 <h3 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
                                     <TrendingUp className="w-7 h-7 text-blue-600" />
@@ -300,7 +375,8 @@ export default function GenericDashboard() {
                     )}
 
                     {/* Saved Businesses Section (Common) */}
-                    <section className="bg-white rounded-[16px] p-8 sm:p-10 border border-black  shadow-slate-200/20 relative overflow-hidden group">
+                    {((isVendor || isAdmin) ? features.showSaved : true) && (
+                        <section className="bg-white rounded-[16px] p-8 sm:p-10 border border-black  shadow-slate-200/20 relative overflow-hidden group">
                         <div className="flex items-center justify-between mb-8">
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 bg-rose-50 rounded-[16px] flex items-center justify-center text-rose-500 shadow-inner">
@@ -338,9 +414,11 @@ export default function GenericDashboard() {
                             )}
                         </div>
                     </section>
+                    )}
 
                     {/* Followed Businesses Section */}
-                    <section className="bg-white rounded-[16px] p-8 sm:p-10 border border-black  shadow-slate-200/20 relative overflow-hidden group">
+                    {((isVendor || isAdmin) ? features.showFollowing : true) && (
+                        <section className="bg-white rounded-[16px] p-8 sm:p-10 border border-black  shadow-slate-200/20 relative overflow-hidden group">
                         <div className="flex items-center justify-between mb-8">
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 bg-blue-50 rounded-[16px] flex items-center justify-center text-blue-600 shadow-inner border border-blue-100/50">
@@ -378,6 +456,7 @@ export default function GenericDashboard() {
                             )}
                         </div>
                     </section>
+                    )}
 
 
                     {/* Pending Vendor CTA if no stats (Admin Only?) - Skipping for now to focus on User Dashboard */}
@@ -425,64 +504,95 @@ export default function GenericDashboard() {
                         <VendorHotDemandWidget insights={demandInsights} loading={loading} />
                     )}
 
-                    {isVendor && features.showQueries && (
-                        <section className="bg-white rounded-[16px] p-8 border border-black  shadow-slate-200/20">
+                    {((isVendor || isAdmin) && features.showChat) && (
+                        <section className="bg-white rounded-[16px] p-8 border border-black shadow-slate-200/20">
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-gradient-to-br from-violet-100 to-blue-100 rounded-[14px] flex items-center justify-center">
-                                        <Send className="w-5 h-5 text-violet-600" />
+                                    <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-[14px] flex items-center justify-center">
+                                        <MessageSquare className="w-5 h-5 text-blue-600" />
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-black text-slate-900 tracking-tight">Enquiries</h3>
-                                        {enquiries.filter(e => e.status === 'new').length > 0 && (
-                                            <span className="text-xs font-black text-violet-600">
-                                                {enquiries.filter(e => e.status === 'new').length} new
-                                            </span>
-                                        )}
+                                        <h3 className="text-lg font-black text-slate-900 tracking-tight">Recent Chats</h3>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Live Conversations</p>
                                     </div>
                                 </div>
-                                <Link href="/vendor/leads" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-violet-600 transition-all flex items-center gap-1">
-                                    View All <ChevronRight className="w-3 h-3" />
+                                <Link href="/vendor/chat" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-all flex items-center gap-1">
+                                    {isVendor ? 'Open Inbox' : 'My Messages'} <ChevronRight className="w-3 h-3" />
                                 </Link>
                             </div>
                             <div className="space-y-3">
-                                {enquiries.length > 0 ? (
-                                    enquiries.slice(0, 4).map((enq) => (
-                                        <div key={enq.id} className={`p-4 rounded-[14px] border transition-all hover:shadow-sm ${enq.status === 'new' ? 'bg-violet-50/60 border-violet-100' : 'bg-slate-50 border-slate-100'
-                                            }`}>
-                                            <div className="flex items-start justify-between gap-2 mb-1">
+                                {conversations.length > 0 ? (
+                                    conversations.map((conv) => (
+                                        <Link 
+                                            key={conv.id} 
+                                            href={`/vendor/chat?id=${conv.id}`}
+                                            className="block p-4 rounded-[14px] bg-slate-50 border border-slate-100 hover:border-blue-200 hover:bg-white transition-all group"
+                                        >
+                                            <div className="flex items-start justify-between gap-2">
                                                 <div className="flex items-center gap-2">
-                                                    <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-violet-200 to-blue-200 flex items-center justify-center text-violet-700 font-black text-xs flex-shrink-0">
-                                                        {(enq.name?.[0] || '?').toUpperCase()}
+                                                    <div className="w-8 h-8 rounded-full bg-slate-200 overflow-hidden flex-shrink-0">
+                                                        {isVendor ? (
+                                                            conv.user?.avatarUrl ? (
+                                                                <img src={getImageUrl(conv.user.avatarUrl) as string} alt="" className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center bg-blue-50 text-blue-600 font-black text-xs">
+                                                                    {(conv.user?.fullName?.[0] || 'U').toUpperCase()}
+                                                                </div>
+                                                            )
+                                                        ) : (
+                                                            conv.business?.logoUrl ? (
+                                                                <img src={getImageUrl(conv.business.logoUrl) as string} alt="" className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center bg-orange-50 text-orange-600 font-black text-xs">
+                                                                    {(conv.business?.title?.[0] || 'B').toUpperCase()}
+                                                                </div>
+                                                            )
+                                                        )}
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-black text-slate-900 leading-none">{enq.name || 'Guest'}</p>
-                                                        {enq.email && <p className="text-[10px] text-slate-400 font-medium mt-0.5">{enq.email}</p>}
+                                                        <p className="text-sm font-black text-slate-900 leading-none">
+                                                            {isVendor ? (conv.user?.fullName || 'User') : (conv.business?.title || 'Business')}
+                                                        </p>
+                                                        {isVendor && <p className="text-[10px] text-slate-400 font-medium mt-1 italic">on {conv.business?.title || 'Listing'}</p>}
                                                     </div>
                                                 </div>
-                                                {enq.status === 'new' && (
-                                                    <span className="flex-shrink-0 px-2 py-0.5 bg-violet-600 text-white text-[10px] font-black rounded-full uppercase">New</span>
-                                                )}
+                                                <span className="text-[9px] text-slate-300 font-medium">{new Date(conv.lastMessageAt || conv.createdAt).toLocaleDateString()}</span>
                                             </div>
-                                            {enq.message && (
-                                                <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 mt-2 pl-9">{enq.message}</p>
-                                            )}
-                                            <div className="flex items-center gap-1 text-[10px] text-slate-300 font-medium mt-2 pl-9">
-                                                <Clock className="w-3 h-3" />
-                                                {new Date(enq.createdAt).toLocaleDateString('en-US', { day: '2-digit', month: 'short' })}
-                                            </div>
-                                        </div>
+                                            <p className="text-xs text-slate-500 line-clamp-1 mt-2 pl-10">
+                                                {conv.lastMessage || 'Start the conversation...'}
+                                            </p>
+                                        </Link>
                                     ))
                                 ) : (
-                                    <div className="py-8 text-center">
-                                        <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                                            <Send className="w-6 h-6 text-slate-300" />
+                                    <div className="py-8 text-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-100">
+                                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-sm transform -rotate-6">
+                                            <MessageSquare className="w-6 h-6 text-slate-300" />
                                         </div>
-                                        <p className="text-sm text-slate-400 font-bold">No enquiries yet</p>
-                                        <p className="text-xs text-slate-300 mt-1">Customers can enquire from your listing page</p>
+                                        <p className="text-sm text-slate-400 font-bold italic">No active chats yet</p>
                                     </div>
                                 )}
                             </div>
+                        </section>
+                    )}
+
+                    {isVendor && features.showQueries && (
+                        <section className="bg-white rounded-[16px] p-8 border border-black  shadow-slate-200/20 opacity-60 grayscale-[0.5] scale-95 origin-top">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-slate-100 rounded-[14px] flex items-center justify-center text-slate-400">
+                                        <Mail className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-black text-slate-400 tracking-tight">Form Enquiries</h3>
+                                    </div>
+                                </div>
+                                <Link href="/vendor/messages" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600">
+                                    Full Leads Inbox →
+                                </Link>
+                            </div>
+                            <p className="text-[11px] text-slate-400 font-bold text-center py-4">
+                                Most customers use the Live Chat now. Older form-based queries can be accessed in the full inbox.
+                            </p>
                         </section>
                     )}
 

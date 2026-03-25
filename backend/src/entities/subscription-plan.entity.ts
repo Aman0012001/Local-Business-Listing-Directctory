@@ -46,7 +46,7 @@ export class SubscriptionPlan {
     isFeatured: boolean;
 
     @Column({ name: 'dashboard_features', type: 'jsonb', default: {} })
-    dashboardFeatures: Record<string, boolean>;
+    dashboardFeatures: any;
 
     @Column({ name: 'is_active', default: true })
     isActive: boolean;

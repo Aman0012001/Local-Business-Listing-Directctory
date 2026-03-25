@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, Filter, MoreVertical, Star, MapPin, Eye, MessageSquare, Loader2, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Plus, Search, Filter, MoreVertical, Star, MapPin, Eye, MessageSquare, Loader2, ChevronLeft, ChevronRight, X, Lock } from 'lucide-react';
 import Link from 'next/link';
 import AddBusinessModal from '../../../components/vendor/AddBusinessModal';
 import { useAuth } from '../../../context/AuthContext';
@@ -21,6 +21,9 @@ export default function VendorListings() {
     const [sortOrder, setSortOrder] = useState<'newest' | 'rated' | 'views'>('newest');
     const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
     const isAuthorized = user?.role === 'vendor' || user?.role === 'admin' || user?.role === 'superadmin';
+    const isVendor = user?.role === 'vendor';
+    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+    const features = activeSub?.plan?.dashboardFeatures || {};
 
     const fetchListings = async () => {
         try {
@@ -36,8 +39,12 @@ export default function VendorListings() {
     };
 
     useEffect(() => {
+        if (user && isVendor && !features.showListings) {
+            setLoading(false);
+            return;
+        }
         if (user) fetchListings();
-    }, [user]);
+    }, [user, isVendor, features.showListings]);
 
     const handleEdit = (biz: Business) => {
         setEditingBusiness(biz);
@@ -84,6 +91,23 @@ export default function VendorListings() {
 
     const totalPages = Math.ceil(filteredListings.length / PAGE_SIZE);
     const paginatedListings = filteredListings.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+    if (isVendor && !features.showListings) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100 mt-20">
+                <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mb-6">
+                    <Lock className="w-10 h-10" />
+                </div>
+                <h2 className="text-3xl font-black text-slate-900 mb-3">My Listings</h2>
+                <p className="text-slate-500 max-w-md mx-auto mb-8 font-bold leading-relaxed">
+                    Accessing and managing your business listings is a premium feature. Upgrade your plan to start showcasing your services!
+                </p>
+                <Link href="/vendor/subscription" className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black tracking-tight hover:bg-black transition-all active:scale-95 shadow-xl shadow-slate-200">
+                    Upgrade My Plan
+                </Link>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-8">

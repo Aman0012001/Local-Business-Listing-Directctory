@@ -19,6 +19,7 @@ export class ChatService {
     async getOrCreateConversation(userId: string, businessId: string) {
         let conversation = await this.conversationRepository.findOne({
             where: { userId, businessId },
+            relations: ['business', 'user', 'vendor'],
         });
 
         if (!conversation) {
@@ -37,9 +38,21 @@ export class ChatService {
                 vendorId: business.vendor.id,
             });
             await this.conversationRepository.save(conversation);
+
+            // Reload with relations for the response
+            conversation = await this.conversationRepository.findOne({
+                where: { id: conversation.id },
+                relations: ['business', 'user', 'vendor'],
+            });
         }
 
         return conversation;
+    }
+
+    async getConversationById(conversationId: string) {
+        return this.conversationRepository.findOne({
+            where: { id: conversationId },
+        });
     }
 
     async sendMessage(userId: string, conversationId: string, content: string) {

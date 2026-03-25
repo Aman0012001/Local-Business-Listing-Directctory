@@ -1,17 +1,21 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, Search, Send, User, ChevronRight, Loader2, ArrowLeft } from 'lucide-react';
-import Navbar from '../../../components/Navbar';
+import { MessageSquare, Search, Send, User, ChevronRight, Loader2, ArrowLeft, Lock } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { chatApi } from '../../../services/chat.service';
-import { useChat } from '../../../hooks/useChat';
+import { useChat, useChatSocket } from '../../../hooks/useChat';
 import { getImageUrl } from '../../../lib/api';
 import Link from 'next/link';
 
 export default function VendorChatDashboard() {
     const { user } = useAuth();
+    const isVendor = user?.role === 'vendor';
+    const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+    const features = activeSub?.plan?.dashboardFeatures || {};
+
     const [conversations, setConversations] = useState<any[]>([]);
     const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
@@ -19,31 +23,74 @@ export default function VendorChatDashboard() {
 
     const currentConv = conversations.find(c => c.id === selectedConvId);
     const { messages, isLoading: messagesLoading, sendMessage, sendTyping, isTyping } = useChat(selectedConvId || undefined);
+    const { socket } = useChatSocket();
     const [input, setInput] = useState('');
     const scrollRef = React.useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        const fetchConversations = async () => {
-            try {
-                const data = await chatApi.getVendorConversations();
-                setConversations(data);
-                if (data.length > 0 && !selectedConvId) {
-                    setSelectedConvId(data[0].id);
-                }
-            } catch (error) {
-                console.error('Failed to fetch conversations:', error);
-            } finally {
-                setLoading(false);
+    const fetchConversations = useCallback(async () => {
+        try {
+            let data: any[] = [];
+            if (isVendor || isAdmin) {
+                data = await chatApi.getVendorConversations() as any[];
+            } else {
+                data = await chatApi.getUserConversations() as any[];
             }
-        };
+            setConversations(data);
+            if (data.length > 0 && !selectedConvId) {
+                setSelectedConvId(data[0].id);
+            }
+        } catch (error) {
+            console.error('Failed to fetch conversations:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, [selectedConvId, isVendor, isAdmin]);
+
+    // Initial fetch
+    useEffect(() => {
         fetchConversations();
-    }, [selectedConvId]);
+    }, []); // Only on mount — real-time updates handled by socket
+
+    // Real-time: listen for new conversations and message updates
+    useEffect(() => {
+        if (!socket) return;
+
+        const onNewConversation = (conv: any) => {
+            setConversations(prev => {
+                // Avoid duplicates
+                if (prev.some(c => c.id === conv.id)) return prev;
+                return [conv, ...prev];
+            });
+        };
+
+        const onConversationUpdated = (update: any) => {
+            setConversations(prev =>
+                prev.map(c =>
+                    c.id === update.conversationId
+                        ? { ...c, lastMessage: update.lastMessage, lastMessageAt: update.lastMessageAt }
+                        : c
+                )
+            );
+        };
+
+        socket.on('newConversation', onNewConversation);
+        socket.on('conversationUpdated', onConversationUpdated);
+
+        return () => {
+            socket.off('newConversation', onNewConversation);
+            socket.off('conversationUpdated', onConversationUpdated);
+        };
+    }, [socket]);
 
     useEffect(() => {
         if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+            const scrollContainer = scrollRef.current;
+            scrollContainer.scrollTo({
+                top: scrollContainer.scrollHeight,
+                behavior: 'smooth'
+            });
         }
-    }, [messages]);
+    }, [messages, isTyping]);
 
     const handleSend = () => {
         if (!input.trim()) return;
@@ -67,20 +114,32 @@ export default function VendorChatDashboard() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-white">
-                <Navbar />
-                <div className="h-[calc(100-64px)] flex items-center justify-center">
-                    <Loader2 className="w-10 h-10 animate-spin text-primary" />
+            <div className="flex items-center justify-center h-64">
+                <Loader2 className="w-10 h-10 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    if (isVendor && !features.showChat) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100">
+                <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center mb-6">
+                    <Lock className="w-10 h-10" />
                 </div>
+                <h2 className="text-3xl font-black text-slate-900 mb-3">Live Chat & Direct Messaging</h2>
+                <p className="text-slate-500 max-w-md mx-auto mb-8 font-bold leading-relaxed">
+                    Connecting with customers in real-time is a premium feature. Upgrade your plan to enable the instant messaging dashboard!
+                </p>
+                <Link href="/vendor/subscription" className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black tracking-tight hover:bg-black transition-all active:scale-95 shadow-xl shadow-slate-200">
+                    Upgrade My Plan
+                </Link>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex flex-col overflow-hidden">
-            <Navbar />
-            
-            <div className="flex-1 flex max-w-7xl mx-auto w-full p-4 md:p-6 gap-6 overflow-hidden mt-16">
+        <div className="flex flex-col h-full overflow-hidden">
+            <div className="flex-1 flex w-full gap-6 overflow-hidden">
                 {/* Desktop Sidebar / Conversation List */}
                 <div className={`flex-col bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300 ${selectedConvId ? 'hidden md:flex' : 'flex'} w-full md:w-80 lg:w-96`}>
                     <div className="p-6 border-b border-slate-100 bg-white">
@@ -95,7 +154,7 @@ export default function VendorChatDashboard() {
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                             <input
                                 type="text"
-                                placeholder="Search customers..."
+                                placeholder={isVendor ? "Search customers..." : "Search businesses..."}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
@@ -111,7 +170,9 @@ export default function VendorChatDashboard() {
                                 </div>
                                 <div>
                                     <p className="text-sm font-bold text-slate-900">No messages found</p>
-                                    <p className="text-xs text-slate-400">New customer inquiries will appear here.</p>
+                                    <p className="text-xs text-slate-400">
+                                        {isVendor ? "New customer inquiries will appear here." : "Start talking to businesses to see chats here."}
+                                    </p>
                                 </div>
                             </div>
                         ) : (
@@ -127,12 +188,22 @@ export default function VendorChatDashboard() {
                                 >
                                     <div className="relative flex-shrink-0">
                                         <div className="w-12 h-12 rounded-2xl bg-slate-100 overflow-hidden border-2 border-white shadow-sm">
-                                            {conv.user?.avatarUrl ? (
-                                                <img src={getImageUrl(conv.user.avatarUrl) as string} alt="" className="w-full h-full object-cover" />
+                                            {isVendor ? (
+                                                conv.user?.avatarUrl ? (
+                                                    <img src={getImageUrl(conv.user.avatarUrl) as string} alt="" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400">
+                                                        <User className="w-5 h-5" />
+                                                    </div>
+                                                )
                                             ) : (
-                                                <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400">
-                                                    <User className="w-5 h-5" />
-                                                </div>
+                                                conv.business?.logoUrl ? (
+                                                    <img src={getImageUrl(conv.business.logoUrl) as string} alt="" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center bg-orange-50 text-orange-600 font-black text-xs">
+                                                        {(conv.business?.title?.[0] || 'B').toUpperCase()}
+                                                    </div>
+                                                )
                                             )}
                                         </div>
                                         {conv.user?.isOnline && (
@@ -142,7 +213,7 @@ export default function VendorChatDashboard() {
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between mb-0.5">
                                             <h4 className={`font-black text-sm truncate ${selectedConvId === conv.id ? 'text-white' : 'text-slate-900'}`}>
-                                                {conv.user?.fullName || 'Anonymous'}
+                                                {isVendor ? (conv.user?.fullName || 'Anonymous') : (conv.business?.title || 'Business')}
                                             </h4>
                                             <span className={`text-[10px] font-bold ${selectedConvId === conv.id ? 'text-white/70' : 'text-slate-400'}`}>
                                                 {conv.lastMessageAt ? new Date(conv.lastMessageAt).toLocaleDateString() : ''}
@@ -152,7 +223,7 @@ export default function VendorChatDashboard() {
                                             {conv.lastMessage || 'No messages yet'}
                                         </p>
                                         <div className={`mt-1 text-[9px] font-black uppercase tracking-widest ${selectedConvId === conv.id ? 'text-white/60' : 'text-primary'}`}>
-                                            {conv.business?.title}
+                                            {isVendor ? conv.business?.title : 'Customer Service'}
                                         </div>
                                     </div>
                                     {selectedConvId !== conv.id && (
@@ -178,17 +249,27 @@ export default function VendorChatDashboard() {
                                         <ArrowLeft className="w-5 h-5 text-slate-500" />
                                     </button>
                                     <div className="w-12 h-12 rounded-2xl bg-slate-50 overflow-hidden border-2 border-slate-50 shadow-sm">
-                                        {currentConv?.user?.avatarUrl ? (
-                                            <img src={getImageUrl(currentConv.user.avatarUrl) as string} alt="" className="w-full h-full object-cover" />
+                                        {isVendor ? (
+                                            currentConv?.user?.avatarUrl ? (
+                                                <img src={getImageUrl(currentConv.user.avatarUrl) as string} alt="" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-slate-300">
+                                                    <User className="w-6 h-6" />
+                                                </div>
+                                            )
                                         ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-slate-300">
-                                                <User className="w-6 h-6" />
-                                            </div>
+                                            currentConv?.business?.logoUrl ? (
+                                                <img src={getImageUrl(currentConv.business.logoUrl) as string} alt="" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center bg-orange-50 text-orange-600 font-black text-xs">
+                                                    {(currentConv?.business?.title?.[0] || 'B').toUpperCase()}
+                                                </div>
+                                            )
                                         )}
                                     </div>
                                     <div>
                                         <h3 className="text-lg font-black text-slate-900 leading-tight">
-                                            {currentConv?.user?.fullName || 'Anonymous Customer'}
+                                            {isVendor ? (currentConv?.user?.fullName || 'Anonymous Customer') : (currentConv?.business?.title || 'Business')}
                                         </h3>
                                         <div className="flex items-center gap-2 mt-1">
                                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Regarding</span>

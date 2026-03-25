@@ -34,6 +34,20 @@ export class SubscriptionsSeederService implements OnModuleInit {
                 billingCycle: 'monthly',
                 features: ["1 Business Listing", "Basic Search Discovery", "Email Support", "5 Photo Gallery"],
                 maxListings: 1,
+                dashboardFeatures: {
+                    showListings: true,
+                    canAddListing: true,
+                    showSaved: true,
+                    showFollowing: true,
+                    showQueries: true,
+                    showLeads: false,
+                    showOffers: false,
+                    showReviews: true,
+                    showAnalytics: false,
+                    showChat: false,
+                    showBroadcast: false,
+                    maxKeywords: 0
+                },
                 isFeatured: false,
                 isActive: true,
             },
@@ -46,6 +60,20 @@ export class SubscriptionsSeederService implements OnModuleInit {
                 billingCycle: 'monthly',
                 features: ["Unlimited Listings", "Priority Discovery", "Featured Badge", "Unlimited Photos", "WhatsApp Integration", "Lead Exports"],
                 maxListings: 999,
+                dashboardFeatures: {
+                    showListings: true,
+                    canAddListing: true,
+                    showLeads: true,
+                    showOffers: true,
+                    showReviews: true,
+                    showAnalytics: true,
+                    showSaved: true,
+                    showFollowing: true,
+                    showQueries: true,
+                    showChat: true,
+                    showBroadcast: true,
+                    maxKeywords: 10
+                },
                 isFeatured: true,
                 isActive: true,
             },
@@ -59,12 +87,10 @@ export class SubscriptionsSeederService implements OnModuleInit {
 
             if (existing) {
                 this.logger.log(`Updating plan: ${planData.name}`);
-                await this.planRepository.update(existing.id, {
-                    ...planData,
-                });
+                await this.planRepository.update(existing.id, planData as any);
             } else {
                 this.logger.log(`Creating new plan: ${planData.name}`);
-                const plan = this.planRepository.create(planData);
+                const plan = this.planRepository.create(planData as any);
                 await this.planRepository.save(plan);
             }
         }

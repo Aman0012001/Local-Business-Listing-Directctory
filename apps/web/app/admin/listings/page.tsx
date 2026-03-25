@@ -36,6 +36,8 @@ export default function AdminListingsPage() {
     const [meta, setMeta] = useState<any>({ total: 0, totalPages: 1 });
     const [rejectionModal, setRejectionModal] = useState<{ id: string; title: string } | null>(null);
     const [rejectionReason, setRejectionReason] = useState('');
+    const [keywordsModal, setKeywordsModal] = useState<{ id: string; title: string; keywords: string[]; limit: number } | null>(null);
+    const [newKeyword, setNewKeyword] = useState('');
     const LIMIT = 10;
 
     const fetchListings = useCallback(async (p = page, f = filter) => {
@@ -64,6 +66,20 @@ export default function AdminListingsPage() {
                 setRejectionModal(null);
                 setRejectionReason('');
             }
+        } catch (err: any) {
+            alert(err.message || 'Action failed');
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const updateKeywords = async (id: string, keywords: string[]) => {
+        setActionLoading(id + 'keywords');
+        try {
+            await api.admin.updateSearchKeywords(id, keywords);
+            setListings(prev => prev.map(l => l.id === id ? { ...l, searchKeywords: keywords } : l));
+            setKeywordsModal(null);
+            setNewKeyword('');
         } catch (err: any) {
             alert(err.message || 'Action failed');
         } finally {
@@ -199,6 +215,17 @@ export default function AdminListingsPage() {
                                                 <XCircle className="w-5 h-5" /> Reject
                                             </button>
                                             <button
+                                                onClick={() => {
+                                                    const activeSub = listing.vendor?.subscriptions?.find((s: any) => s.status === 'active');
+                                                    const limit = activeSub?.plan?.dashboardFeatures?.maxKeywords || 0;
+                                                    setKeywordsModal({ id: listing.id, title: listing.title, keywords: listing.searchKeywords || [], limit });
+                                                }}
+                                                className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-white hover:bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-[1.5rem] font-black text-sm transition-all active:scale-95"
+                                                title="Manage Search Keywords"
+                                            >
+                                                <Search className="w-5 h-5" /> Keywords
+                                            </button>
+                                            <button
                                                 onClick={() => window.open(`/business/${listing.slug}`, '_blank')}
                                                 className="p-4 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-900 rounded-[1.5rem] border border-slate-100 transition-all active:scale-95"
                                                 title="Preview Listing"
@@ -283,6 +310,97 @@ export default function AdminListingsPage() {
                                     className="px-6 py-4 bg-red-500 hover:bg-red-600 text-white rounded-[1.5rem] font-black text-sm  shadow-red-500/30 transition-all disabled:opacity-50"
                                 >
                                     {actionLoading?.includes('rejected') ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Confirm Rejection'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+
+                {/* Keywords Modal */}
+                {keywordsModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="bg-white rounded-[2rem] p-10 max-w-lg w-full shadow-2xl relative overflow-hidden"
+                        >
+                            <div className="absolute top-0 left-0 w-full h-2 bg-indigo-500" />
+                            <div className="flex items-center gap-4 mb-8">
+                                <div className="w-16 h-16 bg-indigo-50 rounded-3xl flex items-center justify-center">
+                                    <Search className="w-8 h-8 text-indigo-500" />
+                                </div>
+                                <div className="min-w-0">
+                                    <h3 className="text-xl font-black text-slate-900 truncate">Search Keywords</h3>
+                                    <p className="text-slate-400 font-medium text-sm truncate">Limit: {keywordsModal.keywords.length} / {keywordsModal.limit}</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={newKeyword}
+                                        onChange={(e) => setNewKeyword(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && newKeyword.trim() && keywordsModal.keywords.length < keywordsModal.limit) {
+                                                const kw = newKeyword.trim();
+                                                if (!keywordsModal.keywords.includes(kw)) {
+                                                    setKeywordsModal({ ...keywordsModal, keywords: [...keywordsModal.keywords, kw] });
+                                                }
+                                                setNewKeyword('');
+                                            }
+                                        }}
+                                        disabled={keywordsModal.keywords.length >= keywordsModal.limit}
+                                        placeholder={keywordsModal.keywords.length >= keywordsModal.limit ? "Limit reached" : "Add keyword and press Enter..."}
+                                        className="flex-1 px-5 py-3.5 rounded-2xl border border-slate-100 bg-slate-50 text-slate-900 font-bold focus:outline-none focus:ring-4 focus:ring-indigo-50 placeholder:text-slate-300 text-sm"
+                                    />
+                                    <button
+                                        onClick={() => {
+                                            if (newKeyword.trim() && keywordsModal.keywords.length < keywordsModal.limit) {
+                                                const kw = newKeyword.trim();
+                                                if (!keywordsModal.keywords.includes(kw)) {
+                                                    setKeywordsModal({ ...keywordsModal, keywords: [...keywordsModal.keywords, kw] });
+                                                }
+                                                setNewKeyword('');
+                                            }
+                                        }}
+                                        disabled={!newKeyword.trim() || keywordsModal.keywords.length >= keywordsModal.limit}
+                                        className="p-3.5 bg-indigo-500 text-white rounded-2xl disabled:opacity-50"
+                                    >
+                                        <CheckCircle2 className="w-5 h-5" />
+                                    </button>
+                                </div>
+
+                                <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1 rounded-xl">
+                                    {keywordsModal.keywords.map((kw, i) => (
+                                        <span key={i} className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg font-bold text-xs">
+                                            {kw}
+                                            <XCircle 
+                                                className="w-4 h-4 text-slate-400 hover:text-red-500 cursor-pointer" 
+                                                onClick={() => setKeywordsModal({ ...keywordsModal, keywords: keywordsModal.keywords.filter(k => k !== kw) })}
+                                            />
+                                        </span>
+                                    ))}
+                                    {keywordsModal.keywords.length === 0 && (
+                                        <p className="text-slate-300 text-sm italic font-medium w-full text-center py-4">No keywords assigned yet.</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 mt-10">
+                                <button
+                                    onClick={() => { setKeywordsModal(null); setNewKeyword(''); }}
+                                    className="px-6 py-4 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-[1.5rem] font-black text-sm transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => updateKeywords(keywordsModal.id, keywordsModal.keywords)}
+                                    disabled={!!actionLoading}
+                                    className="px-6 py-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-[1.5rem] font-black text-sm shadow-indigo-500/30 transition-all disabled:opacity-50"
+                                >
+                                    {actionLoading?.includes('keywords') ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Save Keywords'}
                                 </button>
                             </div>
                         </motion.div>

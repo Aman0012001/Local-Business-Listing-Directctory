@@ -168,6 +168,17 @@ export class AdminController {
         return this.adminService.toggleVerifiedListing(id, isVerified);
     }
 
+    @Patch('business/:id/search-keywords')
+    @Roles(UserRole.ADMIN)
+    @ApiOperation({ summary: 'Update business search keywords' })
+    @ApiResponse({ status: 200, description: 'Business search keywords updated' })
+    updateSearchKeywords(
+        @Param('id', ParseUuidPipe) id: string,
+        @Body('keywords') keywords: string[],
+    ) {
+        return this.adminService.updateSearchKeywords(id, keywords);
+    }
+
     @Get('settings')
     @Roles(UserRole.ADMIN)
     @ApiOperation({ summary: 'Get all system settings' })

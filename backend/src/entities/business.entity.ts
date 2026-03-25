@@ -185,6 +185,9 @@ export class Listing {
     @Column({ name: 'meta_keywords', nullable: true, type: 'text' })
     metaKeywords: string;
 
+    @Column({ name: 'search_keywords', type: 'jsonb', default: '[]' })
+    searchKeywords: string[];
+
     // Approval
     @Column({ name: 'approved_at', nullable: true, type: 'timestamp' })
     approvedAt: Date;

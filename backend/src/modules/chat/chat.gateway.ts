@@ -46,6 +46,36 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return { status: 'joined', conversationId };
     }
 
+    /**
+     * Vendor joins their own room so they receive newConversation events
+     * in real-time without polling.
+     */
+    @SubscribeMessage('joinVendorRoom')
+    @UseGuards(WsJwtGuard)
+    async handleJoinVendorRoom(
+        @ConnectedSocket() client: any,
+        @MessageBody('vendorId') vendorId: string,
+    ) {
+        const room = `vendor:${vendorId}`;
+        client.join(room);
+        this.logger.log(`Client ${client.id} joined vendor room ${room}`);
+        return { status: 'joined', room };
+    }
+
+    /**
+     * User joins their own room so they receive conversation events
+     */
+    @SubscribeMessage('joinUserRoom')
+    @UseGuards(WsJwtGuard)
+    async handleJoinUserRoom(
+        @ConnectedSocket() client: any,
+    ) {
+        const room = `user:${client.user.id}`;
+        client.join(room);
+        this.logger.log(`Client ${client.id} joined user room ${room}`);
+        return { status: 'joined', room };
+    }
+
     @SubscribeMessage('sendMessage')
     @UseGuards(WsJwtGuard)
     async handleSendMessage(
@@ -60,9 +90,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 data.content,
             );
 
-            // Broadcast message back to the room
+            // Broadcast full message to conversation room
             this.server.to(data.conversationId).emit('newMessage', message);
-            
+
+            // Also broadcast a lightweight update to vendor/user rooms
+            // so their conversation list can update the last_message preview
+            const conversation = await this.chatService.getConversationById(data.conversationId);
+            if (conversation) {
+                const update = {
+                    conversationId: data.conversationId,
+                    lastMessage: data.content,
+                    lastMessageAt: message.createdAt,
+                };
+                this.server.to(`vendor:${conversation.vendorId}`).emit('conversationUpdated', update);
+                this.server.to(`user:${conversation.userId}`).emit('conversationUpdated', update);
+            }
+
             return { status: 'success', message };
         } catch (error) {
             this.logger.error(`Error sending message: ${error.message}`);
@@ -80,5 +123,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             userId: client.user.id,
             conversationId,
         });
+    }
+
+    /**
+     * Called by frontend after getOrCreateConversation succeeds.
+     * Broadcasts the new conversation to vendor's room.
+     */
+    async notifyNewConversation(conversation: any) {
+        this.server.to(`vendor:${conversation.vendorId}`).emit('newConversation', conversation);
     }
 }

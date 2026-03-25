@@ -14,7 +14,7 @@ import { Lead } from '../../entities/lead.entity';
 import { SavedListing } from '../../entities/favorite.entity';
 import { Comment as BusinessComment } from '../../entities/comment.entity';
 import { Notification } from '../../entities/notification.entity';
-import { Subscription } from '../../entities/subscription.entity';
+import { Subscription, SubscriptionStatus } from '../../entities/subscription.entity';
 import { CommentReply } from '../../entities/comment-reply.entity';
 import { createPaginatedResponse, calculateSkip } from '../../common/utils/pagination.util';
 import { SearchLog } from '../../entities/search-log.entity';
@@ -369,6 +369,8 @@ export class AdminService {
         const skip = calculateSkip(page, limit);
         const query = this.businessRepository.createQueryBuilder('business')
             .leftJoinAndSelect('business.vendor', 'vendor')
+            .leftJoinAndSelect('vendor.subscriptions', 'subscriptions', 'subscriptions.status = :activeStatus', { activeStatus: SubscriptionStatus.ACTIVE })
+            .leftJoinAndSelect('subscriptions.plan', 'plan')
             .leftJoinAndSelect('business.category', 'category')
             .orderBy('business.createdAt', 'DESC')
             .skip(skip)
@@ -492,5 +494,32 @@ export class AdminService {
                 totalVerified,
             },
         };
+    }
+
+    /**
+     * Update search keywords for a business
+     */
+    async updateSearchKeywords(id: string, keywords: string[]) {
+        const business = await this.businessRepository.findOne({
+            where: { id },
+            relations: ['vendor', 'vendor.subscriptions', 'vendor.subscriptions.plan'],
+        });
+        if (!business) throw new NotFoundException('Business not found');
+
+        // Check plan limits
+        const activeSubscription = business.vendor?.subscriptions?.find(s => s.status === SubscriptionStatus.ACTIVE);
+        const planLimit = activeSubscription?.plan?.dashboardFeatures?.['maxKeywords'] || 0;
+
+        if (keywords.length > planLimit) {
+            throw new BadRequestException(`Keyword limit exceeded for this plan (${planLimit} allowed)`);
+        }
+
+        business.searchKeywords = keywords;
+        const updated = await this.businessRepository.save(business);
+
+        // Update in Elasticsearch
+        this.searchService.indexBusiness(updated).catch(err => console.error('ES Keyword Index Error:', err));
+
+        return updated;
     }
 }
