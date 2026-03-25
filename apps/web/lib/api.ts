@@ -503,7 +503,8 @@ export const api = {
         getMyInvoices: () => fetcher<any[]>('/subscriptions/my-invoices'),
         getInvoice: (id: string) => fetcher<any>(`/subscriptions/invoice/${id}`),
         mockCheckout: (planId: string) => fetcher<any>(`/subscriptions/mock-success/${planId}`, { method: 'POST' }),
-        changePlan: (planId: string) => fetcher<any>('/subscriptions/change', { method: 'POST', body: JSON.stringify({ planId }) }),
+        createCheckout: (planId: string) => api.post<{ sessionId: string; checkoutUrl: string }>('/subscriptions/checkout', { planId }),
+        changePlan: (planId: string) => api.post<any>('/subscriptions/change', { planId }),
 
         // Admin
         adminGetAll: (page = 1, limit = 20) => fetcher<any>(`/subscriptions/admin/all?page=${page}&limit=${limit}`),

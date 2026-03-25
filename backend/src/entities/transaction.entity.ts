@@ -47,6 +47,9 @@ export class Transaction {
     @Column({ name: 'gateway_transaction_id', nullable: true })
     gatewayTransactionId: string;
 
+    @Column({ name: 'stripe_session_id', nullable: true })
+    stripeSessionId: string;
+
     // Status
     @Column({
         type: 'enum',

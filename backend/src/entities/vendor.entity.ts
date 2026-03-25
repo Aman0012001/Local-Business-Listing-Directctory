@@ -27,6 +27,9 @@ export class Vendor {
     @Column({ name: 'business_name', nullable: true })
     businessName: string;
 
+    @Column({ name: 'stripe_customer_id', nullable: true })
+    stripeCustomerId: string;
+
     @Column({ nullable: true, type: 'text' })
     bio: string;
 

@@ -388,8 +388,8 @@ export default function VendorSubscriptionPage() {
     useEffect(() => { fetchAll(); }, []);
 
     const handleSelectPlan = async (plan: Plan) => {
-        const isUpgrade = activeSub && Number(plan.price) > Number(activeSub.plan.price);
-        const isDowngrade = activeSub && Number(plan.price) < Number(activeSub.plan.price);
+        const isUpgrade = activeSub?.plan && Number(plan.price) > Number(activeSub.plan.price);
+        const isDowngrade = activeSub?.plan && Number(plan.price) < Number(activeSub.plan.price);
 
         let confirmMsg = 'Activate this plan?';
         if (isUpgrade) confirmMsg = `Are you sure you want to upgrade to ${plan.name}? Your features will be expanded immediately.`;
@@ -400,15 +400,14 @@ export default function VendorSubscriptionPage() {
 
         setCheckingOut(plan.id);
         try {
-            if (activeSub) {
-                // Use the new changePlan endpoint
-                await api.subscriptions.changePlan(plan.id);
-                setSuccessMsg(`🎉 Successfully switched to ${plan.name}!`);
-            } else {
-                // Initial activation
-                await api.subscriptions.mockCheckout(plan.id);
-                setSuccessMsg('🎉 Plan activated successfully!');
+            const res = await api.subscriptions.createCheckout(plan.id);
+            if (res.checkoutUrl) {
+                window.location.href = res.checkoutUrl;
+                return; // Stop execution, browser will navigate away
             }
+            
+            // Fallback for free plans which don't return a Stripe URL
+            setSuccessMsg(`🎉 Successfully activated ${plan.name}!`);
             setTimeout(() => setSuccessMsg(''), 4000);
             await fetchAll();
             await syncProfile();
@@ -571,7 +570,7 @@ export default function VendorSubscriptionPage() {
                                         plan={plan}
                                         isActive={activeSub?.plan?.id === plan.id}
                                         status={activeSub?.status}
-                                        currentPrice={activeSub ? Number(activeSub.plan.price) : undefined}
+                                        currentPrice={activeSub?.plan ? Number(activeSub.plan.price) : undefined}
                                         onSelect={() => handleSelectPlan(plan)}
                                         loading={checkingOut === plan.id}
                                     />

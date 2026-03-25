@@ -17,7 +17,6 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule, { rawBody: true });
 
     app.use(compression());
-    app.use(helmet());
 
     app.enableShutdownHooks();
 
@@ -148,9 +147,14 @@ async function bootstrap() {
         showSwaggerEnv === true ||
         nodeEnv !== 'production';
 
-    console.log(
-        `🔍 Swagger Diagnosis → SHOW_SWAGGER=${showSwaggerEnv} | NODE_ENV=${nodeEnv} | Enabled=${showSwagger}`,
-    );
+    if (nodeEnv === 'production') {
+        app.use(helmet());
+    } else {
+        // Basic helmet for dev without restrictive HSTS
+        app.use(helmet({
+            hsts: false,
+        }));
+    }
 
     if (showSwagger) {
         const swaggerConfig = new DocumentBuilder()

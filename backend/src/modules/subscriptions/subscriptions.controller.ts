@@ -8,7 +8,12 @@ import {
     UseGuards,
     Param,
     Query,
+    Req,
+    Headers,
+    RawBodyRequest,
+    BadRequestException
 } from '@nestjs/common';
+import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { SubscriptionsService } from './subscriptions.service';
 import { SubscriptionCronService } from './subscription-cron.service';
@@ -169,6 +174,20 @@ export class SubscriptionsController {
             planId,
             'MOCK-SUB-' + Date.now()
         );
+    }
+
+    // --- Webhook ---
+    @Public()
+    @Post('webhook')
+    @ApiOperation({ summary: 'Stripe Webhook' })
+    async stripeWebhook(
+        @Headers('stripe-signature') signature: string,
+        @Req() req: RawBodyRequest<Request>,
+    ) {
+        if (!signature || !req.rawBody) {
+            throw new BadRequestException('Missing stripe signature or raw body');
+        }
+        return this.subService.handleStripeWebhook(signature, req.rawBody);
     }
 
     // Keep old endpoint for backward compat

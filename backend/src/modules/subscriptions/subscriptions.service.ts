@@ -18,10 +18,12 @@ import { CreatePlanDto, UpdatePlanDto, CheckoutDto, AssignPlanDto } from './dto/
 
 import { ConfigService } from '@nestjs/config';
 import { AffiliateService } from '../affiliate/affiliate.service';
+import Stripe from 'stripe';
 
 @Injectable()
 export class SubscriptionsService {
     private readonly logger = new Logger(SubscriptionsService.name);
+    private stripe: Stripe;
     constructor(
         @InjectRepository(Subscription)
         private subscriptionRepository: Repository<Subscription>,
@@ -39,7 +41,11 @@ export class SubscriptionsService {
         private affiliateRepository: Repository<Affiliate>,
         private configService: ConfigService,
         private affiliateService: AffiliateService,
-    ) { }
+    ) { 
+        this.stripe = new Stripe(this.configService.get<string>('STRIPE_SECRET_KEY') || '', {
+            apiVersion: '2026-02-25.clover',
+        });
+    }
 
     /**
      * Get all available subscription plans (Client)
@@ -195,9 +201,57 @@ export class SubscriptionsService {
 
         const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
 
+        // Wait, if no stripePriceId, create one on the fly for backward compatibility
+        if (!plan.stripePriceId && plan.price > 0 && this.configService.get<string>('STRIPE_SECRET_KEY')) {
+            const product = await this.stripe.products.create({ name: plan.name });
+            const price = await this.stripe.prices.create({
+                product: product.id,
+                unit_amount: Math.round(plan.price * 100),
+                currency: 'pkr',
+                recurring: { interval: plan.billingCycle.toLowerCase() === 'yearly' ? 'year' : 'month' },
+            });
+            plan.stripePriceId = price.id;
+            await this.planRepository.save(plan);
+        }
+
+        if (plan.price === 0 || !plan.stripePriceId) {
+            // Free plan or fallback
+            return {
+                sessionId: 'MOCK-SESSION-' + Date.now(),
+                checkoutUrl: `${frontendUrl}/vendor/subscription/success?session_id=MOCK-SESSION-${Date.now()}&mock_plan_id=${plan.id}`,
+            };
+        }
+
+        let customerId = vendor.stripeCustomerId;
+        if (!customerId) {
+            const customer = await this.stripe.customers.create({
+                email: vendor.businessEmail || vendor.user.email,
+                name: vendor.businessName || vendor.user.fullName,
+                metadata: { vendorId: vendor.id },
+            });
+            customerId = customer.id;
+            vendor.stripeCustomerId = customerId;
+            await this.vendorRepository.save(vendor);
+        }
+
+        const session = await this.stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            customer: customerId,
+            client_reference_id: vendor.id,
+            line_items: [
+                {
+                    price: plan.stripePriceId,
+                    quantity: 1,
+                },
+            ],
+            mode: 'subscription',
+            success_url: `${frontendUrl}/vendor/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${frontendUrl}/vendor/subscription?canceled=true`,
+        });
+
         return {
-            sessionId: 'MOCK-SESSION-' + Date.now(),
-            checkoutUrl: `${frontendUrl}/vendor/subscription/success?session_id=MOCK-SESSION-${Date.now()}&mock_plan_id=${plan.id}`,
+            sessionId: session.id,
+            checkoutUrl: session.url,
         };
     }
 
@@ -340,67 +394,59 @@ export class SubscriptionsService {
      * Vendor: Change (Upgrade/Downgrade) Subscription Plan
      */
     async changeSubscription(userId: string, planId: string) {
-        const vendor = await this.vendorRepository.findOne({
-            where: { userId },
-            relations: ['user']
-        });
-        if (!vendor) throw new ForbiddenException('Only vendors can change plans');
+        // For a production-ready flow, we simply initiate a new checkout session.
+        // The webhook will handle cancelling the previous one upon successful payment.
+        return this.createCheckoutSession(userId, { planId });
+    }
 
-        const newPlan = await this.planRepository.findOne({ where: { id: planId } });
-        if (!newPlan) throw new NotFoundException('New plan not found');
-
-        // Check if there's an active subscription
-        const activeSub = await this.subscriptionRepository.findOne({
-            where: { vendorId: vendor.id, status: SubscriptionStatus.ACTIVE },
-            relations: ['plan']
-        });
-
-        if (activeSub && activeSub.planId === planId) {
-            throw new BadRequestException('You are already on this plan');
+    /**
+     * Handle Stripe Webhooks
+     */
+    async handleStripeWebhook(signature: string, payload: Buffer) {
+        let event: Stripe.Event;
+        try {
+            event = this.stripe.webhooks.constructEvent(
+                payload,
+                signature,
+                this.configService.get<string>('STRIPE_WEBHOOK_SECRET') || ''
+            );
+        } catch (err: any) {
+            this.logger.error(`Webhook signature verification failed: ${err.message}`);
+            throw new BadRequestException(`Webhook Error: ${err.message}`);
         }
 
-        // In a real system, you'd calculate prorated amounts here.
-        // For this mock implementation, we just cancel the old one and start new.
-        if (activeSub) {
-            activeSub.status = SubscriptionStatus.CANCELLED;
-            activeSub.cancelledAt = new Date();
-            activeSub.cancellationReason = `Switched to ${newPlan.name}`;
-            await this.subscriptionRepository.save(activeSub);
+        switch (event.type) {
+            case 'checkout.session.completed': {
+                const session = event.data.object as Stripe.Checkout.Session;
+                if (session.mode === 'subscription') {
+                    const vendorId = session.client_reference_id;
+                    if (session.subscription && vendorId) {
+                        const subscription = await this.stripe.subscriptions.retrieve(session.subscription as string);
+                        const priceId = subscription.items.data[0].price.id;
+                        const plan = await this.planRepository.findOne({ where: { stripePriceId: priceId } });
+                        if (plan) {
+                            await this.handleMockSubscriptionSuccess(vendorId, plan.id, session.id);
+                        }
+                    }
+                }
+                break;
+            }
+            case 'customer.subscription.deleted': {
+                const subscription = event.data.object as Stripe.Subscription;
+                const vendor = await this.vendorRepository.findOne({ where: { stripeCustomerId: subscription.customer as string } });
+                if (vendor) {
+                    await this.subscriptionRepository.update(
+                        { vendorId: vendor.id, status: SubscriptionStatus.ACTIVE },
+                        { status: SubscriptionStatus.CANCELLED, cancelledAt: new Date() }
+                    );
+                }
+                break;
+            }
+            default:
+                this.logger.log(`Unhandled event type: ${event.type}`);
         }
-
-        const now = new Date();
-        const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
-
-        const subscription = this.subscriptionRepository.create({
-            vendorId: vendor.id,
-            planId: newPlan.id,
-            status: SubscriptionStatus.ACTIVE,
-            startDate: now,
-            endDate,
-            amount: newPlan.price,
-            autoRenew: true,
-        });
-
-        const savedSub = await this.subscriptionRepository.save(subscription);
-
-        // Record transaction
-        const transaction = this.transactionRepository.create({
-            subscriptionId: savedSub.id,
-            vendorId: vendor.id,
-            amount: newPlan.price,
-            status: PaymentStatus.COMPLETED,
-            paidAt: now,
-            gatewayTransactionId: `PLAN-CHANGE-${Date.now()}`,
-            paymentGateway: 'Mock',
-            invoiceNumber: `INV-MOD-${Date.now()}`,
-        });
-
-        await this.transactionRepository.save(transaction);
-
-        return {
-            message: 'Plan changed successfully',
-            subscription: savedSub
-        };
+        return { received: true };
     }
 }
+
 
