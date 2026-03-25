@@ -159,8 +159,6 @@ export default function AdminPlansPage() {
         switch (type) {
             case 'free': return <Clock className="w-5 h-5 text-slate-400" />;
             case 'basic': return <Zap className="w-5 h-5 text-blue-500" />;
-            case 'premium': return <Crown className="w-5 h-5 text-amber-500" />;
-            case 'enterprise': return <Building2 className="w-5 h-5 text-red-500" />;
             default: return <CreditCard className="w-5 h-5 text-slate-400" />;
         }
     };
@@ -213,9 +211,8 @@ export default function AdminPlansPage() {
                         )}
 
                         <div className="flex items-center gap-4 mb-6">
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${plan.planType === 'premium' ? 'bg-amber-50' :
-                                plan.planType === 'basic' ? 'bg-blue-50' :
-                                    plan.planType === 'enterprise' ? 'bg-red-50' : 'bg-slate-50'
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${
+                                plan.planType === 'basic' ? 'bg-blue-50' : 'bg-slate-50'
                                 }`}>
                                 {getPlanIcon(plan.planType)}
                             </div>
@@ -339,7 +336,7 @@ export default function AdminPlansPage() {
                                             className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-200 font-bold text-slate-900"
                                         >
                                             <option value="free">Free</option>
-                                            <option value="premium">Premium</option>
+                                            <option value="basic">Basic</option>
                                         </select>
                                     </div>
                                     <div className="space-y-2">

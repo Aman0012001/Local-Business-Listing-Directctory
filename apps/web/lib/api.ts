@@ -495,23 +495,7 @@ export const api = {
             body: JSON.stringify(data),
         }),
         getPayouts: () => fetcher<any[]>('/affiliate/payouts'),
-        // Admin
-        adminGetStats: () => fetcher<any>('/affiliate/admin/stats'),
-        adminGetPayouts: () => fetcher<any[]>('/affiliate/admin/payouts'),
-        adminUpdatePayout: (id: string, data: { status: string; notes?: string }) => fetcher(`/affiliate/admin/payouts/${id}`, {
-            method: 'PATCH',
-            body: JSON.stringify(data),
-        }),
-        adminGetAffiliates: () => fetcher<any[]>('/affiliate/admin/affiliates'),
         getSettings: () => fetcher<any>('/affiliate/settings'),
-        adminUpdateSettings: (data: any) => fetcher('/affiliate/admin/settings', {
-            method: 'PATCH',
-            body: JSON.stringify(data),
-        }),
-        adminGetReferrals: () => fetcher<any[]>('/affiliate/admin/referrals'),
-        adminActivateReferral: (id: string) => fetcher<any>(`/affiliate/admin/activate-referral/${id}`, {
-            method: 'POST'
-        }),
     },
     subscriptions: {
         getPlans: () => fetcher<any[]>('/subscriptions/plans'),

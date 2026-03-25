@@ -1,4 +1,21 @@
 const { execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+
+function getPortFromEnv() {
+    try {
+        const envPath = path.join(__dirname, '..', '.env');
+        if (fs.existsSync(envPath)) {
+            const content = fs.readFileSync(envPath, 'utf8');
+            const match = content.match(/^PORT=(\d+)/m);
+            if (match) return parseInt(match[1]);
+        }
+    } catch (err) {
+        // Ignore errors
+    }
+    return null;
+}
+
 
 /**
  * Robustly ensures a port is free before starting the application.
@@ -24,5 +41,5 @@ function ensurePortFree(port) {
     }
 }
 
-const port = process.argv[2] || process.env.PORT || 3002;
+const port = process.argv[2] || process.env.PORT || getPortFromEnv() || 3001;
 ensurePortFree(port);

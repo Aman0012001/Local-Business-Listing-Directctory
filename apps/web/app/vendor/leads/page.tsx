@@ -13,7 +13,7 @@ export default function VendorLeadsPage() {
     const features = activeSub?.plan?.dashboardFeatures || {};
     const isVendor = user?.role === 'vendor';
 
-    // Premium check
+    // Basic check
     if (isVendor && !features.showLeads) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100 mt-20">
@@ -22,7 +22,7 @@ export default function VendorLeadsPage() {
                 </div>
                 <h2 className="text-3xl font-black text-slate-900 mb-3">Job Leads & Broadcasts</h2>
                 <p className="text-slate-500 max-w-md mx-auto mb-8 font-bold leading-relaxed">
-                    Accessing real-time job leads and customer broadcasts is a premium feature. Upgrade your plan to see who is looking for your services!
+                    Accessing real-time job leads and customer broadcasts is a Basic feature. Upgrade your plan to see who is looking for your services!
                 </p>
                 <Link href="/vendor/subscription" className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black tracking-tight hover:bg-black transition-all active:scale-95 shadow-xl shadow-slate-200">
                     Upgrade My Plan

@@ -129,7 +129,7 @@ export default function AffiliateDashboard() {
                     </div>
                     <h1 className="text-4xl font-black text-slate-900 mb-4">Join Our Affiliate Program</h1>
                     <p className="text-slate-500 text-lg mb-10 max-w-2xl mx-auto font-medium">
-                        Earn rewards for every business you refer and every visit you drive. Start earning today with Punjab's most premium business network.
+                        Earn rewards for every business you refer and every visit you drive. Start earning today with Punjab's leading business network.
                     </p>
                     <button
                         onClick={handleJoin}

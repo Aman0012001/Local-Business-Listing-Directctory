@@ -224,8 +224,6 @@ function PlanCard({ plan, isActive, status, currentPrice, onSelect, loading }: {
         const colors: Record<string, { bg: string; text: string; border: string; icon: string; accent: string }> = {
             free: { bg: 'bg-slate-50', text: 'text-slate-500', border: 'border-slate-200', icon: 'text-slate-400', accent: 'bg-slate-100' },
             basic: { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200', icon: 'text-blue-500', accent: 'bg-blue-100' },
-            premium: { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200', icon: 'text-amber-500', accent: 'bg-amber-100' },
-            enterprise: { bg: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-200', icon: 'text-rose-500', accent: 'bg-rose-50' },
         };
         return colors[type] || colors.basic;
     };
@@ -234,8 +232,6 @@ function PlanCard({ plan, isActive, status, currentPrice, onSelect, loading }: {
         switch (type) {
             case 'free': return <Clock className="w-5 h-5" />;
             case 'basic': return <Zap className="w-5 h-5" />;
-            case 'premium': return <Crown className="w-5 h-5" />;
-            case 'enterprise': return <Building2 className="w-5 h-5" />;
             default: return <CreditCard className="w-5 h-5" />;
         }
     };

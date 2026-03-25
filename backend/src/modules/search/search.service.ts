@@ -20,37 +20,39 @@ export class SearchService implements OnModuleInit {
         private readonly businessRepository: Repository<Listing>,
     ) { }
 
-    async onModuleInit() {
-        const isEnabled = this.configService.get<string>('ELASTICSEARCH_ENABLED') === 'true';
+    onModuleInit() {
+        // Run index setup in the background to avoid blocking application startup
+        setImmediate(async () => {
+            const isEnabled = this.configService.get<string>('ELASTICSEARCH_ENABLED') === 'true';
 
-        if (!isEnabled) {
-            this.isElasticAvailable = false;
-            this.logger.log('ℹ️ Elasticsearch is disabled by configuration. Using database search.');
-            return;
-        }
-
-        this.INDEX_NAME = this.configService.get<string>('ELASTICSEARCH_INDEX') || 'businesses';
-
-        try {
-            await this.elasticsearchService.ping();
-            this.isElasticAvailable = true;
-            this.logger.log('✅ Elasticsearch is available. Creating index if needed...');
-            await this.createIndex();
-            this.logger.log('Search metadata sync starting...');
-            const available = await this.isAvailable();
-            if (available) {
-                // Re-index on startup to ensure mapping is up to date
-                // We do this asynchronously to not block application startup
-                this.reindexAll().catch(err => {
-                    this.logger.error('Failed to reindex on startup:', err);
-                });
+            if (!isEnabled) {
+                this.isElasticAvailable = false;
+                this.logger.log('ℹ️ Elasticsearch is disabled by configuration. Using database search.');
+                return;
             }
-            this.logger.log('✅ Elasticsearch index ready.');
-        } catch (error) {
-            this.isElasticAvailable = false;
-            this.logger.warn(`⚠️ Elasticsearch is enabled but not reachable: ${error.message}`);
-            this.logger.debug(error);
-        }
+
+            this.INDEX_NAME = this.configService.get<string>('ELASTICSEARCH_INDEX') || 'businesses';
+
+            try {
+                await this.elasticsearchService.ping();
+                this.isElasticAvailable = true;
+                this.logger.log('✅ Elasticsearch is available. Creating index if needed...');
+                await this.createIndex();
+                this.logger.log('Search metadata sync starting...');
+                const available = await this.isAvailable();
+                if (available) {
+                    // Re-index on startup to ensure mapping is up to date
+                    // We do this asynchronously to not block application startup
+                    this.reindexAll().catch(err => {
+                        this.logger.error('Failed to reindex on startup:', err);
+                    });
+                }
+                this.logger.log('✅ Elasticsearch index ready.');
+            } catch (error) {
+                this.isElasticAvailable = false;
+                this.logger.warn(`⚠️ Elasticsearch is enabled but not reachable: ${error.message}`);
+            }
+        });
     }
 
     /**

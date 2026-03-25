@@ -53,7 +53,7 @@ export default function VendorFollowing() {
                 </div>
                 <h2 className="text-3xl font-black text-slate-900 mb-3">Following</h2>
                 <p className="text-slate-500 max-w-md mx-auto mb-8 font-bold leading-relaxed">
-                    Connecting and following other businesses is a premium feature. Upgrade your plan to build your professional network!
+                    Connecting and following other businesses is a Basic feature. Upgrade your plan to build your professional network!
                 </p>
                 <Link href="/vendor/subscription" className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black tracking-tight hover:bg-black transition-all active:scale-95 shadow-xl shadow-slate-200">
                     Upgrade My Plan

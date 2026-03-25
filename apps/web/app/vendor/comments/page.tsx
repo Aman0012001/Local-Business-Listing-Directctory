@@ -85,7 +85,7 @@ export default function VendorCommentsPage() {
                 </div>
                 <h2 className="text-3xl font-black text-slate-900 mb-3">Customer Reviews</h2>
                 <p className="text-slate-500 max-w-md mx-auto mb-8 font-bold leading-relaxed">
-                    Managing and replying to customer reviews is a premium feature. Upgrade your plan to build trust with your customers!
+                    Managing and replying to customer reviews is a Basic feature. Upgrade your plan to build trust with your customers!
                 </p>
                 <Link href="/vendor/subscription" className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black tracking-tight hover:bg-black transition-all active:scale-95 shadow-xl shadow-slate-200">
                     Upgrade My Plan

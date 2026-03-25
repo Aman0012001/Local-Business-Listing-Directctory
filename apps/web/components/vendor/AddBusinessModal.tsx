@@ -6,6 +6,7 @@ import { api, getImageUrl } from '../../lib/api';
 import { Category, Business, City } from '../../types/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import CategorySearchSelect from '../CategorySearchSelect';
+import { useAuth } from '../../context/AuthContext';
 
 const SOCIAL_PLATFORMS = [
     { key: 'facebook', label: 'Facebook', emoji: '📘', color: '#1877F2', placeholder: 'https://facebook.com/yourbusiness' },
@@ -31,6 +32,7 @@ const TABS = [
 ];
 
 export default function AddBusinessModal({ isOpen, onClose, onSuccess, business }: AddBusinessModalProps) {
+    const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState<Category[]>([]);
     const [cities, setCities] = useState<City[]>([]);
@@ -63,6 +65,9 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
         faqs: [] as { question: string; answer: string }[]
     });
 
+    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+    const maxKeywords = activeSub?.plan?.dashboardFeatures?.maxKeywords || 0;
+
     const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
     const [galleryUploading, setGalleryUploading] = useState(false);
 
@@ -73,7 +78,7 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
 
     const addKeyword = (raw: string) => {
         const tag = raw.trim().toLowerCase().replace(/[,]+$/, '');
-        if (tag && !keywords.includes(tag) && keywords.length < 20) {
+        if (tag && !keywords.includes(tag) && keywords.length < maxKeywords) {
             const updated = [...keywords, tag];
             setKeywords(updated);
             setFormData(prev => ({ ...prev, metaKeywords: updated.join(',') }));
@@ -863,7 +868,7 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                                                 <div className="space-y-3">
                                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 flex items-center justify-between">
                                                         Search Keywords
-                                                        <span className="text-[9px] text-slate-300 normal-case tracking-normal">max 20 tags</span>
+                                                        <span className="text-[9px] text-slate-300 normal-case tracking-normal">max {maxKeywords} tags</span>
                                                     </label>
                                                     <div
                                                         onClick={() => keywordInputRef.current?.focus()}

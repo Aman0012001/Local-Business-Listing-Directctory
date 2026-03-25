@@ -32,7 +32,6 @@ const menuItems = [
     { name: 'Listings Approval', icon: ShieldAlert, href: '/admin/listings', badge: null },
     { name: 'Plans', icon: CreditCard, href: '/admin/plans', badge: null },
     { name: 'Subscriptions', icon: Receipt, href: '/admin/subscriptions', badge: null },
-    { name: 'Affiliates', icon: Users, href: '/admin/affiliates', badge: null },
     { name: 'Demand Insights', icon: Activity, href: '/admin/demand', badge: null },
     { name: 'Search Analytics', icon: Activity, href: '/admin/analytics', badge: null },
     { name: 'Search Heatmap', icon: ShieldCheck, href: '/admin/heatmap', badge: 'New' },
