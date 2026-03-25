@@ -5,7 +5,7 @@ import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 import { chatApi } from '../services/chat.service';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL?.split('/api')[0] || 'http://localhost:3001';
+const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL?.split('/api')[0] || 'https://local-business-listing-directctory-production.up.railway.app';
 
 export function useChat(conversationId?: string) {
     const { user } = useAuth();
@@ -64,7 +64,7 @@ export function useChat(conversationId?: string) {
         const fetchHistory = async () => {
             setIsLoading(true);
             try {
-                const history = await chatApi.getMessages(conversationId);
+                const history = await chatApi.getMessages(conversationId) as any[];
                 setMessages(history);
             } catch (error) {
                 console.error('[useChat] Failed to fetch history:', error);

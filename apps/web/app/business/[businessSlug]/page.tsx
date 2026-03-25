@@ -1,4 +1,4 @@
-import { api } from '../../../lib/api';
+import { api } from '@/lib/api';
 import BusinessDetailClient from './BusinessDetailClient';
 
 export const dynamic = 'force-static';
@@ -6,8 +6,9 @@ export const dynamicParams = false;
 
 export async function generateStaticParams() {
     try {
+        // Robust search with basic fallback
         const response = await api.listings.search({ limit: 100 });
-        const businesses = response.data || [];
+        const businesses = (response && Array.isArray(response.data)) ? response.data : [];
         
         const params = businesses
             .filter((b: any) => b && b.slug)
@@ -15,10 +16,12 @@ export async function generateStaticParams() {
                 businessSlug: String(business.slug),
             }));
             
-        return params.length > 0 ? params : [{ businessSlug: 'test-business' }];
+        // If no businesses found, provide at least one valid-looking slug to satisfy Next.js static export
+        return params.length > 0 ? params : [{ businessSlug: 'sample-business' }];
     } catch (error) {
         console.error('Failed to generate static params for businesses:', error);
-        return [{ businessSlug: 'test-business' }];
+        // Fallback for build phase if API is unreachable
+        return [{ businessSlug: 'sample-business' }];
     }
 }
 

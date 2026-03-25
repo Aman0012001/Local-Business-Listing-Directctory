@@ -1,4 +1,4 @@
-import { api } from '../../../lib/api';
+import { api } from '@/lib/api';
 import OfferEventDetailClient from './OfferEventDetailClient';
 
 export const dynamic = 'force-static';
@@ -7,7 +7,7 @@ export const dynamicParams = false;
 export async function generateStaticParams() {
     try {
         const response = await api.offers.search({ limit: 50 });
-        const offers = response.data || [];
+        const offers = (response && Array.isArray(response.data)) ? response.data : [];
         
         const params = offers
             .filter((o: any) => o && (o.id || o._id))
@@ -15,10 +15,10 @@ export async function generateStaticParams() {
                 id: String(offer.id || offer._id),
             }));
             
-        return params.length > 0 ? params : [{ id: 'test-offer' }];
+        return params.length > 0 ? params : [{ id: 'sample-offer' }];
     } catch (error) {
         console.error('Failed to generate static params for offers:', error);
-        return [{ id: 'test-offer' }];
+        return [{ id: 'sample-offer' }];
     }
 }
 
