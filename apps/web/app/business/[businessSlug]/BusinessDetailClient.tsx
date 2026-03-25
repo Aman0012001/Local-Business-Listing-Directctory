@@ -16,6 +16,8 @@ import { api, getImageUrl } from '../../../lib/api';
 import { Business } from '../../../types/api';
 import { useAuth } from '../../../context/AuthContext';
 import { getBusinessOpenStatus } from '../../../lib/business-status';
+import ChatTrigger from '../../../components/chat/ChatTrigger';
+import { useChat } from '../../../hooks/useChat';
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
     <svg viewBox="0 0 24 24" className={className} xmlns="http://www.w3.org/2000/svg" fill="currentColor">
@@ -914,6 +916,15 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                         </button>
                                     )}
                                 </div>
+
+                                {/* Live Chat Button */}
+                                {!isOwner && (
+                                    <ChatTrigger
+                                        businessId={business.id}
+                                        businessName={business.title}
+                                        className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/10 active:scale-95 mb-4"
+                                    />
+                                )}
 
                                 {/* Enquiry Button - hidden for the owner */}
                                 {!isOwner && (

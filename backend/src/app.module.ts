@@ -28,6 +28,7 @@ import { DemandModule } from './modules/demand/demand.module';
 import { FollowsModule } from './modules/follows/follows.module';
 import { AffiliateModule } from './modules/affiliate/affiliate.module';
 import { JobLeadsModule } from './modules/job-leads/job-leads.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 import { join } from 'path';
 
@@ -108,6 +109,7 @@ import { join } from 'path';
         FollowsModule,
         AffiliateModule,
         JobLeadsModule,
+        ChatModule,
     ],
     providers: [
         {

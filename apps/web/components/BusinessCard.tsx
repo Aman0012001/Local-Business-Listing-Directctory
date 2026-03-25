@@ -6,6 +6,7 @@ import { Star, MapPin, ShieldCheck, Clock, CheckCircle2, Users } from 'lucide-re
 import { Business } from '../types/api';
 import { getImageUrl } from '../lib/api';
 import { getBusinessOpenStatus } from '../lib/business-status';
+import ChatTrigger from './chat/ChatTrigger';
 // Simple Online/Offline badge — green when vendor is logged in, red when not
 const VendorOnlineBadge = ({ isOnline }: { isOnline?: boolean }) => {
     if (isOnline) {
@@ -267,10 +268,15 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                         </div>
                     </div>
 
-                    <div className="mt-auto">
-                        <div className={`block w-full text-center py-2  font-bold transition-all s active:scale-95`} style={{ backgroundColor: "#eff6ff", borderRadius: "10px" }}>
-                            {/* {getButtonText()} */} View Details
+                    <div className="mt-auto flex gap-2">
+                        <div className="flex-1 text-center py-2 font-bold transition-all active:scale-95 bg-blue-50 text-blue-600 rounded-[10px]">
+                            View Details
                         </div>
+                        <ChatTrigger 
+                            businessId={business.id} 
+                            businessName={business.title}
+                            className="flex-1"
+                        />
                     </div>
                 </div>
             </div>

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { api, getImageUrl } from '../../../lib/api';
 import Navbar from '../../../components/Navbar';
+import ChatTrigger from '../../../components/chat/ChatTrigger';
 
 interface VendorProfile {
     id: string;
@@ -164,6 +165,13 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
                                 <div className="h-10 w-[1px] bg-slate-100 mx-2 hidden sm:block" />
 
                                 <div className="flex items-center gap-4">
+                                    {vendor.listings?.[0] && (
+                                        <ChatTrigger 
+                                            businessId={vendor.listings[0].id}
+                                            businessName={vendor.businessName}
+                                            variant="icon"
+                                        />
+                                    )}
                                     {vendor.businessPhone && (
                                         <a href={`tel:${vendor.businessPhone}`} className="w-10 h-10 rounded-xl bg-white flex items-center justify-center border border-slate-100 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-all shadow-sm group">
                                             <Phone className="w-4 h-4 transition-transform group-hover:scale-110" />
@@ -373,9 +381,17 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
                                         <MapPin className="w-4 h-4 text-indigo-400" />
                                         <span className="text-[10px] font-black uppercase tracking-widest">{item.city}</span>
                                     </div>
-                                    <div className="flex items-center gap-2 text-emerald-500">
-                                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">Online</span>
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-2 text-emerald-500">
+                                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">Online</span>
+                                        </div>
+                                        <ChatTrigger 
+                                            businessId={item.id}
+                                            businessName={item.title}
+                                            variant="icon"
+                                            className="!p-2 !rounded-xl !border-slate-100"
+                                        />
                                     </div>
                                 </div>
                             </div>

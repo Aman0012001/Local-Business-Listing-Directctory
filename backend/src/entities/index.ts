@@ -44,3 +44,7 @@ export * from './comment-reply.entity';
 // Job Leads
 export * from './job-lead.entity';
 export * from './job-lead-response.entity';
+
+// Chat
+export * from './chat-conversation.entity';
+export * from './chat-message.entity';

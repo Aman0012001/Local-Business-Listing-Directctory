@@ -54,6 +54,7 @@ export default function Sidebar() {
         { name: 'Saved', icon: Heart, href: '/vendor/saved', badge: null },
         { name: 'Following', icon: UserPlus, href: '/vendor/following', badge: null },
         { name: 'Queries', icon: Send, href: '/vendor/messages', badge: newEnquiryCount > 0 ? String(newEnquiryCount) : null },
+        { name: 'Live Chat', icon: MessageSquare, iconColor: 'text-emerald-500', href: '/vendor/chat', badge: 'Live' },
         { name: 'Demand Insights', icon: TrendingUp, href: '/vendor/demand', badge: null },
         { name: 'Subscription & Billing', icon: CreditCard, href: '/vendor/subscription', badge: null },
         { name: 'Broadcast Feed', icon: Megaphone, href: '/vendor/broadcasts', badge: 'New' },
@@ -129,7 +130,7 @@ export default function Sidebar() {
                                 <div className="flex items-center gap-4">
                                     <item.icon className={`w-5 h-5 transition-all duration-300 ${isActive
                                         ? isEnquiries ? 'text-violet-600 scale-110' : 'text-blue-600 scale-110'
-                                        : 'text-slate-400 group-hover:text-slate-900 group-hover:scale-110'
+                                        : (item as any).iconColor && !isActive ? `${(item as any).iconColor} group-hover:scale-110` : 'text-slate-400 group-hover:text-slate-900 group-hover:scale-110'
                                         }`} />
                                     <span className={`text-[15px] tracking-tight transition-all ${isActive ? 'font-black' : 'font-bold'}`}>{item.name}</span>
                                 </div>

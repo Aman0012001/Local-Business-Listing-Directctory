@@ -109,6 +109,19 @@ async function fetcher<T>(endpoint: string, options?: FetcherOptions): Promise<T
 }
 
 export const api = {
+    get: <T>(endpoint: string, options?: FetcherOptions) => fetcher<T>(endpoint, { ...options, method: 'GET' }),
+    post: <T>(endpoint: string, body?: any, options?: FetcherOptions) => fetcher<T>(endpoint, { 
+        ...options, 
+        method: 'POST', 
+        body: body ? JSON.stringify(body) : undefined 
+    }),
+    patch: <T>(endpoint: string, body?: any, options?: FetcherOptions) => fetcher<T>(endpoint, { 
+        ...options, 
+        method: 'PATCH', 
+        body: body ? JSON.stringify(body) : undefined 
+    }),
+    delete: <T>(endpoint: string, options?: FetcherOptions) => fetcher<T>(endpoint, { ...options, method: 'DELETE' }),
+    
     categories: {
         getAll: () => fetcher<Category[]>('/categories'),
         getPopular: (limit = 8) => fetcher<Category[]>(`/categories/popular?limit=${limit}`),
