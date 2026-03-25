@@ -48,7 +48,13 @@ export default function AdminPlansPage() {
             showLeads: false,
             showDemand: false,
             showQueries: false,
-            showReviews: false
+            showReviews: false,
+            showChat: false,
+            showBroadcast: false,
+            showSaved: false,
+            showFollowing: false,
+            showListings: true,
+            canAddListing: true,
         }
     });
 
@@ -86,7 +92,13 @@ export default function AdminPlansPage() {
                     showLeads: false,
                     showDemand: false,
                     showQueries: false,
-                    showReviews: false
+                    showReviews: false,
+                    showChat: false,
+                    showBroadcast: false,
+                    showSaved: false,
+                    showFollowing: false,
+                    showListings: true,
+                    canAddListing: true,
                 }
             });
         } else {
@@ -106,7 +118,13 @@ export default function AdminPlansPage() {
                     showLeads: false,
                     showDemand: false,
                     showQueries: false,
-                    showReviews: false
+                    showReviews: false,
+                    showChat: false,
+                    showBroadcast: false,
+                    showSaved: false,
+                    showFollowing: false,
+                    showListings: true,
+                    canAddListing: true,
                 }
             });
         }
@@ -211,8 +229,7 @@ export default function AdminPlansPage() {
                         )}
 
                         <div className="flex items-center gap-4 mb-6">
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${
-                                plan.planType === 'basic' ? 'bg-blue-50' : 'bg-slate-50'
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${plan.planType === 'basic' ? 'bg-blue-50' : 'bg-slate-50'
                                 }`}>
                                 {getPlanIcon(plan.planType)}
                             </div>
@@ -409,6 +426,12 @@ export default function AdminPlansPage() {
                                                 { id: 'showDemand', label: 'Demand Insights' },
                                                 { id: 'showQueries', label: 'Direct Queries' },
                                                 { id: 'showReviews', label: 'Review Management' },
+                                                { id: 'showChat', label: 'Live Chat' },
+                                                { id: 'showBroadcast', label: 'Broadcast Feed' },
+                                                { id: 'showSaved', label: 'Saved Items' },
+                                                { id: 'showFollowing', label: 'Following List' },
+                                                { id: 'showListings', label: 'My Listings' },
+                                                { id: 'canAddListing', label: 'Add Listing' },
                                             ].map((feature) => (
                                                 <label key={feature.id} className="flex items-center gap-3 cursor-pointer group bg-slate-50/50 p-4 rounded-2xl hover:bg-slate-50 transition-colors">
                                                     <div className="relative">

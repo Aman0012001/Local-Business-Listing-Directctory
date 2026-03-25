@@ -15,7 +15,8 @@ export class SubscriptionsSeederService implements OnModuleInit {
     ) { }
 
     async onModuleInit() {
-        const shouldSeed = this.configService.get<string>('SEED_DATABASE') === 'true';
+        const val = this.configService.get('SEED_DATABASE');
+        const shouldSeed = String(val) === 'true';
         if (shouldSeed) {
             await this.seedPlans();
         }
@@ -32,7 +33,6 @@ export class SubscriptionsSeederService implements OnModuleInit {
                 description: 'Essential tools for small local businesses starting out.',
                 price: 0,
                 billingCycle: 'monthly',
-                features: ["1 Business Listing", "Basic Search Discovery", "Email Support", "5 Photo Gallery"],
                 maxListings: 1,
                 dashboardFeatures: {
                     showListings: false,
@@ -58,7 +58,6 @@ export class SubscriptionsSeederService implements OnModuleInit {
                 description: 'Everything you need to dominate your local market.',
                 price: 2000,
                 billingCycle: 'monthly',
-                features: ["Unlimited Listings", "Priority Discovery", "Featured Badge", "Unlimited Photos", "WhatsApp Integration", "Lead Exports"],
                 maxListings: 999,
                 dashboardFeatures: {
                     showListings: true,
@@ -82,7 +81,7 @@ export class SubscriptionsSeederService implements OnModuleInit {
         // Seeding / Updating
         for (const planData of plans) {
             const existing = await this.planRepository.findOne({
-                where: { planType: planData.planType }
+                where: { id: planData.id }
             });
 
             if (existing) {
@@ -96,9 +95,9 @@ export class SubscriptionsSeederService implements OnModuleInit {
         }
 
         // Deactivate others
-        const activeTypes = plans.map(p => p.planType);
+        const activeIds = plans.map(p => p.id);
         await this.planRepository.update(
-            { planType: Not(In(activeTypes)) },
+            { id: Not(In(activeIds)) },
             { isActive: false }
         );
 

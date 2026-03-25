@@ -276,18 +276,36 @@ function PlanCard({ plan, isActive, status, currentPrice, onSelect, loading }: {
             </div>
 
             <div className="space-y-2.5 flex-1 mb-6">
-                {plan.dashboardFeatures && Object.entries(plan.dashboardFeatures).map(([key, enabled]) => (
-                    enabled && (
+                {plan.dashboardFeatures && Object.entries(plan.dashboardFeatures).map(([key, enabled]) => {
+                    if (!enabled || key === 'maxKeywords') return null;
+                    
+                    const labels: Record<string, string> = {
+                        showListings: 'My Listings',
+                        canAddListing: 'Add Listing',
+                        showLeads: 'Leads',
+                        showOffers: 'Offers & Events',
+                        showReviews: 'Reviews',
+                        showAnalytics: 'Analytics',
+                        showSaved: 'Saved',
+                        showFollowing: 'Following',
+                        showQueries: 'Queries',
+                        showChat: 'Live Chat',
+                        showBroadcast: 'Broadcast Feed',
+                    };
+
+                    const label = labels[key] || key.replace('show', '').replace(/([A-Z])/g, ' $1').trim();
+
+                    return (
                         <div key={key} className="flex items-start gap-2.5">
                             <div className="mt-0.5 w-4 h-4 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
                                 <Check className="w-2.5 h-2.5 text-emerald-500 stroke-[3]" />
                             </div>
                             <span className="text-slate-600 font-bold text-sm leading-tight text-capitalize">
-                                {key.replace('show', '').replace(/([A-Z])/g, ' $1').trim()}
+                                {label}
                             </span>
                         </div>
-                    )
-                ))}
+                    );
+                })}
                 <div className="flex items-center gap-2.5 pt-1">
                     <div className="w-4 h-4 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
                         <FileText className="w-2.5 h-2.5 text-blue-500" />

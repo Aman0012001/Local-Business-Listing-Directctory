@@ -86,14 +86,6 @@ export class SubscriptionsService {
      */
     async deletePlan(id: string): Promise<void> {
         const plan = await this.getPlanById(id);
-        const activeSubCount = await this.subscriptionRepository.count({
-            where: { planId: id, status: SubscriptionStatus.ACTIVE }
-        });
-
-        if (activeSubCount > 0) {
-            throw new BadRequestException('Cannot delete plan with active subscribers. Deactivate it instead.');
-        }
-
         await this.planRepository.remove(plan);
     }
 
