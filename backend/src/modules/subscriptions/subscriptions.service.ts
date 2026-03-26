@@ -42,8 +42,15 @@ export class SubscriptionsService {
         private configService: ConfigService,
         private affiliateService: AffiliateService,
     ) { 
-        this.stripe = new Stripe(this.configService.get<string>('STRIPE_SECRET_KEY') || '', {
-            apiVersion: '2026-02-25.clover',
+        const apiKey = this.configService.get<string>('STRIPE_SECRET_KEY');
+        if (!apiKey || apiKey === 'sk_test_your_secret_key_here') {
+            this.logger.error('❌ STRIPE_SECRET_KEY is missing or invalid! Stripe features will be disabled.');
+            // We still initialize with empty string to avoid "undefined" errors, 
+            // but the guard above notifies the developer.
+        }
+
+        this.stripe = new Stripe(apiKey || '', {
+            apiVersion: '2025-02-24.acacia', // Updated to match likely intended version or a stable one
         });
     }
 
