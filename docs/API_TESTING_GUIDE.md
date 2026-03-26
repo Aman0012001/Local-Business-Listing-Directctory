@@ -26,26 +26,26 @@ npm run start:dev
 
 #### 1. Subscription Plans
 ```powershell
-curl http://localhost:3001/api/v1/subscriptions/plans -UseBasicParsing
+curl http://process.env.NEXT_PUBLIC_API_URL/api/v1/subscriptions/plans -UseBasicParsing
 ```
 **Expected:** List of 4 subscription plans (Free, Basic, Premium, Enterprise)
 
 #### 2. Categories
 ```powershell
-curl http://localhost:3001/api/v1/categories -UseBasicParsing
+curl http://process.env.NEXT_PUBLIC_API_URL/api/v1/categories -UseBasicParsing
 ```
 **Expected:** List of 8 categories (Restaurants, Health, Education, etc.)
 
 #### 3. Health Check
 ```powershell
-curl http://localhost:3001/health -UseBasicParsing
+curl http://process.env.NEXT_PUBLIC_API_URL/health -UseBasicParsing
 ```
 **Expected:** `{"status":"ok"}`
 
 #### 4. API Documentation
 Open in browser:
 ```
-http://localhost:3001/api/docs
+http://process.env.NEXT_PUBLIC_API_URL/api/docs
 ```
 **Expected:** Swagger UI with all API endpoints
 
@@ -156,7 +156,7 @@ try {
 
 Write-Host "`n=== Backend API Test ===" -ForegroundColor Cyan
 try {
-    $response = Invoke-WebRequest -Uri "http://localhost:3001/health" -UseBasicParsing
+    $response = Invoke-WebRequest -Uri "http://process.env.NEXT_PUBLIC_API_URL/health" -UseBasicParsing
     if ($response.StatusCode -eq 200) {
         Write-Host "✅ Backend API (Port 3001): Running" -ForegroundColor Green
     }

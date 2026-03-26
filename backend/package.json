@@ -24,7 +24,7 @@
         "migration:run": "typeorm migration:run -d src/config/typeorm.config.ts",
         "migration:revert": "typeorm migration:revert -d src/config/typeorm.config.ts",
         "seed": "ts-node src/database/seeds/run-seeds.ts",
-        "search:sync": "curl -X POST http://localhost:3001/api/v1/search/sync"
+        "search:sync": "curl -X POST http://process.env.NEXT_PUBLIC_API_URL/api/v1/search/sync"
     },
     "engines": {
         "node": ">=20.0.0"

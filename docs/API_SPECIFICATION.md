@@ -2,7 +2,7 @@
 
 ## Base URL
 ```
-Development: http://localhost:3001/api/v1
+Development: http://process.env.NEXT_PUBLIC_API_URL/api/v1
 Production: https://local-business-listing-directctory-production.up.railway.app/api/v1
 ```
 

@@ -55,7 +55,7 @@ async function bootstrap() {
         : [
             'http://localhost:3000',
             'http://127.0.0.1:3000',
-            'http://localhost:3001',
+            'http://process.env.NEXT_PUBLIC_API_URL',
             'http://127.0.0.1:3001',
         ];
 
@@ -68,7 +68,7 @@ async function bootstrap() {
             const isAllowed = allowedOrigins.some((allowed) => {
                 if (allowed === '*') return true;
                 if (allowed === origin) return true;
-                
+
                 // Allow all local development origins dynamically
                 if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
                     return true;
@@ -174,7 +174,7 @@ async function bootstrap() {
             .addTag('subscriptions')
             .addTag('search')
             .addTag('admin')
-            .addServer('http://localhost:3001', 'Local development server')
+            .addServer('http://process.env.NEXT_PUBLIC_API_URL', 'Local development server')
             .addServer(
                 'https://local-business-listing-directctory-production.up.railway.app',
                 'Production server',

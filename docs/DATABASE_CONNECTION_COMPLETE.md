@@ -100,8 +100,8 @@ npm install  # Install dependencies first
 npm run start:dev
 ```
 **Status:** ⏳ Ready to start (dependencies need installation)
-**URL:** http://localhost:3001
-**API Docs:** http://localhost:3001/api/docs (Swagger)
+**URL:** http://process.env.NEXT_PUBLIC_API_URL
+**API Docs:** http://process.env.NEXT_PUBLIC_API_URL/api/docs (Swagger)
 
 **Available Modules:**
 - Auth (Firebase authentication)
@@ -130,13 +130,13 @@ curl http://localhost:3000/users -UseBasicParsing
 ### Test Full Backend (after starting)
 ```powershell
 # Health check
-curl http://localhost:3001/api/v1/health -UseBasicParsing
+curl http://process.env.NEXT_PUBLIC_API_URL/api/v1/health -UseBasicParsing
 
 # Get subscription plans
-curl http://localhost:3001/api/v1/subscriptions/plans -UseBasicParsing
+curl http://process.env.NEXT_PUBLIC_API_URL/api/v1/subscriptions/plans -UseBasicParsing
 
 # Get categories
-curl http://localhost:3001/api/v1/categories -UseBasicParsing
+curl http://process.env.NEXT_PUBLIC_API_URL/api/v1/categories -UseBasicParsing
 ```
 
 ---
@@ -198,7 +198,7 @@ npm run start:dev
 ```
 
 ### 2. Test All Endpoints
-Visit Swagger docs at: http://localhost:3001/api/docs
+Visit Swagger docs at: http://process.env.NEXT_PUBLIC_API_URL/api/docs
 
 ### 3. Add Sample Data
 Use the Swagger UI or create seed scripts to add:

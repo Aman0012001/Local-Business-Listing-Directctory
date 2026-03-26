@@ -172,6 +172,6 @@ The database has been reset and reseeded with the new schema. All Firebase refer
 ## Status
 
 ✅ **Complete** - Application is running successfully with database-only authentication
-- Backend: http://localhost:3001
+- Backend: http://process.env.NEXT_PUBLIC_API_URL
 - Frontend: http://localhost:3000
-- API Docs: http://localhost:3001/api/docs
+- API Docs: http://process.env.NEXT_PUBLIC_API_URL/api/docs

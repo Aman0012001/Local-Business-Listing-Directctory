@@ -77,7 +77,7 @@ export default function ReviewModerationPage() {
         try {
             // Use the standard delete endpoint (admin role check handled by backend)
             // Note: Our API controller has a standard DELETE :id endpoint already.
-            await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1'}/reviews/${id}`, {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://process.env.NEXT_PUBLIC_API_URL/api/v1'}/reviews/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`

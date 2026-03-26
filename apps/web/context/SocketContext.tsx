@@ -14,7 +14,7 @@ const SocketContext = createContext<SocketContextType>({
     connected: false
 });
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001/notifications';
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://process.env.NEXT_PUBLIC_API_URL/notifications';
 
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     const { user } = useAuth();
@@ -41,7 +41,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         console.log('[SocketContext] Attempting connection to:', SOCKET_URL);
-        
+
         const newSocket = io(SOCKET_URL, {
             auth: { token: `Bearer ${token}` },
             transports: ['websocket'],
@@ -52,7 +52,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         newSocket.on('connect', () => {
             console.log('[SocketContext] Connection established. Socket ID:', newSocket.id);
             setConnected(true);
-            
+
             console.log('[SocketContext] Sending authenticate event...');
             newSocket.emit('authenticate', (response: any) => {
                 console.log('[SocketContext] Authentication callback received:', response);

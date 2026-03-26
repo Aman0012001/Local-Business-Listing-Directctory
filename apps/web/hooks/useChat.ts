@@ -5,7 +5,7 @@ import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 import { chatApi } from '../services/chat.service';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL?.split('/api')[0] || 'http://localhost:3001';
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL?.split('/api')[0] || 'http://process.env.NEXT_PUBLIC_API_URL';
 
 // Singleton socket so all components share the same connection
 let sharedSocket: Socket | null = null;
@@ -149,7 +149,7 @@ export function useChat(conversationId?: string) {
             const duplicateIdx = acc.findIndex(m => {
                 // Exact ID match (both real or both identical temp)
                 if (m.id === current.id) return true;
-                
+
                 // Content match between optimistic and real
                 const isOp1 = !!m.isOptimistic;
                 const isOp2 = !!current.isOptimistic;
@@ -157,7 +157,7 @@ export function useChat(conversationId?: string) {
                     // Check timestamp proximity to be safe (within 10 seconds)
                     const mTime = new Date(m.createdAt).getTime();
                     const cTime = new Date(current.createdAt).getTime();
-                    if (Math.abs(mTime - cTime) < 10000) return true; 
+                    if (Math.abs(mTime - cTime) < 10000) return true;
                 }
                 return false;
             });

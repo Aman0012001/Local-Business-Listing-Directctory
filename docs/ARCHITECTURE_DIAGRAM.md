@@ -287,20 +287,20 @@ npm run dev
 ### API URLs
 
 - **Frontend:** http://localhost:3000
-- **Backend:** http://localhost:3001
-- **API Docs:** http://localhost:3001/api/docs
+- **Backend:** http://process.env.NEXT_PUBLIC_API_URL
+- **API Docs:** http://process.env.NEXT_PUBLIC_API_URL/api/docs
 - **Database:** localhost:5432/webapp
 
 ### Test Endpoints
 
 ```bash
 # Public endpoints
-curl http://localhost:3001/api/v1/categories
-curl http://localhost:3001/api/v1/subscriptions/plans
+curl http://process.env.NEXT_PUBLIC_API_URL/api/v1/categories
+curl http://process.env.NEXT_PUBLIC_API_URL/api/v1/subscriptions/plans
 
 # Auth required
 curl -H "Authorization: Bearer TOKEN" \
-  http://localhost:3001/api/v1/vendors/dashboard-stats
+  http://process.env.NEXT_PUBLIC_API_URL/api/v1/vendors/dashboard-stats
 ```
 
 ---

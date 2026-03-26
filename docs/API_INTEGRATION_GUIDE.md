@@ -100,7 +100,7 @@ npm install  # First time only
 npm run start:dev
 ```
 
-**Local API:** http://localhost:3001/api/v1
+**Local API:** http://process.env.NEXT_PUBLIC_API_URL/api/v1
 **Production API:** https://local-business-listing-directctory-production.up.railway.app/api/v1
 **API Docs (Swagger):** https://local-business-listing-directctory-production.up.railway.app/api/docs
 
@@ -260,18 +260,18 @@ curl https://local-business-listing-directctory-production.up.railway.app/api/v1
 curl https://local-business-listing-directctory-production.up.railway.app/api/v1/categories
 
 # Get subscription plans (Local)
-curl http://localhost:3001/api/v1/subscriptions/plans
+curl http://process.env.NEXT_PUBLIC_API_URL/api/v1/subscriptions/plans
 ```
 
 ### Test Vendor Side (requires auth token)
 ```bash
 # Get vendor dashboard stats
 curl -H "Authorization: Bearer YOUR_TOKEN" \
-  http://localhost:3001/api/v1/vendors/dashboard-stats
+  http://process.env.NEXT_PUBLIC_API_URL/api/v1/vendors/dashboard-stats
 
 # Get my businesses
 curl -H "Authorization: Bearer YOUR_TOKEN" \
-  http://localhost:3001/api/v1/businesses/my-businesses
+  http://process.env.NEXT_PUBLIC_API_URL/api/v1/businesses/my-businesses
 ```
 
 ### Test Admin Side (requires admin token)
@@ -429,7 +429,7 @@ Response → Frontend → UI Update
    ```
 
 3. **Test API Integration**
-   - Visit http://localhost:3001/api/docs (Swagger)
+   - Visit http://process.env.NEXT_PUBLIC_API_URL/api/docs (Swagger)
    - Test endpoints with Postman or curl
    - Verify frontend can call backend
 
@@ -447,7 +447,7 @@ Response → Frontend → UI Update
 
 ## 📚 Additional Resources
 
-- **API Documentation:** http://localhost:3001/api/docs
+- **API Documentation:** http://process.env.NEXT_PUBLIC_API_URL/api/docs
 - **Database Guide:** `/docs/DATABASE_CONNECTION_COMPLETE.md`
 - **Testing Guide:** `/docs/API_TESTING_GUIDE.md`
 - **Backend Modules:** `/backend/src/modules/`

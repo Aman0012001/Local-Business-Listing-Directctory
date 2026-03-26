@@ -1,6 +1,6 @@
 async function test() {
-    const baseUrl = 'http://localhost:3001/api/v1';
-    
+    const baseUrl = 'http://process.env.NEXT_PUBLIC_API_URL/api/v1';
+
     const searches = [
         { query: 'pizza', city: 'Lahore', latitude: 31.5204, longitude: 74.3587 },
         { query: 'tech', city: 'Karachi', latitude: 24.8607, longitude: 67.0011 },
@@ -18,7 +18,7 @@ async function test() {
                 latitude: s.latitude.toString(),
                 longitude: s.longitude.toString()
             }).toString();
-            
+
             const response = await fetch(`${baseUrl}/businesses/search?${params}`);
             if (!response.ok) {
                 console.error(`Error logging search: ${response.status} ${response.statusText}`);

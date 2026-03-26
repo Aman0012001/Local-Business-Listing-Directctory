@@ -1,7 +1,7 @@
 async function testReviews() {
-    const baseUrl = 'http://localhost:3001/api/v1';
+    const baseUrl = 'http://process.env.NEXT_PUBLIC_API_URL/api/v1';
     const token = 'YOUR_TOKEN_HERE'; // I'll need a token or use a public businessId
-    
+
     // First, let's find a businessId
     const businessesRes = await fetch(`${baseUrl}/businesses/search?limit=1`);
     const businesses = await businessesRes.json();
