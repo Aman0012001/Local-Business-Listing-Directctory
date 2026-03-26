@@ -6,12 +6,11 @@ import Script from "next/script";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
-const inter = Inter({
-    subsets: ["latin"],
-    display: "swap",
+// Using system font stack instead of next/font/google to avoid build-time fetch errors in restricted environments
+const inter = {
+    className: "font-sans",
     variable: "--font-inter",
-    weight: ["300", "400", "500", "600", "700"],
-});
+};
 
 const baseUrl = process.env.NODE_ENV === 'production' 
     ? "https://local-business-listing-directctory-production.up.railway.app"
