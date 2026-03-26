@@ -404,46 +404,75 @@ export class SubscriptionsService {
      */
     async handleStripeWebhook(signature: string, payload: Buffer) {
         let event: Stripe.Event;
+        const webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET');
+
+        if (!webhookSecret || webhookSecret === 'whsec_your_webhook_secret_here') {
+            this.logger.error('❌ STRIPE_WEBHOOK_SECRET is not configured or is using placeholder. Webhook verification will fail.');
+        }
+
         try {
             event = this.stripe.webhooks.constructEvent(
                 payload,
                 signature,
-                this.configService.get<string>('STRIPE_WEBHOOK_SECRET') || ''
+                webhookSecret || ''
             );
+            this.logger.log(`✅ Webhook verified successfully. Event type: ${event.type}`);
         } catch (err: any) {
-            this.logger.error(`Webhook signature verification failed: ${err.message}`);
+            this.logger.error(`❌ Webhook signature verification failed: ${err.message}`);
+            // In development, you might want to log the payload or signature for debugging
+            // but NEVER in production for security reasons.
             throw new BadRequestException(`Webhook Error: ${err.message}`);
         }
+
+        this.logger.log(`📦 Processing Stripe event: ${event.id} [${event.type}]`);
 
         switch (event.type) {
             case 'checkout.session.completed': {
                 const session = event.data.object as Stripe.Checkout.Session;
+                this.logger.log(`💳 Checkout session completed: ${session.id} for customer: ${session.customer}`);
+                
                 if (session.mode === 'subscription') {
                     const vendorId = session.client_reference_id;
+                    this.logger.log(`🔍 client_reference_id (vendorId): ${vendorId}`);
+                    
                     if (session.subscription && vendorId) {
                         const subscription = await this.stripe.subscriptions.retrieve(session.subscription as string);
                         const priceId = subscription.items.data[0].price.id;
+                        this.logger.log(`📄 Retraining price ID: ${priceId}`);
+                        
                         const plan = await this.planRepository.findOne({ where: { stripePriceId: priceId } });
                         if (plan) {
+                            this.logger.log(`🚀 Activating plan: ${plan.name} (${plan.id}) for vendor: ${vendorId}`);
                             await this.handleMockSubscriptionSuccess(vendorId, plan.id, session.id);
+                            this.logger.log(`✅ Plan activated successfully for vendor: ${vendorId}`);
+                        } else {
+                            this.logger.error(`❌ Plan not found for Stripe Price ID: ${priceId}. Please ensure your DB is synced with Stripe.`);
                         }
+                    } else {
+                        this.logger.warn(`⚠️ Missing subscription ID (${session.subscription}) or vendorId (${vendorId}) in session.`);
                     }
                 }
                 break;
             }
             case 'customer.subscription.deleted': {
                 const subscription = event.data.object as Stripe.Subscription;
+                this.logger.log(`🚫 Subscription deleted: ${subscription.id} for customer: ${subscription.customer}`);
+                
                 const vendor = await this.vendorRepository.findOne({ where: { stripeCustomerId: subscription.customer as string } });
                 if (vendor) {
+                    this.logger.log(`📉 Cancelling active subscription for vendor: ${vendor.id}`);
                     await this.subscriptionRepository.update(
                         { vendorId: vendor.id, status: SubscriptionStatus.ACTIVE },
                         { status: SubscriptionStatus.CANCELLED, cancelledAt: new Date() }
                     );
+                    this.logger.log(`✅ Subscription cancelled for vendor: ${vendor.id}`);
+                } else {
+                    this.logger.warn(`⚠️ Vendor not found for Stripe Customer ID: ${subscription.customer}`);
                 }
                 break;
             }
             default:
-                this.logger.log(`Unhandled event type: ${event.type}`);
+                this.logger.log(`ℹ️ Unhandled event type: ${event.type}`);
         }
         return { received: true };
     }
