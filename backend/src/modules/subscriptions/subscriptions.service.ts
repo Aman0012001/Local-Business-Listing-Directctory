@@ -44,13 +44,13 @@ export class SubscriptionsService {
     ) { 
         const apiKey = this.configService.get<string>('STRIPE_SECRET_KEY');
         if (!apiKey || apiKey === 'sk_test_your_secret_key_here') {
-            this.logger.error('❌ STRIPE_SECRET_KEY is missing or invalid! Stripe features will be disabled.');
-            // We still initialize with empty string to avoid "undefined" errors, 
-            // but the guard above notifies the developer.
+            this.logger.error('❌ STRIPE_SECRET_KEY is missing or invalid! Stripe features will be disabled. Please set this in your .env or Railway dashboard.');
         }
 
-        this.stripe = new Stripe(apiKey || '', {
-            apiVersion: '2025-02-24.acacia', // Updated to match likely intended version or a stable one
+        // We use a dummy key if the real one is missing to prevent the Stripe constructor from throwing an error.
+        // This allows the NestJS application to start successfully even without Stripe configured.
+        this.stripe = new Stripe(apiKey || 'sk_test_not_configured', {
+            apiVersion: '2025-02-24.acacia',
         });
     }
 
