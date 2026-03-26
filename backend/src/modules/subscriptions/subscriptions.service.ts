@@ -50,7 +50,7 @@ export class SubscriptionsService {
         // We use a dummy key if the real one is missing to prevent the Stripe constructor from throwing an error.
         // This allows the NestJS application to start successfully even without Stripe configured.
         this.stripe = new Stripe(apiKey || 'sk_test_not_configured', {
-            apiVersion: '2025-02-24.acacia',
+            apiVersion: '2026-02-25.clover' as any,
         });
     }
 
