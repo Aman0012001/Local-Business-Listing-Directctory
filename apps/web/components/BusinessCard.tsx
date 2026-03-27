@@ -69,9 +69,10 @@ interface BusinessCardProps {
     business: Business;
     variant?: 'green' | 'blue' | 'white' | 'dark' | 'minimal';
     layout?: 'grid' | 'list';
+    showChat?: boolean;
 }
 
-export default function BusinessCard({ business, variant = 'blue', layout = 'grid' }: BusinessCardProps) {
+export default function BusinessCard({ business, variant = 'blue', layout = 'grid', showChat = true }: BusinessCardProps) {
     const getButtonStyles = () => {
         switch (variant) {
             case 'green':
@@ -272,11 +273,13 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                         <div className="flex-1 text-center py-2 font-bold transition-all active:scale-95 bg-blue-50 text-blue-600 rounded-[10px]">
                             View Details
                         </div>
-                        <ChatTrigger 
-                            businessId={business.id} 
-                            businessName={business.title}
-                            className="flex-1"
-                        />
+                        {showChat && (
+                            <ChatTrigger 
+                                businessId={business.id} 
+                                businessName={business.title}
+                                className="flex-1"
+                            />
+                        )}
                     </div>
                 </div>
             </div>

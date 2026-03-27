@@ -113,29 +113,75 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
     const mapRef = useRef<any>(null);
     const markerRef = useRef<any>(null);
 
-    const initMap = () => {
-        if (!mapLoaded || !(window as any).google || !mapContainerRef.current || !business) return;
+    const initMap = async () => {
+        if (!mapContainerRef.current || !business) return;
 
-        const lat = Number(business.latitude) || 40.7128;
-        const lng = Number(business.longitude) || -74.0060;
-        const center = { lat, lng };
+        try {
+            // Coordinate parsing for Pakistan context (fallback if invalid)
+            const lat = parseFloat(String(business.latitude)) || 30.3753;
+            const lng = parseFloat(String(business.longitude)) || 69.3451;
+            const center = { lat, lng };
 
-        if (!mapRef.current) {
-            mapRef.current = new (window as any).google.maps.Map(mapContainerRef.current, {
-                center,
-                zoom: 15,
-                mapId: 'DEMO_MAP_ID',
-                mapTypeId: 'roadmap',
-                zoomControl: true,
-                streetViewControl: true,
-                fullscreenControl: true,
-            });
+            console.log('[BusinessDetail] Initializing map at:', center);
 
-            markerRef.current = new (window as any).google.maps.marker.AdvancedMarkerElement({
-                position: center,
-                map: mapRef.current,
-                title: business.title,
-            });
+            // Ensure window.google.maps is available
+            if (!(window as any).google?.maps?.importLibrary) {
+                console.warn('[BusinessDetail] Google Maps importLibrary not available yet');
+                return;
+            }
+
+            const { Map } = await (window as any).google.maps.importLibrary("maps");
+            
+            if (!mapRef.current) {
+                // Initialize the Map
+                mapRef.current = new Map(mapContainerRef.current, {
+                    center,
+                    zoom: 15,
+                    mapId: 'DEMO_MAP_ID', // DEMO_MAP_ID for testing Advanced Markers
+                    mapTypeId: 'roadmap',
+                    zoomControl: true,
+                    streetViewControl: true,
+                    fullscreenControl: true,
+                    maxZoom: 19,
+                    minZoom: 2,
+                });
+
+                console.log('[BusinessDetail] Map instance created');
+
+                // Try AdvancedMarkerElement (requires MapId)
+                try {
+                    const { AdvancedMarkerElement } = await (window as any).google.maps.importLibrary("marker");
+                    markerRef.current = new AdvancedMarkerElement({
+                        position: center,
+                        map: mapRef.current,
+                        title: business.title,
+                    });
+                    console.log('[BusinessDetail] AdvancedMarkerElement initialized');
+                } catch (markerErr) {
+                    console.warn('[BusinessDetail] AdvancedMarkerElement failed, using Legacy Marker:', markerErr);
+                    // Fallback to legacy Marker
+                    const { Marker } = await (window as any).google.maps.importLibrary("marker");
+                    markerRef.current = new Marker({
+                        position: center,
+                        map: mapRef.current,
+                        title: business.title,
+                    });
+                    console.log('[BusinessDetail] Legacy Marker initialized');
+                }
+            } else {
+                // Update existing map if business data changed
+                mapRef.current.setCenter(center);
+                if (markerRef.current) {
+                    if (markerRef.current.setPosition) {
+                        markerRef.current.setPosition(center);
+                    } else {
+                        markerRef.current.position = center;
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('[BusinessDetail] GOOGLE MAP CRITICAL ERROR:', err);
+            setMapError(true);
         }
     };
 
@@ -146,21 +192,30 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
     }, [mapLoaded, business, activeTab]);
 
     useEffect(() => {
-        if (typeof window !== 'undefined' && (window as any).google && (window as any).google.maps && (window as any).google.maps.marker) {
-            console.log('[BusinessDetail] Google Maps already available');
+        if (typeof window !== 'undefined' && (window as any).google?.maps?.importLibrary) {
+            console.log('[BusinessDetail] Google Maps script found');
             setMapLoaded(true);
             return;
         }
 
         const interval = setInterval(() => {
-            if (typeof window !== 'undefined' && (window as any).google && (window as any).google.maps && (window as any).google.maps.marker) {
-                console.log('[BusinessDetail] Google Maps became available');
+            if (typeof window !== 'undefined' && (window as any).google?.maps?.importLibrary) {
+                console.log('[BusinessDetail] Google Maps backend ready');
                 setMapLoaded(true);
                 clearInterval(interval);
             }
-        }, 500);
+        }, 1000);
 
-        return () => clearInterval(interval);
+        // Handle API Key failures (global callback)
+        (window as any).gm_authFailure = () => {
+            console.error('[BusinessDetail] Google Maps auth failure - check API Key and Billing');
+            setMapError(true);
+        };
+
+        return () => {
+            if (interval) clearInterval(interval);
+            // Don't delete gm_authFailure globally as it might affect other pages
+        };
     }, []);
 
     useEffect(() => {

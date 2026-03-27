@@ -8,22 +8,38 @@ import { motion } from 'framer-motion';
 export default function SubscriptionSuccessPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
-    const sessionId = searchParams.get('session_id');
-    const canceled = searchParams.get('canceled');
+    const mockPlanId = searchParams.get('mock_plan_id');
     
-    const [status, setStatus] = useState<'loading' | 'success' | 'canceled'>('loading');
+    const [status, setStatus] = useState<'loading' | 'success' | 'canceled' | 'error'>('loading');
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        const activateMockPlan = async (planId: string) => {
+            try {
+                const { api } = await import('@/lib/api');
+                await api.subscriptions.mockCheckout(planId);
+                setStatus('success');
+                // Refresh user profile if needed here or via AuthContext
+                setTimeout(() => router.push('/vendor/subscription'), 4000);
+            } catch (err: any) {
+                console.error('Failed to activate mock plan:', err);
+                setError(err.message || 'Failed to activate plan. Please contact support.');
+                setStatus('error');
+            }
+        };
+
         if (canceled) {
             setStatus('canceled');
             setTimeout(() => router.push('/vendor/subscription'), 3000);
+        } else if (mockPlanId) {
+            activateMockPlan(mockPlanId);
         } else if (sessionId) {
             setStatus('success');
             setTimeout(() => router.push('/vendor/subscription'), 4000);
         } else {
             router.push('/vendor/subscription');
         }
-    }, [sessionId, canceled, router]);
+    }, [sessionId, canceled, mockPlanId, router]);
 
     return (
         <div className="min-h-[70vh] flex items-center justify-center p-4">
@@ -64,6 +80,21 @@ export default function SubscriptionSuccessPage() {
                         </div>
                         <h2 className="text-2xl font-black text-slate-900 mb-2">Payment Cancelled</h2>
                         <p className="text-slate-500 font-bold mb-8">You haven't been charged. Redirecting you back to plans...</p>
+                    </div>
+                )}
+                {status === 'error' && (
+                    <div className="flex flex-col items-center">
+                        <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
+                            <span className="text-3xl">❌</span>
+                        </div>
+                        <h2 className="text-2xl font-black text-slate-900 mb-2">Activation Failed</h2>
+                        <p className="text-red-500 font-bold mb-8">{error}</p>
+                        <button 
+                            onClick={() => router.push('/vendor/subscription')}
+                            className="bg-slate-900 text-white font-black py-3 px-8 rounded-xl hover:bg-black transition-colors"
+                        >
+                            Back to Plans
+                        </button>
                     </div>
                 )}
             </motion.div>

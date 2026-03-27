@@ -223,7 +223,7 @@ export class BusinessesService {
         } else if (searchDto.query) {
             // Text search fallback — matches title, description and vendor/admin-added search keywords
             queryBuilder.andWhere(
-                '(listing.title ILIKE :query OR listing.description ILIKE :query OR listing.metaKeywords ILIKE :query OR listing.searchKeywords::text ILIKE :query OR vendor.businessName ILIKE :query)',
+                '("listing"."name" ILIKE :query OR "listing"."description" ILIKE :query OR "listing"."meta_keywords" ILIKE :query OR "listing"."search_keywords"::text ILIKE :query OR "vendor"."business_name" ILIKE :query)',
                 { query: `%${searchDto.query}%` },
             );
         }
@@ -295,7 +295,7 @@ export class BusinessesService {
         // 1) Keyword boost: if the query matches a vendor's metaKeywords, rank that listing first
         if (searchDto.query) {
             queryBuilder.addSelect(
-                'CASE WHEN listing.searchKeywords::text ILIKE :query THEN 0 WHEN listing.metaKeywords ILIKE :query THEN 1 ELSE 2 END',
+                'CASE WHEN "listing"."search_keywords"::text ILIKE :query THEN 0 WHEN "listing"."meta_keywords" ILIKE :query THEN 1 ELSE 2 END',
                 'boost',
             );
             queryBuilder.addOrderBy('boost', 'ASC');

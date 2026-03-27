@@ -424,6 +424,7 @@ export default function HomePage() {
                                 <BusinessCard
                                     business={biz}
                                     variant={idx % 4 === 0 ? 'green' : idx % 4 === 1 ? 'blue' : idx % 4 === 2 ? 'white' : 'dark'}
+                                    showChat={false}
                                 />
                             </motion.div>
                         )) : (

@@ -156,28 +156,25 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
     }, [formData]);
 
     useEffect(() => {
-        if (typeof window !== 'undefined' && (window as any).google && (window as any).google.maps && (window as any).google.maps.marker && (window as any).google.maps.places) {
+        if (typeof window !== 'undefined' && (window as any).google?.maps?.importLibrary) {
             setMapLoaded(true);
             return;
         }
 
         const interval = setInterval(() => {
-            if (typeof window !== 'undefined' && (window as any).google && (window as any).google.maps && (window as any).google.maps.marker && (window as any).google.maps.places) {
+            if (typeof window !== 'undefined' && (window as any).google?.maps?.importLibrary) {
                 setMapLoaded(true);
                 clearInterval(interval);
             }
-        }, 500);
+        }, 1000);
 
-        return () => clearInterval(interval);
-    }, []);
-
-    useEffect(() => {
         (window as any).gm_authFailure = () => {
-            console.error('Google Maps authentication failed - check API Key.');
+            console.error('[AddBusiness] Google Maps auth failure');
             setMapError(true);
         };
+
         return () => {
-            delete (window as any).gm_authFailure;
+            if (interval) clearInterval(interval);
         };
     }, []);
 
@@ -226,107 +223,146 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
         }
     };
 
-    const initAutocomplete = () => {
-        if (!mapLoaded || !(window as any).google || !(window as any).google.maps || !(window as any).google.maps.Map || !addressInputRef.current || !mapContainerRef.current) return;
+    const initAutocomplete = async () => {
+        if (!mapContainerRef.current || !addressInputRef.current) return;
 
-        const defaultCenter = { lat: formData.latitude, lng: formData.longitude };
+        try {
+            const defaultCenter = { lat: formData.latitude, lng: formData.longitude };
+            
+            if (!(window as any).google?.maps?.importLibrary) {
+                console.warn('[AddBusiness] Google Maps importLibrary not available yet');
+                return;
+            }
 
-        if (!mapRef.current) {
-            mapRef.current = new (window as any).google.maps.Map(mapContainerRef.current, {
-                center: defaultCenter,
-                zoom: 15,
-                mapId: 'DEMO_MAP_ID',
-                mapTypeControl: false,
-                streetViewControl: false,
-                fullscreenControl: false,
-            });
+            const { Map } = await (window as any).google.maps.importLibrary("maps");
+            const { Autocomplete } = await (window as any).google.maps.importLibrary("places");
 
-            markerRef.current = new (window as any).google.maps.marker.AdvancedMarkerElement({
-                position: defaultCenter,
-                map: mapRef.current,
-                gmpDraggable: true,
-                title: "Drag to set location",
-            });
+            if (!mapRef.current) {
+                mapRef.current = new Map(mapContainerRef.current, {
+                    center: defaultCenter,
+                    zoom: 15,
+                    mapId: 'DEMO_MAP_ID',
+                    mapTypeControl: false,
+                    streetViewControl: false,
+                    fullscreenControl: false,
+                });
 
-            markerRef.current.addListener("dragend", (e: any) => {
-                let lat: number, lng: number;
-                if (e && e.latLng) {
-                    lat = typeof e.latLng.lat === 'function' ? e.latLng.lat() : e.latLng.lat;
-                    lng = typeof e.latLng.lng === 'function' ? e.latLng.lng() : e.latLng.lng;
-                } else {
-                    const pos = markerRef.current.position;
-                    if (!pos) return;
-                    lat = typeof pos.lat === 'function' ? pos.lat() : pos.lat;
-                    lng = typeof pos.lng === 'function' ? pos.lng() : pos.lng;
-                }
-                updateLocationFromCoords(lat, lng);
-            });
+                console.log('[AddBusiness] Map instance created');
 
-            mapRef.current.addListener("click", (e: any) => {
-                if (e.latLng) {
-                    markerRef.current.position = e.latLng;
-                    updateLocationFromCoords(e.latLng.lat(), e.latLng.lng());
-                }
-            });
-        }
-
-        if (!autoCompleteRef.current) {
-            autoCompleteRef.current = new (window as any).google.maps.places.Autocomplete(
-                addressInputRef.current,
-                {
-                    componentRestrictions: { country: "pk" },
-                    fields: ["address_components", "geometry", "formatted_address"],
-                }
-            );
-
-            autoCompleteRef.current.addListener("place_changed", () => {
+                // Try AdvancedMarkerElement
                 try {
-                    const place = autoCompleteRef.current.getPlace();
-                    if (!place.geometry) return;
-
-                    const lat = place.geometry.location.lat();
-                    const lng = place.geometry.location.lng();
-
-                    mapRef.current.setCenter({ lat, lng });
-                    mapRef.current.setZoom(17);
-                    markerRef.current.position = { lat, lng };
-
-                    let city = '';
-                    let state = '';
-                    let pincode = '';
-                    let address = place.formatted_address || '';
-
-                    place.address_components?.forEach((component: any) => {
-                        const types = component.types;
-                        if (types.includes("locality")) city = component.long_name;
-                        else if (types.includes("administrative_area_level_2") && !city) city = component.long_name;
-                        else if (types.includes("administrative_area_level_1")) state = component.long_name;
-                        else if (types.includes("postal_code")) pincode = component.long_name;
+                    const { AdvancedMarkerElement } = await (window as any).google.maps.importLibrary("marker");
+                    markerRef.current = new AdvancedMarkerElement({
+                        position: defaultCenter,
+                        map: mapRef.current,
+                        gmpDraggable: true,
+                        title: "Drag to set location",
                     });
-
-                    let cleanAddress = address;
-                    [city, state, "Pakistan", pincode].forEach(term => {
-                        if (term) {
-                            const regex = new RegExp(`,?\\s*${term}\\s*,?`, 'gi');
-                            cleanAddress = cleanAddress.replace(regex, '').trim();
-                        }
+                    console.log('[AddBusiness] AdvancedMarkerElement initialized');
+                } catch (markerErr) {
+                    console.warn('[AddBusiness] AdvancedMarkerElement failed, using Legacy Marker:', markerErr);
+                    const { Marker } = await (window as any).google.maps.importLibrary("marker");
+                    markerRef.current = new Marker({
+                        position: defaultCenter,
+                        map: mapRef.current,
+                        draggable: true,
+                        title: "Drag to set location",
                     });
-                    cleanAddress = cleanAddress.replace(/,$/, '').trim();
-
-                    setFormData(prev => ({
-                        ...prev,
-                        address: cleanAddress || address || prev.address,
-                        city: city || prev.city,
-                        state: state || prev.state,
-                        pincode: pincode || prev.pincode,
-                        latitude: lat,
-                        longitude: lng,
-                    }));
-                } catch (err) {
-                    console.error("Error in place_changed handler:", err);
-                    setMapError(true);
+                    console.log('[AddBusiness] Legacy Marker initialized');
                 }
-            });
+
+                markerRef.current.addListener("dragend", (e: any) => {
+                    let lat: number, lng: number;
+                    if (e && e.latLng) {
+                        lat = typeof e.latLng.lat === 'function' ? e.latLng.lat() : e.latLng.lat;
+                        lng = typeof e.latLng.lng === 'function' ? e.latLng.lng() : e.latLng.lng;
+                    } else {
+                        const pos = markerRef.current.position;
+                        if (!pos) return;
+                        lat = typeof pos.lat === 'function' ? pos.lat() : pos.lat;
+                        lng = typeof pos.lng === 'function' ? pos.lng() : pos.lng;
+                    }
+                    updateLocationFromCoords(lat, lng);
+                });
+
+                mapRef.current.addListener("click", (e: any) => {
+                    if (e.latLng) {
+                        const pos = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+                        if (markerRef.current.setPosition) {
+                            markerRef.current.setPosition(pos);
+                        } else {
+                            markerRef.current.position = pos;
+                        }
+                        updateLocationFromCoords(pos.lat, pos.lng);
+                    }
+                });
+            }
+
+            if (!autoCompleteRef.current) {
+                autoCompleteRef.current = new Autocomplete(
+                    addressInputRef.current,
+                    {
+                        componentRestrictions: { country: "pk" },
+                        fields: ["address_components", "geometry", "formatted_address"],
+                    }
+                );
+
+                autoCompleteRef.current.addListener("place_changed", () => {
+                    try {
+                        const place = autoCompleteRef.current.getPlace();
+                        if (!place.geometry) return;
+
+                        const lat = place.geometry.location.lat();
+                        const lng = place.geometry.location.lng();
+                        const pos = { lat, lng };
+
+                        mapRef.current.setCenter(pos);
+                        mapRef.current.setZoom(17);
+                        if (markerRef.current.setPosition) {
+                            markerRef.current.setPosition(pos);
+                        } else {
+                            markerRef.current.position = pos;
+                        }
+
+                        let city = '';
+                        let state = '';
+                        let pincode = '';
+                        let address = place.formatted_address || '';
+
+                        place.address_components?.forEach((component: any) => {
+                            const types = component.types;
+                            if (types.includes("locality")) city = component.long_name;
+                            else if (types.includes("administrative_area_level_2") && !city) city = component.long_name;
+                            else if (types.includes("administrative_area_level_1")) state = component.long_name;
+                            else if (types.includes("postal_code")) pincode = component.long_name;
+                        });
+
+                        let cleanAddress = address;
+                        [city, state, "Pakistan", pincode].forEach(term => {
+                            if (term) {
+                                const regex = new RegExp(`,?\\s*${term}\\s*,?`, 'gi');
+                                cleanAddress = cleanAddress.replace(regex, '').trim();
+                            }
+                        });
+                        cleanAddress = cleanAddress.replace(/,$/, '').trim();
+
+                        setFormData(prev => ({
+                            ...prev,
+                            address: cleanAddress || address || prev.address,
+                            city: city || prev.city,
+                            state: state || prev.state,
+                            pincode: pincode || prev.pincode,
+                            latitude: lat,
+                            longitude: lng,
+                        }));
+                    } catch (err) {
+                        console.error("Error in place_changed handler:", err);
+                    }
+                });
+            }
+        } catch (err) {
+            console.error('[AddBusiness] Map initialization error:', err);
+            setMapError(true);
         }
     };
 

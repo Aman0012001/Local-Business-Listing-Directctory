@@ -27,6 +27,7 @@ export default function OfferEventDetailClient() {
 
     // Map State & Refs
     const [mapLoaded, setMapLoaded] = useState(false);
+    const [mapError, setMapError] = useState(false);
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<any>(null);
     const markerRef = useRef<any>(null);
@@ -63,30 +64,69 @@ export default function OfferEventDetailClient() {
     }, [id]);
 
     // Initialize Map logic
-    const initMap = () => {
-        if (!mapLoaded || !(window as any).google || !mapContainerRef.current || !offer?.business) return;
+    const initMap = async () => {
+        if (!mapContainerRef.current || !offer) return;
 
-        const business = offer.business;
-        const lat = Number(business.latitude) || 30.3753;
-        const lng = Number(business.longitude) || 69.3451;
-        const center = { lat, lng };
+        try {
+            const lat = parseFloat(String(offer.business.latitude)) || 30.3753;
+            const lng = parseFloat(String(offer.business.longitude)) || 69.3451;
+            const center = { lat, lng };
 
-        if (!mapRef.current) {
-            mapRef.current = new (window as any).google.maps.Map(mapContainerRef.current, {
-                center,
-                zoom: 15,
-                mapId: 'DEMO_MAP_ID',
-                mapTypeId: 'roadmap',
-                zoomControl: true,
-                streetViewControl: true,
-                fullscreenControl: true,
-            });
+            console.log('[OfferEventDetail] Initializing map at:', center);
 
-            markerRef.current = new (window as any).google.maps.marker.AdvancedMarkerElement({
-                position: center,
-                map: mapRef.current,
-                title: business.title,
-            });
+            if (!(window as any).google?.maps?.importLibrary) {
+                console.warn('[OfferEventDetail] Google Maps importLibrary not available yet');
+                return;
+            }
+
+            const { Map } = await (window as any).google.maps.importLibrary("maps");
+
+            if (!mapRef.current) {
+                mapRef.current = new Map(mapContainerRef.current, {
+                    center,
+                    zoom: 15,
+                    mapId: 'DEMO_MAP_ID',
+                    mapTypeId: 'roadmap',
+                    zoomControl: true,
+                    streetViewControl: true,
+                    fullscreenControl: true,
+                    maxZoom: 19,
+                    minZoom: 2,
+                });
+
+                console.log('[OfferEventDetail] Map instance created');
+
+                try {
+                    const { AdvancedMarkerElement } = await (window as any).google.maps.importLibrary("marker");
+                    markerRef.current = new AdvancedMarkerElement({
+                        position: center,
+                        map: mapRef.current,
+                        title: offer.business.title,
+                    });
+                    console.log('[OfferEventDetail] AdvancedMarkerElement initialized');
+                } catch (markerErr) {
+                    console.warn('[OfferEventDetail] AdvancedMarkerElement failed, using Legacy Marker:', markerErr);
+                    const { Marker } = await (window as any).google.maps.importLibrary("marker");
+                    markerRef.current = new Marker({
+                        position: center,
+                        map: mapRef.current,
+                        title: offer.business.title,
+                    });
+                    console.log('[OfferEventDetail] Legacy Marker initialized');
+                }
+            } else {
+                mapRef.current.setCenter(center);
+                if (markerRef.current) {
+                    if (markerRef.current.setPosition) {
+                        markerRef.current.setPosition(center);
+                    } else {
+                        markerRef.current.position = center;
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('[OfferEventDetail] GOOGLE MAP CRITICAL ERROR:', err);
+            setMapError(true);
         }
     };
 
@@ -97,19 +137,26 @@ export default function OfferEventDetailClient() {
     }, [mapLoaded, offer]);
 
     useEffect(() => {
-        if (typeof window !== 'undefined' && (window as any).google && (window as any).google.maps && (window as any).google.maps.marker) {
+        let interval: NodeJS.Timeout | undefined;
+        if (typeof window !== 'undefined' && (window as any).google?.maps?.importLibrary) {
             setMapLoaded(true);
-            return;
+        } else {
+            interval = setInterval(() => {
+                if (typeof window !== 'undefined' && (window as any).google?.maps?.importLibrary) {
+                    setMapLoaded(true);
+                    clearInterval(interval);
+                }
+            }, 1000);
         }
 
-        const interval = setInterval(() => {
-            if (typeof window !== 'undefined' && (window as any).google && (window as any).google.maps && (window as any).google.maps.marker) {
-                setMapLoaded(true);
-                clearInterval(interval);
-            }
-        }, 500);
+        (window as any).gm_authFailure = () => {
+            console.error('[OfferEventDetail] Google Maps auth failure - check API Key and Billing');
+            setMapError(true);
+        };
 
-        return () => clearInterval(interval);
+        return () => {
+            if (interval) clearInterval(interval);
+        };
     }, []);
 
     if (loading) {
@@ -464,7 +511,24 @@ export default function OfferEventDetailClient() {
                         </div>
 
                         <div className="mt-10 rounded-[2rem] overflow-hidden relative group/map border border-slate-200 shadow-inner h-64 bg-slate-50">
-                            {!mapLoaded && (
+                            {mapError && (
+                                <div className="absolute inset-0 z-30 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
+                                    <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 mb-4 shadow-sm">
+                                        <MapPin className="w-6 h-6" />
+                                    </div>
+                                    <h4 className="text-sm font-black text-slate-900 mb-1 tracking-tight">Map Load Error</h4>
+                                    <p className="text-[10px] font-bold text-slate-500 leading-relaxed mb-4 max-w-[200px] mx-auto">
+                                        We're having trouble loading the interactive map for this offer.
+                                    </p>
+                                    <button
+                                        onClick={() => { setMapError(false); initMap(); }}
+                                        className="px-6 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all active:scale-95 shadow-lg shadow-slate-200"
+                                    >
+                                        Retry Loading
+                                    </button>
+                                </div>
+                            )}
+                            {!mapLoaded && !mapError && (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
                                     <Loader2 className="w-8 h-8 text-[#FF7904] animate-spin mb-3" />
                                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading Map...</p>

@@ -173,7 +173,8 @@ export class SearchService implements OnModuleInit {
                         innerQb.where('LOWER(b.name) LIKE :term', { term: `%${term}%` })
                             .orWhere('LOWER(b.description) LIKE :term', { term: `%${term}%` })
                             .orWhere('LOWER(b.city) LIKE :term', { term: `%${term}%` })
-                            .orWhere('LOWER(category.name) LIKE :term', { term: `%${term}%` });
+                            .orWhere('LOWER(category.name) LIKE :term', { term: `%${term}%` })
+                            .orWhere('"b"."search_keywords"::text ILIKE :term', { term: `%${term}%` });
                     }),
                     { term: `%${term}%` }
                 );

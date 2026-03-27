@@ -47,48 +47,34 @@ async function bootstrap() {
      * CORS CONFIGURATION
      * -----------------------
      */
-
     const corsOrigin = configService.get<string>('CORS_ORIGIN');
-
-    const allowedOrigins = corsOrigin
-        ? corsOrigin.split(',').map((o) => o.trim())
-        : [
-            'http://localhost:3000',
-            'http://127.0.0.1:3000',
-            'http://process.env.NEXT_PUBLIC_API_URL',
-            'http://127.0.0.1:3001',
-        ];
+    const allowedOrigins = corsOrigin ? corsOrigin.split(',').map(o => o.trim()) : [];
 
     app.enableCors({
         origin: (origin, callback) => {
-            if (!origin) {
+            // Allow if no origin (Postman, mobile apps, server-to-server)
+            if (!origin) return callback(null, true);
+
+            // 1. Check explicit allowed origins from ENV
+            if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
                 return callback(null, true);
             }
 
-            const isAllowed = allowedOrigins.some((allowed) => {
-                if (allowed === '*') return true;
-                if (allowed === origin) return true;
+            // 2. Allow dynamic subdomains via Regex
+            const allowedPatterns = [
+                /^https:\/\/.*\.netlify\.app$/,      // All Netlify dynamic domains
+                /^https:\/\/.*\.railway\.app$/,      // All Railway dynamic domains
+                /^http:\/\/localhost(:\d+)?$/,        // localhost with any port
+                /^http:\/\/127\.0.0\.1(:\d+)?$/,    // 127.0.0.1 with any port
+            ];
 
-                // Allow all local development origins dynamically
-                if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
-                    return true;
-                }
+            const isMatchingPattern = allowedPatterns.some(pattern => pattern.test(origin));
 
-                if (
-                    allowed.includes('up.railway.app') &&
-                    origin.endsWith('up.railway.app')
-                ) {
-                    return true;
-                }
-
-                return false;
-            });
-
-            if (isAllowed) {
+            if (isMatchingPattern) {
                 return callback(null, true);
             }
 
-            console.warn(`❌ Blocked by CORS: ${origin}`);
+            console.warn(`❌ CORS Blocked: origin ${origin} not allowed`);
             return callback(new Error('Not allowed by CORS'), false);
         },
         credentials: true,
