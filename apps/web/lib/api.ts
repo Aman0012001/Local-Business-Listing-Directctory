@@ -48,15 +48,18 @@ async function fetcher<T>(endpoint: string, options?: FetcherOptions): Promise<T
 
         if (!response.ok) {
             const error = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
-            
-            if (response.status === 401) {
+
+            // Only redirect on 401 for protected (non-auth) endpoints.
+            // Auth endpoints (/auth/login, /auth/google, /auth/register) must
+            // throw so the login UI can display the real error message.
+            const isAuthEndpoint = endpoint.startsWith('/auth/');
+
+            if (response.status === 401 && !isAuthEndpoint) {
                 // Handle invalid/expired token globally
                 if (typeof window !== 'undefined') {
                     console.error('[api.ts] Unauthorized! Clearing token...');
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
-                    // Force refresh to trigger AuthContext redirect if needed, 
-                    // or just let the app handle it via useAuth
                     window.location.href = '/login?error=expired';
                 }
             } else {

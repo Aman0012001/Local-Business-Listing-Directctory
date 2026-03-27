@@ -4,6 +4,7 @@ import {
     BadRequestException,
     ForbiddenException,
     Logger,
+    OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -21,7 +22,7 @@ import { AffiliateService } from '../affiliate/affiliate.service';
 import Stripe from 'stripe';
 
 @Injectable()
-export class SubscriptionsService {
+export class SubscriptionsService implements OnModuleInit {
     private readonly logger = new Logger(SubscriptionsService.name);
     private stripe: Stripe;
     constructor(
@@ -41,7 +42,9 @@ export class SubscriptionsService {
         private affiliateRepository: Repository<Affiliate>,
         private configService: ConfigService,
         private affiliateService: AffiliateService,
-    ) { 
+    ) {}
+
+    onModuleInit() {
         const apiKey = this.configService.get<string>('STRIPE_SECRET_KEY');
         if (!apiKey || apiKey === 'sk_test_your_secret_key_here') {
             this.logger.error('❌ STRIPE_SECRET_KEY is missing or invalid! Stripe features will be disabled. Please set this in your .env or Railway dashboard.');

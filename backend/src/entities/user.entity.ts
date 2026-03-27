@@ -25,11 +25,29 @@ export enum UserRole {
     SUPERADMIN = 'superadmin',
 }
 
+/**
+ * Tracks how this account was originally created and which auth providers
+ * are currently linked to it.
+ *
+ * - 'local'  → signed up with email + password
+ * - 'google' → signed up via Google OAuth (no password set)
+ * - 'both'   → started as local, later linked Google (or vice-versa)
+ */
+export enum AuthProvider {
+    LOCAL = 'local',
+    GOOGLE = 'google',
+    BOTH = 'both',
+}
+
 @Entity('users')
 export class User {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
+    /**
+     * Nullable and excluded from default SELECT results.
+     * Google-only users will have this as NULL — that is intentional.
+     */
     @Column({ nullable: true, select: false })
     password: string;
 
@@ -74,11 +92,22 @@ export class User {
     @Column({ nullable: true, length: 100, default: 'Pakistan' })
     country: string;
 
+    /** The Google `sub` identifier.  Unique but nullable so local-only users work. */
     @Column({ name: 'google_id', nullable: true, unique: true })
     googleId: string;
 
-    @Column({ name: 'provider', nullable: true, default: 'local' })
-    provider: string;
+    /**
+     * Auth provider tracking.  Stored as varchar(10) so existing DB rows with
+     * the string values 'local' / 'google' are compatible without a migration.
+     */
+    @Column({
+        name: 'provider',
+        type: 'varchar',
+        length: 10,
+        nullable: true,
+        default: AuthProvider.LOCAL,
+    })
+    provider: AuthProvider;
 
     @Column({ name: 'device_token', nullable: true, type: 'text' })
     deviceToken: string;
@@ -101,7 +130,8 @@ export class User {
     @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
 
-    // Relations
+    // ── Relations ─────────────────────────────────────────────────────────────
+
     @OneToOne(() => Vendor, (vendor) => vendor.user)
     vendor: Vendor;
 

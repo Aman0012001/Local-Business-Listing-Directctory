@@ -4,7 +4,7 @@ const nextConfig = {
     reactStrictMode: true,
 
     // Static export for Netlify / static hosting
-    output: "export",
+    output: "export", // Enabled for static hosting
 
     // Disable Next image optimization (required for static export)
     images: {

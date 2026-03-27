@@ -11,7 +11,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { OAuth2Client } from 'google-auth-library';
-import { User, UserRole } from '../../entities/user.entity';
+import { User, UserRole, AuthProvider } from '../../entities/user.entity';
 import { Affiliate } from '../../entities/affiliate.entity';
 import { AffiliateReferral } from '../../entities/referral.entity';
 import { Vendor } from '../../entities/vendor.entity';
@@ -110,6 +110,7 @@ export class AuthService {
             fullName,
             phone,
             role: (registerDto.role as UserRole) || UserRole.USER,
+            provider: AuthProvider.LOCAL,
             isEmailVerified: true, // Auto-verify for local auth
             isActive: true,
         });
@@ -177,8 +178,17 @@ export class AuthService {
             throw new UnauthorizedException('Invalid credentials');
         }
 
-        // Verify password
+        // ── Google-only account guard ──────────────────────────────────────────
+        // If the user was created via Google and has never set a password, we
+        // cannot validate a password.  Give a clear error rather than a cryptic
+        // "Invalid credentials" so the user knows how to proceed.
         if (!user.password) {
+            if (user.provider === AuthProvider.GOOGLE) {
+                throw new UnauthorizedException(
+                    'This account was created with Google. Please sign in using the "Continue with Google" button.',
+                );
+            }
+            // Local account with no password set — edge case, treat as invalid.
             throw new UnauthorizedException('Invalid credentials');
         }
 
@@ -216,9 +226,21 @@ export class AuthService {
             throw new BadRequestException('Google credential token is required');
         }
 
-        const clientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
+        // ConfigService can occasionally return undefined in the ts-node dev server
+        // even when the .env value is present, so fall back directly to process.env.
+        const clientId =
+            this.configService.get<string>('GOOGLE_CLIENT_ID') ||
+            process.env.GOOGLE_CLIENT_ID;
+
+        this.logger.log(
+            `[GoogleAuth] GOOGLE_CLIENT_ID resolved: ${clientId ? clientId.substring(0, 20) + '...' : 'MISSING'}`,
+        );
+
         if (!clientId) {
-            this.logger.error('[GoogleAuth] GOOGLE_CLIENT_ID is not configured');
+            this.logger.error(
+                '[GoogleAuth] GOOGLE_CLIENT_ID is not configured. ' +
+                'Add GOOGLE_CLIENT_ID=<your-client-id> to the .env file and restart the server.',
+            );
             throw new UnauthorizedException('Google authentication is not configured');
         }
 
@@ -233,33 +255,48 @@ export class AuthService {
             });
             payload = ticket.getPayload();
         } catch (error) {
-            // Try as Access Token (Custom button/Implicit flow)
+            // Token is not a Google ID Token — try treating it as an OAuth2 Access Token
+            // (this is what useGoogleLogin from @react-oauth/google returns by default)
+            this.logger.log(
+                `[GoogleAuth] ID Token verify failed ("${error.message}"). Attempting Access Token userinfo fallback...`,
+            );
             try {
-                this.logger.log(`[GoogleAuth] Falling back to userinfo check for access token (prefix: ${credential.substring(0, 5)}...)`);
                 const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                    headers: {
-                        Authorization: `Bearer ${credential}`,
-                    },
+                    headers: { Authorization: `Bearer ${credential}` },
                 });
 
                 if (!userInfoResponse.ok) {
                     const errorText = await userInfoResponse.text();
-                    throw new Error(`Google UserInfo API responded with ${userInfoResponse.status}: ${errorText}`);
+                    throw new Error(
+                        `Google UserInfo API responded with ${userInfoResponse.status}: ${errorText}`,
+                    );
                 }
 
                 payload = await userInfoResponse.json();
+                this.logger.log(
+                    `[GoogleAuth] UserInfo response fields: ${Object.keys(payload).join(', ')}`,
+                );
             } catch (fallbackError) {
-                this.logger.error(`[GoogleAuth] Token verification failed. ID Token Error: ${error.message}. Access Token Error: ${fallbackError.message}`);
-                throw new UnauthorizedException('Invalid or expired Google token');
+                this.logger.error(
+                    `[GoogleAuth] Both token paths failed.` +
+                    ` ID-token error: ${error.message}.` +
+                    ` Userinfo error: ${fallbackError.message}`,
+                );
+                throw new UnauthorizedException('Invalid or expired Google token. Please try signing in again.');
             }
         }
 
-        if (!payload || (!payload.email && !payload.email_verified)) {
-            throw new UnauthorizedException('Invalid Google token payload');
+        // Validate that we got a usable email from either token path
+        if (!payload || !payload.email) {
+            this.logger.error(
+                `[GoogleAuth] Payload missing email. Received fields: ${payload ? Object.keys(payload).join(', ') : 'null'}`,
+            );
+            throw new UnauthorizedException('Could not retrieve email from Google account. Make sure your Google account has a verified email.');
         }
 
+        // Normalize: Google ID tokens use 'sub', userinfo v3 also uses 'sub'
         const { email, name, picture, sub: googleId } = payload;
-        this.logger.log(`[GoogleAuth] Verified Google user: ${email}`);
+        this.logger.log(`[GoogleAuth] Successfully verified Google user: ${email} (sub: ${googleId})`);
 
         // Find or create user
         let user = await this.userRepository
@@ -271,22 +308,24 @@ export class AuthService {
             .getOne();
 
         if (user) {
-            // Link Google account if not already linked
+            // ── Merge: existing account found, link Google if not already linked ──
             if (!user.googleId) {
                 user.googleId = googleId;
-                user.provider = user.provider === 'local' ? 'local' : 'google';
+                // If this was a local-only account, mark it as linked to both providers
+                user.provider =
+                    user.provider === AuthProvider.LOCAL ? AuthProvider.BOTH : AuthProvider.GOOGLE;
                 if (!user.avatarUrl && picture) {
                     user.avatarUrl = picture;
                 }
                 user.lastLoginAt = new Date();
                 user.isOnline = true;
                 await this.userRepository.save(user);
-                this.logger.log(`[GoogleAuth] Linked Google account and marked online: ${email}`);
+                this.logger.log(`[GoogleAuth] Linked Google to existing account and marked online: ${email}`);
             } else {
                 user.lastLoginAt = new Date();
                 user.isOnline = true;
                 await this.userRepository.save(user);
-                this.logger.log(`[GoogleAuth] Marked existing Google user as online: ${email}`);
+                this.logger.log(`[GoogleAuth] Existing Google user marked online: ${email}`);
             }
 
             // Fix for Vendor Role Upgrade via Google Login
@@ -336,7 +375,7 @@ export class AuthService {
                 fullName: name || email.split('@')[0],
                 avatarUrl: picture || null,
                 googleId,
-                provider: 'google',
+                provider: AuthProvider.GOOGLE,
                 role: (dto.role as UserRole) || UserRole.USER,
                 isEmailVerified: true,
                 isActive: true,

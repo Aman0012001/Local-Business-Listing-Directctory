@@ -9,6 +9,8 @@ export default function SubscriptionSuccessPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const mockPlanId = searchParams.get('mock_plan_id');
+    const sessionId = searchParams.get('session_id');
+    const canceled = searchParams.get('canceled');
     
     const [status, setStatus] = useState<'loading' | 'success' | 'canceled' | 'error'>('loading');
     const [error, setError] = useState<string | null>(null);

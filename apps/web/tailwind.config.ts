@@ -26,7 +26,7 @@ const config: Config = {
                 }
             },
             fontFamily: {
-                sans: ["var(--font-inter)", "system-ui", "-apple-system", "BlinkMacSystemFont", '"Segoe UI"', "Roboto", "Helvetica", "Arial", "sans-serif"],
+                sans: ["var(--font-roboto)", "Roboto", "system-ui", "-apple-system", "BlinkMacSystemFont", '"Segoe UI"', "Helvetica", "Arial", "sans-serif"],
             },
             backgroundImage: {
                 "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",

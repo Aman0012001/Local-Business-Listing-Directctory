@@ -1,8 +1,8 @@
 import { api } from '@/lib/api';
 import BusinessDetailClient from './BusinessDetailClient';
 
-export const dynamic = 'force-static';
-export const dynamicParams = false;
+export const revalidate = 60; // Revalidate every 60 seconds
+export const dynamicParams = false; // Required for static export
 
 export async function generateStaticParams() {
     try {

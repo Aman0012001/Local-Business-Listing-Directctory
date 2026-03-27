@@ -2,7 +2,7 @@ import React from 'react';
 import { api } from '@/lib/api';
 import CategoryDetailClient from './CategoryDetailClient';
 
-export const dynamic = 'force-static';
+export const revalidate = 60;
 export const dynamicParams = false;
 
 export async function generateStaticParams() {

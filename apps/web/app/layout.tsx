@@ -1,16 +1,18 @@
 import "./globals.css";
 import { AuthProvider } from "../context/AuthContext";
 import { SocketProvider } from "../context/SocketContext";
-import { Inter } from "next/font/google";
+import { Roboto } from "next/font/google";
 import Script from "next/script";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
-// Using system font stack instead of next/font/google to avoid build-time fetch errors in restricted environments
-const inter = {
-    className: "font-sans",
-    variable: "--font-inter",
-};
+const roboto = Roboto({
+    subsets: ["latin"],
+    weight: ["300", "400", "500", "700"],
+    style: ["normal", "italic"],
+    variable: "--font-roboto",
+    display: "swap",
+});
 
 const baseUrl = process.env.NODE_ENV === 'production' 
     ? "https://local-business-listing-directctory-production.up.railway.app"
@@ -45,9 +47,9 @@ export default function RootLayout({
     children: React.ReactNode;
 }) {
     return (
-        <html lang="en" className={inter.variable} suppressHydrationWarning>
+        <html lang="en" className={roboto.variable} suppressHydrationWarning>
             <body
-                className={`${inter.className} bg-white text-slate-900 min-h-screen antialiased`}
+                className={`${roboto.className} bg-white text-slate-900 min-h-screen antialiased`}
                 suppressHydrationWarning
             >
                 <AuthProvider>

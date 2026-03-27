@@ -1,12 +1,12 @@
 import CityVendorsClient from './CityVendorsClient';
 
-export const dynamic = 'force-static';
+export const revalidate = 60;
 export const dynamicParams = false;
 
 // For static export
 export async function generateStaticParams() {
     try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://process.env.NEXT_PUBLIC_API_URL/api/v1';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://local-business-listing-directctory-production.up.railway.app/api/v1';
         const res = await fetch(`${apiUrl}/cities`);
         const cities = await res.json();
         const params = (Array.isArray(cities) ? cities : [])
