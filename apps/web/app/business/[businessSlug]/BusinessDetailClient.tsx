@@ -697,9 +697,12 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                         </div>
 
                         {/* Tabs / Content */}
-
-                        <div className="border-b border-slate-100 flex items-center gap-12 mb-10 overflow-x-auto scrollbar-hide">
-                            {['Overview', 'Reviews', 'Amenities', ...(business.hasOffer ? ['Offer / Deal'] : [])].map(tab => (
+                        {(() => {
+                            const validFaqs = business.faqs?.filter(faq => faq.question && faq.answer) || [];
+                            return (
+                                <>
+                                    <div className="border-b border-slate-100 flex items-center gap-12 mb-10 overflow-x-auto scrollbar-hide">
+                                        {['Overview', 'Reviews', 'Amenities', ...(business.hasOffer ? ['Offer / Deal'] : []), ...(validFaqs.length > 0 ? ['FAQs'] : [])].map(tab => (
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
@@ -942,7 +945,28 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                 </div>
                             </div>
 
-                        </div>{/* end min-h-[400px] */}
+                            <div className={activeTab === 'FAQs' ? 'block' : 'hidden'}>
+                                <div className="animate-in fade-in duration-500">
+                                    <h3 className="text-2xl font-bold text-slate-900 mb-8">Frequently Asked Questions</h3>
+                                    {validFaqs.length > 0 ? (
+                                        <div className="space-y-4">
+                                            {validFaqs.map((faq, idx) => (
+                                                <div key={idx} className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                                                    <h4 className="font-bold text-slate-900 text-lg mb-2">{faq.question}</h4>
+                                                    <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">{faq.answer}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                                <p className="text-slate-500">No FAQs available for this business.</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                </div>{/* end min-h-[400px] */}
+                                </>
+                            );
+                        })()}
                     </div>{/* end lg:col-span-2 */}
 
                     {/* Sidebar Area */}

@@ -9,7 +9,7 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
-import { Expose, Exclude } from 'class-transformer';
+import { Expose, Exclude, Type } from 'class-transformer';
 import { Vendor } from './vendor.entity';
 import { Category } from './category.entity';
 import { BusinessHours } from './business-hours.entity';
@@ -217,6 +217,8 @@ export class Listing {
     @Column({ name: 'offer_banner_url', nullable: true, type: 'text' })
     offerBannerUrl: string;
 
+    @Expose()
+    @Type(() => Object)
     @Column({ type: 'jsonb', default: '[]' })
     faqs: { question: string; answer: string }[];
 

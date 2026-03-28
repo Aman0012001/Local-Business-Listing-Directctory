@@ -679,3 +679,24 @@ Error: Connection terminated due to connection timeout
 [2026-03-25T01:31:27.488Z] findBySlug: hair-salon-mmp8acr9 (User: amanjeetthakur644@gmail.com)
 [2026-03-25T01:31:28.722Z] findBySlug: hair-salon-mmp8acr9 - Found in DB. Status: approved
 [2026-03-25T01:31:29.159Z] findBySlug: hair-salon-mmp8acr9 - SUCCESS
+[2026-03-28T08:45:11.973Z] findBySlug: bright-future-academy-mn8n7y7p (User: Public)
+[2026-03-28T08:45:13.321Z] findBySlug: bright-future-academy-mn8n7y7p - Found in DB. Status: approved
+[2026-03-28T08:45:13.914Z] findBySlug: bright-future-academy-mn8n7y7p - SUCCESS. FAQs Count: 2
+[2026-03-28T08:45:32.334Z] findBySlug: featured-coaching-institute-mn9snny7p (User: Public)
+[2026-03-28T08:45:32.809Z] findBySlug: featured-coaching-institute-mn9snny7p - NOT FOUND IN DB
+[2026-03-28T08:45:32.814Z] findBySlug: featured-coaching-institute-mn9snny7p - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:444:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-03-28T08:47:27.962Z] findBySlug: bright-future-academy-mn8n7y7p (User: Public)
+[2026-03-28T08:47:29.341Z] findBySlug: bright-future-academy-mn8n7y7p - Found in DB. Status: approved
+[2026-03-28T08:47:29.806Z] findBySlug: bright-future-academy-mn8n7y7p - SUCCESS. FAQs Count: 2
+[2026-03-28T08:48:07.995Z] findBySlug: bright-future-academy-mn8n7y7p (User: Public)
+[2026-03-28T08:48:09.386Z] findBySlug: bright-future-academy-mn8n7y7p - Found in DB. Status: approved
+[2026-03-28T08:48:09.867Z] findBySlug: bright-future-academy-mn8n7y7p - SUCCESS. FAQs Count: 2
+[2026-03-28T08:48:46.062Z] findBySlug: bright-future-academy-mn8n7y7p (User: Public)
+[2026-03-28T08:48:47.514Z] findBySlug: bright-future-academy-mn8n7y7p - Found in DB. Status: approved
+[2026-03-28T08:48:47.932Z] findBySlug: bright-future-academy-mn8n7y7p - SUCCESS. FAQs: [[],[]]
+[2026-03-28T08:49:54.861Z] findBySlug: featured-coaching-institute-mna0aar3 (User: Public)
+[2026-03-28T08:49:55.773Z] findBySlug: featured-coaching-institute-mna0aar3 - Found in DB. Status: approved
+[2026-03-28T08:49:56.182Z] findBySlug: featured-coaching-institute-mna0aar3 - SUCCESS. FAQs: [{"answer":"A. A. It is located in Johar Town, Lahore near Emporium Mall.","question":"1. What is the best notification system in Pakistan?"}]

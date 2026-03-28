@@ -453,7 +453,7 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                 offerBadge: (business as any).offerBadge || '',
                 offerExpiresAt: (business as any).offerExpiresAt ? new Date((business as any).offerExpiresAt).toISOString().split('T')[0] : '',
                 offerBannerUrl: (business as any).offerBannerUrl || '',
-                faqs: business.faqs || []
+                faqs: (business.faqs || []).filter(f => f && f.question && f.answer)
             });
             // Pre-fill gallery previews
             setGalleryPreviews(business.images || []);
