@@ -94,9 +94,20 @@ export class BusinessesService {
         // Generate unique slug
         const slug = generateUniqueSlug(createBusinessDto.title);
 
+        // Sanitize offerExpiresAt to prevent invalid date errors
+        let sanitizedExpiresAt = createBusinessDto.offerExpiresAt;
+        if (
+            sanitizedExpiresAt === '' || 
+            sanitizedExpiresAt === null || 
+            (typeof sanitizedExpiresAt === 'string' && (sanitizedExpiresAt.includes('NaN') || sanitizedExpiresAt.includes('Invalid')))
+        ) {
+            sanitizedExpiresAt = null as any;
+        }
+
         // Create listing
         const listing = this.listingRepository.create({
             ...createBusinessDto,
+            offerExpiresAt: sanitizedExpiresAt,
             vendorId: vendor.id,
             slug,
             status: BusinessStatus.PENDING,
@@ -222,10 +233,22 @@ export class BusinessesService {
             }
         } else if (searchDto.query) {
             // Text search fallback — matches title, description and vendor/admin-added search keywords
-            queryBuilder.andWhere(
-                '("listing"."name" ILIKE :query OR "listing"."description" ILIKE :query OR "listing"."meta_keywords" ILIKE :query OR "listing"."search_keywords"::text ILIKE :query OR "vendor"."business_name" ILIKE :query)',
-                { query: `%${searchDto.query}%` },
-            );
+            const searchTerms = searchDto.query.toLowerCase().split(' ').filter(term => term.length > 0);
+            queryBuilder.andWhere(new Brackets((qb) => {
+                for (let i = 0; i < searchTerms.length; i++) {
+                    const term = searchTerms[i];
+                    qb.andWhere(
+                        new Brackets((innerQb) => {
+                            innerQb.where(`"listing"."name" ILIKE :term${i}`)
+                                .orWhere(`"listing"."description" ILIKE :term${i}`)
+                                .orWhere(`"listing"."meta_keywords" ILIKE :term${i}`)
+                                .orWhere(`"listing"."search_keywords"::text ILIKE :term${i}`)
+                                .orWhere(`"vendor"."business_name" ILIKE :term${i}`);
+                        }),
+                        { [`term${i}`]: `%${term}%` }
+                    );
+                }
+            }));
         }
 
         // Category filter
@@ -295,9 +318,10 @@ export class BusinessesService {
         // 1) Keyword boost: if the query matches a vendor's metaKeywords, rank that listing first
         if (searchDto.query) {
             queryBuilder.addSelect(
-                'CASE WHEN "listing"."search_keywords"::text ILIKE :query THEN 0 WHEN "listing"."meta_keywords" ILIKE :query THEN 1 ELSE 2 END',
+                'CASE WHEN "listing"."search_keywords"::text ILIKE :queryBoost THEN 0 WHEN "listing"."meta_keywords" ILIKE :queryBoost THEN 1 ELSE 2 END',
                 'boost',
             );
+            queryBuilder.setParameter('queryBoost', `%${searchDto.query}%`);
             queryBuilder.addOrderBy('boost', 'ASC');
         }
 
@@ -516,6 +540,15 @@ export class BusinessesService {
 
         // Remove nested objects from update
         const { businessHours, amenityIds, ...updateData } = updateBusinessDto;
+
+        // Sanitize offerExpiresAt to prevent invalid date errors
+        if (
+            updateData.offerExpiresAt === '' || 
+            updateData.offerExpiresAt === null || 
+            (typeof updateData.offerExpiresAt === 'string' && (updateData.offerExpiresAt.includes('NaN') || updateData.offerExpiresAt.includes('Invalid')))
+        ) {
+            updateData.offerExpiresAt = null as any;
+        }
 
         // Apply updates to the listing object
         Object.assign(listing, updateData);

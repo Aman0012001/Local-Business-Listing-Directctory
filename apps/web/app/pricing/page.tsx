@@ -176,7 +176,7 @@ export default function PricingPage() {
                                     const config = PLAN_FEATURES[plan.planType as keyof typeof PLAN_FEATURES] || PLAN_FEATURES.free;
                                     const PlanIcon = config.icon;
                                     const isBasic = plan.planType === "basic";
-                                    const priceDisplay = plan.price === 0 ? "₹0" : `₹${Number(plan.price).toLocaleString("en-IN")}`;
+                                    const priceDisplay = plan.price === 0 ? "Free" : `PKR ${Number(plan.price).toLocaleString("en-PK")}`;
 
                                     return (
                                         <div

@@ -35,7 +35,7 @@ export class Transaction {
     @Column({ type: 'decimal', precision: 10, scale: 2 })
     amount: number;
 
-    @Column({ length: 3, default: 'INR' })
+    @Column({ length: 3, default: 'PKR' })
     currency: string;
 
     @Column({ name: 'payment_method', nullable: true, length: 50 })

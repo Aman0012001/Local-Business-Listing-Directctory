@@ -49,6 +49,7 @@ export class SubscriptionsSeederService implements OnModuleInit {
                     maxKeywords: 0,
                 },
                 isFeatured: false,
+                stripePriceId: null,
                 isActive: true,
             },
             {
@@ -74,6 +75,7 @@ export class SubscriptionsSeederService implements OnModuleInit {
                     maxKeywords: 10,
                 },
                 isFeatured: true,
+                stripePriceId: 'price_1TFl84B8g7hLDd8UNvtGDhrg', // PKR 2,000/month – Basic Vendor Plan (Stripe)
                 isActive: true,
             },
         ];

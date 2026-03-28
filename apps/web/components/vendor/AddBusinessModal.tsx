@@ -482,9 +482,10 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
         try {
             // Handle empty strings for optional URL/Email fields (send null to clear them in backend)
             const submissionData = { ...formData };
-            const fieldsToPrune: string[] = ['coverImageUrl', 'website', 'metaKeywords', 'whatsapp'];
+            const fieldsToPrune: string[] = ['coverImageUrl', 'website', 'metaKeywords', 'whatsapp', 'offerExpiresAt'];
             fieldsToPrune.forEach(field => {
-                if ((submissionData as any)[field] === '') {
+                const val = (submissionData as any)[field];
+                if (val === '' || (typeof val === 'string' && val.includes('NaN'))) {
                     (submissionData as any)[field] = null;
                 }
             });

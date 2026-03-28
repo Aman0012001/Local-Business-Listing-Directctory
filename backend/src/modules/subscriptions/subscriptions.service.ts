@@ -197,7 +197,8 @@ export class SubscriptionsService implements OnModuleInit {
     }
 
     /**
-     * Create a Mock checkout session since Stripe is removed
+     * Create a Stripe Checkout session for a vendor subscription.
+     * Handles stale customer IDs gracefully by auto-recreating the Stripe customer.
      */
     async createCheckoutSession(userId: string, checkoutDto: CheckoutDto) {
         const vendor = await this.vendorRepository.findOne({
@@ -209,55 +210,86 @@ export class SubscriptionsService implements OnModuleInit {
         const plan = await this.planRepository.findOne({ where: { id: checkoutDto.planId } });
         if (!plan) throw new NotFoundException('Plan not found');
 
-        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+        // Free plan — no Stripe involved
+        if (plan.price === 0) {
+            const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+            const mockId = `MOCK-FREE-${Date.now()}`;
+            // Auto-activate free plan inline
+            await this.handleMockSubscriptionSuccess(vendor.id, plan.id, mockId);
+            return {
+                sessionId: mockId,
+                checkoutUrl: null,   // null = frontend stays on page and shows success message
+            };
+        }
 
-        // Wait, if no stripePriceId, create one on the fly for backward compatibility
-        if (!plan.stripePriceId && plan.price > 0 && this.configService.get<string>('STRIPE_SECRET_KEY')) {
+        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+        // Use only the first URL if FRONTEND_URL is a comma-separated list
+        const baseUrl = frontendUrl.split(',')[0].trim();
+
+        // ── Ensure plan has a Stripe Price ID ──────────────────────────────
+        if (!plan.stripePriceId) {
+            this.logger.log(`No stripePriceId for plan "${plan.name}" — creating Stripe product+price on the fly`);
             const product = await this.stripe.products.create({ name: plan.name });
             const price = await this.stripe.prices.create({
                 product: product.id,
-                unit_amount: Math.round(plan.price * 100),
+                // plan.price is stored in PKR; Stripe needs paisa (smallest unit = 1/100 PKR)
+                unit_amount: Math.round(Number(plan.price) * 100),
                 currency: 'pkr',
                 recurring: { interval: plan.billingCycle.toLowerCase() === 'yearly' ? 'year' : 'month' },
             });
             plan.stripePriceId = price.id;
             await this.planRepository.save(plan);
+            this.logger.log(`Created Stripe price ${price.id} for plan "${plan.name}"`);
         }
 
-        if (plan.price === 0 || !plan.stripePriceId) {
-            // Free plan or fallback
-            return {
-                sessionId: 'MOCK-SESSION-' + Date.now(),
-                checkoutUrl: `${frontendUrl}/vendor/subscription/success?session_id=MOCK-SESSION-${Date.now()}&mock_plan_id=${plan.id}`,
-            };
-        }
-
+        // ── Resolve Stripe Customer ID ─────────────────────────────────────
+        // The stored ID may be stale (e.g., from a different Stripe account/environment).
+        // Try to retrieve it first; if Stripe says it doesn't exist, create a fresh one.
         let customerId = vendor.stripeCustomerId;
+
+        if (customerId) {
+            try {
+                await this.stripe.customers.retrieve(customerId);
+                this.logger.log(`Using existing Stripe customer ${customerId} for vendor ${vendor.id}`);
+            } catch (err: any) {
+                if (err?.code === 'resource_missing' || err?.message?.includes('No such customer')) {
+                    this.logger.warn(
+                        `Stale Stripe customer ID "${customerId}" for vendor ${vendor.id} — clearing and recreating.`
+                    );
+                    customerId = null;
+                    vendor.stripeCustomerId = null;
+                    await this.vendorRepository.save(vendor);
+                } else {
+                    // Unexpected Stripe error — rethrow
+                    throw err;
+                }
+            }
+        }
+
         if (!customerId) {
             const customer = await this.stripe.customers.create({
-                email: vendor.businessEmail || vendor.user.email,
-                name: vendor.businessName || vendor.user.fullName,
+                email: vendor.businessEmail || vendor.user?.email,
+                name: vendor.businessName || vendor.user?.fullName,
                 metadata: { vendorId: vendor.id },
             });
             customerId = customer.id;
             vendor.stripeCustomerId = customerId;
             await this.vendorRepository.save(vendor);
+            this.logger.log(`Created new Stripe customer ${customerId} for vendor ${vendor.id}`);
         }
 
+        // ── Create Checkout Session ────────────────────────────────────────
         const session = await this.stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             customer: customerId,
             client_reference_id: vendor.id,
-            line_items: [
-                {
-                    price: plan.stripePriceId,
-                    quantity: 1,
-                },
-            ],
+            line_items: [{ price: plan.stripePriceId, quantity: 1 }],
             mode: 'subscription',
-            success_url: `${frontendUrl}/vendor/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${frontendUrl}/vendor/subscription?canceled=true`,
+            success_url: `${baseUrl}/vendor/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url:  `${baseUrl}/vendor/subscription?canceled=true`,
         });
+
+        this.logger.log(`Stripe checkout session created: ${session.id} for vendor ${vendor.id}`);
 
         return {
             sessionId: session.id,
@@ -266,30 +298,63 @@ export class SubscriptionsService implements OnModuleInit {
     }
 
     /**
-     * Handle Mock Subscription Success
-     * Accepts either a vendorId or a userId (will attempt to find vendor by userId as fallback)
+     * Core logic to activate a subscription and record a transaction (invoice).
+     * Used by mock success, admin assignment, and Stripe webhooks.
      */
-    async handleMockSubscriptionSuccess(vendorIdOrUserId: string, planId: string, mockSessionId: string) {
+    async processSubscriptionSuccess(
+        vendorId: string,
+        planId: string,
+        gatewayTransactionId: string,
+        gateway: 'Stripe' | 'Mock' | 'Admin',
+        amount?: number
+    ) {
         const plan = await this.planRepository.findOne({ where: { id: planId } });
         if (!plan) throw new NotFoundException('Plan not found');
 
-        // Try to find vendor directly, then by userId as fallback
-        let vendor = await this.vendorRepository.findOne({ where: { id: vendorIdOrUserId } });
-        if (!vendor) {
-            vendor = await this.vendorRepository.findOne({ where: { userId: vendorIdOrUserId } });
-        }
+        const vendor = await this.vendorRepository.findOne({ where: { id: vendorId } });
         if (!vendor) throw new NotFoundException('Vendor not found');
 
-        // Cancel old subscription if exists
+        // 1. Cancel existing active subscription
         await this.subscriptionRepository.update(
             { vendorId: vendor.id, status: SubscriptionStatus.ACTIVE },
             { status: SubscriptionStatus.CANCELLED, cancelledAt: new Date() }
         );
 
         const now = new Date();
-        const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+        const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // Default 30 days
 
-        // Check for referral
+        // 2. Create new Subscription
+        const subscription = this.subscriptionRepository.create({
+            vendorId: vendor.id,
+            planId,
+            status: SubscriptionStatus.ACTIVE,
+            startDate: now,
+            endDate,
+            amount: amount ?? plan.price,
+            autoRenew: gateway === 'Stripe', // Auto-renew only for Stripe
+        });
+
+        const savedSub = await this.subscriptionRepository.save(subscription);
+
+        // 3. Generate Invoice Number
+        const prefix = gateway === 'Stripe' ? 'INV-STRIPE' : gateway === 'Admin' ? 'INV-ADMIN' : 'INV-MOCK';
+        const invoiceNumber = `${prefix}-${Date.now().toString().slice(-8)}`;
+
+        // 4. Record Transaction (Invoice)
+        const transaction = this.transactionRepository.create({
+            subscriptionId: savedSub.id,
+            vendorId: vendor.id,
+            amount: amount ?? plan.price,
+            status: PaymentStatus.COMPLETED,
+            paidAt: now,
+            gatewayTransactionId,
+            paymentGateway: gateway,
+            invoiceNumber,
+        });
+
+        await this.transactionRepository.save(transaction);
+
+        // 5. Affiliate Integration
         const referral = await this.referralRepository.findOne({
             where: [
                 { referredUserId: vendor.userId, status: ReferralStatus.PENDING, type: ReferralType.SIGNUP },
@@ -298,44 +363,27 @@ export class SubscriptionsService implements OnModuleInit {
             order: { createdAt: 'DESC' }
         });
 
-        const subscription = this.subscriptionRepository.create({
-            vendorId: vendor.id,
-            planId,
-            status: SubscriptionStatus.ACTIVE, // Immediately activate regardless of referral
-            startDate: now,
-            endDate: endDate,
-            amount: plan.price,
-            autoRenew: true,
-        });
-
-        const savedSub = await this.subscriptionRepository.save(subscription);
-
-        // Record transaction
-        const transaction = this.transactionRepository.create({
-            subscriptionId: savedSub.id,
-            vendorId: vendor.id,
-            amount: plan.price,
-            status: PaymentStatus.COMPLETED,
-            paidAt: now,
-            gatewayTransactionId: mockSessionId,
-            paymentGateway: 'Mock',
-            invoiceNumber: `INV-${Date.now()}`,
-        });
-
-        await this.transactionRepository.save(transaction);
-
-        // --- Affiliate Integration ---
         if (referral) {
-            // Simply update the referral to indicate a subscription attempt happened
-            // Activation and commission award will be handled by Admin
             referral.type = ReferralType.SUBSCRIPTION;
             await this.referralRepository.save(referral);
-            
             this.logger.log(`Affiliate referral ${referral.id} for user ${vendor.userId} is now AWAITING ADMIN ACTIVATION`);
         }
-        // ------------------------------
 
+        this.logger.log(`✅ Subscription [${savedSub.id}] activated for vendor [${vendor.id}] via ${gateway}`);
         return savedSub;
+    }
+
+    /**
+     * Handle Mock Subscription Success (Legacy/Testing)
+     */
+    async handleMockSubscriptionSuccess(vendorIdOrUserId: string, planId: string, mockSessionId: string) {
+        let vendor = await this.vendorRepository.findOne({ where: { id: vendorIdOrUserId } });
+        if (!vendor) {
+            vendor = await this.vendorRepository.findOne({ where: { userId: vendorIdOrUserId } });
+        }
+        if (!vendor) throw new NotFoundException('Vendor not found');
+
+        return this.processSubscriptionSuccess(vendor.id, planId, mockSessionId, 'Mock');
     }
 
     /**
@@ -453,13 +501,59 @@ export class SubscriptionsService implements OnModuleInit {
                         const plan = await this.planRepository.findOne({ where: { stripePriceId: priceId } });
                         if (plan) {
                             this.logger.log(`🚀 Activating plan: ${plan.name} (${plan.id}) for vendor: ${vendorId}`);
-                            await this.handleMockSubscriptionSuccess(vendorId, plan.id, session.id);
+                            await this.processSubscriptionSuccess(vendorId, plan.id, session.id, 'Stripe');
                             this.logger.log(`✅ Plan activated successfully for vendor: ${vendorId}`);
                         } else {
                             this.logger.error(`❌ Plan not found for Stripe Price ID: ${priceId}. Please ensure your DB is synced with Stripe.`);
                         }
                     } else {
                         this.logger.warn(`⚠️ Missing subscription ID (${session.subscription}) or vendorId (${vendorId}) in session.`);
+                    }
+                }
+                break;
+            }
+
+            case 'invoice.paid': {
+                const invoice = event.data.object as any; // Cast to any to avoid property access errors
+                this.logger.log(`💰 Invoice paid: ${invoice.id} for customer: ${invoice.customer}`);
+
+                // For recurring subscription payments
+                if (invoice.subscription) {
+                    const stripeSub = await this.stripe.subscriptions.retrieve(invoice.subscription as string);
+                    const vendor = await this.vendorRepository.findOne({ where: { stripeCustomerId: invoice.customer as string } });
+                    
+                    if (vendor) {
+                        const priceId = stripeSub.items.data[0].price.id;
+                        const plan = await this.planRepository.findOne({ where: { stripePriceId: priceId } });
+                        const activeSub = await this.subscriptionRepository.findOne({
+                            where: { vendorId: vendor.id, status: SubscriptionStatus.ACTIVE },
+                            order: { createdAt: 'DESC' }
+                        });
+
+                        if (activeSub && plan) {
+                            this.logger.log(`🔄 Extending subscription for vendor: ${vendor.id}`);
+                            
+                            // Extend end date by 30 days from current end date or now (whichever is later)
+                            const currentEnd = new Date(activeSub.endDate).getTime();
+                            const newEnd = new Date(Math.max(currentEnd, Date.now()) + 30 * 24 * 60 * 60 * 1000);
+                            activeSub.endDate = newEnd;
+                            await this.subscriptionRepository.save(activeSub);
+
+                            // Create a new transaction for the renewal
+                            const invoiceNumber = `INV-STRIPE-RENEW-${Date.now().toString().slice(-6)}`;
+                            const transaction = this.transactionRepository.create({
+                                subscriptionId: activeSub.id,
+                                vendorId: vendor.id,
+                                amount: invoice.amount_paid / 100, // Stripe returns cents
+                                status: PaymentStatus.COMPLETED,
+                                paidAt: new Date(),
+                                gatewayTransactionId: invoice.id,
+                                paymentGateway: 'Stripe',
+                                invoiceNumber,
+                            });
+                            await this.transactionRepository.save(transaction);
+                            this.logger.log(`✅ Subscription extended and renewal invoice created for vendor: ${vendor.id}`);
+                        }
                     }
                 }
                 break;

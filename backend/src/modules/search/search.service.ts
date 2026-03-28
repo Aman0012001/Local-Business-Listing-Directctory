@@ -91,6 +91,8 @@ export class SearchService implements OnModuleInit {
                             isFeatured: { type: 'boolean' },
                             isVerified: { type: 'boolean' },
                             status: { type: 'keyword' },
+                            search_keywords: { type: 'text', analyzer: 'standard' },
+                            meta_keywords: { type: 'text', analyzer: 'standard' },
                             followersCount: { type: 'integer' },
                             createdAt: { type: 'date' },
                             updatedAt: { type: 'date' },
@@ -126,8 +128,11 @@ export class SearchService implements OnModuleInit {
                 },
                 rating: Number(business.averageRating) || 0,
                 status: business.status,
-                is_active: business.status === BusinessStatus.APPROVED, // Changed from isFeatured
-                is_verified: business.isVerified, // Changed from isVerified
+                is_active: business.status === BusinessStatus.APPROVED,
+                is_verified: business.isVerified,
+                is_featured: business.isFeatured,
+                search_keywords: business.searchKeywords || [],
+                meta_keywords: business.metaKeywords || '',
                 followersCount: business.followersCount || 0,
                 createdAt: business.createdAt,
                 updatedAt: business.updatedAt,
@@ -174,6 +179,7 @@ export class SearchService implements OnModuleInit {
                             .orWhere('LOWER(b.description) LIKE :term', { term: `%${term}%` })
                             .orWhere('LOWER(b.city) LIKE :term', { term: `%${term}%` })
                             .orWhere('LOWER(category.name) LIKE :term', { term: `%${term}%` })
+                            .orWhere('b.meta_keywords LIKE :term', { term: `%${term}%` })
                             .orWhere('"b"."search_keywords"::text ILIKE :term', { term: `%${term}%` });
                     }),
                     { term: `%${term}%` }
@@ -342,7 +348,14 @@ export class SearchService implements OnModuleInit {
             ? {
                 multi_match: {
                     query,
-                    fields: ['title^5', 'description^2', 'category^3', 'address'],
+                    fields: [
+                        'search_keywords^10',
+                        'title^5',
+                        'category^3',
+                        'meta_keywords^2',
+                        'description',
+                        'address'
+                    ],
                     fuzziness: 'AUTO'
                 }
               }
@@ -355,9 +368,9 @@ export class SearchService implements OnModuleInit {
 
         // Ranking functions
         const functions: any[] = [
-            // Boost Featured (now using is_active as a proxy for featured if needed, or remove if not applicable)
+            // Boost Featured
             {
-                filter: { term: { is_active: true } }, // Changed to is_active
+                filter: { term: { is_featured: true } }, 
                 weight: 2.0
             },
             // Boost Verified
@@ -478,12 +491,22 @@ export class SearchService implements OnModuleInit {
                     function_score: {
                         query: {
                             bool: {
-                                must: {
-                                    multi_match: {
-                                        query,
-                                        fields: ['title^3', 'description', 'category', 'address'],
-                                    },
-                                },
+                                must: query ? [
+                                    {
+                                        multi_match: {
+                                            query,
+                                            fields: [
+                                                'search_keywords^10',
+                                                'title^5',
+                                                'category^3',
+                                                'meta_keywords^2',
+                                                'description',
+                                                'address'
+                                            ],
+                                            fuzziness: 'AUTO'
+                                        },
+                                    }
+                                ] : [{ match_all: {} }],
                                 filter: filters,
                             },
                         },

@@ -3,9 +3,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    CreditCard, CheckCircle2, Clock, Zap, Crown, Building2, Check,
+    CreditCard, CheckCircle2, Clock, Zap, Check,
     AlertTriangle, FileText, Download, X, ChevronRight, Loader2,
-    Calendar, Receipt, BadgeCheck, Sparkles, RefreshCw, Eye, ChevronLeft
+    Receipt, BadgeCheck, RefreshCw, Eye
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../../lib/api';
@@ -218,45 +218,84 @@ function InvoiceModal({ invoiceId, onClose, user }: { invoiceId: string; onClose
 }
 
 /* ─── Plan Card ─────────────────────────────────────────────────────────── */
-function PlanCard({ plan, isActive, status, currentPrice, onSelect, loading }: { plan: Plan; isActive: boolean; status?: string; currentPrice?: number; onSelect: () => void; loading: boolean }) {
-// ... (omitting getColor/getIcon for brevity, will provide full replacement)
+function PlanCard({ plan, isActive, status, hasActivePaidPlan, onSelect, loading }: {
+    plan: Plan;
+    isActive: boolean;         // This plan IS the currently active plan
+    status?: string;           // Status of the active subscription
+    hasActivePaidPlan: boolean; // Vendor currently has any paid (non-free) active plan
+    onSelect: () => void;
+    loading: boolean;
+}) {
     const getColor = (type: string) => {
-        const colors: Record<string, { bg: string; text: string; border: string; icon: string; accent: string }> = {
-            free: { bg: 'bg-slate-50', text: 'text-slate-500', border: 'border-slate-200', icon: 'text-slate-400', accent: 'bg-slate-100' },
-            basic: { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200', icon: 'text-blue-500', accent: 'bg-blue-100' },
+        const colors: Record<string, { text: string; icon: string; accent: string }> = {
+            free:  { text: 'text-slate-500', icon: 'text-slate-400', accent: 'bg-slate-100' },
+            basic: { text: 'text-blue-600',  icon: 'text-blue-500',  accent: 'bg-blue-100'  },
         };
         return colors[type] || colors.basic;
     };
 
     const getIcon = (type: string) => {
         switch (type) {
-            case 'free': return <Clock className="w-5 h-5" />;
-            case 'basic': return <Zap className="w-5 h-5" />;
-            default: return <CreditCard className="w-5 h-5" />;
+            case 'free':  return <Clock className="w-5 h-5" />;
+            case 'basic': return <Zap   className="w-5 h-5" />;
+            default:      return <CreditCard className="w-5 h-5" />;
         }
     };
 
-    const clr = getColor(plan.planType);
+    const clr       = getColor(plan.planType);
     const planPrice = Number(plan.price);
-    const isUpgrade = currentPrice !== undefined && planPrice > currentPrice;
-    const isDowngrade = currentPrice !== undefined && planPrice < currentPrice;
+    const isFree    = plan.planType === 'free';
     const isPending = isActive && status === 'pending';
+
+    // Free plan is locked — it is the default fallback, not a selectable plan
+    // Paid plan (Basic) is always rechargeable, even when currently active
+    const isLocked   = isFree;                         // free plan: never directly selectable
+    const isRecharge = isActive && !isFree && !isPending; // active paid plan: show Recharge
+
+    // Border / background styling
+    const cardStyle = isActive && !isFree
+        ? isPending
+            ? 'border-amber-300 bg-amber-50/30'
+            : 'border-orange-400 bg-gradient-to-b from-orange-50 to-white shadow-lg shadow-orange-100'
+        : isFree
+            ? 'border-slate-100 bg-slate-50/60'
+            : 'border-slate-100 bg-white hover:border-slate-200 hover:shadow-md';
+
+    // Button label + style
+    const btnContent = () => {
+        if (loading)    return <Loader2 className="w-4 h-4 animate-spin" />;
+        if (isFree)     return <><CheckCircle2 className="w-4 h-4" /> Always Included</>;
+        if (isPending)  return <><Clock className="w-4 h-4" /> Pending Approval</>;
+        if (isRecharge) return <><RefreshCw className="w-4 h-4" /> Recharge Monthly</>;
+        return <>Activate Plan <ChevronRight className="w-4 h-4" /></>;
+    };
+
+    const btnClass = isFree
+        ? 'bg-slate-100 text-slate-400 cursor-default'
+        : isPending
+            ? 'bg-amber-100 text-amber-700 cursor-default'
+            : isRecharge
+                ? 'bg-[#FF7A30] hover:bg-[#E86920] text-white shadow-lg shadow-orange-900/10 cursor-pointer'
+                : 'bg-slate-900 hover:bg-black text-white shadow-lg shadow-slate-900/10 cursor-pointer';
 
     return (
         <motion.div
-            whileHover={{ y: -4 }}
-            className={`relative rounded-2xl border-2 p-6 flex flex-col transition-all ${isActive
-                ? isPending 
-                    ? 'border-amber-300 bg-amber-50/30' 
-                    : 'border-orange-400 bg-gradient-to-b from-orange-50 to-white shadow-lg shadow-orange-100'
-                : 'border-slate-100 bg-white hover:border-slate-200 hover:shadow-md'
-                }`}
+            whileHover={isFree ? {} : { y: -4 }}
+            className={`relative rounded-2xl border-2 p-6 flex flex-col transition-all ${cardStyle}`}
         >
-            {isActive && (
+            {/* Badge: Current Plan or Pending */}
+            {isActive && !isFree && (
                 <div className={`absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 text-white text-[10px] font-black uppercase tracking-widest rounded-full whitespace-nowrap ${isPending ? 'bg-amber-500' : 'bg-orange-500'}`}>
                     {isPending ? '⌛ Pending' : '✓ Current Plan'}
                 </div>
             )}
+            {isFree && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-slate-400 text-white text-[10px] font-black uppercase tracking-widest rounded-full whitespace-nowrap">
+                    Default Free
+                </div>
+            )}
+
+            {/* Plan identity */}
             <div className="flex items-center gap-3 mb-4">
                 <div className={`w-10 h-10 rounded-xl ${clr.accent} ${clr.icon} flex items-center justify-center`}>
                     {getIcon(plan.planType)}
@@ -267,42 +306,48 @@ function PlanCard({ plan, isActive, status, currentPrice, onSelect, loading }: {
                 </div>
             </div>
 
+            {/* Price */}
             <div className="mb-5">
                 <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-black text-slate-900">PKR {planPrice.toLocaleString()}</span>
-                    <span className="text-slate-400 font-bold text-sm">/{plan.billingCycle}</span>
+                    {planPrice === 0 ? (
+                        <span className="text-3xl font-black text-slate-400">Free</span>
+                    ) : (
+                        <>
+                            <span className="text-3xl font-black text-slate-900">PKR {planPrice.toLocaleString()}</span>
+                            <span className="text-slate-400 font-bold text-sm">/{plan.billingCycle}</span>
+                        </>
+                    )}
                 </div>
+                {!isFree && (
+                    <p className="text-xs text-slate-400 font-bold mt-1">Billed monthly · Each recharge extends by 30 days</p>
+                )}
                 <p className="text-slate-500 font-bold text-sm mt-2 leading-relaxed">{plan.description || 'Grow your business visibility'}</p>
             </div>
 
+            {/* Feature list */}
             <div className="space-y-2.5 flex-1 mb-6">
                 {plan.dashboardFeatures && Object.entries(plan.dashboardFeatures).map(([key, enabled]) => {
                     if (!enabled || key === 'maxKeywords') return null;
-                    
                     const labels: Record<string, string> = {
-                        showListings: 'My Listings',
+                        showListings:  'My Listings',
                         canAddListing: 'Add Listing',
-                        showLeads: 'Leads',
-                        showOffers: 'Offers & Events',
-                        showReviews: 'Reviews',
+                        showLeads:     'Leads',
+                        showOffers:    'Offers & Events',
+                        showReviews:   'Reviews',
                         showAnalytics: 'Analytics',
-                        showSaved: 'Saved',
+                        showSaved:     'Saved',
                         showFollowing: 'Following',
-                        showQueries: 'Queries',
-                        showChat: 'Live Chat',
+                        showQueries:   'Queries',
+                        showChat:      'Live Chat',
                         showBroadcast: 'Broadcast Feed',
                     };
-
                     const label = labels[key] || key.replace('show', '').replace(/([A-Z])/g, ' $1').trim();
-
                     return (
                         <div key={key} className="flex items-start gap-2.5">
-                            <div className="mt-0.5 w-4 h-4 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
-                                <Check className="w-2.5 h-2.5 text-emerald-500 stroke-[3]" />
+                            <div className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 ${isFree ? 'bg-slate-100' : 'bg-emerald-50'}`}>
+                                <Check className={`w-2.5 h-2.5 stroke-[3] ${isFree ? 'text-slate-400' : 'text-emerald-500'}`} />
                             </div>
-                            <span className="text-slate-600 font-bold text-sm leading-tight text-capitalize">
-                                {label}
-                            </span>
+                            <span className={`font-bold text-sm leading-tight ${isFree ? 'text-slate-400' : 'text-slate-600'}`}>{label}</span>
                         </div>
                     );
                 })}
@@ -310,33 +355,19 @@ function PlanCard({ plan, isActive, status, currentPrice, onSelect, loading }: {
                     <div className="w-4 h-4 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
                         <FileText className="w-2.5 h-2.5 text-blue-500" />
                     </div>
-                    <span className="font-black text-slate-700 text-sm">{plan.maxListings} Listing{plan.maxListings !== 1 ? 's' : ''}</span>
+                    <span className="font-black text-slate-700 text-sm">
+                        {plan.maxListings >= 999 ? 'Unlimited Listings' : `${plan.maxListings} Listing${plan.maxListings !== 1 ? 's' : ''}`}
+                    </span>
                 </div>
             </div>
 
+            {/* CTA Button */}
             <button
                 onClick={onSelect}
-                disabled={isActive || loading}
-                className={`w-full py-3 rounded-xl font-black text-sm transition-all active:scale-[0.97] flex items-center justify-center gap-2 ${isActive
-                    ? isPending ? 'bg-amber-100 text-amber-700' : 'bg-orange-50 text-orange-500'
-                    : isUpgrade
-                        ? 'bg-[#FF7A30] hover:bg-[#E86920] text-white shadow-lg shadow-orange-900/10'
-                        : 'bg-slate-900 hover:bg-black text-white shadow-lg shadow-slate-900/10'
-                    } cursor-default disabled:opacity-80`}
+                disabled={isFree || isPending || loading}
+                className={`w-full py-3 rounded-xl font-black text-sm transition-all active:scale-[0.97] flex items-center justify-center gap-2 disabled:opacity-70 ${btnClass}`}
             >
-                {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                ) : isPending ? (
-                    <><Clock className="w-4 h-4" /> Pending Approval</>
-                ) : isActive ? (
-                    <><CheckCircle2 className="w-4 h-4" /> Active</>
-                ) : isUpgrade ? (
-                    <><Sparkles className="w-4 h-4" /> Upgrade Plan</>
-                ) : isDowngrade ? (
-                    <><RefreshCw className="w-4 h-4" /> Downgrade Plan</>
-                ) : (
-                    <>Activate Plan <ChevronRight className="w-4 h-4" /></>
-                )}
+                {btnContent()}
             </button>
         </motion.div>
     );
@@ -388,13 +419,14 @@ export default function VendorSubscriptionPage() {
     useEffect(() => { fetchAll(); }, []);
 
     const handleSelectPlan = async (plan: Plan) => {
-        const isUpgrade = activeSub?.plan && Number(plan.price) > Number(activeSub.plan.price);
-        const isDowngrade = activeSub?.plan && Number(plan.price) < Number(activeSub.plan.price);
+        // Free plan is never directly selectable — it's the automatic fallback
+        if (plan.planType === 'free') return;
 
-        let confirmMsg = 'Activate this plan?';
-        if (isUpgrade) confirmMsg = `Are you sure you want to upgrade to ${plan.name}? Your features will be expanded immediately.`;
-        if (isDowngrade) confirmMsg = `Are you sure you want to downgrade to ${plan.name}? Some features might be restricted.`;
-        if (activeSub && !isUpgrade && !isDowngrade) confirmMsg = `Switch to ${plan.name}? Current plan will be replaced.`;
+        const isRecharge = activeSub?.plan?.id === plan.id;
+
+        const confirmMsg = isRecharge
+            ? `Recharge your ${plan.name} plan for another 30 days?\n\nYou will be charged PKR ${Number(plan.price).toLocaleString()} via Stripe.`
+            : `Activate the ${plan.name} plan?\n\nYou will be charged PKR ${Number(plan.price).toLocaleString()}/month via Stripe.`;
 
         if (!confirm(confirmMsg)) return;
 
@@ -403,16 +435,15 @@ export default function VendorSubscriptionPage() {
             const res = await api.subscriptions.createCheckout(plan.id);
             if (res.checkoutUrl) {
                 window.location.href = res.checkoutUrl;
-                return; // Stop execution, browser will navigate away
+                return; // Stripe checkout — browser navigates away
             }
-            
-            // Fallback for free plans which don't return a Stripe URL
+            // Fallback: free plan mock success (shouldn't reach here for paid plans)
             setSuccessMsg(`🎉 Successfully activated ${plan.name}!`);
             setTimeout(() => setSuccessMsg(''), 4000);
             await fetchAll();
             await syncProfile();
         } catch (err: any) {
-            alert(err.message || 'Failed to switch plan');
+            alert(err.message || 'Failed to process plan. Please try again.');
         } finally {
             setCheckingOut(null);
         }
@@ -520,7 +551,7 @@ export default function VendorSubscriptionPage() {
                         <div className="flex items-center gap-3">
                             <div className={`text-center px-5 py-3 rounded-xl ${isExpiringSoon ? 'bg-red-100' : 'bg-white/10'}`}>
                                 <p className={`text-xs font-black uppercase tracking-wider ${isExpiringSoon ? 'text-red-400' : 'text-slate-400'}`}>Amount</p>
-                                <p className={`text-lg font-black ${isExpiringSoon ? 'text-red-700' : 'text-white'}`}>PKR {Number(activeSub.amount).toLocaleString()}</p>
+                                <p className={`text-lg font-black ${isExpiringSoon ? 'text-red-700' : 'text-white'}`}>{Number(activeSub.amount) === 0 ? 'Free' : `PKR ${Number(activeSub.amount).toLocaleString()}`}</p>
                             </div>
                             {isExpiringSoon && (
                                 <button
@@ -570,7 +601,7 @@ export default function VendorSubscriptionPage() {
                                         plan={plan}
                                         isActive={activeSub?.plan?.id === plan.id}
                                         status={activeSub?.status}
-                                        currentPrice={activeSub?.plan ? Number(activeSub.plan.price) : undefined}
+                                        hasActivePaidPlan={!!activeSub && Number(activeSub.plan?.price ?? 0) > 0}
                                         onSelect={() => handleSelectPlan(plan)}
                                         loading={checkingOut === plan.id}
                                     />
