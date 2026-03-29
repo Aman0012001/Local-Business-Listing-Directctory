@@ -339,8 +339,9 @@ export class BusinessesService {
                 queryBuilder.addOrderBy('listing.createdAt', 'DESC');
                 break;
             default:
-                // Relevance (featured > rating)
+                // Relevance (sponsored > featured > rating)
                 queryBuilder
+                    .addOrderBy('listing.isSponsored', 'DESC')
                     .addOrderBy('listing.isFeatured', 'DESC')
                     .addOrderBy('listing.averageRating', 'DESC');
         }

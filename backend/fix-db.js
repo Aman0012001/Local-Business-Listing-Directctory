@@ -1,133 +1,42 @@
-"use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
-    return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (g && (g = 0, op[0] && (_ = 0)), _) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-var typeorm_1 = require("typeorm");
-var dotenv = require("dotenv");
-dotenv.config({ path: __dirname + '/.env' });
-var AppDataSource = new typeorm_1.DataSource({
-    type: 'postgres',
+const { Client } = require('pg');
+const dotenv = require('dotenv');
+const path = require('path');
+
+dotenv.config({ path: path.join(__dirname, '.env') });
+
+async function fixDb() {
+  const client = new Client({
     host: process.env.DB_HOST,
-    port: parseInt(process.env.DB_PORT || '5432'),
-    username: process.env.DB_USERNAME,
+    port: parseInt(process.env.DB_PORT),
+    user: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
-    ssl: { rejectUnauthorized: false },
-    synchronize: false,
-    logging: true,
-});
-function run() {
-    return __awaiter(this, void 0, void 0, function () {
-        var e_1, e_2, res;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4 /*yield*/, AppDataSource.initialize()];
-                case 1:
-                    _a.sent();
-                    console.log('DB Connected! Updating plans...');
-                    // Deactivate unused plans entirely to avoid confusion, instead of deleting them which breaks foreign keys
-                    return [4 /*yield*/, AppDataSource.query("UPDATE subscription_plans SET is_active = false WHERE id NOT IN ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000003')")];
-                case 2:
-                    // Deactivate unused plans entirely to avoid confusion, instead of deleting them which breaks foreign keys
-                    _a.sent();
-                    _a.label = 3;
-                case 3:
-                    _a.trys.push([3, 5, , 6]);
-                    return [4 /*yield*/, AppDataSource.query("ALTER TYPE subscription_plans_plan_type_enum ADD VALUE IF NOT EXISTS 'basic'")];
-                case 4:
-                    _a.sent();
-                    return [3 /*break*/, 6];
-                case 5:
-                    e_1 = _a.sent();
-                    return [3 /*break*/, 6];
-                case 6:
-                    _a.trys.push([6, 8, , 9]);
-                    return [4 /*yield*/, AppDataSource.query("ALTER TYPE subscription_plan_type_enum ADD VALUE IF NOT EXISTS 'basic'")];
-                case 7:
-                    _a.sent();
-                    return [3 /*break*/, 9];
-                case 8:
-                    e_2 = _a.sent();
-                    return [3 /*break*/, 9];
-                case 9: 
-                // Update the FREE Plan
-                return [4 /*yield*/, AppDataSource.query("\n        UPDATE subscription_plans\n        SET name = 'Free',\n            plan_type = 'free',\n            description = 'Essential tools for small local businesses starting out.',\n            price = 0,\n            billing_cycle = 'monthly',\n            max_listings = 1,\n            is_featured = false,\n            is_active = true,\n            dashboard_features = $1\n        WHERE id = '00000000-0000-0000-0000-000000000001'\n    ", [JSON.stringify({
-                            showListings: false,
-                            canAddListing: false,
-                            showSaved: false,
-                            showFollowing: false,
-                            showQueries: false,
-                            showLeads: false,
-                            showOffers: false,
-                            showReviews: false,
-                            showAnalytics: false,
-                            showChat: false,
-                            showBroadcast: false,
-                            maxKeywords: 0
-                        })])];
-                case 10:
-                    // Update the FREE Plan
-                    _a.sent();
-                    // Update the PREMIUM / BASIC Plan (we'll call it Premium for the UI, or Basic? Based on user asking for 'Premium', let's set name to 'Premium', plan_type to 'premium' to be safe)
-                    return [4 /*yield*/, AppDataSource.query("\n        UPDATE subscription_plans\n        SET name = 'Basic',\n            plan_type = 'basic',\n            description = 'Everything you need to dominate your local market.',\n            price = 2000,\n            billing_cycle = 'monthly',\n            max_listings = 999,\n            is_featured = true,\n            is_active = true,\n            dashboard_features = $1\n        WHERE id = '00000000-0000-0000-0000-000000000003'\n    ", [JSON.stringify({
-                                showListings: true,
-                                canAddListing: true,
-                                showLeads: true,
-                                showOffers: true,
-                                showReviews: true,
-                                showAnalytics: true,
-                                showSaved: true,
-                                showFollowing: true,
-                                showQueries: true,
-                                showChat: true,
-                                showBroadcast: true,
-                                maxKeywords: 10
-                            })])];
-                case 11:
-                    // Update the PREMIUM / BASIC Plan (we'll call it Premium for the UI, or Basic? Based on user asking for 'Premium', let's set name to 'Premium', plan_type to 'premium' to be safe)
-                    _a.sent();
-                    return [4 /*yield*/, AppDataSource.query("SELECT * FROM subscription_plans")];
-                case 12:
-                    res = _a.sent();
-                    console.log('Final Plans:', res);
-                    process.exit(0);
-                    return [2 /*return*/];
-            }
-        });
-    });
+    ssl: { rejectUnauthorized: false }
+  });
+
+  try {
+    await client.connect();
+    
+    console.log('--- FIXING DUPLICATE NAMES IN CATEGORIES ---');
+    const delQuery = "DELETE FROM categories WHERE id IN (SELECT id FROM (SELECT id, ROW_NUMBER() OVER (PARTITION BY name ORDER BY created_at DESC) as row_num FROM categories) t WHERE t.row_num > 1)";
+    const delRes = await client.query(delQuery);
+    console.log('Deleted ' + delRes.rowCount + ' duplicate categories.');
+
+    console.log('--- FIXING NULL REFERRAL CODES IN AFFILIATES ---');
+    // Check if table exists first
+    const tc = await client.query("SELECT count(*) FROM information_schema.tables WHERE table_name = 'affiliates'");
+    if (tc.rows[0].count > 0) {
+      const updAff = await client.query("UPDATE affiliates SET referral_code = 'REF-' || substring(id::text, 1, 8) WHERE referral_code IS NULL");
+      console.log('Updated ' + updAff.rowCount + ' affiliate referral codes.');
+    }
+
+    console.log('✅ Cleanup complete. Retrying TypeORM sync...');
+
+  } catch (err) {
+    console.error('Error:', err);
+  } finally {
+    await client.end();
+  }
 }
-run().catch(console.error);
+
+fixDb();

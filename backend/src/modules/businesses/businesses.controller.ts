@@ -22,10 +22,12 @@ import { UpdateBusinessDto } from './dto/update-business.dto';
 import { SearchBusinessDto } from './dto/search-business.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CheckFeature } from '../../common/decorators/check-feature.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../../common/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { FeatureGateGuard } from '../../common/guards/feature-gate.guard';
 import { ParseUuidPipe } from '../../common/pipes/parse-uuid.pipe';
 import { User, UserRole } from '../../entities/user.entity';
 
@@ -41,6 +43,8 @@ export class BusinessesController {
 
     @Post()
     @Roles(UserRole.VENDOR, UserRole.ADMIN)
+    @UseGuards(FeatureGateGuard)
+    @CheckFeature('maxListings')
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Create a new listing (Vendor only)' })
     @ApiResponse({ status: 201, description: 'Listing created successfully' })

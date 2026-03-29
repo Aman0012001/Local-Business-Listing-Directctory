@@ -102,6 +102,11 @@ export class CheckoutDto {
     @IsString()
     planId: string;
 
+    @ApiPropertyOptional({ description: 'Target ID for boosts (Listing UUID, Offer UUID, etc.)' })
+    @IsOptional()
+    @IsUUID()
+    targetId?: string;
+
     @ApiPropertyOptional({ example: 'monthly' })
     @IsOptional()
     @IsString()

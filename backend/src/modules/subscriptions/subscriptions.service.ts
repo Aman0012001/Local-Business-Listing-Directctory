@@ -10,9 +10,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Subscription, SubscriptionStatus } from '../../entities/subscription.entity';
 import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
+import { PricingPlan, PricingPlanType, PricingPlanUnit } from '../../entities/pricing-plan.entity';
+import { ActivePlan, ActivePlanStatus } from '../../entities/active-plan.entity';
 import { Transaction, PaymentStatus } from '../../entities/transaction.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { User } from '../../entities/user.entity';
+import { Listing } from '../../entities/business.entity';
 import { AffiliateReferral, ReferralStatus, ReferralType } from '../../entities/referral.entity';
 import { Affiliate } from '../../entities/affiliate.entity';
 import { CreatePlanDto, UpdatePlanDto, CheckoutDto, AssignPlanDto } from './dto/subscription.dto';
@@ -30,6 +33,12 @@ export class SubscriptionsService implements OnModuleInit {
         private subscriptionRepository: Repository<Subscription>,
         @InjectRepository(SubscriptionPlan)
         private planRepository: Repository<SubscriptionPlan>,
+        @InjectRepository(PricingPlan)
+        private pricingPlanRepository: Repository<PricingPlan>,
+        @InjectRepository(ActivePlan)
+        private activePlanRepository: Repository<ActivePlan>,
+        @InjectRepository(Listing)
+        private listingRepo: Repository<Listing>,
         @InjectRepository(Transaction)
         private transactionRepository: Repository<Transaction>,
         @InjectRepository(Vendor)
@@ -521,31 +530,59 @@ export class SubscriptionsService implements OnModuleInit {
     }
 
     /**
-     * Get active subscription for vendor
+     * Get active subscription for vendor (supports both old and new system)
      */
-    async getActiveSubscription(userId: string): Promise<Subscription | null> {
+    async getActiveSubscription(userId: string): Promise<Subscription | ActivePlan | null> {
         const vendor = await this.vendorRepository.findOne({ where: { userId } });
-        if (!vendor) return null; // Not using wrap ForbiddenException here to prevent dashboard crashes during hydration
+        if (!vendor) return null;
 
-        // Find the active subscription
+        // 1. Try new PricingPlan system first (ActivePlan)
+        const activeNewPlan = await this.activePlanRepository.findOne({
+            where: { vendorId: vendor.id, status: ActivePlanStatus.ACTIVE },
+            relations: ['plan'],
+            order: { createdAt: 'DESC' }
+        });
+
+        if (activeNewPlan && activeNewPlan.plan?.type === PricingPlanType.SUBSCRIPTION) {
+            return activeNewPlan;
+        }
+
+        // 2. Try old Subscription system
         let activeSub = await this.subscriptionRepository.findOne({
             where: { vendorId: vendor.id, status: SubscriptionStatus.ACTIVE },
             relations: ['plan'],
             order: { createdAt: 'DESC' }
         });
 
-        // --- FALLBACK: If no active subscription, try to assign Free Plan ---
-        if (!activeSub) {
+        // --- FALLBACK: If no active subscription anywhere, try to assign Free Plan ---
+        if (!activeSub && !activeNewPlan) {
+            // Check for new Free Plan first
+            const newFreePlan = await this.pricingPlanRepository.findOne({
+                where: { name: 'Free', type: PricingPlanType.SUBSCRIPTION }
+            });
+
+            if (newFreePlan) {
+                const now = new Date();
+                const endDate = new Date(now.getTime() + 3650 * 24 * 60 * 60 * 1000);
+                const activePlan = this.activePlanRepository.create({
+                    vendorId: vendor.id,
+                    planId: newFreePlan.id,
+                    status: ActivePlanStatus.ACTIVE,
+                    startDate: now,
+                    endDate: endDate,
+                });
+                const saved = await this.activePlanRepository.save(activePlan);
+                saved.plan = newFreePlan;
+                return saved;
+            }
+
+            // Fallback to old Free Plan if exists
             const freePlan = await this.planRepository.findOne({ 
                 where: { id: '00000000-0000-0000-0000-000000000001' } 
             });
             if (freePlan) {
-                // We'll create a simple active record for the free plan
-                // so the vendor always has something active.
-                this.logger.log(`Assigning automatic Free Plan fallback for vendor ${vendor.id}`);
                 const now = new Date();
-                const endDate = new Date(now.getTime() + 3650 * 24 * 60 * 60 * 1000); // 10 years for free plan
-                
+                const endDate = new Date(now.getTime() + 3650 * 24 * 60 * 60 * 1000);
                 const newSub = this.subscriptionRepository.create({
                     vendorId: vendor.id,
                     planId: freePlan.id,
@@ -555,13 +592,194 @@ export class SubscriptionsService implements OnModuleInit {
                     amount: 0,
                     autoRenew: false,
                 });
-                
                 activeSub = await this.subscriptionRepository.save(newSub);
-                activeSub.plan = freePlan; // Ensure plan relation is attached
+                activeSub.plan = freePlan;
+                return activeSub;
             }
         }
 
-        return activeSub;
+        return activeNewPlan || activeSub;
+    }
+
+    /**
+     * Get all available pricing plans of a specific type (Client)
+     */
+    async getPricingPlans(type?: PricingPlanType): Promise<PricingPlan[]> {
+        const where: any = { isActive: true };
+        if (type) where.type = type;
+        return this.pricingPlanRepository.find({ where, order: { price: 'ASC' } });
+    }
+
+    /**
+     * Create a Stripe Checkout session for a new PricingPlan (Subscription or Boost)
+     */
+    async createPricingCheckoutSession(userId: string, planId: string, targetId?: string) {
+        const vendor = await this.vendorRepository.findOne({
+            where: { userId },
+            relations: ['user']
+        });
+        if (!vendor) throw new ForbiddenException('Only vendors can purchase plans');
+
+        const plan = await this.pricingPlanRepository.findOne({ where: { id: planId } });
+        if (!plan) throw new NotFoundException('Plan not found');
+
+        // Free plan - instant activation
+        if (plan.price <= 0) {
+            await this.processActivePlanSuccess(vendor.id, plan.id, `FREE-${Date.now()}`, 'Mock', targetId);
+            return { sessionId: 'FREE', checkoutUrl: null };
+        }
+
+        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+        const baseUrl = frontendUrl.split(',')[0].trim();
+
+        // Ensure Stripe Price exists
+        if (!plan.stripePriceId) {
+            const product = await this.stripe.products.create({ 
+                name: plan.name,
+                metadata: { type: plan.type }
+            });
+            const price = await this.stripe.prices.create({
+                product: product.id,
+                unit_amount: Math.round(Number(plan.price) * 100),
+                currency: 'pkr',
+                recurring: plan.type === PricingPlanType.SUBSCRIPTION ? { 
+                    interval: plan.unit === PricingPlanUnit.YEARS ? 'year' : 'month' 
+                } : undefined,
+            });
+            plan.stripePriceId = price.id;
+            await this.pricingPlanRepository.save(plan);
+        }
+
+        // Get or Create Customer
+        let customerId = vendor.stripeCustomerId;
+        if (!customerId) {
+            const customer = await this.stripe.customers.create({
+                email: vendor.businessEmail || vendor.user?.email,
+                name: vendor.businessName || vendor.user?.fullName,
+                metadata: { vendorId: vendor.id },
+            });
+            customerId = customer.id;
+            vendor.stripeCustomerId = customerId;
+            await this.vendorRepository.save(vendor);
+        }
+
+        const sessionParams: Stripe.Checkout.SessionCreateParams = {
+            payment_method_types: ['card'],
+            customer: customerId,
+            client_reference_id: vendor.id,
+            metadata: { 
+                planId: plan.id,
+                targetId: targetId || '',
+                type: plan.type
+            },
+            line_items: [{ price: plan.stripePriceId, quantity: 1 }],
+            mode: plan.type === PricingPlanType.SUBSCRIPTION ? 'subscription' : 'payment',
+            success_url: `${baseUrl}/vendor/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url:  `${baseUrl}/vendor/subscription?canceled=true`,
+        };
+
+        const session = await this.stripe.checkout.sessions.create(sessionParams);
+
+        return {
+            sessionId: session.id,
+            checkoutUrl: session.url,
+        };
+    }
+
+    /**
+     * Process successful purchase of a new PricingPlan
+     */
+    async processActivePlanSuccess(
+        vendorId: string,
+        planId: string,
+        gatewayTransactionId: string,
+        gateway: string,
+        targetId?: string
+    ) {
+        const plan = await this.pricingPlanRepository.findOne({ where: { id: planId } });
+        if (!plan) throw new NotFoundException('Plan not found');
+
+        const now = new Date();
+        const endDate = new Date(now);
+
+        // Calculate end date
+        switch (plan.unit) {
+            case PricingPlanUnit.MINUTES: endDate.setMinutes(endDate.getMinutes() + plan.duration); break;
+            case PricingPlanUnit.HOURS: endDate.setHours(endDate.getHours() + plan.duration); break;
+            case PricingPlanUnit.DAYS: endDate.setDate(endDate.getDate() + plan.duration); break;
+            case PricingPlanUnit.MONTHS: endDate.setMonth(endDate.getMonth() + plan.duration); break;
+            case PricingPlanUnit.YEARS: endDate.setFullYear(endDate.getFullYear() + plan.duration); break;
+        }
+
+        // If it's a subscription, cancel previous active subscriptions
+        if (plan.type === PricingPlanType.SUBSCRIPTION) {
+            await this.activePlanRepository.update(
+                { vendorId, status: ActivePlanStatus.ACTIVE, plan: { type: PricingPlanType.SUBSCRIPTION } as any },
+                { status: ActivePlanStatus.CANCELLED }
+            );
+        }
+
+        const activePlan = this.activePlanRepository.create({
+            vendorId,
+            planId,
+            targetId,
+            status: ActivePlanStatus.ACTIVE,
+            startDate: now,
+            endDate,
+            amountPaid: plan.price,
+            transactionId: gatewayTransactionId,
+        });
+
+        const saved = await this.activePlanRepository.save(activePlan);
+
+        // Sync flags if needed (featured/boosted)
+        if (targetId) {
+            if (plan.type === PricingPlanType.HOMEPAGE_FEATURED || plan.type === PricingPlanType.CATEGORY_FEATURED) {
+                await this.listingRepo.update(targetId, { isFeatured: true });
+            } else if (plan.type === PricingPlanType.LISTING_BOOST) {
+                await this.listingRepo.update(targetId, { isSponsored: true });
+            }
+        }
+
+        // Record transaction
+        const transaction = this.transactionRepository.create({
+            vendorId,
+            amount: plan.price,
+            status: PaymentStatus.COMPLETED,
+            paidAt: now,
+            gatewayTransactionId,
+            paymentGateway: gateway,
+            invoiceNumber: `INV-${plan.type.toUpperCase()}-${Date.now().toString().slice(-6)}`,
+        });
+        await this.transactionRepository.save(transaction);
+
+        return saved;
+    }
+
+    /**
+     * Check if a vendor can perform an action based on their current plan limits
+     */
+    async canPerformAction(userId: string, feature: string): Promise<boolean> {
+        const activeSub = await this.getActiveSubscription(userId);
+        if (!activeSub) return false;
+
+        const features = (activeSub as any).plan?.features || (activeSub as any).plan?.dashboardFeatures || {};
+        const limit = features[feature];
+
+        if (limit === true) return true;
+        if (typeof limit === 'number') {
+            const vendor = await this.vendorRepository.findOne({ where: { userId } });
+            if (!vendor) return false;
+
+            // Check specific limits
+            if (feature === 'maxListings') {
+                const count = await this.listingRepo.count({ where: { vendorId: vendor.id } });
+                return count < limit;
+            }
+            // Add other limit checks (maxOffers, etc.) as needed
+        }
+
+        return false;
     }
 
     /**
@@ -652,25 +870,26 @@ export class SubscriptionsService implements OnModuleInit {
                 const session = event.data.object as Stripe.Checkout.Session;
                 this.logger.log(`💳 Checkout session completed: ${session.id} for customer: ${session.customer}`);
                 
+                // --- NEW SYSTEM (ActivePlan) ---
+                if (session.metadata?.planId) {
+                    const vendorId = session.client_reference_id;
+                    const { planId, targetId } = session.metadata;
+                    this.logger.log(`🚀 Activating new-style plan: ${planId} for vendor: ${vendorId}`);
+                    await this.processActivePlanSuccess(vendorId, planId, session.id, 'Stripe', targetId);
+                    return { received: true };
+                }
+
+                // --- OLD SYSTEM (FALLBACK) ---
                 if (session.mode === 'subscription') {
                     const vendorId = session.client_reference_id;
-                    this.logger.log(`🔍 client_reference_id (vendorId): ${vendorId}`);
-                    
                     if (session.subscription && vendorId) {
                         const subscription = await this.stripe.subscriptions.retrieve(session.subscription as string);
                         const priceId = subscription.items.data[0].price.id;
-                        this.logger.log(`📄 Retraining price ID: ${priceId}`);
                         
                         const plan = await this.planRepository.findOne({ where: { stripePriceId: priceId } });
                         if (plan) {
-                            this.logger.log(`🚀 Activating plan: ${plan.name} (${plan.id}) for vendor: ${vendorId}`);
                             await this.processSubscriptionSuccess(vendorId, plan.id, session.id, 'Stripe');
-                            this.logger.log(`✅ Plan activated successfully for vendor: ${vendorId}`);
-                        } else {
-                            this.logger.error(`❌ Plan not found for Stripe Price ID: ${priceId}. Please ensure your DB is synced with Stripe.`);
                         }
-                    } else {
-                        this.logger.warn(`⚠️ Missing subscription ID (${session.subscription}) or vendorId (${vendorId}) in session.`);
                     }
                 }
                 break;

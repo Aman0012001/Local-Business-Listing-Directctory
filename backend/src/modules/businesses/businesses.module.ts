@@ -12,6 +12,7 @@ import { SearchModule } from '../search/search.module';
 import { DemandModule } from '../demand/demand.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { AffiliateModule } from '../affiliate/affiliate.module';
+import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 
 @Module({
     imports: [
@@ -27,6 +28,7 @@ import { AffiliateModule } from '../affiliate/affiliate.module';
         SearchModule,
         DemandModule,
         AffiliateModule,
+        SubscriptionsModule,
     ],
     controllers: [BusinessesController],
     providers: [BusinessesService],

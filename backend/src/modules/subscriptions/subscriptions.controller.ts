@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { PricingPlanType } from '../../entities/pricing-plan.entity';
 import { SubscriptionsService } from './subscriptions.service';
 import { SubscriptionCronService } from './subscription-cron.service';
 import { CreatePlanDto, UpdatePlanDto, CheckoutDto, AssignPlanDto, ChangePlanDto } from './dto/subscription.dto';
@@ -41,6 +42,13 @@ export class SubscriptionsController {
     @ApiOperation({ summary: 'List all active subscription plans' })
     getPlans() {
         return this.subService.getPlans();
+    }
+
+    @Public()
+    @Get('pricing/plans')
+    @ApiOperation({ summary: 'List all active monetization plans (New System)' })
+    getPricingPlans(@Query('type') type?: PricingPlanType) {
+        return this.subService.getPricingPlans(type);
     }
 
     @Get('plans/admin')
@@ -126,6 +134,13 @@ export class SubscriptionsController {
         return this.subService.createCheckoutSession(user.id, checkoutDto);
     }
 
+    @Post('pricing/checkout')
+    @Roles(UserRole.VENDOR, UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Initiate a checkout session for a PricingPlan' })
+    createPricingCheckout(@CurrentUser() user: User, @Body() checkoutDto: CheckoutDto) {
+        return this.subService.createPricingCheckoutSession(user.id, checkoutDto.planId, checkoutDto.targetId);
+    }
+
     @Get('active')
     @Roles(UserRole.VENDOR, UserRole.ADMIN, UserRole.SUPERADMIN)
     @ApiOperation({ summary: 'Get current active subscription for logged-in vendor' })
@@ -171,14 +186,26 @@ export class SubscriptionsController {
     @ApiOperation({ summary: 'Mock a payment success for development' })
     async mockSuccess(
         @CurrentUser() user: User,
-        @Param('planId') planId: string
+        @Param('planId') planId: string,
+        @Query('system') system: 'old' | 'new' = 'new',
+        @Query('targetId') targetId?: string
     ) {
-        // Look up current vendor via active subscription or by querying vendors
+        if (system === 'new') {
+            const vendor = await (this.subService as any).vendorRepository.findOne({ where: { userId: user.id } });
+            return this.subService.processActivePlanSuccess(
+                vendor.id,
+                planId,
+                'MOCK-NEW-' + Date.now(),
+                'Mock',
+                targetId
+            );
+        }
+        
+        // Old system fallback
         const sub = await this.subService.getActiveSubscription(user.id).catch(() => null);
         const vendorId = (sub as any)?.vendorId;
-        // If no active sub, we rely on the service to find vendor by userId
         return this.subService.handleMockSubscriptionSuccess(
-            vendorId || user.id, // fallback: service will handle by userId lookup
+            vendorId || user.id,
             planId,
             'MOCK-SUB-' + Date.now()
         );

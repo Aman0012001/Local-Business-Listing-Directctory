@@ -3,10 +3,13 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThanOrEqual, MoreThan } from 'typeorm';
 import { Subscription, SubscriptionStatus } from '../../entities/subscription.entity';
+import { ActivePlan, ActivePlanStatus } from '../../entities/active-plan.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { User } from '../../entities/user.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PushService } from '../notifications/push.service';
+import { Listing } from '../../entities/business.entity';
+import { PricingPlanType } from '../../entities/pricing-plan.entity';
 
 @Injectable()
 export class SubscriptionCronService {
@@ -15,10 +18,14 @@ export class SubscriptionCronService {
     constructor(
         @InjectRepository(Subscription)
         private subscriptionRepo: Repository<Subscription>,
+        @InjectRepository(ActivePlan)
+        private activePlanRepo: Repository<ActivePlan>,
         @InjectRepository(Vendor)
         private vendorRepo: Repository<Vendor>,
         @InjectRepository(User)
         private userRepo: Repository<User>,
+        @InjectRepository(Listing)
+        private listingRepo: Repository<Listing>,
         private notificationsService: NotificationsService,
         private pushService: PushService,
     ) { }
@@ -34,6 +41,47 @@ export class SubscriptionCronService {
     }
 
     /**
+     * Runs every hour - deactivates expired plans and clears listing flags
+     */
+    @Cron(CronExpression.EVERY_HOUR)
+    async handlePlanExpirations() {
+        this.logger.log('[Cron] Checking for expired plans...');
+        const now = new Date();
+
+        const expiredPlans = await this.activePlanRepo.find({
+            where: {
+                status: ActivePlanStatus.ACTIVE,
+                endDate: LessThanOrEqual(now),
+            },
+            relations: ['plan'],
+        });
+
+        if (expiredPlans.length === 0) return;
+
+        for (const plan of expiredPlans) {
+            try {
+                // 1. Mark as expired
+                plan.status = ActivePlanStatus.EXPIRED;
+                await this.activePlanRepo.save(plan);
+
+                // 2. Clear listing flags if it was a boost
+                if (plan.targetId) {
+                    const planType = (plan.plan as any)?.type;
+                    if (planType === PricingPlanType.HOMEPAGE_FEATURED || planType === PricingPlanType.CATEGORY_FEATURED) {
+                        await this.listingRepo.update(plan.targetId, { isFeatured: false });
+                    } else if (planType === PricingPlanType.LISTING_BOOST) {
+                        await this.listingRepo.update(plan.targetId, { isSponsored: false });
+                    }
+                }
+                
+                this.logger.log(`[Cron] Deactivated expired plan ${plan.id} for vendor ${plan.vendorId}`);
+            } catch (err: any) {
+                this.logger.error(`[Cron] Failed to deactivate plan ${plan.id}: ${err.message}`);
+            }
+        }
+    }
+
+    /**
      * Core logic - callable from cron or manually via admin trigger endpoint
      */
     async sendExpiryReminders(): Promise<{ notified: number; errors: number }> {
@@ -46,8 +94,8 @@ export class SubscriptionCronService {
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
 
-        // Find active subscriptions ending within the next 1-4 days
-        const expiring = await this.subscriptionRepo.find({
+        // Find active old-style subscriptions ending within the next 1-4 days
+        const expiringOld = await this.subscriptionRepo.find({
             where: {
                 status: SubscriptionStatus.ACTIVE,
                 endDate: LessThanOrEqual(in4Days),
@@ -55,10 +103,21 @@ export class SubscriptionCronService {
             relations: ['plan', 'vendor', 'vendor.user'],
         });
 
+        // Find active new-style plans ending within the next 1-4 days
+        const expiringNew = await this.activePlanRepo.find({
+            where: {
+                status: ActivePlanStatus.ACTIVE,
+                endDate: LessThanOrEqual(in4Days),
+            },
+            relations: ['plan', 'vendor', 'vendor.user'],
+        });
+
+        const allExpiring = [...expiringOld, ...expiringNew];
+
         let notified = 0;
         let errors = 0;
 
-        for (const sub of expiring) {
+        for (const sub of allExpiring) {
             try {
                 if (!sub.vendor?.user) continue;
 
