@@ -5,11 +5,13 @@ import { ReviewsService } from './reviews.service';
 import { ReviewDetectionService } from './review-detection.service';
 import { Review } from '../../entities/review.entity';
 import { ReviewHelpfulVote } from '../../entities/review-helpful-vote.entity';
+import { ReviewReply } from '../../entities/review-reply.entity';
 import { Listing } from '../../entities/business.entity';
+import { Vendor } from '../../entities/vendor.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Review, ReviewHelpfulVote, Listing]),
+        TypeOrmModule.forFeature([Review, ReviewHelpfulVote, ReviewReply, Listing, Vendor]),
     ],
     controllers: [ReviewsController],
     providers: [ReviewsService, ReviewDetectionService],

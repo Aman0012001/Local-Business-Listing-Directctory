@@ -194,4 +194,25 @@ export class AdminController {
     updateSettings(@Body() settings: Record<string, string>) {
         return this.adminService.updateSettings(settings);
     }
+
+    @Get('offer-pricing')
+    @Roles(UserRole.ADMIN)
+    @ApiOperation({ summary: 'Get all offer/event pricing' })
+    getOfferPricing() {
+        return this.adminService.getOfferPricing();
+    }
+
+    @Post('offer-pricing')
+    @Roles(UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Create or update offer/event pricing' })
+    saveOfferPricing(@Body() data: any) {
+        return this.adminService.saveOfferPricing(data);
+    }
+
+    @Delete('offer-pricing/:id')
+    @Roles(UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Delete offer/event pricing' })
+    deleteOfferPricing(@Param('id', ParseUuidPipe) id: string) {
+        return this.adminService.deleteOfferPricing(id);
+    }
 }

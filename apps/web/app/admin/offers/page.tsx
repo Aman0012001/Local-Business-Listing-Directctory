@@ -83,7 +83,13 @@ export default function AdminOffersPage() {
                             <Megaphone className="w-10 h-10 text-orange-500" />
                             Ads & Promotions
                         </h1>
-                        <p className="text-slate-500 font-bold mt-2">Manage all vendor offers and feature them on home/category pages.</p>
+                        <p className="text-slate-500 font-bold mt-2 flex items-center gap-4">
+                            Manage all vendor offers and feature them on home/category pages.
+                            <Link href="/admin/offers/pricing" className="text-orange-500 hover:underline flex items-center gap-1">
+                                <DollarSign className="w-4 h-4" />
+                                Manage Pricing
+                            </Link>
+                        </p>
                     </div>
 
                     <div className="relative w-full md:w-96">

@@ -246,7 +246,7 @@ export default function ReviewModerationPage() {
                                         </div>
 
                                         {review.suspicionReason && (
-                                            <div className="mt-4 p-4 bg-orange-50 rounded-[1.5rem] border border-orange-100">
+                                            <div className="mt-4 p-4 bg-orange-50 rounded-[20px] border border-orange-100">
                                                 <p className="text-xs font-black text-orange-600 uppercase tracking-widest mb-1">Detection Reason</p>
                                                 <p className="text-sm font-bold text-orange-700">{review.suspicionReason}</p>
                                             </div>

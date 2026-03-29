@@ -18,6 +18,7 @@ import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { VendorResponseDto } from './dto/vendor-response.dto';
 import { GetReviewsDto } from './dto/get-reviews.dto';
+import { CreateReviewReplyDto } from './dto/create-review-reply.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -31,6 +32,27 @@ import { User, UserRole } from '../../entities/user.entity';
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ReviewsController {
     constructor(private readonly reviewsService: ReviewsService) { }
+
+    @Post(':id/replies')
+    @Roles(UserRole.USER, UserRole.VENDOR, UserRole.ADMIN)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Reply to a review' })
+    @ApiResponse({ status: 201, description: 'Reply created successfully' })
+    createReply(
+        @Param('id', ParseUuidPipe) id: string,
+        @Body() createReviewReplyDto: CreateReviewReplyDto,
+        @CurrentUser() user: User,
+    ) {
+        return this.reviewsService.createReply(id, createReviewReplyDto, user);
+    }
+
+    @Public()
+    @Get(':id/replies')
+    @ApiOperation({ summary: 'Get replies for a review' })
+    @ApiResponse({ status: 200, description: 'Replies retrieved successfully' })
+    findReplies(@Param('id', ParseUuidPipe) id: string) {
+        return this.reviewsService.findReplies(id);
+    }
 
     @Post()
     @Roles(UserRole.USER, UserRole.VENDOR, UserRole.ADMIN)
@@ -121,6 +143,19 @@ export class ReviewsController {
         return this.reviewsService.addVendorResponse(id, vendorResponseDto, user);
     }
 
+    @Post(':id/response')
+    @Roles(UserRole.VENDOR, UserRole.ADMIN)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Respond to a review (Unified endpoint)' })
+    @ApiResponse({ status: 200, description: 'Response added successfully' })
+    respond(
+        @Param('id', ParseUuidPipe) id: string,
+        @Body() vendorResponseDto: VendorResponseDto,
+        @CurrentUser() user: User,
+    ) {
+        return this.reviewsService.addVendorResponse(id, vendorResponseDto, user);
+    }
+
     @Post(':id/helpful')
     @Roles(UserRole.USER, UserRole.VENDOR, UserRole.ADMIN)
     @ApiBearerAuth()
@@ -140,6 +175,19 @@ export class ReviewsController {
     @ApiResponse({ status: 204, description: 'Helpful mark removed' })
     removeHelpfulMark(@Param('id', ParseUuidPipe) id: string, @CurrentUser() user: User) {
         return this.reviewsService.removeHelpfulMark(id, user);
+    }
+
+
+    @Get('vendor/all')
+    @Roles(UserRole.VENDOR, UserRole.ADMIN)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Get all reviews for the current vendor businesses' })
+    @ApiResponse({ status: 200, description: 'Reviews retrieved successfully' })
+    findVendorReviews(
+        @CurrentUser() user: User,
+        @Query() query: GetReviewsDto,
+    ) {
+        return this.reviewsService.findVendorReviews(user.id, query);
     }
 
     // Admin Endpoints
@@ -162,5 +210,14 @@ export class ReviewsController {
         @Body() moderationDto: { isApproved?: boolean; isSuspicious?: boolean },
     ) {
         return this.reviewsService.moderate(id, moderationDto);
+    }
+
+    @Delete(':id/response')
+    @Roles(UserRole.VENDOR, UserRole.ADMIN)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Delete vendor response' })
+    @ApiResponse({ status: 204, description: 'Vendor response deleted successfully' })
+    removeResponse(@Param('id', ParseUuidPipe) id: string, @CurrentUser() user: User) {
+        return this.reviewsService.addVendorResponse(id, { response: null }, user);
     }
 }

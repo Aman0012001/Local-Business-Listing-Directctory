@@ -2,27 +2,42 @@
 
 import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
-import { JobLead } from '../../types/api';
-import JobOpportunityCard from './JobOpportunityCard';
+import { Phone, Mail, MessageSquare, Globe, Clock, ChevronRight, User, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
+import Link from 'next/link';
+
+interface Lead {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    message: string;
+    type: 'call' | 'whatsapp' | 'email' | 'chat' | 'website';
+    status: 'new' | 'contacted' | 'converted' | 'lost';
+    createdAt: string;
+}
+
+const TYPE_CONFIG = {
+    call: { icon: Phone, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    whatsapp: { icon: MessageSquare, color: 'text-green-600', bg: 'bg-green-50' },
+    email: { icon: Mail, color: 'text-sky-600', bg: 'bg-sky-50' },
+    chat: { icon: MessageSquare, color: 'text-violet-600', bg: 'bg-violet-50' },
+    website: { icon: Globe, color: 'text-slate-600', bg: 'bg-slate-50' },
+};
 
 export default function VendorLeadsInbox() {
-    const [leads, setLeads] = useState<JobLead[]>([]);
+    const [leads, setLeads] = useState<Lead[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [selectedLead, setSelectedLead] = useState<JobLead | null>(null);
-    const [responseMessage, setResponseMessage] = useState('');
-    const [responsePrice, setResponsePrice] = useState('');
-    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
-        fetchLeads();
+        fetchRecentLeads();
     }, []);
 
-    const fetchLeads = async () => {
+    const fetchRecentLeads = async () => {
         try {
             setLoading(true);
-            const data = await api.broadcasts.getVendorInbox();
-            setLeads(data);
+            const response = await api.leads.getForVendor({ limit: 5 });
+            setLeads(response.data || []);
         } catch (err: any) {
             setError(err.message || 'Failed to fetch leads');
         } finally {
@@ -30,126 +45,107 @@ export default function VendorLeadsInbox() {
         }
     };
 
-    const handleRespond = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!selectedLead) return;
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Fetching Latest Leads...</p>
+            </div>
+        );
+    }
 
-        setSubmitting(true);
-        try {
-            await api.broadcasts.respond(selectedLead.id, {
-                message: responseMessage,
-                price: responsePrice ? parseFloat(responsePrice) : undefined,
-            });
-            setSelectedLead(null);
-            setResponseMessage('');
-            setResponsePrice('');
-            fetchLeads();
-        } catch (err: any) {
-            alert(err.message || 'Failed to send response');
-        } finally {
-            setSubmitting(false);
-        }
-    };
+    if (error) {
+        return (
+            <div className="p-8 bg-red-50 rounded-3xl border-2 border-dashed border-red-100 text-center">
+                <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-3" />
+                <p className="text-red-700 font-black tracking-tight">{error}</p>
+                <button onClick={fetchRecentLeads} className="mt-4 text-sm font-bold text-red-600 hover:underline px-4 py-2 bg-white rounded-xl shadow-sm">Try Again</button>
+            </div>
+        );
+    }
 
-    if (loading) return <div className="text-center py-12">Loading Brodcast...</div>;
+    if (leads.length === 0) {
+        return (
+            <div className="p-12 bg-slate-50/50 rounded-[32px] border-2 border-dashed border-slate-100 text-center">
+                <div className="w-16 h-16 bg-white text-slate-200 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                    <User className="w-8 h-8" />
+                </div>
+                <h3 className="text-lg font-black text-slate-900 mb-1">No Leads Found</h3>
+                <p className="text-slate-400 text-sm font-medium mb-6">Start growing your business to see leads here.</p>
+                <Link href="/vendor/leads" className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-black text-slate-600 hover:text-blue-600 hover:border-blue-200 transition-all active:scale-95 shadow-sm">
+                    View Lead Center
+                    <ChevronRight className="w-4 h-4" />
+                </Link>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-900">Brodcast</h2>
-                <button
-                    onClick={fetchLeads}
-                    className="text-primary-600 hover:text-primary-700 text-sm font-semibold flex items-center"
+            <div className="flex items-center justify-between px-2">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-orange-100 rounded-[14px] flex items-center justify-center text-orange-600">
+                        <Phone className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h3 className="text-2xl font-black text-slate-900 tracking-tight">Recent Leads</h3>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-1">Direct Enquiries</p>
+                    </div>
+                </div>
+                <button 
+                    onClick={fetchRecentLeads}
+                    className="p-2 text-slate-300 hover:text-blue-600 transition-colors"
+                    title="Refresh Leads"
                 >
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Refresh
+                    <RefreshCw className="w-4 h-4" />
                 </button>
             </div>
 
-            {leads.length === 0 ? (
-                <div className="bg-white p-12 rounded-2xl border border-dashed border-gray-200 text-center">
-                    <div className="w-16 h-16 bg-gray-50 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                        </svg>
-                    </div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">No leads yet</h3>
-                    <p className="text-gray-500">We'll notify you when new requests match your business category.</p>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 gap-4">
-                    {leads.map(lead => (
-                        <JobOpportunityCard
-                            key={lead.id}
-                            lead={lead}
-                            onRespond={setSelectedLead}
-                        />
-                    ))}
-                </div>
-            )}
-
-            {/* Response Modal */}
-            {selectedLead && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
-                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                            <div>
-                                <h3 className="font-bold text-gray-900">Send Price Quote</h3>
-                                <p className="text-sm text-gray-500 line-clamp-1">To: {selectedLead.title}</p>
-                            </div>
-                            <button onClick={() => setSelectedLead(null)} className="text-gray-400 hover:text-gray-600">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l18 18" />
-                                </svg>
-                            </button>
+            <div className="space-y-3">
+            {leads.map((lead) => {
+                const Config = TYPE_CONFIG[lead.type] || TYPE_CONFIG.website;
+                const Icon = Config.icon;
+                
+                return (
+                    <Link 
+                        key={lead.id} 
+                        href="/vendor/leads"
+                        className="group flex items-center gap-4 p-4 bg-slate-50/50 hover:bg-white rounded-[24px] border-2 border-transparent hover:border-slate-100 transition-all active:scale-[0.99] hover:shadow-xl hover:shadow-slate-200/50"
+                    >
+                        <div className={`w-12 h-12 ${Config.bg} ${Config.color} rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110`}>
+                            <Icon className="w-6 h-6" />
                         </div>
-                        <form onSubmit={handleRespond} className="p-6 space-y-4">
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Your Message</label>
-                                <textarea
-                                    required
-                                    rows={4}
-                                    placeholder="Explain how you can help and why they should choose you..."
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
-                                    value={responseMessage}
-                                    onChange={(e) => setResponseMessage(e.target.value)}
-                                />
+                        
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2 mb-0.5">
+                                <h4 className="font-black text-slate-900 truncate tracking-tight">{lead.name || 'Anonymous User'}</h4>
+                                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-1 flex-shrink-0">
+                                    <Clock className="w-3 h-3" />
+                                    {new Date(lead.createdAt).toLocaleDateString()}
+                                </span>
                             </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Estimated Price (Optional)</label>
-                                <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">PKR</span>
-                                    <input
-                                        type="number"
-                                        placeholder="0.00"
-                                        className="w-full pl-14 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
-                                        value={responsePrice}
-                                        onChange={(e) => setResponsePrice(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                            <button
-                                type="submit"
-                                disabled={submitting}
-                                className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center space-x-2 shadow-lg shadow-primary-200"
-                            >
-                                {submitting ? (
-                                    <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                                ) : (
-                                    <>
-                                        <span>Send Proposal</span>
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                                        </svg>
-                                    </>
-                                )}
-                            </button>
-                        </form>
-                    </div>
+                            <p className="text-xs text-slate-400 font-bold truncate group-hover:text-slate-600 transition-colors">
+                                {lead.message || 'Interested in your services'}
+                            </p>
+                        </div>
+
+                        <div className="w-8 h-8 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 group-hover:text-blue-600 group-hover:border-blue-100 transition-all fle-shrink-0">
+                            <ChevronRight className="w-4 h-4" />
+                        </div>
+                    </Link>
+                );
+            })}
+
+            <Link 
+                href="/vendor/leads" 
+                className="flex items-center justify-center gap-2 p-4 text-xs font-black text-slate-400 hover:text-blue-600 uppercase tracking-[.2em] transition-all group pt-2"
+            >
+                See All Leads
+                <div className="w-6 h-6 bg-slate-50 rounded-lg flex items-center justify-center group-hover:bg-blue-50 transition-all">
+                    <ChevronRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
                 </div>
-            )}
+            </Link>
+            </div>
         </div>
     );
 }

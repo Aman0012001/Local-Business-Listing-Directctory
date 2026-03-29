@@ -158,7 +158,28 @@ export default function GenericDashboard() {
     }, [socket]);
 
     const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
-    const features = activeSub?.plan?.dashboardFeatures || {};
+    
+    // Default features logic
+    let features: Record<string, boolean> = activeSub?.plan?.dashboardFeatures || {};
+    
+    // Admins and Superadmins should have all features available by default
+    if (isAdmin) {
+        features = {
+            showListings: true,
+            canAddListing: true,
+            showSaved: true,
+            showFollowing: true,
+            showQueries: true,
+            showLeads: true,
+            showOffers: true,
+            showReviews: true,
+            showAnalytics: true,
+            showChat: true,
+            showBroadcast: true,
+            showDemand: true,
+            maxKeywords: 999
+        };
+    }
 
     const vendorStats = [
         {

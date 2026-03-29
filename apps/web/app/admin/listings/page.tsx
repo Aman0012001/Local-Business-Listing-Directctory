@@ -202,7 +202,7 @@ export default function AdminListingsPage() {
                                         <button
                                             onClick={() => moderate(listing.id, 'approved')}
                                             disabled={!!actionLoading}
-                                            className="flex-1 flex items-center justify-center gap-2 px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[1.5rem] font-black text-sm transition-all disabled:opacity-50  shadow-emerald-500/30 active:scale-95"
+                                            className="flex-1 flex items-center justify-center gap-2 px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[20px] font-black text-sm transition-all disabled:opacity-50  shadow-emerald-500/30 active:scale-95"
                                         >
                                             <CheckCircle2 className="w-5 h-5" /> Approve
                                         </button>
@@ -210,7 +210,7 @@ export default function AdminListingsPage() {
                                             <button
                                                 onClick={() => setRejectionModal({ id: listing.id, title: listing.title })}
                                                 disabled={!!actionLoading}
-                                                className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-white hover:bg-red-50 text-red-600 border border-red-100 rounded-[1.5rem] font-black text-sm transition-all active:scale-95"
+                                                className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-white hover:bg-red-50 text-red-600 border border-red-100 rounded-[20px] font-black text-sm transition-all active:scale-95"
                                             >
                                                 <XCircle className="w-5 h-5" /> Reject
                                             </button>
@@ -220,14 +220,14 @@ export default function AdminListingsPage() {
                                                     const limit = activeSub?.plan?.dashboardFeatures?.maxKeywords || 0;
                                                     setKeywordsModal({ id: listing.id, title: listing.title, keywords: listing.searchKeywords || [], limit });
                                                 }}
-                                                className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-white hover:bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-[1.5rem] font-black text-sm transition-all active:scale-95"
+                                                className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-white hover:bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-[20px] font-black text-sm transition-all active:scale-95"
                                                 title="Manage Search Keywords"
                                             >
                                                 <Search className="w-5 h-5" /> Keywords
                                             </button>
                                             <button
                                                 onClick={() => window.open(`/business/${listing.slug}`, '_blank')}
-                                                className="p-4 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-900 rounded-[1.5rem] border border-slate-100 transition-all active:scale-95"
+                                                className="p-4 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-900 rounded-[20px] border border-slate-100 transition-all active:scale-95"
                                                 title="Preview Listing"
                                             >
                                                 <ExternalLink className="w-5 h-5" />
@@ -300,14 +300,14 @@ export default function AdminListingsPage() {
                             <div className="grid grid-cols-2 gap-4 mt-8">
                                 <button
                                     onClick={() => setRejectionModal(null)}
-                                    className="px-6 py-4 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-[1.5rem] font-black text-sm transition-all"
+                                    className="px-6 py-4 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-[20px] font-black text-sm transition-all"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={() => moderate(rejectionModal.id, 'rejected', rejectionReason)}
                                     disabled={!rejectionReason || !!actionLoading}
-                                    className="px-6 py-4 bg-red-500 hover:bg-red-600 text-white rounded-[1.5rem] font-black text-sm  shadow-red-500/30 transition-all disabled:opacity-50"
+                                    className="px-6 py-4 bg-red-500 hover:bg-red-600 text-white rounded-[20px] font-black text-sm  shadow-red-500/30 transition-all disabled:opacity-50"
                                 >
                                     {actionLoading?.includes('rejected') ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Confirm Rejection'}
                                 </button>
@@ -376,8 +376,8 @@ export default function AdminListingsPage() {
                                     {keywordsModal.keywords.map((kw, i) => (
                                         <span key={i} className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg font-bold text-xs">
                                             {kw}
-                                            <XCircle 
-                                                className="w-4 h-4 text-slate-400 hover:text-red-500 cursor-pointer" 
+                                            <XCircle
+                                                className="w-4 h-4 text-slate-400 hover:text-red-500 cursor-pointer"
                                                 onClick={() => setKeywordsModal({ ...keywordsModal, keywords: keywordsModal.keywords.filter(k => k !== kw) })}
                                             />
                                         </span>
@@ -391,14 +391,14 @@ export default function AdminListingsPage() {
                             <div className="grid grid-cols-2 gap-4 mt-10">
                                 <button
                                     onClick={() => { setKeywordsModal(null); setNewKeyword(''); }}
-                                    className="px-6 py-4 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-[1.5rem] font-black text-sm transition-all"
+                                    className="px-6 py-4 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-[20px] font-black text-sm transition-all"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={() => updateKeywords(keywordsModal.id, keywordsModal.keywords)}
                                     disabled={!!actionLoading}
-                                    className="px-6 py-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-[1.5rem] font-black text-sm shadow-indigo-500/30 transition-all disabled:opacity-50"
+                                    className="px-6 py-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-[20px] font-black text-sm shadow-indigo-500/30 transition-all disabled:opacity-50"
                                 >
                                     {actionLoading?.includes('keywords') ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Save Keywords'}
                                 </button>

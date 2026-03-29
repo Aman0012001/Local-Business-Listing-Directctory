@@ -107,7 +107,7 @@ export default function VendorChatDashboard() {
         }
     };
 
-    const filteredConversations = conversations.filter(c => 
+    const filteredConversations = conversations.filter(c =>
         c.user?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.business?.title?.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -149,7 +149,7 @@ export default function VendorChatDashboard() {
                                 {conversations.length} Active
                             </div>
                         </div>
-                        
+
                         <div className="relative group">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                             <input
@@ -180,11 +180,10 @@ export default function VendorChatDashboard() {
                                 <button
                                     key={conv.id}
                                     onClick={() => setSelectedConvId(conv.id)}
-                                    className={`w-full text-left p-4 rounded-[1.5rem] transition-all flex items-center gap-4 group ${
-                                        selectedConvId === conv.id 
-                                            ? 'bg-primary text-white shadow-lg shadow-primary/20 ring-4 ring-primary/5' 
+                                    className={`w-full text-left p-4 rounded-[20px] transition-all flex items-center gap-4 group ${selectedConvId === conv.id
+                                            ? 'bg-primary text-white shadow-lg shadow-primary/20 ring-4 ring-primary/5'
                                             : 'hover:bg-slate-50 border border-transparent hover:border-slate-100'
-                                    }`}
+                                        }`}
                                 >
                                     <div className="relative flex-shrink-0">
                                         <div className="w-12 h-12 rounded-2xl bg-slate-100 overflow-hidden border-2 border-white shadow-sm">
@@ -242,7 +241,7 @@ export default function VendorChatDashboard() {
                             {/* Chat Header */}
                             <div className="p-4 md:p-6 border-b border-slate-100 bg-white flex items-center justify-between">
                                 <div className="flex items-center gap-4">
-                                    <button 
+                                    <button
                                         onClick={() => setSelectedConvId(null)}
                                         className="md:hidden p-2 hover:bg-slate-50 rounded-xl transition-colors"
                                     >
@@ -280,11 +279,10 @@ export default function VendorChatDashboard() {
                                     </div>
                                 </div>
                                 <div className="hidden sm:flex items-center gap-3">
-                                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${
-                                        currentConv?.user?.isOnline 
-                                            ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
+                                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${currentConv?.user?.isOnline
+                                            ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
                                             : 'bg-slate-50 text-slate-400 border-slate-100'
-                                    }`}>
+                                        }`}>
                                         <div className={`w-1.5 h-1.5 rounded-full ${currentConv?.user?.isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
                                         {currentConv?.user?.isOnline ? 'Online' : 'Offline'}
                                     </div>
@@ -292,7 +290,7 @@ export default function VendorChatDashboard() {
                             </div>
 
                             {/* Messages Container */}
-                            <div 
+                            <div
                                 ref={scrollRef}
                                 className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50"
                             >
@@ -311,11 +309,10 @@ export default function VendorChatDashboard() {
                                                 className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
                                             >
                                                 <div className="flex flex-col gap-1.5 max-w-[80%] md:max-w-[70%]">
-                                                    <div className={`p-4 rounded-[1.5rem] text-sm font-medium shadow-sm transition-all ${
-                                                        isMe 
-                                                            ? 'bg-primary text-white rounded-tr-none shadow-primary/20 hover:shadow-primary/30' 
+                                                    <div className={`p-4 rounded-[20px] text-sm font-medium shadow-sm transition-all ${isMe
+                                                            ? 'bg-primary text-white rounded-tr-none shadow-primary/20 hover:shadow-primary/30'
                                                             : 'bg-white text-slate-700 rounded-tl-none border border-slate-100 hover:border-slate-200'
-                                                    }`}>
+                                                        }`}>
                                                         {msg.content}
                                                     </div>
                                                     <span className={`text-[9px] font-black uppercase tracking-widest opacity-50 ${isMe ? 'text-right' : 'text-left'}`}>

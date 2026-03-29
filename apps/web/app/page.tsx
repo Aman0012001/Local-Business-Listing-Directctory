@@ -68,7 +68,7 @@ export default function HomePage() {
                     api.cities.getPopular(),
                     api.categories.getAll(),
                     api.cities.getAll(),
-                    api.comments.getPublic(1, 15),
+                    api.reviews.getPopular(15),
                     api.offers.search({ limit: 4 }),
                     api.offers.search({ isFeatured: true, limit: 4 })
                 ]);
@@ -81,7 +81,7 @@ export default function HomePage() {
                 const cities = getValue(results[2], []);
                 const allCats = getValue(results[3], []);
                 const allCities = getValue(results[4], []);
-                const commentsData = getValue(results[5], { data: [] });
+                const reviewsData = getValue(results[5], { data: [] });
                 const offersData = getValue(results[6], { data: [] });
                 const featuredOffersData = getValue(results[7], { data: [] });
 
@@ -93,7 +93,7 @@ export default function HomePage() {
                 setPopularCities(cities || []);
                 setCategoriesList(allCats || []);
                 setCitiesList(allCities || []);
-                setStatsComments(commentsData?.data || []);
+                setStatsComments(reviewsData?.data || []);
                 setLatestOffers(offersData?.data || []);
                 setFeaturedOffers(featuredOffersData?.data || []);
 

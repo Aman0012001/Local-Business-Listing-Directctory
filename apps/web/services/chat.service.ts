@@ -13,4 +13,10 @@ export const chatApi = {
     getMessages: async (conversationId: string) => {
         return api.get(`/chat/conversations/${conversationId}/messages`);
     },
+    getUnreadCount: async () => {
+        return api.get('/chat/unread-count');
+    },
+    markAsRead: async (conversationId: string) => {
+        return api.post(`/chat/conversations/${conversationId}/mark-as-read`, {});
+    },
 };

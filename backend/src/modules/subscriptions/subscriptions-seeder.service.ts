@@ -45,6 +45,7 @@ export class SubscriptionsSeederService implements OnModuleInit {
                     showReviews: false,
                     showAnalytics: false,
                     showChat: false,
+                    showDemand: false,
                     showBroadcast: false,
                     maxKeywords: 0,
                 },
@@ -71,6 +72,7 @@ export class SubscriptionsSeederService implements OnModuleInit {
                     showReviews: true,
                     showAnalytics: true,
                     showChat: true,
+                    showDemand: true,
                     showBroadcast: true,
                     maxKeywords: 10,
                 },
@@ -87,10 +89,12 @@ export class SubscriptionsSeederService implements OnModuleInit {
             });
 
             if (existing) {
-                this.logger.log(`Updating plan: ${planData.name}`);
-                await this.planRepository.update(existing.id, planData as any);
+                this.logger.log(`Updating dashboard features for plan: ${planData.name} (preserving existing price/name)`);
+                // Destructure to exclude fields that only the Admin should control in live DB
+                const { price, name, id, ...configOnly } = planData;
+                await this.planRepository.update(existing.id, configOnly as any);
             } else {
-                this.logger.log(`Creating new plan: ${planData.name}`);
+                this.logger.log(`Creating new plan: ${planData.name} with price ${planData.price}`);
                 const plan = this.planRepository.create(planData as any);
                 await this.planRepository.save(plan);
             }

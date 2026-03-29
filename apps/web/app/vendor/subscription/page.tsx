@@ -69,7 +69,7 @@ function InvoiceModal({ invoiceId, onClose, user }: { invoiceId: string; onClose
                 table { width: 100%; border-collapse: collapse; }
                 th, td { padding: 12px 16px; text-align: left; }
                 th { background: #f8fafc; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; }
-                .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #dcfce7; color: #16a34a; }
+                .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #fff7ed; color: #f97316; }
                 .total-row { border-top: 2px solid #f1f5f9; font-weight: 900; }
             </style>
         </head><body>${content}</body></html>`);
@@ -137,9 +137,9 @@ function InvoiceModal({ invoiceId, onClose, user }: { invoiceId: string; onClose
                                     <p className="text-xs text-slate-400 font-bold">Business Listings Platform</p>
                                 </div>
                                 <div className="text-right">
-                                    <div className="inline-block px-4 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-black uppercase tracking-wider mb-2">
-                                        {txn.status === 'completed' ? '✓ Paid' : txn.status}
-                                    </div>
+                                <div className="inline-block px-4 py-1.5 bg-orange-50 text-orange-700 rounded-full text-xs font-black uppercase tracking-wider mb-2">
+                                    {txn.status === 'completed' ? '✓ Paid' : txn.status}
+                                </div>
                                     <p className="text-sm font-black text-slate-900">{txn.invoiceNumber || `INV-${txn.id.slice(0, 8).toUpperCase()}`}</p>
                                     <p className="text-xs text-slate-400 font-bold mt-0.5">
                                         {invDate.toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -340,6 +340,7 @@ function PlanCard({ plan, isActive, status, hasActivePaidPlan, onSelect, loading
                         showQueries:   'Queries',
                         showChat:      'Live Chat',
                         showBroadcast: 'Broadcast Feed',
+                        showDemand:    'Hot Demand Insights',
                     };
                     const label = labels[key] || key.replace('show', '').replace(/([A-Z])/g, ' $1').trim();
                     return (
@@ -533,7 +534,7 @@ export default function VendorSubscriptionPage() {
                                 <h2 className={`text-xl font-black ${isExpiringSoon ? 'text-red-700' : 'text-white'}`}>
                                     {activeSub.plan?.name}
                                 </h2>
-                                {activeSub.status === 'active' && (
+                                {activeSub.status === 'active' && activeSub.plan?.planType !== 'free' && (
                                     <p className={`text-sm font-bold mt-0.5 ${isExpiringSoon ? 'text-red-500' : 'text-slate-400'}`}>
                                         {daysLeft !== null && daysLeft > 0
                                             ? `Expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''} · ${new Date(activeSub.endDate).toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' })}`

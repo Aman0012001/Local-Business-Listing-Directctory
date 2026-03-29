@@ -77,7 +77,7 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
     const [business, setBusiness] = useState<Business | null>(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('Overview');
-    const [comments, setComments] = useState<any[]>([]);
+    const [comments, setComments] = useState<any[]>([]); // We keep the name 'comments' to minimize changes but it will hold Review objects
     const [isFavorite, setIsFavorite] = useState(false);
     const [showReviewModal, setShowReviewModal] = useState(false);
     const [reviewRating, setReviewRating] = useState(5);
@@ -85,6 +85,11 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
     const [submittingReview, setSubmittingReview] = useState(false);
     const [copySuccess, setCopySuccess] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
+
+    // Review replying state
+    const [replyingTo, setReplyingTo] = useState<string | null>(null);
+    const [replyContent, setReplyContent] = useState('');
+    const [submittingReply, setSubmittingReply] = useState(false);
 
     // Enquiry modal state
     const [showEnquiryModal, setShowEnquiryModal] = useState(false);
@@ -236,12 +241,12 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                 }
                 setBusiness(data);
 
-                // Load comments instead of legacy reviews
+                // Load reviews (replaces legacy comments)
                 try {
-                    const commentsData = await api.comments.getByBusiness(data.id);
-                    setComments(commentsData.data || []);
+                    const reviewsData = await api.reviews.getByBusiness(data.id);
+                    setComments(reviewsData.data || []);
                 } catch (ce) {
-                    console.error('[BusinessDetail] Failed to load comments:', ce);
+                    console.error('[BusinessDetail] Failed to load reviews:', ce);
                 }
 
                 // Load public offers for this business
@@ -438,14 +443,14 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
 
         setSubmittingReview(true);
         try {
-            await api.comments.create({
+            await api.reviews.create({
                 businessId: business.id,
                 rating: reviewRating,
-                content: reviewComment.trim()
+                comment: reviewComment.trim()
             });
-            // Refresh comments
-            const commentsData = await api.comments.getByBusiness(business.id);
-            setComments(commentsData.data || []);
+            // Refresh reviews
+            const reviewsData = await api.reviews.getByBusiness(business.id);
+            setComments(reviewsData.data || []);
             setShowReviewModal(false);
             setReviewComment('');
             setReviewRating(5);
@@ -453,6 +458,28 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
             alert(err.message || 'Failed to submit review');
         } finally {
             setSubmittingReview(false);
+        }
+    };
+
+    const handleReplySubmit = async (reviewId: string) => {
+        if (!user) {
+            alert('Please login to reply');
+            return;
+        }
+        if (!replyContent.trim()) return;
+
+        setSubmittingReply(true);
+        try {
+            await api.reviews.createReply(reviewId, replyContent.trim());
+            // Refresh reviews
+            const reviewsData = await api.reviews.getByBusiness(business!.id);
+            setComments(reviewsData.data || []);
+            setReplyingTo(null);
+            setReplyContent('');
+        } catch (err: any) {
+            alert(err.message || 'Failed to submit reply');
+        } finally {
+            setSubmittingReply(false);
         }
     };
 
@@ -821,19 +848,93 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <p className="text-slate-600 leading-relaxed italic">"{comment.content}"</p>
-                                                    {comment.reply && (
+                                                    <p className="text-slate-600 leading-relaxed italic">"{comment.comment}"</p>
+                                                    
+                                                    {/* Vendor Response (if any) */}
+                                                    {comment.vendorResponse && (
                                                         <div className="mt-6 p-5 bg-blue-50 rounded-3xl border border-blue-100 relative">
                                                             <div className="absolute -top-3 left-6 px-3 py-1 bg-white border border-blue-100 rounded-lg shadow-sm">
                                                                 <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Vendor Response</span>
                                                             </div>
-                                                            <p className="text-sm text-slate-700 font-medium leading-relaxed italic">"{comment.reply.replyText}"</p>
-                                                            <div className="mt-3 flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                                                                <Clock className="w-3 h-3" />
-                                                                {new Date(comment.reply.createdAt).toLocaleDateString()}
-                                                            </div>
+                                                            <p className="text-sm text-slate-700 font-medium leading-relaxed italic">"{comment.vendorResponse}"</p>
+                                                            {comment.vendorResponseAt && (
+                                                                <div className="mt-3 flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                                                                    <Clock className="w-3 h-3" />
+                                                                    {new Date(comment.vendorResponseAt).toLocaleDateString()}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     )}
+
+                                                    {/* User Replies */}
+                                                    {comment.replies && comment.replies.length > 0 && (
+                                                        <div className="mt-6 ml-4 sm:ml-8 space-y-4 border-l-2 border-slate-100 pl-4 sm:pl-6">
+                                                            {comment.replies.map((reply: any) => (
+                                                                <div key={reply.id} className="relative group">
+                                                                    <div className="flex items-center gap-3 mb-2">
+                                                                        <div className="w-7 h-7 bg-violet-50 rounded-lg flex items-center justify-center text-violet-600 font-bold text-[10px] shadow-sm">
+                                                                            {reply.user?.avatarUrl ? (
+                                                                                <img src={getImageUrl(reply.user.avatarUrl) as string} alt={reply.user.fullName || 'User'} className="w-full h-full object-cover rounded-lg" />
+                                                                            ) : (
+                                                                                (reply.user?.fullName?.[0] || 'U').toUpperCase()
+                                                                            )}
+                                                                        </div>
+                                                                        <div>
+                                                                            <h5 className="text-[11px] font-black text-slate-900 uppercase tracking-wider">{reply.user?.fullName || 'Anonymous'}</h5>
+                                                                            <p className="text-[9px] text-slate-400 font-bold">{new Date(reply.createdAt).toLocaleDateString()}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <p className="text-sm text-slate-600 leading-relaxed font-medium">
+                                                                        {reply.content}
+                                                                    </p>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Reply Action & Form */}
+                                                    <div className="mt-6 pt-4 border-t border-slate-50">
+                                                        {replyingTo === comment.id ? (
+                                                            <div className="animate-in slide-in-from-top-2 duration-300">
+                                                                <div className="flex items-center justify-between mb-3">
+                                                                    <span className="text-[10px] font-black text-violet-600 uppercase tracking-widest flex items-center gap-2">
+                                                                        <MessageSquare className="w-3 h-3" /> Replying to Review
+                                                                    </span>
+                                                                    <button 
+                                                                        onClick={() => setReplyingTo(null)}
+                                                                        className="text-[10px] font-black text-slate-400 hover:text-slate-600 uppercase tracking-widest"
+                                                                    >
+                                                                        Cancel
+                                                                    </button>
+                                                                </div>
+                                                                <textarea
+                                                                    autoFocus
+                                                                    value={replyContent}
+                                                                    onChange={(e) => setReplyContent(e.target.value)}
+                                                                    placeholder="Write your reply..."
+                                                                    className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-[20px] text-sm font-medium focus:ring-4 focus:ring-violet-500/10 focus:border-violet-400 outline-none transition-all placeholder:text-slate-300 resize-none"
+                                                                    rows={3}
+                                                                />
+                                                                <div className="flex justify-end mt-3">
+                                                                    <button
+                                                                        onClick={() => handleReplySubmit(comment.id)}
+                                                                        disabled={submittingReply || !replyContent.trim()}
+                                                                        className="px-6 py-2.5 bg-violet-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-violet-700 transition-all shadow-lg shadow-violet-500/20 active:scale-95 disabled:opacity-50"
+                                                                    >
+                                                                        {submittingReply ? 'Posting...' : 'Post Reply'}
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <button 
+                                                                onClick={() => setReplyingTo(comment.id)}
+                                                                className="flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-violet-600 uppercase tracking-widest transition-colors group"
+                                                            >
+                                                                <MessageSquare className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" /> 
+                                                                Reply to {comment.user?.fullName?.split(' ')[0] || 'User'}
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>

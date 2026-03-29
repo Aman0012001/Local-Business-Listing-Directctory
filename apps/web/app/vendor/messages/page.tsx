@@ -203,7 +203,7 @@ export default function VendorEnquiriesPage() {
         }
         if (!silent) setLoading(true); else setRefreshing(true);
         try {
-            const params: any = { page, limit: LIMIT, type: 'chat' };
+            const params: any = { page, limit: LIMIT };
             if (filterStatus) params.status = filterStatus;
 
             const [enqRes, statsRes] = await Promise.allSettled([
@@ -359,6 +359,7 @@ export default function VendorEnquiriesPage() {
                                 <thead>
                                     <tr className="border-b border-slate-100 bg-slate-50/50">
                                         <th className="px-6 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">From</th>
+                                        <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Type</th>
                                         <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Message</th>
                                         <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Status</th>
                                         <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Date</th>
@@ -380,11 +381,16 @@ export default function VendorEnquiriesPage() {
                                                             {(enq.name?.[0] || '?').toUpperCase()}
                                                         </div>
                                                         <div>
-                                                            <p className="font-black text-slate-900 text-sm">{enq.name || '—'}</p>
-                                                            {enq.email && <p className="text-xs text-slate-400 font-medium">{enq.email}</p>}
-                                                            {enq.phone && <a href={`tel:${enq.phone}`} onClick={e => e.stopPropagation()} className="text-xs text-blue-500 font-bold hover:underline">{enq.phone}</a>}
+                                                            <p className="font-black text-slate-900 text-sm whitespace-nowrap">{enq.name || '—'}</p>
+                                                            {enq.email && <p className="text-xs text-slate-400 font-medium whitespace-nowrap">{enq.email}</p>}
+                                                            {enq.phone && <a href={`tel:${enq.phone}`} onClick={e => e.stopPropagation()} className="text-xs text-blue-500 font-bold hover:underline whitespace-nowrap">{enq.phone}</a>}
                                                         </div>
                                                     </div>
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <span className="inline-flex items-center px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-lg">
+                                                        {(enq as any).type || 'Query'}
+                                                    </span>
                                                 </td>
                                                 <td className="px-4 py-4 max-w-[260px]">
                                                     <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed">{enq.message || '—'}</p>

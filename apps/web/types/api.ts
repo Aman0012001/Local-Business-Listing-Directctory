@@ -114,6 +114,17 @@ export interface Business {
     faqs?: { question: string; answer: string }[];
 }
 
+export interface ReviewReply {
+    id: string;
+    content: string;
+    userId: string;
+    user: {
+        fullName: string;
+        avatarUrl?: string;
+    };
+    createdAt: string;
+}
+
 export interface Review {
     id: string;
     rating: number;
@@ -131,6 +142,7 @@ export interface Review {
     };
     vendorResponse?: string;
     vendorResponseAt?: string;
+    replies?: ReviewReply[];
     createdAt: string;
 }
 

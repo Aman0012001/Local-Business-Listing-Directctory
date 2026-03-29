@@ -49,4 +49,11 @@ select {
   .glass {
     @apply bg-white/10 backdrop-blur-md border border-white/20 ;
   }
+
+  .country-code-select {
+    background: #00d66f !important;
+    color: white !important;
+    gap: 10px !important;
+    margin: 10px 0px !important;
+  }
 }

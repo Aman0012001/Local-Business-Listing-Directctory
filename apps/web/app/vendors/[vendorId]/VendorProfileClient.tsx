@@ -166,7 +166,7 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
 
                                 <div className="flex items-center gap-4">
                                     {vendor.listings?.[0] && (
-                                        <ChatTrigger 
+                                        <ChatTrigger
                                             businessId={vendor.listings[0].id}
                                             businessName={vendor.businessName}
                                             variant="icon"
@@ -206,7 +206,7 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
                                 </div>
                                 <div className="space-y-4">
                                     {vendor.offers.map(offer => (
-                                        <div key={offer.id} className="group relative bg-white border border-slate-100 rounded-[1.5rem] p-5 hover:border-orange-200 transition-all shadow-sm hover:shadow-md">
+                                        <div key={offer.id} className="group relative bg-white border border-slate-100 rounded-[20px] p-5 hover:border-orange-200 transition-all shadow-sm hover:shadow-md">
                                             <div className="flex gap-5">
                                                 {offer.imageUrl && (
                                                     <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 bg-slate-50 border border-slate-50">
@@ -252,7 +252,7 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
                                 </div>
                                 <div className="space-y-4">
                                     {vendor.events.map(event => (
-                                        <div key={event.id} className="group flex bg-white border border-slate-100 rounded-[1.5rem] overflow-hidden hover:border-indigo-200 transition-all shadow-sm hover:shadow-md">
+                                        <div key={event.id} className="group flex bg-white border border-slate-100 rounded-[20px] overflow-hidden hover:border-indigo-200 transition-all shadow-sm hover:shadow-md">
                                             <div className="w-24 bg-indigo-600 p-4 flex flex-col items-center justify-center text-white text-center">
                                                 <span className="text-xs font-black uppercase tracking-widest opacity-80">
                                                     {event.startDate ? new Date(event.startDate).toLocaleString('default', { month: 'short' }) : '---'}
@@ -314,8 +314,8 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
                         <button
                             onClick={() => setActiveCategory(null)}
                             className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${!activeCategory
-                                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200'
-                                    : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200'
+                                ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200'
+                                : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200'
                                 }`}
                         >
                             All Categories
@@ -325,8 +325,8 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
                                 key={cat}
                                 onClick={() => setActiveCategory(cat)}
                                 className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${activeCategory === cat
-                                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200'
-                                        : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200'
+                                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200'
+                                    : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200'
                                     }`}
                             >
                                 {cat}
@@ -386,7 +386,7 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
                                             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                                             <span className="text-[10px] font-black uppercase tracking-widest">Online</span>
                                         </div>
-                                        <ChatTrigger 
+                                        <ChatTrigger
                                             businessId={item.id}
                                             businessName={item.title}
                                             variant="icon"

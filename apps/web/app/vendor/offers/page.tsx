@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Megaphone, Plus, Pencil, Trash2, X, CheckCircle2,
     Loader2, Tag, Calendar, Clock, ImagePlus, Store,
-    AlertTriangle, ChevronLeft, ChevronRight, Sparkles, Lock
+    AlertTriangle, ChevronLeft, ChevronRight, Sparkles, Lock, Star
 } from 'lucide-react';
 import { api } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
@@ -30,6 +30,9 @@ interface OfferItem {
     businessId: string;
     business?: { id: string; title: string };
     createdAt: string;
+    isFeatured?: boolean;
+    featuredUntil?: string;
+    pricingId?: string;
 }
 
 const inputClass = "w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all placeholder:text-slate-400";
@@ -53,6 +56,7 @@ const emptyForm = {
     expiryDate: '',
     highlights: [] as string[],
     terms: [] as string[],
+    pricingId: '',
 };
 
 export default function VendorOffersPage() {
@@ -71,6 +75,7 @@ export default function VendorOffersPage() {
     const [form, setForm] = useState<typeof emptyForm>(emptyForm);
     const [page, setPage] = useState(1);
     const [meta, setMeta] = useState<any>(null);
+    const [pricingOptions, setPricingOptions] = useState<any[]>([]);
     const fileRef = useRef<HTMLInputElement>(null);
 
     const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
@@ -102,6 +107,13 @@ export default function VendorOffersPage() {
         } catch { }
     };
 
+    const loadPricing = async () => {
+        try {
+            const res = await api.offers.getPublicPricing();
+            setPricingOptions(res || []);
+        } catch { }
+    };
+
     useEffect(() => {
         if (user && isVendor && !features.showOffers) {
             setLoading(false);
@@ -109,6 +121,7 @@ export default function VendorOffersPage() {
         }
         loadOffers(1);
         loadBusinesses();
+        loadPricing();
     }, [user, isVendor, features.showOffers]);
 
     if (loading) {
@@ -156,6 +169,7 @@ export default function VendorOffersPage() {
             expiryDate: offer.expiryDate ? offer.expiryDate.slice(0, 16) : '',
             highlights: offer.highlights || [],
             terms: offer.terms || [],
+            pricingId: offer.pricingId || '',
         });
         setEditingId(offer.id);
         setShowModal(true);
@@ -193,13 +207,27 @@ export default function VendorOffersPage() {
                 highlights: form.highlights.filter(h => h.trim() !== ''),
                 terms: form.terms.filter(t => t.trim() !== ''),
             };
+            
+            let offerId = editingId;
             if (editingId) {
                 await api.offers.update(editingId, payload);
                 setSuccess('Offer updated successfully!');
             } else {
-                await api.offers.create(payload);
+                const res = await api.offers.create(payload);
+                offerId = res.id;
                 setSuccess('Offer created successfully!');
             }
+
+            // Handle checkout if pricing was selected
+            if (form.pricingId && offerId) {
+                setSaving(true);
+                const featureRes = await api.offers.feature(offerId, form.pricingId);
+                if (featureRes.checkoutUrl) {
+                    window.location.href = featureRes.checkoutUrl;
+                    return; // Don't hide modal or reload, let page redirect
+                }
+            }
+
             setShowModal(false);
             await loadOffers(page);
             setTimeout(() => setSuccess(null), 3000);
@@ -327,6 +355,12 @@ export default function VendorOffersPage() {
                                                         {offer.type === 'event' ? <Calendar className="w-3 h-3" /> : <Tag className="w-3 h-3" />}
                                                         {offer.type.charAt(0).toUpperCase() + offer.type.slice(1)}
                                                     </span>
+                                                    {offer.isFeatured && (
+                                                        <span className="ml-2 inline-flex items-center gap-1.5 px-2 py-1 bg-amber-100 text-amber-700 rounded-lg text-[10px] font-black uppercase">
+                                                            <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                                                            Featured
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td className="px-5 py-4">
                                                     {offer.offerBadge ? (
@@ -588,6 +622,48 @@ export default function VendorOffersPage() {
                                         {(form.terms || []).length === 0 && (
                                             <p className="text-xs text-slate-400 italic">No specific terms added.</p>
                                         )}
+                                    </div>
+                                </div>
+
+                                {/* Promote Offer Selection */}
+                                <div className="pt-4 border-t border-slate-50">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+                                        <label className={labelClass + " !mb-0"}>Promote this {form.type === 'event' ? 'Event' : 'Offer'} (Optional)</label>
+                                    </div>
+                                    <p className="text-sm font-semibold text-slate-500 mb-4">
+                                        Get more views by featuring your {form.type} on the homepage and search results.
+                                    </p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <button type="button"
+                                            onClick={() => setForm(p => ({ ...p, pricingId: '' }))}
+                                            className={`p-4 rounded-2xl border-2 text-left transition-all ${!form.pricingId
+                                                ? 'border-slate-800 bg-slate-50 shadow-sm'
+                                                : 'border-slate-200 hover:border-slate-300 bg-white'
+                                                }`}
+                                        >
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className={`font-black uppercase tracking-widest text-xs ${!form.pricingId ? 'text-slate-800' : 'text-slate-400'}`}>Standard</span>
+                                            </div>
+                                            <p className={`font-black text-xl ${!form.pricingId ? 'text-slate-900' : 'text-slate-700'}`}>Free</p>
+                                        </button>
+                                        {pricingOptions.map(plan => (
+                                            <button key={plan.id} type="button"
+                                                onClick={() => setForm(p => ({ ...p, pricingId: plan.id }))}
+                                                className={`p-4 rounded-2xl border-2 text-left transition-all ${form.pricingId === plan.id
+                                                    ? 'border-amber-400 bg-amber-50 shadow-sm'
+                                                    : 'border-slate-200 hover:border-amber-200 bg-white'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className={`font-black uppercase tracking-widest text-xs ${form.pricingId === plan.id ? 'text-amber-700' : 'text-slate-500'}`}>{plan.name}</span>
+                                                    <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{plan.duration} {plan.unit}</span>
+                                                </div>
+                                                <p className={`font-black text-xl ${form.pricingId === plan.id ? 'text-slate-900' : 'text-slate-700'}`}>
+                                                    ${Number(plan.price).toFixed(2)}
+                                                </p>
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
 

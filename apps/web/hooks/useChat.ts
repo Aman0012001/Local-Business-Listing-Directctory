@@ -74,6 +74,10 @@ export function useChat(conversationId?: string) {
             if (message.conversationId === conversationId) {
                 setMessages(prev => [...prev, message]);
                 setIsTyping(false);
+                // Mark as read immediately if the conversation is active
+                if (conversationId) {
+                    chatApi.markAsRead(conversationId).catch(() => { });
+                }
             }
         };
 
@@ -106,6 +110,8 @@ export function useChat(conversationId?: string) {
             try {
                 const history = await chatApi.getMessages(conversationId) as any[];
                 setMessages(history);
+                // Mark conversation as read
+                await chatApi.markAsRead(conversationId).catch(() => { });
             } catch (error) {
                 console.error('[useChat] Failed to fetch history:', error);
             } finally {

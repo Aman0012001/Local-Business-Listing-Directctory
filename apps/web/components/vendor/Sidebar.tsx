@@ -27,20 +27,38 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getImageUrl, api } from '../../lib/api';
+import { chatApi } from '../../services/chat.service';
 
 export default function Sidebar() {
     const { user, logout } = useAuth();
     const pathname = usePathname();
     const [newEnquiryCount, setNewEnquiryCount] = useState(0);
+    const [unreadChatCount, setUnreadChatCount] = useState(0);
+    const [newBroadcastCount, setNewBroadcastCount] = useState(0);
 
     // Fetch new enquiry count for vendor badge
     useEffect(() => {
         const isVendorOrAdmin = user?.role === 'vendor' || user?.role === 'admin' || user?.role === 'superadmin';
         if (!isVendorOrAdmin) return;
 
-        api.leads.getStats()
-            .then((stats: any) => setNewEnquiryCount(stats?.new || 0))
-            .catch(() => { });
+        const refreshStats = () => {
+            api.leads.getStats()
+                .then((stats: any) => setNewEnquiryCount(stats?.new || 0))
+                .catch(() => { });
+
+            chatApi.getUnreadCount()
+                .then((res: any) => setUnreadChatCount(res?.count || 0))
+                .catch(() => { });
+
+            api.broadcasts.getStats()
+                .then((res: any) => setNewBroadcastCount(res?.newCount || 0))
+                .catch(() => { });
+        };
+
+        refreshStats();
+        const interval = setInterval(refreshStats, 30000); // 30 seconds
+
+        return () => clearInterval(interval);
     }, [user]);
 
     const menuItems = [
@@ -54,10 +72,10 @@ export default function Sidebar() {
         { name: 'Saved', icon: Heart, href: '/vendor/saved', badge: null },
         { name: 'Following', icon: UserPlus, href: '/vendor/following', badge: null },
         { name: 'Queries', icon: Send, href: '/vendor/messages', badge: newEnquiryCount > 0 ? String(newEnquiryCount) : null },
-        { name: 'Live Chat', icon: MessageSquare, iconColor: 'text-emerald-500', href: '/vendor/chat', badge: 'Live' },
+        { name: 'Live Chat', icon: MessageSquare, iconColor: 'text-emerald-500', href: '/vendor/chat', badge: unreadChatCount > 0 ? String(unreadChatCount) : null },
         { name: 'Demand Insights', icon: TrendingUp, href: '/vendor/demand', badge: null },
         { name: 'Subscription & Billing', icon: CreditCard, href: '/vendor/subscription', badge: null },
-        { name: 'Broadcast Feed', icon: Megaphone, href: '/vendor/broadcasts', badge: 'New' },
+        { name: 'Broadcast Feed', icon: Megaphone, href: '/vendor/broadcasts', badge: newBroadcastCount > 0 ? String(newBroadcastCount) : null },
         { name: 'My Broadcasts', icon: Zap, href: '/vendor/my-broadcasts', badge: null },
         { name: 'Notifications', icon: Bell, href: '/vendor/notifications', badge: null },
         { name: 'Affiliate', icon: Gift, href: '/vendor/affiliate', badge: 'Rewards' },
@@ -124,7 +142,7 @@ export default function Sidebar() {
                                 'Following': 'showFollowing',
                                 'Queries': 'showQueries',
                                 'Live Chat': 'showChat',
-                                'Demand Insights': 'showAnalytics',
+                                'Demand Insights': 'showDemand',
                                 'Broadcast Feed': 'showBroadcast',
                                 'My Broadcasts': 'showBroadcast',
                             };

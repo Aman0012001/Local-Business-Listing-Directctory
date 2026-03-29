@@ -30,14 +30,36 @@ export default function SubscriptionSuccessPage() {
             }
         };
 
+        const verifySession = async (sid: string) => {
+            try {
+                const { api } = await import('@/lib/api');
+                const result = await api.subscriptions.verify(sid);
+                if (result.success || result.alreadyProcessed) {
+                    setStatus('success');
+                    // Refresh profile
+                    const { useAuth } = await import('@/context/AuthContext');
+                    // Note: We can't easily access the hook here, but we can call api.users.getProfile()
+                    await api.users.getProfile(); 
+                    
+                    setTimeout(() => router.push('/vendor/dashboard'), 3000);
+                } else {
+                    setStatus('error');
+                    setError('Payment not fully processed yet. Please check back in 1 minute.');
+                }
+            } catch (err: any) {
+                console.error('Verification failed:', err);
+                setError(err.message || 'Failed to verify payment.');
+                setStatus('error');
+            }
+        };
+
         if (canceled) {
             setStatus('canceled');
             setTimeout(() => router.push('/vendor/subscription'), 3000);
         } else if (mockPlanId) {
             activateMockPlan(mockPlanId);
         } else if (sessionId) {
-            setStatus('success');
-            setTimeout(() => router.push('/vendor/subscription'), 4000);
+            verifySession(sessionId);
         } else {
             router.push('/vendor/subscription');
         }
@@ -60,8 +82,8 @@ export default function SubscriptionSuccessPage() {
                 
                 {status === 'success' && (
                     <div className="flex flex-col items-center">
-                        <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-6">
-                            <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+                        <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mb-6 text-orange-500">
+                            <CheckCircle2 className="w-10 h-10" />
                         </div>
                         <h2 className="text-2xl font-black text-slate-900 mb-2">Payment Successful!</h2>
                         <p className="text-slate-500 font-bold mb-8">Thank you for subscribing. Your plan is being activated.</p>

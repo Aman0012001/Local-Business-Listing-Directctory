@@ -76,6 +76,7 @@ export default function CategoryDetailClient({ slug }: CategoryDetailClientProps
                     setOffersLoading(true);
                     const offersRes = await api.offers.search({ 
                         categoryId: catData.id,
+                        isFeatured: true,
                         limit: 4 
                     });
                     setCategoryOffers(offersRes.data);

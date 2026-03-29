@@ -133,6 +133,14 @@ export class SubscriptionsController {
         return this.subService.getActiveSubscription(user.id);
     }
 
+    @Post('verify')
+    @Roles(UserRole.VENDOR, UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Manually verify a payment session if webhook failed' })
+    verifyPayment(@CurrentUser() user: User, @Body('sessionId') sessionId: string) {
+        if (!sessionId) throw new BadRequestException('sessionId is required');
+        return this.subService.verifyCheckoutSession(sessionId, user.id);
+    }
+
     @Get('my-invoices')
     @Roles(UserRole.VENDOR, UserRole.ADMIN, UserRole.SUPERADMIN)
     @ApiOperation({ summary: 'Get all invoices/transactions for the logged-in vendor' })

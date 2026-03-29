@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Not } from 'typeorm';
 import { ChatConversation, ChatMessage, User, Listing, Vendor } from '../../entities';
 
 @Injectable()
@@ -133,5 +133,26 @@ export class ChatService {
         const vendor = await this.vendorRepository.findOne({ where: { userId } });
         if (!vendor) return [];
         return this.getVendorConversations(vendor.id);
+    }
+
+    async getUnreadCount(userId: string): Promise<number> {
+        const result = await this.messageRepository
+            .createQueryBuilder('message')
+            .innerJoin('message.conversation', 'conversation')
+            .leftJoin('conversation.vendor', 'vendor')
+            .select('COUNT(DISTINCT message.conversation_id)', 'count')
+            .where('message.is_read = :isRead', { isRead: false })
+            .andWhere('message.sender_id != :userId', { userId })
+            .andWhere('(conversation.user_id = :userId OR vendor.user_id = :userId)', { userId })
+            .getRawOne();
+            
+        return parseInt(result?.count || '0');
+    }
+
+    async markAsRead(conversationId: string, userId: string): Promise<void> {
+        await this.messageRepository.update(
+            { conversationId, senderId: Not(userId), isRead: false },
+            { isRead: true }
+        );
     }
 }

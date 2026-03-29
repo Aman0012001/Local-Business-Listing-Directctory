@@ -1,7 +1,9 @@
-import { Business, Category, City, SearchResponse, Review } from '../types/api';
+import { Business, Category, City, SearchResponse, Review, ReviewReply } from '../types/api';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://local-business-listing-directctory-production.up.railway.app/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 const API_ROOT = API_BASE_URL.split('/api')[0];
+
+console.log('[api.ts] Active API_BASE_URL:', API_BASE_URL);
 
 export const getImageUrl = (path: string | null | undefined) => {
     if (!path) return null;
@@ -37,8 +39,11 @@ async function fetcher<T>(endpoint: string, options?: FetcherOptions): Promise<T
     const timeout = options?.timeout || 60000;
     const timeoutId = setTimeout(() => controller.abort(), timeout); // Use custom or 60s default
 
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
+    const url = `${API_BASE_URL.endsWith('/') ? API_BASE_URL : API_BASE_URL + '/'}${cleanEndpoint}`;
+
     try {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        const response = await fetch(url, {
             ...options,
             headers,
             signal: controller.signal,
@@ -239,12 +244,17 @@ export const api = {
             const query = new URLSearchParams(params).toString();
             return fetcher<{ data: Review[], meta: any }>(`/reviews?${query}`);
         },
-        getByBusiness: (idOrSlug: string) => fetcher<{ data: Review[] }>(`/reviews/business/${idOrSlug}`),
-        getByVendor: (vendorId: string) => fetcher<{ data: Review[] }>(`/reviews?vendorId=${vendorId}`),
-        getPopular: (limit = 3) => fetcher<{ data: Review[] }>(`/reviews?rating=5&limit=${limit}`),
+        getByBusiness: (idOrSlug: string) => fetcher<{ data: Review[], meta: any }>(`/reviews/business/${idOrSlug}`),
+        getByVendor: (vendorId: string) => fetcher<{ data: Review[], meta: any }>(`/reviews?vendorId=${vendorId}`),
+        getVendorAll: (page = 1, limit = 20) => fetcher<{ data: Review[], meta: any }>(`/reviews/vendor/all?page=${page}&limit=${limit}`),
+        getPopular: (limit = 3) => fetcher<{ data: Review[], meta: any }>(`/reviews?rating=5&limit=${limit}`),
         create: (reviewData: any) => fetcher<Review>('/reviews', {
             method: 'POST',
             body: JSON.stringify(reviewData),
+        }),
+        createReply: (reviewId: string, content: string) => fetcher<ReviewReply>(`/reviews/${reviewId}/replies`, {
+            method: 'POST',
+            body: JSON.stringify({ content }),
         }),
         respond: (reviewId: string, response: string) => fetcher<Review>(`/reviews/${reviewId}/response`, {
             method: 'POST',
@@ -476,6 +486,16 @@ export const api = {
             categories: any[], 
             cities: any[] 
         }>(`/admin/search/global?q=${encodeURIComponent(q)}`),
+        offerPricing: {
+            getAll: () => fetcher<any[]>('/admin/offer-pricing'),
+            save: (data: any) => fetcher<any>('/admin/offer-pricing', {
+                method: 'POST',
+                body: JSON.stringify(data),
+            }),
+            delete: (id: string) => fetcher<any>(`/admin/offer-pricing/${id}`, {
+                method: 'DELETE',
+            }),
+        },
     },
     notifications: {
         getAll: () => fetcher('/notifications'),
@@ -507,6 +527,7 @@ export const api = {
         getInvoice: (id: string) => fetcher<any>(`/subscriptions/invoice/${id}`),
         mockCheckout: (planId: string) => fetcher<any>(`/subscriptions/mock-success/${planId}`, { method: 'POST' }),
         createCheckout: (planId: string) => api.post<{ sessionId: string; checkoutUrl: string }>('/subscriptions/checkout', { planId }),
+        verify: (sessionId: string) => api.post<{ success: boolean; alreadyProcessed: boolean }>('/subscriptions/verify', { sessionId }),
         changePlan: (planId: string) => api.post<any>('/subscriptions/change', { planId }),
 
         // Admin
@@ -535,8 +556,16 @@ export const api = {
             method: 'PATCH',
             body: JSON.stringify(data),
         }),
-        remove: (id: string) => fetcher<void>(`/offers/${id}`, {
+        remove: (id: string) => fetcher<any>(`/offers/${id}`, {
             method: 'DELETE',
+        }),
+        feature: (id: string, pricingId: string) => fetcher<{ sessionId: string; checkoutUrl: string | null }>(`/offers/${id}/feature`, {
+            method: 'POST',
+            body: JSON.stringify({ pricingId }),
+        }),
+        verifyFeature: (id: string, sessionId: string) => fetcher<{ success: boolean; status?: string }>(`/offers/${id}/verify-feature`, {
+            method: 'POST',
+            body: JSON.stringify({ sessionId }),
         }),
         // Admin
         adminGetAll: (page = 1, limit = 20) => fetcher<{ data: any[]; meta: any }>(`/offers/admin/all?page=${page}&limit=${limit}`),
@@ -555,6 +584,10 @@ export const api = {
             });
             const query = new URLSearchParams(sanitizedParams).toString();
             return fetcher<{ data: any[]; meta: any }>(`/offers/public/search?${query}`);
+        },
+        getPublicPricing: (type?: 'offer' | 'event') => {
+            const query = type ? `?type=${type}` : '';
+            return fetcher<any[]>(`/offers/public/pricing${query}`);
         },
     },
     comments: {
@@ -606,6 +639,7 @@ export const api = {
         create: (data: any) => fetcher<any>('/broadcasts', { method: 'POST', body: JSON.stringify(data) }),
         getMyLeads: () => fetcher<any[]>('/broadcasts/my-leads'),
         getVendorInbox: () => fetcher<any[]>('/broadcasts/vendor/inbox'),
+        getStats: () => fetcher<{ newCount: number }>('/broadcasts/vendor/stats'),
         respond: (id: string, data: any) => fetcher<any>(`/broadcasts/${id}/respond`, { method: 'POST', body: JSON.stringify(data) }),
         getResponses: (id: string) => fetcher<any[]>(`/broadcasts/${id}/responses`),
     },

@@ -37,6 +37,19 @@ export class JobLeadsService {
         const category = await this.categoryRepository.findOne({ where: { id: dto.categoryId } });
         if (!category) throw new NotFoundException('Category not found');
 
+        // Validation: Vendor cannot broadcast for their own services
+        const vendor = await this.vendorRepository.findOne({ 
+            where: { userId }, 
+            relations: ['businesses'] 
+        });
+
+        if (vendor && vendor.businesses) {
+            const hasOwnService = vendor.businesses.some(b => b.categoryId === dto.categoryId);
+            if (hasOwnService) {
+                throw new BadRequestException('You cannot send a broadcast for a category you already serve as a vendor.');
+            }
+        }
+
         const lead = this.jobLeadRepository.create({
             ...dto,
             userId,
@@ -79,14 +92,14 @@ export class JobLeadsService {
                 return dist <= radius;
             });
 
-            const vendorUserIds = [...new Set(matchedListings.map(l => l.vendor.userId))];
+            const vendorUserIds = [...new Set(matchedListings.map(l => l.vendor.userId))].filter(id => id !== lead.userId);
             await this.notifyVendors(lead, vendorUserIds);
         } else {
             if (lead.city) {
                 query.andWhere('listing.city ILIKE :city', { city: `%${lead.city}%` });
             }
             const listings = await query.getMany();
-            const vendorUserIds = [...new Set(listings.map(l => l.vendor.userId))];
+            const vendorUserIds = [...new Set(listings.map(l => l.vendor.userId))].filter(id => id !== lead.userId);
             await this.notifyVendors(lead, vendorUserIds);
         }
     }
@@ -165,6 +178,7 @@ export class JobLeadsService {
                 .leftJoinAndSelect('lead.user', 'user')
                 .leftJoinAndSelect('lead.responses', 'responses', 'responses.vendorId = :vendorId', { vendorId: vendor.id })
                 .where('lead.categoryId IN (:...categoryIds)', { categoryIds })
+                .andWhere('lead.userId != :userId', { userId })
                 .andWhere('lead.status IN (:...statuses)', { 
                     statuses: [JobLeadStatus.OPEN, JobLeadStatus.BROADCASTED, JobLeadStatus.RESPONDED] 
                 });
@@ -205,6 +219,10 @@ export class JobLeadsService {
 
         const lead = await this.jobLeadRepository.findOne({ where: { id: leadId }, relations: ['user'] });
         if (!lead) throw new NotFoundException('Lead not found');
+
+        if (lead.userId === vendorUserId) {
+            throw new BadRequestException('You cannot respond to your own lead');
+        }
 
         // Check if already responded - If so, update it
         const existing = await this.responseRepository.findOne({ where: { jobLeadId: leadId, vendorId: vendor.id } });
@@ -270,5 +288,12 @@ export class JobLeadsService {
             relations: ['category', 'user', 'responses', 'responses.vendor', 'responses.vendor.user'],
             order: { createdAt: 'DESC' },
         });
+    }
+
+    async getVendorInboxStats(userId: string): Promise<{ newCount: number }> {
+        const leads = await this.getLeadsForVendor(userId);
+        // "New" means not responded yet. We could also filter by date if needed.
+        const newCount = (leads as any[]).filter(l => !l.hasResponded).length;
+        return { newCount };
     }
 }

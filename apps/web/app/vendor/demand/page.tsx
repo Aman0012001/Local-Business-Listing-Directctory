@@ -15,6 +15,7 @@ export default function VendorDemandPage() {
 
     const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
     const features = activeSub?.plan?.dashboardFeatures || {};
+    const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
     const isVendor = user?.role === 'vendor';
 
     useEffect(() => {
@@ -67,7 +68,7 @@ export default function VendorDemandPage() {
         );
     }
 
-    if (isVendor && !features.showDemand) {
+    if (!isAdmin && isVendor && !features.showDemand) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100">
                 <div className="w-20 h-20 bg-orange-50 text-[#FF7A30] rounded-3xl flex items-center justify-center mb-6">

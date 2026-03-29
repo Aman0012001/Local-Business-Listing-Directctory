@@ -1,28 +1,300 @@
 "use client";
 
-import React from 'react';
-import VendorLeadsInbox from '../../../components/leads/VendorLeadsInbox';
-import { Phone, Lock } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { api } from '../../../lib/api';
+import {
+    Phone, Mail, MessageSquare, Globe, Download, Filter,
+    RefreshCw, TrendingUp, Users, CheckCircle, XCircle,
+    PhoneCall, ChevronDown, Search, Eye, ChevronLeft, ChevronRight, Loader2, Lock
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../../context/AuthContext';
 import Link from 'next/link';
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+type LeadStatus = 'new' | 'contacted' | 'converted' | 'lost';
+type LeadType = 'call' | 'whatsapp' | 'email' | 'chat' | 'website';
+
+interface Lead {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    message: string;
+    type: LeadType;
+    status: LeadStatus;
+    source: string;
+    businessId: string;
+    createdAt: string;
+    notes?: string;
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; bg: string; icon: React.ElementType }> = {
+    new: { label: 'New', color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200', icon: TrendingUp },
+    contacted: { label: 'Contacted', color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200', icon: PhoneCall },
+    converted: { label: 'Converted', color: 'text-green-700', bg: 'bg-green-50 border-green-200', icon: CheckCircle },
+    lost: { label: 'Lost', color: 'text-red-700', bg: 'bg-red-50 border-red-200', icon: XCircle },
+};
+
+const TYPE_CONFIG: Record<LeadType, { label: string; icon: React.ElementType; color: string }> = {
+    call: { label: 'Call', icon: Phone, color: 'text-indigo-600 bg-indigo-50' },
+    whatsapp: { label: 'WhatsApp', icon: MessageSquare, color: 'text-green-600 bg-green-50' },
+    email: { label: 'Email', icon: Mail, color: 'text-sky-600 bg-sky-50' },
+    chat: { label: 'Chat', icon: MessageSquare, color: 'text-violet-600 bg-violet-50' },
+    website: { label: 'Website', icon: Globe, color: 'text-slate-600 bg-slate-100' },
+};
+
+// ─── CSV Export ───────────────────────────────────────────────────────────────
+function exportToCSV(leads: Lead[]) {
+    const headers = ['Name', 'Email', 'Phone', 'Type', 'Status', 'Message', 'Date'];
+    const rows = leads.map(l => [
+        l.name || '',
+        l.email || '',
+        l.phone || '',
+        l.type,
+        l.status,
+        (l.message || '').replace(/,/g, ';'),
+        new Date(l.createdAt).toLocaleDateString(),
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `leads-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+}
+
+// ─── Status Badge ─────────────────────────────────────────────────────────────
+function StatusBadge({ status }: { status: LeadStatus }) {
+    const cfg = STATUS_CONFIG[status];
+    const Icon = cfg.icon;
+    return (
+        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${cfg.bg} ${cfg.color}`}>
+            <Icon className="w-3 h-3" />
+            {cfg.label}
+        </span>
+    );
+}
+
+// ─── Type Badge ───────────────────────────────────────────────────────────────
+function TypeBadge({ type }: { type: LeadType }) {
+    const cfg = TYPE_CONFIG[type];
+    const Icon = cfg.icon;
+    return (
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold ${cfg.color}`}>
+            <Icon className="w-3 h-3" />
+            {cfg.label}
+        </span>
+    );
+}
+
+// ─── Stat Card ────────────────────────────────────────────────────────────────
+function StatCard({ label, value, icon: Icon, color }: { label: string; value: number; icon: React.ElementType; color: string }) {
+    return (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
+                <Icon className="w-6 h-6" />
+            </div>
+            <div>
+                <p className="text-2xl font-black text-slate-900">{value}</p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{label}</p>
+            </div>
+        </motion.div>
+    );
+}
+
+// ─── Lead Row Detail Modal ────────────────────────────────────────────────────
+function LeadDetailModal({ lead, onClose, onStatusChange }: {
+    lead: Lead; onClose: () => void; onStatusChange: (id: string, status: LeadStatus) => void;
+}) {
+    const [updating, setUpdating] = useState(false);
+
+    const handleStatus = async (status: LeadStatus) => {
+        setUpdating(true);
+        await onStatusChange(lead.id, status);
+        setUpdating(false);
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg p-8 z-10">
+                <div className="flex items-start justify-between mb-6">
+                    <div>
+                        <h2 className="text-2xl font-black text-slate-900">{lead.name || 'Unknown'}</h2>
+                        <div className="flex items-center gap-2 mt-2">
+                            <TypeBadge type={lead.type} />
+                            <StatusBadge status={lead.status} />
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="text-slate-400 hover:text-slate-700 transition-colors p-1">
+                        <XCircle className="w-6 h-6" />
+                    </button>
+                </div>
+
+                <div className="space-y-4 mb-6">
+                    {lead.email && (
+                        <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                            <Mail className="w-4 h-4 text-slate-400" />
+                            <a href={`mailto:${lead.email}`} className="text-sm font-bold text-blue-600 hover:underline">{lead.email}</a>
+                        </div>
+                    )}
+                    {lead.phone && (
+                        <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                            <Phone className="w-4 h-4 text-slate-400" />
+                            <a href={`tel:${lead.phone}`} className="text-sm font-bold text-slate-700">{lead.phone}</a>
+                        </div>
+                    )}
+                    {lead.message && (
+                        <div className="p-4 bg-slate-50 rounded-xl">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Message</p>
+                            <p className="text-sm text-slate-700 leading-relaxed">{lead.message}</p>
+                        </div>
+                    )}
+                    <p className="text-xs text-slate-400 font-medium">
+                        Received: {new Date(lead.createdAt).toLocaleString()}
+                    </p>
+                </div>
+
+                <div>
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Update Status</p>
+                    <div className="relative">
+                        <select
+                            value={lead.status}
+                            onChange={(e) => handleStatus(e.target.value as LeadStatus)}
+                            disabled={updating}
+                            className="w-full pl-4 pr-10 py-3 rounded-xl text-sm font-bold border border-slate-200 bg-white text-slate-700 focus:border-blue-400 focus:ring-4 focus:ring-blue-50 outline-none transition-all appearance-none cursor-pointer disabled:opacity-50"
+                        >
+                            {(Object.keys(STATUS_CONFIG) as LeadStatus[]).map(s => (
+                                <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
+                            ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                            {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronDown className="w-4 h-4" />}
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
+        </div>
+    );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function VendorLeadsPage() {
     const { user } = useAuth();
-    
+    const [leads, setLeads] = useState<Lead[]>([]);
+    const [stats, setStats] = useState<Record<string, number>>({});
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [total, setTotal] = useState(0);
+    const LIMIT = 15;
+
+    // Filters
+    const [search, setSearch] = useState('');
+    const [filterStatus, setFilterStatus] = useState('');
+    const [filterType, setFilterType] = useState('');
+
     const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
     const features = activeSub?.plan?.dashboardFeatures || {};
     const isVendor = user?.role === 'vendor';
 
-    // Basic check
+    const fetchLeads = useCallback(async (silent = false) => {
+        if (!user || (isVendor && !features.showLeads)) {
+            setLoading(false); // Ensure loading is false if feature is not available
+            return;
+        }
+        if (!silent) setLoading(true); else setRefreshing(true);
+        try {
+            const params: any = { page, limit: LIMIT };
+            if (filterStatus) params.status = filterStatus;
+            if (filterType) params.type = filterType;
+
+            // Fetch leads and stats independently so one failure doesn't block the other
+            const [leadsRes, statsRes] = await Promise.allSettled([
+                api.leads.getForVendor(params),
+                api.leads.getStats(),
+            ]);
+
+            if (leadsRes.status === 'fulfilled') {
+                setLeads(leadsRes.value.data || []);
+                setTotal(leadsRes.value.meta?.total || 0);
+                setTotalPages(Math.ceil((leadsRes.value.meta?.total || 0) / LIMIT));
+            } else {
+                console.error('Failed to fetch leads list:', leadsRes.reason);
+                setLeads([]);
+            }
+
+            if (statsRes.status === 'fulfilled') {
+                setStats(statsRes.value || {});
+            } else {
+                console.warn('Failed to fetch lead stats:', statsRes.reason);
+            }
+        } catch (e) {
+            console.error('Unexpected error in fetchLeads:', e);
+            setLeads([]);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    }, [user, isVendor, features.showLeads, page, filterStatus, filterType]);
+
+    useEffect(() => {
+        if (user && isVendor && !features.showLeads) {
+            setLoading(false);
+            return;
+        }
+        fetchLeads();
+    }, [user, isVendor, features.showLeads, fetchLeads]);
+
+    const handleStatusChange = async (id: string, status: LeadStatus) => {
+        try {
+            await api.leads.updateStatus(id, status);
+            setLeads(prev => prev.map(l => l.id === id ? { ...l, status } : l));
+            if (selectedLead?.id === id) setSelectedLead(sl => sl ? { ...sl, status } : sl);
+            setStats(prev => {
+                const lead = leads.find(l => l.id === id);
+                if (!lead) return prev;
+                const next = { ...prev };
+                next[lead.status] = Math.max(0, (next[lead.status] || 0) - 1);
+                next[status] = (next[status] || 0) + 1;
+                return next;
+            });
+        } catch (e) {
+            console.error('Failed to update status:', e);
+        }
+    };
+
+    const handleDownload = async () => {
+        try {
+            const all = await api.leads.getForVendor({ limit: 500, ...(filterStatus && { status: filterStatus }), ...(filterType && { type: filterType }) });
+            exportToCSV(all.data || []);
+        } catch (e) { console.error('Download failed:', e); }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
+                <p className="text-slate-400 font-bold text-sm">Loading leads…</p>
+            </div>
+        );
+    }
+
     if (isVendor && !features.showLeads) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100 mt-20">
-                <div className="w-20 h-20 bg-orange-50 text-orange-600 rounded-3xl flex items-center justify-center mb-6">
+                <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center mb-6">
                     <Lock className="w-10 h-10" />
                 </div>
-                <h2 className="text-3xl font-black text-slate-900 mb-3">Job Leads & Broadcasts</h2>
+                <h2 className="text-3xl font-black text-slate-900 mb-3">Lead Management</h2>
                 <p className="text-slate-500 max-w-md mx-auto mb-8 font-bold leading-relaxed">
-                    Accessing real-time job leads and customer broadcasts is a Basic feature. Upgrade your plan to see who is looking for your services!
+                    Connecting with customers via leads and enquiries is a Basic feature. Upgrade your plan to start receiving business leads!
                 </p>
                 <Link href="/vendor/subscription" className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black tracking-tight hover:bg-black transition-all active:scale-95 shadow-xl shadow-slate-200">
                     Upgrade My Plan
@@ -31,22 +303,203 @@ export default function VendorLeadsPage() {
         );
     }
 
+    const filtered = leads.filter(l => {
+        if (!search) return true;
+        const q = search.toLowerCase();
+        return (l.name || '').toLowerCase().includes(q)
+            || (l.email || '').toLowerCase().includes(q)
+            || (l.phone || '').includes(q);
+    });
+
+    const statCards = [
+        { label: 'Total Leads', value: total, icon: Users, color: 'bg-blue-50 text-blue-600' },
+        { label: 'New', value: stats.new || 0, icon: TrendingUp, color: 'bg-indigo-50 text-indigo-600' },
+        { label: 'Contacted', value: stats.contacted || 0, icon: PhoneCall, color: 'bg-amber-50 text-amber-600' },
+        { label: 'Converted', value: stats.converted || 0, icon: CheckCircle, color: 'bg-green-50 text-green-600' },
+    ];
+
     return (
         <div className="min-h-screen pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Header */}
-            <div className="py-8">
-                <div className="flex items-center gap-3 mb-1">
-                    <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-red-100 rounded-2xl flex items-center justify-center">
-                        <Phone className="w-5 h-5 text-orange-600" />
-                    </div>
-                    <h1 className="text-4xl font-black text-slate-900 tracking-tight">Job Leads</h1>
+            <div className="py-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-4xl font-black text-slate-900 tracking-tight">Leads</h1>
+                    <p className="text-slate-400 font-bold mt-1">Track and manage all customer enquiries</p>
                 </div>
-                <p className="text-slate-400 font-bold mt-1 ml-[52px]">Customer requests and broadcasts matching your business</p>
+                <div className="flex items-center gap-3">
+                    <button id="refresh-leads-btn" onClick={() => fetchLeads(true)} disabled={refreshing}
+                        className="p-3 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-slate-900 hover:border-slate-300 transition-all shadow-sm">
+                        <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+                    </button>
+                    <button id="download-leads-btn" onClick={handleDownload}
+                        className="flex items-center gap-2 px-5 py-3 bg-slate-900 text-white rounded-xl font-bold shadow-lg hover:bg-slate-800 active:scale-95 transition-all">
+                        <Download className="w-4 h-4" />
+                        Export CSV
+                    </button>
+                </div>
             </div>
 
-            <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
-                <VendorLeadsInbox />
+            {/* Stats */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                {statCards.map(s => <StatCard key={s.label} {...s} />)}
             </div>
+
+            {/* Filters */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 mb-6 flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input id="leads-search" type="text" placeholder="Search by name, email, phone…"
+                        value={search} onChange={e => setSearch(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 text-sm font-medium bg-slate-50 rounded-xl border border-transparent focus:border-blue-400 focus:bg-white outline-none transition-all" />
+                </div>
+                <div className="relative">
+                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    <select id="leads-status-filter" value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}
+                        className="pl-9 pr-8 py-2.5 text-sm font-bold bg-slate-50 rounded-xl border border-transparent focus:border-blue-400 outline-none appearance-none cursor-pointer">
+                        <option value="">All Statuses</option>
+                        {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                    </select>
+                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                </div>
+                <div className="relative">
+                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    <select id="leads-type-filter" value={filterType} onChange={e => { setFilterType(e.target.value); setPage(1); }}
+                        className="pl-9 pr-8 py-2.5 text-sm font-bold bg-slate-50 rounded-xl border border-transparent focus:border-blue-400 outline-none appearance-none cursor-pointer">
+                        <option value="">All Types</option>
+                        {Object.entries(TYPE_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                    </select>
+                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                </div>
+            </div>
+
+            {/* Table */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                {filtered.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-24 gap-3">
+                        <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center">
+                            <Users className="w-8 h-8 text-slate-300" />
+                        </div>
+                        <p className="text-slate-400 font-bold">No leads found</p>
+                        <p className="text-slate-300 text-sm">Leads appear here when customers contact your business</p>
+                    </div>
+                ) : (
+                    <>
+                        {/* Desktop table */}
+                        <div className="hidden md:block overflow-x-auto">
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="border-b border-slate-100 bg-slate-50/50">
+                                        <th className="px-6 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Contact</th>
+                                        <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Type</th>
+                                        <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Status</th>
+                                        <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Message</th>
+                                        <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Date</th>
+                                        <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                    <AnimatePresence>
+                                        {filtered.map((lead, i) => (
+                                            <motion.tr key={lead.id}
+                                                initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: i * 0.03 }}
+                                                className="hover:bg-slate-50/70 transition-colors group">
+                                                <td className="px-6 py-4">
+                                                    <p className="font-black text-slate-900 text-sm">{lead.name || '—'}</p>
+                                                    {lead.email && <p className="text-xs text-slate-400 font-medium mt-0.5">{lead.email}</p>}
+                                                    {lead.phone && (
+                                                        <a href={`tel:${lead.phone}`} className="text-xs text-blue-500 font-bold mt-0.5 block hover:underline">
+                                                            {lead.phone}
+                                                        </a>
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-4"><TypeBadge type={lead.type} /></td>
+                                                <td className="px-4 py-4">
+                                                    <div className="relative inline-block mt-0.5">
+                                                        <select
+                                                            value={lead.status}
+                                                            onChange={(e) => handleStatusChange(lead.id, e.target.value as LeadStatus)}
+                                                            className={`appearance-none pl-3 pr-8 py-1 rounded-full text-xs font-bold border outline-none cursor-pointer transition-all ${STATUS_CONFIG[lead.status].bg} ${STATUS_CONFIG[lead.status].color} focus:ring-2 focus:ring-current/20`}
+                                                        >
+                                                            {(Object.keys(STATUS_CONFIG) as LeadStatus[]).map(s => (
+                                                                <option key={s} value={s} className="bg-white text-slate-900 font-bold">{STATUS_CONFIG[s].label}</option>
+                                                            ))}
+                                                        </select>
+                                                        <ChevronDown className={`absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none opacity-60`} />
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-4 max-w-[200px]">
+                                                    <p className="text-sm text-slate-500 truncate">{lead.message || '—'}</p>
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <p className="text-xs text-slate-400 font-medium whitespace-nowrap">
+                                                        {new Date(lead.createdAt).toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                    </p>
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <button id={`view-lead-${lead.id}`} onClick={() => setSelectedLead(lead)}
+                                                        className="p-2 rounded-xl bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-all opacity-0 group-hover:opacity-100">
+                                                        <Eye className="w-4 h-4" />
+                                                    </button>
+                                                </td>
+                                            </motion.tr>
+                                        ))}
+                                    </AnimatePresence>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Mobile cards */}
+                        <div className="md:hidden divide-y divide-slate-50">
+                            {filtered.map(lead => (
+                                <div key={lead.id} className="p-4 flex items-start gap-4" onClick={() => setSelectedLead(lead)}>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                                            <TypeBadge type={lead.type} />
+                                            <StatusBadge status={lead.status} />
+                                        </div>
+                                        <p className="font-black text-slate-900 text-sm">{lead.name || '—'}</p>
+                                        {lead.phone && <p className="text-xs text-blue-500 font-bold">{lead.phone}</p>}
+                                        {lead.message && <p className="text-xs text-slate-400 mt-1 line-clamp-2">{lead.message}</p>}
+                                        <p className="text-[10px] text-slate-300 font-medium mt-1">{new Date(lead.createdAt).toLocaleDateString()}</p>
+                                    </div>
+                                    <Eye className="w-4 h-4 text-slate-400 flex-shrink-0 mt-1" />
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                )}
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                    <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
+                        <p className="text-xs text-slate-400 font-medium">
+                            Page {page} of {totalPages} · {total} total
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <button id="leads-prev-page" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+                                className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:border-slate-300 disabled:opacity-40 transition-all">
+                                <ChevronLeft className="w-4 h-4" />
+                            </button>
+                            <button id="leads-next-page" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+                                className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:border-slate-300 disabled:opacity-40 transition-all">
+                                <ChevronRight className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Detail Modal */}
+            <AnimatePresence>
+                {selectedLead && (
+                    <LeadDetailModal
+                        lead={selectedLead}
+                        onClose={() => setSelectedLead(null)}
+                        onStatusChange={handleStatusChange}
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 }

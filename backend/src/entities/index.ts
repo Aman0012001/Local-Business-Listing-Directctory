@@ -15,6 +15,7 @@ export * from './business-amenity.entity';
 // Reviews
 export * from './review.entity';
 export * from './review-helpful-vote.entity';
+export * from './review-reply.entity';
 
 // Leads & Favorites
 export * from './lead.entity';
@@ -39,6 +40,7 @@ export * from './system-setting.entity';
 
 // Offers & Events
 export * from './offer-event.entity';
+export * from './offer-event-pricing.entity';
 export * from './comment.entity';
 export * from './comment-reply.entity';
 // Job Leads

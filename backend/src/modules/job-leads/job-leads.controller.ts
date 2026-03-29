@@ -48,6 +48,15 @@ export class JobLeadsController {
         return this.jobLeadsService.getLeadsForVendor(user.id);
     }
 
+    @Get('vendor/stats')
+    @Roles(UserRole.VENDOR, UserRole.ADMIN)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Get broadcast inbox statistics (new/unresponded)' })
+    @ApiResponse({ status: 200, description: 'Stats retrieved' })
+    async getStats(@CurrentUser() user: User) {
+        return this.jobLeadsService.getVendorInboxStats(user.id);
+    }
+
     @Post(':id/respond')
     @Roles(UserRole.VENDOR, UserRole.ADMIN)
     @ApiBearerAuth()

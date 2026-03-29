@@ -66,4 +66,9 @@ export class CreateOfferDto {
     @IsOptional()
     @IsString({ each: true })
     terms?: string[];
+
+    @ApiPropertyOptional({ example: 'uuid-of-pricing' })
+    @IsOptional()
+    @IsUUID()
+    pricingId?: string;
 }

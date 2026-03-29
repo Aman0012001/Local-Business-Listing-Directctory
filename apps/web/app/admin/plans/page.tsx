@@ -423,7 +423,7 @@ export default function AdminPlansPage() {
                                                 { id: 'showAnalytics', label: 'Analytics & Reports' },
                                                 { id: 'showLeads', label: 'Business Leads' },
                                                 { id: 'showOffers', label: 'Offers & Events' },
-                                                { id: 'showDemand', label: 'Demand Insights' },
+                                                { id: 'showDemand', label: 'Hot Demand Insights' },
                                                 { id: 'showQueries', label: 'Direct Queries' },
                                                 { id: 'showReviews', label: 'Review Management' },
                                                 { id: 'showChat', label: 'Live Chat' },

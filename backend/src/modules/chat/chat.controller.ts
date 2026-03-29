@@ -48,4 +48,18 @@ export class ChatController {
     async getMessages(@Request() req: any, @Param('id') id: string) {
         return this.chatService.getConversationHistory(id, req.user.id);
     }
+
+    @Get('unread-count')
+    @ApiOperation({ summary: 'Get total unread messages count for the current user' })
+    async getUnreadCount(@Request() req: any) {
+        const count = await this.chatService.getUnreadCount(req.user.id);
+        return { count };
+    }
+
+    @Post('conversations/:id/mark-as-read')
+    @ApiOperation({ summary: 'Mark all messages in a conversation as read' })
+    async markAsRead(@Request() req: any, @Param('id') id: string) {
+        await this.chatService.markAsRead(id, req.user.id);
+        return { success: true };
+    }
 }

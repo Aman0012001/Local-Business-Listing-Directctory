@@ -2,10 +2,13 @@ import {
     Injectable,
     NotFoundException,
     ForbiddenException,
+    BadRequestException,
+    OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OfferEvent, OfferStatus } from '../../entities/offer-event.entity';
+import { OfferEventPricing } from '../../entities/offer-event-pricing.entity';
 import { Listing } from '../../entities/business.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { CreateOfferDto } from './dto/create-offer.dto';
@@ -13,9 +16,11 @@ import { UpdateOfferDto } from './dto/update-offer.dto';
 
 import { SearchOfferDto } from './dto/search-offer.dto';
 import { Brackets } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
+import Stripe from 'stripe';
 
 @Injectable()
-export class OffersService {
+export class OffersService implements OnModuleInit {
     constructor(
         @InjectRepository(OfferEvent)
         private offerRepository: Repository<OfferEvent>,
@@ -23,11 +28,30 @@ export class OffersService {
         private listingRepository: Repository<Listing>,
         @InjectRepository(Vendor)
         private vendorRepository: Repository<Vendor>,
+        @InjectRepository(OfferEventPricing)
+        private pricingRepository: Repository<OfferEventPricing>,
+        private configService: ConfigService,
     ) { }
 
-    /** Helper: recompute status from dates (same logic as entity hook, but for query results) */
-    private computeStatus(offer: OfferEvent): OfferEvent {
+    private stripe: Stripe;
+
+    onModuleInit() {
+        const apiKey = this.configService.get<string>('STRIPE_SECRET_KEY');
+        if (!apiKey || apiKey === 'sk_test_your_secret_key_here') {
+            console.error('❌ STRIPE_SECRET_KEY is missing! Offer payments will fail.');
+        }
+
+        this.stripe = new Stripe(apiKey || 'sk_test_not_configured', {
+            apiVersion: '2026-02-25.clover' as any,
+        });
+    }
+
+    /** Helper: recompute status from dates (same logic as entity hook, but for query results) */    private computeStatus(offer: OfferEvent): OfferEvent {
         const now = new Date();
+        if (offer.featuredUntil && now > new Date(offer.featuredUntil)) {
+            offer.isFeatured = false;
+        }
+
         if (offer.startDate && now < new Date(offer.startDate)) {
             offer.status = OfferStatus.SCHEDULED;
         } else if (offer.expiryDate && now > new Date(offer.expiryDate)) {
@@ -133,6 +157,9 @@ export class OffersService {
 
             if (isFeatured !== undefined) {
                 qb.andWhere('o.isFeatured = :isFeatured', { isFeatured });
+                if (isFeatured) {
+                    qb.andWhere('(o.featured_until IS NULL OR o.featured_until > :now)', { now: new Date() });
+                }
             }
 
             if (latitude && longitude) {
@@ -208,7 +235,7 @@ export class OffersService {
     async findPublicByBusiness(businessId: string): Promise<OfferEvent[]> {
         const offers = await this.offerRepository.find({
             where: { businessId, isActive: true },
-            order: { createdAt: 'DESC' },
+            order: { isFeatured: 'DESC', createdAt: 'DESC' },
             take: 10, // fetch a few extra then filter
         });
 
@@ -233,9 +260,12 @@ export class OffersService {
         return this.computeStatus(offer);
     }
 
-    /** Cron / scheduled task: mark expired offers */
+    /** Cron / scheduled task: mark expired offers AND clear expired featured status */
     async expireStaleOffers(): Promise<number> {
         const now = new Date();
+        let affected = 0;
+
+        // 1. Expire stale offers overall
         const result = await this.offerRepository
             .createQueryBuilder()
             .update(OfferEvent)
@@ -243,7 +273,20 @@ export class OffersService {
             .where('expiry_date < :now', { now })
             .andWhere('status != :expired', { expired: OfferStatus.EXPIRED })
             .execute();
-        return result.affected || 0;
+        
+        affected += result.affected || 0;
+
+        // 2. Un-feature expired featured offers
+        const featureResult = await this.offerRepository
+            .createQueryBuilder()
+            .update(OfferEvent)
+            .set({ isFeatured: false })
+            .where('featured_until < :now', { now })
+            .andWhere('is_featured = :trueVal', { trueVal: true })
+            .execute();
+
+        affected += featureResult.affected || 0;
+        return affected;
     }
 
     /** Admin: Toggle featured status */
@@ -273,6 +316,130 @@ export class OffersService {
                 totalPages: Math.ceil(total / Number(limit)),
             },
         };
+    }
+
+    /**
+     * Get available promotion pricing for offers/events
+     */
+    async getPricing(type?: 'offer' | 'event') {
+        const query: any = { where: { isActive: true }, order: { price: 'ASC' } };
+        if (type) {
+            query.where.type = type;
+        }
+        return this.pricingRepository.find(query);
+    }
+
+    /** 
+     * Create a Stripe Checkout session to feature an offer/event 
+     */
+    async createFeatureCheckoutSession(userId: string, offerId: string, pricingId: string) {
+        const vendor = await this.getVendorByUserId(userId);
+        const offer = await this.offerRepository.findOne({ where: { id: offerId, vendorId: vendor.id } });
+        if (!offer) throw new NotFoundException('Offer not found');
+        
+        const plan = await this.pricingRepository.findOne({ where: { id: pricingId, isActive: true } });
+        if (!plan) throw new NotFoundException('Pricing plan not found');
+
+        // Free plan logic
+        if (plan.price === 0) {
+            await this.activateFeature(offer.id, plan.id);
+            return {
+                sessionId: `MOCK-${Date.now()}`,
+                checkoutUrl: null,
+            };
+        }
+
+        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+        const baseUrl = frontendUrl.split(',')[0].trim();
+
+        const product = await this.stripe.products.create({ name: `Feature ${offer.type}: ${plan.name}` });
+        const price = await this.stripe.prices.create({
+            product: product.id,
+            unit_amount: Math.round(Number(plan.price) * 100),
+            currency: 'usd',
+        });
+
+        // Resolve customer
+        let customerId = vendor.stripeCustomerId;
+        if (!customerId) {
+            const customer = await this.stripe.customers.create({
+                email: vendor.businessEmail || undefined,
+                name: vendor.businessName || undefined,
+                metadata: { vendorId: vendor.id },
+            });
+            customerId = customer.id;
+            vendor.stripeCustomerId = customerId;
+            await this.vendorRepository.save(vendor);
+        }
+
+        const session = await this.stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            customer: customerId,
+            client_reference_id: vendor.id,
+            line_items: [{ price: price.id, quantity: 1 }],
+            mode: 'payment',
+            metadata: {
+                offerId: offer.id,
+                pricingId: plan.id,
+                type: 'feature_offer'
+            },
+            success_url: `${baseUrl}/vendor/offers/success?session_id={CHECKOUT_SESSION_ID}&offer_id=${offer.id}`,
+            cancel_url:  `${baseUrl}/vendor/offers?canceled=true`,
+        });
+
+        return {
+            sessionId: session.id,
+            checkoutUrl: session.url,
+        };
+    }
+
+    /**
+     * Manually verify a checkout session
+     */
+    async verifyFeatureSession(sessionId: string, userId: string) {
+        const vendor = await this.getVendorByUserId(userId);
+        
+        try {
+            if (sessionId.startsWith('MOCK-')) {
+                return { success: true };
+            }
+
+            const session = await this.stripe.checkout.sessions.retrieve(sessionId);
+            if (session.payment_status === 'paid' && session.metadata?.type === 'feature_offer') {
+                const offerId = session.metadata.offerId;
+                const pricingId = session.metadata.pricingId;
+                
+                const offer = await this.offerRepository.findOne({ where: { id: offerId, vendorId: vendor.id } });
+                if (offer && !offer.isFeatured) {
+                    await this.activateFeature(offer.id, pricingId);
+                }
+                return { success: true };
+            }
+            return { success: false, status: session.payment_status };
+        } catch (error) {
+            console.error(`Failed to verify checkout session ${sessionId}:`, error);
+            throw new BadRequestException(`Verification failed`);
+        }
+    }
+
+    /** Activate featured status based on plan */
+    private async activateFeature(offerId: string, pricingId: string) {
+        const offer = await this.offerRepository.findOne({ where: { id: offerId } });
+        const plan = await this.pricingRepository.findOne({ where: { id: pricingId } });
+        if (!offer || !plan) return;
+
+        const now = new Date();
+        const until = new Date(now);
+
+        if (plan.unit === 'minutes') until.setMinutes(until.getMinutes() + plan.duration);
+        else if (plan.unit === 'hours') until.setHours(until.getHours() + plan.duration);
+        else if (plan.unit === 'days') until.setDate(until.getDate() + plan.duration);
+
+        offer.isFeatured = true;
+        offer.featuredUntil = until;
+        offer.pricingId = pricingId;
+
+        await this.offerRepository.save(offer);
     }
 }
 

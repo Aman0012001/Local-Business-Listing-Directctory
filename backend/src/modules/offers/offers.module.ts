@@ -1,14 +1,17 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OffersController } from './offers.controller';
 import { OffersService } from './offers.service';
 import { OfferEvent } from '../../entities/offer-event.entity';
+import { OfferEventPricing } from '../../entities/offer-event-pricing.entity';
 import { Listing } from '../../entities/business.entity';
 import { Vendor } from '../../entities/vendor.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([OfferEvent, Listing, Vendor]),
+        TypeOrmModule.forFeature([OfferEvent, OfferEventPricing, Listing, Vendor]),
+        ConfigModule,
     ],
     controllers: [OffersController],
     providers: [OffersService],

@@ -18,6 +18,7 @@ import { Subscription, SubscriptionStatus } from '../../entities/subscription.en
 import { CommentReply } from '../../entities/comment-reply.entity';
 import { createPaginatedResponse, calculateSkip } from '../../common/utils/pagination.util';
 import { SearchLog } from '../../entities/search-log.entity';
+import { OfferEventPricing } from '../../entities/offer-event-pricing.entity';
 import { SearchService } from '../search/search.service';
 
 @Injectable()
@@ -53,6 +54,8 @@ export class AdminService {
         private commentReplyRepository: Repository<CommentReply>,
         @InjectRepository(SearchLog)
         private searchLogRepository: Repository<SearchLog>,
+        @InjectRepository(OfferEventPricing)
+        private offerPricingRepository: Repository<OfferEventPricing>,
         private searchService: SearchService,
     ) { }
 
@@ -519,7 +522,34 @@ export class AdminService {
 
         // Update in Elasticsearch
         this.searchService.indexBusiness(updated).catch(err => console.error('ES Keyword Index Error:', err));
-
         return updated;
+    }
+
+    /**
+     * Get all Offer/Event pricing
+     */
+    async getOfferPricing() {
+        return this.offerPricingRepository.find({ order: { type: 'ASC', price: 'ASC' } });
+    }
+
+    /**
+     * Create or update Offer/Event pricing
+     */
+    async saveOfferPricing(data: Partial<OfferEventPricing>) {
+        if (data.id) {
+            const existing = await this.offerPricingRepository.findOne({ where: { id: data.id } });
+            if (!existing) throw new NotFoundException('Pricing not found');
+            Object.assign(existing, data);
+            return this.offerPricingRepository.save(existing);
+        }
+        const created = this.offerPricingRepository.create(data);
+        return this.offerPricingRepository.save(created);
+    }
+
+    /**
+     * Delete Offer/Event pricing
+     */
+    async deleteOfferPricing(id: string) {
+        return this.offerPricingRepository.delete(id);
     }
 }

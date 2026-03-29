@@ -17,6 +17,7 @@ import { Notification } from './notification.entity';
 import { Comment } from './comment.entity';
 import { Follow } from './follow.entity';
 import { Affiliate } from './affiliate.entity';
+import { ReviewReply } from './review-reply.entity';
 
 export enum UserRole {
     USER = 'user',
@@ -161,4 +162,8 @@ export class User {
 
     @OneToOne(() => Affiliate, (affiliate) => affiliate.user)
     affiliate: Affiliate;
+
+    @Exclude()
+    @OneToMany(() => ReviewReply, (reply) => reply.user)
+    reviewReplies: ReviewReply[];
 }

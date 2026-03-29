@@ -27,7 +27,7 @@ export class WsJwtGuard implements CanActivate {
             });
 
             // Attach user to client
-            client.user = payload;
+            client.user = { ...payload, id: payload.sub };
             return true;
         } catch (err) {
             this.logger.error(`WS Authentication failed: ${err.message}`);

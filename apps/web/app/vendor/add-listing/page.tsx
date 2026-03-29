@@ -994,7 +994,7 @@ export default function AddListingPage() {
                                                     setCountryCode(e.target.value);
                                                     setFormData(prev => ({ ...prev, phone: e.target.value + phoneNumber }));
                                                 }}
-                                                className="h-full px-3 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 appearance-none cursor-pointer pr-8 min-w-[100px]"
+                                                className="country-code-select h-full px-3 py-3.5 border border-slate-200 rounded-xl font-black text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 appearance-none cursor-pointer pr-8 min-w-[100px]"
                                             >
                                                 {[
                                                     { code: '+93', label: '🇦🇫 AF +93' },
