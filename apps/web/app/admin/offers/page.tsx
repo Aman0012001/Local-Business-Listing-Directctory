@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Megaphone, CheckCircle2, XCircle, Search, 
     Filter, Loader2, Star, Calendar, Tag, ShieldCheck,
-    ChevronLeft, ChevronRight, LayoutGrid, List, Trash2, ExternalLink
+    ChevronLeft, ChevronRight, LayoutGrid, List, Trash2, ExternalLink, DollarSign
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';

@@ -158,7 +158,7 @@ export class OffersService implements OnModuleInit {
             if (isFeatured !== undefined) {
                 qb.andWhere('o.isFeatured = :isFeatured', { isFeatured });
                 if (isFeatured) {
-                    qb.andWhere('(o.featured_until IS NULL OR o.featured_until > :now)', { now: new Date() });
+                    qb.andWhere('(o.featuredUntil IS NULL OR o.featuredUntil > :now)', { now: new Date() });
                 }
             }
 

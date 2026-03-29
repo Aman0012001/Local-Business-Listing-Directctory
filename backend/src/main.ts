@@ -189,6 +189,8 @@ async function bootstrap() {
 
     const port = configService.get('PORT') || 3001;
 
+    // DB sync trigger
+    console.log('Restarting NestJS to apply DB_SYNCHRONIZE=true');
     await app.listen(port, '0.0.0.0');
 
     console.log(`🚀 Server running on port ${port}`);

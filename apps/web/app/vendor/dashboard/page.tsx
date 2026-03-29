@@ -160,7 +160,7 @@ export default function GenericDashboard() {
     const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
     
     // Default features logic
-    let features: Record<string, boolean> = activeSub?.plan?.dashboardFeatures || {};
+    let features: Record<string, any> = activeSub?.plan?.dashboardFeatures || {};
     
     // Admins and Superadmins should have all features available by default
     if (isAdmin) {
