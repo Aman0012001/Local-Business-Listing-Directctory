@@ -45,6 +45,30 @@ export class OfferEventPricing {
     @Column({ name: 'is_active', default: true })
     isActive: boolean;
 
+    // ── Placement visibility ──────────────────────────────────────────────
+    @Column({ name: 'show_on_home', default: true })
+    showOnHome: boolean;
+
+    @Column({ name: 'show_on_category', default: true })
+    showOnCategory: boolean;
+
+    @Column({ name: 'show_on_listing', default: true })
+    showOnListing: boolean;
+
+    @Column({ name: 'show_on_offer_page', default: true })
+    showOnOfferPage: boolean;
+
+    @Column({ name: 'show_on_event_page', default: false })
+    showOnEventPage: boolean;
+
+    /**
+     * Stripe Price ID — cached after first checkout creation.
+     * Used to avoid creating new on-the-fly prices (which hit Stripe's $0.50 minimum).
+     * Using recurring subscription mode so there is no minimum charge limit.
+     */
+    @Column({ name: 'stripe_price_id', nullable: true, default: null })
+    stripePriceId: string | null;
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 

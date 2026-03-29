@@ -424,6 +424,25 @@ export default function VendorOffersPage() {
                 )}
             </div>
 
+            {/* Boost Plans Banner */}
+            {pricingOptions.length > 0 && (
+                <div className="rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 p-5 flex flex-col sm:flex-row items-center gap-4">
+                    <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+                        <span className="text-2xl">🔥</span>
+                    </div>
+                    <div className="flex-1 text-center sm:text-left">
+                        <p className="font-black text-slate-900">Boost Your Offers & Events</p>
+                        <p className="text-sm font-bold text-slate-500 mt-0.5">
+                            Feature your offer on the homepage and search results starting from PKR {Math.min(...pricingOptions.map((p: any) => Number(p.price))).toLocaleString('en-PK')}
+                        </p>
+                    </div>
+                    <Link href="/vendor/offer-plans"
+                        className="flex-shrink-0 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black text-sm transition-colors whitespace-nowrap">
+                        View Plans →
+                    </Link>
+                </div>
+            )}
+
             {/* ── Create / Edit Modal ───────────────────────────────────────── */}
             <AnimatePresence>
                 {showModal && (
@@ -660,7 +679,7 @@ export default function VendorOffersPage() {
                                                     <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{plan.duration} {plan.unit}</span>
                                                 </div>
                                                 <p className={`font-black text-xl ${form.pricingId === plan.id ? 'text-slate-900' : 'text-slate-700'}`}>
-                                                    ${Number(plan.price).toFixed(2)}
+                                                    PKR {Number(plan.price).toLocaleString('en-PK')}
                                                 </p>
                                             </button>
                                         ))}

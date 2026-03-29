@@ -75,6 +75,7 @@ export default function Sidebar() {
         { name: 'Live Chat', icon: MessageSquare, iconColor: 'text-emerald-500', href: '/vendor/chat', badge: unreadChatCount > 0 ? String(unreadChatCount) : null },
         { name: 'Demand Insights', icon: TrendingUp, href: '/vendor/demand', badge: null },
         { name: 'Subscription & Billing', icon: CreditCard, href: '/vendor/subscription', badge: null },
+        { name: 'Offer Plans', icon: Gift, href: '/vendor/offer-plans', badge: '🔥' },
         { name: 'Broadcast Feed', icon: Megaphone, href: '/vendor/broadcasts', badge: newBroadcastCount > 0 ? String(newBroadcastCount) : null },
         { name: 'My Broadcasts', icon: Zap, href: '/vendor/my-broadcasts', badge: null },
         { name: 'Notifications', icon: Bell, href: '/vendor/notifications', badge: null },

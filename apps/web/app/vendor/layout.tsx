@@ -32,6 +32,7 @@ export default function VendorLayout({
                 const freePages = [
                     '/vendor/dashboard',    // The central hub, degrades gracefully
                     '/vendor/subscription', // The billing/plan selection page
+                    '/vendor/offer-plans',  // Offer/event plan purchase page (always free to view)
                     '/vendor/affiliate',    // Explicitly requested as free
                     '/vendor/settings',     // Account profile management
                     '/vendor/notifications', // System alerts

@@ -41,13 +41,13 @@ export class ActivePlan {
     })
     status: ActivePlanStatus;
 
-    @Column({ type: 'timestamp' })
+    @Column({ name: 'start_date', type: 'timestamp' })
     startDate: Date;
 
-    @Column({ type: 'timestamp' })
+    @Column({ name: 'end_date', type: 'timestamp' })
     endDate: Date;
 
-    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+    @Column({ name: 'amount_paid', type: 'decimal', precision: 10, scale: 2, nullable: true })
     amountPaid: number;
 
     @Column({ name: 'transaction_id', nullable: true })

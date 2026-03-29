@@ -1,6 +1,6 @@
 import { Business, Category, City, SearchResponse, Review, ReviewReply } from '../types/api';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001/api/v1';
 const API_ROOT = API_BASE_URL.split('/api')[0];
 
 console.log('[api.ts] Active API_BASE_URL:', API_BASE_URL);
@@ -496,6 +496,24 @@ export const api = {
                 method: 'DELETE',
             }),
         },
+        // New offer plan endpoints
+        offerPlans: {
+            getAll: (type?: 'offer' | 'event') => {
+                const q = type ? `?type=${type}` : '';
+                return fetcher<any[]>(`/subscriptions/offer-plans/admin${q}`);
+            },
+            create: (data: any) => fetcher<any>('/subscriptions/offer-plans', {
+                method: 'POST',
+                body: JSON.stringify(data),
+            }),
+            update: (id: string, data: any) => fetcher<any>(`/subscriptions/offer-plans/${id}`, {
+                method: 'PATCH',
+                body: JSON.stringify(data),
+            }),
+            delete: (id: string) => fetcher<any>(`/subscriptions/offer-plans/${id}`, {
+                method: 'DELETE',
+            }),
+        },
     },
     notifications: {
         getAll: () => fetcher('/notifications'),
@@ -588,6 +606,11 @@ export const api = {
         getPublicPricing: (type?: 'offer' | 'event') => {
             const query = type ? `?type=${type}` : '';
             return fetcher<any[]>(`/offers/public/pricing${query}`);
+        },
+        // Public offer/event plan pricing from subscriptions module
+        getOfferPlans: (type?: 'offer' | 'event') => {
+            const query = type ? `?type=${type}` : '';
+            return fetcher<any[]>(`/subscriptions/offer-plans${query}`);
         },
     },
     comments: {

@@ -23,7 +23,7 @@ export class Transaction {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ name: 'subscription_id', type: 'uuid' })
+    @Column({ name: 'subscription_id', type: 'uuid', nullable: true })
     @Index()
     subscriptionId: string;
 

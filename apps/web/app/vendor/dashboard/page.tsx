@@ -335,6 +335,44 @@ export default function GenericDashboard() {
                 </div>
             </motion.div>
 
+            {/* Impactful Plan Upgrade CTA (Only for Free/No Plan Vendors) */}
+            {isVendor && (!activeSub || Number(activeSub.amount) === 0) && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="mb-10 bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-800 rounded-[20px] p-1 shadow-xl shadow-blue-500/20"
+                >
+                    <div className="bg-slate-900/40 backdrop-blur-sm rounded-[18px] p-6 sm:p-8 flex flex-col lg:flex-row items-center justify-between gap-6 overflow-hidden relative">
+                        {/* Decorative background elements */}
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
+                        <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-400/10 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none" />
+                        
+                        <div className="flex items-center gap-6 relative z-10">
+                            <div className="w-14 h-14 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/20 flex-shrink-0 animate-bounce-slow">
+                                <Sparkles className="w-8 h-8 text-white fill-white/20" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight mb-1">
+                                    Stop leaving money on the table!
+                                </h2>
+                                <p className="text-blue-100 font-bold text-sm sm:text-base max-w-2xl leading-relaxed">
+                                    Upgrade to a Premium Plan now to <span className="text-orange-400 font-black">rank #1 in your city</span> and turn more views into high-value confirmed leads.
+                                </p>
+                            </div>
+                        </div>
+
+                        <Link 
+                            href="/vendor/subscription" 
+                            className="group relative z-10 flex items-center gap-3 px-10 py-4 bg-white text-blue-900 rounded-[16px] font-black text-sm uppercase tracking-widest hover:bg-[#FF7A30] hover:text-white transition-all transform active:scale-95 shadow-xl shadow-black/20 whitespace-nowrap"
+                        >
+                            Boost My Business Now
+                            <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        </Link>
+                    </div>
+                </motion.div>
+            )}
+
             {/* Stats Overview */}
             <div className="mb-14">
                 <StatsGrid stats={isVendor || isAdmin ? vendorStats : userStats} />

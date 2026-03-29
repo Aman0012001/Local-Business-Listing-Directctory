@@ -16,6 +16,7 @@ import { Listing } from '../../entities/business.entity';
 import { SubscriptionsSeederService } from './subscriptions-seeder.service';
 import { PricingPlanSeederService } from './pricing-plan-seeder.service';
 import { AffiliateModule } from '../affiliate/affiliate.module';
+import { OfferEventPricing } from '../../entities/offer-event-pricing.entity';
 
 @Module({
     imports: [
@@ -30,6 +31,7 @@ import { AffiliateModule } from '../affiliate/affiliate.module';
             Affiliate,
             AffiliateReferral,
             Listing,
+            OfferEventPricing,
         ]),
         AffiliateModule,
     ],
