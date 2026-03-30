@@ -1,6 +1,6 @@
 import { Injectable, Inject, forwardRef, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Notification } from '../../entities/notification.entity';
 import { NotificationsGateway } from './notifications.gateway';
 import { User } from '../../entities/user.entity';
@@ -71,11 +71,11 @@ export class NotificationsService {
         return saved;
     }
 
-    /** Broadcast a notification to ALL regular users (role = user) */
+    /** Broadcast a notification to ALL regular users and vendors (role = user/vendor) */
     async broadcast(dto: Omit<CreateNotificationDto, 'userId'>): Promise<void> {
         const users = await this.userRepo.find({
             select: ['id'],
-            where: { role: 'user' as any },
+            where: { role: In(['user', 'vendor'] as any) },
         });
         for (const user of users) {
              this.create({ ...dto, userId: user.id }).catch(() => {});

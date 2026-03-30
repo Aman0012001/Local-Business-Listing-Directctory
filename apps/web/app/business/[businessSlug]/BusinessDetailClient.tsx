@@ -117,11 +117,16 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<any>(null);
     const markerRef = useRef<any>(null);
+    const initInProgress = useRef(false);
 
     const initMap = async () => {
-        if (!mapContainerRef.current || !business) return;
+        // Only initialize if we have the container, business data, and we are on the Overview tab
+        // Also don't initialize if already in progress
+        if (!mapContainerRef.current || !business || activeTab !== 'Overview' || initInProgress.current) return;
 
         try {
+            initInProgress.current = true;
+            
             // Coordinate parsing for Pakistan context (fallback if invalid)
             const lat = parseFloat(String(business.latitude)) || 30.3753;
             const lng = parseFloat(String(business.longitude)) || 69.3451;
@@ -132,6 +137,7 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
             // Ensure window.google.maps is available
             if (!(window as any).google?.maps?.importLibrary) {
                 console.warn('[BusinessDetail] Google Maps importLibrary not available yet');
+                initInProgress.current = false;
                 return;
             }
 
@@ -142,40 +148,39 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                 mapRef.current = new Map(mapContainerRef.current, {
                     center,
                     zoom: 15,
-                    mapId: 'DEMO_MAP_ID', // DEMO_MAP_ID for testing Advanced Markers
                     mapTypeId: 'roadmap',
                     zoomControl: true,
                     streetViewControl: true,
                     fullscreenControl: true,
                     maxZoom: 19,
                     minZoom: 2,
+                    // Remove DEMO_MAP_ID as it can cause blank maps if not authorized
                 });
 
                 console.log('[BusinessDetail] Map instance created');
 
-                // Try AdvancedMarkerElement (requires MapId)
+                // Try AdvancedMarkerElement (requires MapId, which we removed for stability)
+                // We'll use legacy Marker for better reliability unless a Map ID is provided
                 try {
-                    const { AdvancedMarkerElement } = await (window as any).google.maps.importLibrary("marker");
-                    markerRef.current = new AdvancedMarkerElement({
-                        position: center,
-                        map: mapRef.current,
-                        title: business.title,
-                    });
-                    console.log('[BusinessDetail] AdvancedMarkerElement initialized');
-                } catch (markerErr) {
-                    console.warn('[BusinessDetail] AdvancedMarkerElement failed, using Legacy Marker:', markerErr);
-                    // Fallback to legacy Marker
                     const { Marker } = await (window as any).google.maps.importLibrary("marker");
                     markerRef.current = new Marker({
                         position: center,
                         map: mapRef.current,
                         title: business.title,
+                        animation: (window as any).google.maps.Animation?.DROP
                     });
                     console.log('[BusinessDetail] Legacy Marker initialized');
+                } catch (markerErr) {
+                    console.warn('[BusinessDetail] Marker failed:', markerErr);
                 }
             } else {
-                // Update existing map if business data changed
+                // Update existing map if business data changed or tab switched back
                 mapRef.current.setCenter(center);
+                // Trigger a resize to ensure map renders correctly after being hidden
+                if ((window as any).google?.maps?.event) {
+                    (window as any).google.maps.event.trigger(mapRef.current, 'resize');
+                }
+                
                 if (markerRef.current) {
                     if (markerRef.current.setPosition) {
                         markerRef.current.setPosition(center);
@@ -187,6 +192,8 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
         } catch (err) {
             console.error('[BusinessDetail] GOOGLE MAP CRITICAL ERROR:', err);
             setMapError(true);
+        } finally {
+            initInProgress.current = false;
         }
     };
 

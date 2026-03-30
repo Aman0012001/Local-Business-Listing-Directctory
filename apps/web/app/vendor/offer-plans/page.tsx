@@ -2,13 +2,16 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import {
-    Gift, Tag, Calendar, Flame, Star,
-    CheckCircle2, Loader2, ShoppingCart, Eye,
-    TrendingUp, Info, XCircle
+import { 
+    Gift, Tag, Calendar, Flame, Star, 
+    CheckCircle2, Loader2, ShoppingCart, Eye, 
+    TrendingUp, Info, XCircle, FileText, Sparkles,
+    Clock, Download, ArrowRight, Wallet
 } from 'lucide-react';
 import { api } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
+import Link from 'next/link';
+import { format } from 'date-fns';
 
 interface OfferPlan {
     id: string;
@@ -119,11 +122,14 @@ function VendorOfferPlansPageInner() {
     const { user } = useAuth();
     const searchParams = useSearchParams();
     const [plans, setPlans] = useState<OfferPlan[]>([]);
+    const [invoices, setInvoices] = useState<any[]>([]);
+    const [promotionsData, setPromotionsData] = useState<any>({ plans: [], boosts: [] });
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'offer' | 'event'>('offer');
+    const [activeTab, setActiveTab] = useState<'offer' | 'event' | 'trajection'>('offer');
     const [purchasing, setPurchasing] = useState<string | null>(null);
     const [successPlan, setSuccessPlan] = useState<OfferPlan | null>(null);
     const [error, setError] = useState('');
+    const [hasActivePromos, setHasActivePromos] = useState(false);
     const canceled = searchParams?.get('canceled') === 'true';
 
     useEffect(() => { fetchPlans(); }, []);
@@ -131,10 +137,21 @@ function VendorOfferPlansPageInner() {
     const fetchPlans = async () => {
         setLoading(true);
         try {
-            const data = await api.offers.getOfferPlans();
-            setPlans(data || []);
+            const [plansData, promosData, invoicesData] = await Promise.all([
+                api.offers.getOfferPlans(),
+                api.subscriptions.getActivePromotions(),
+                api.subscriptions.getMyInvoices()
+            ]);
+            
+            setPlans(plansData || []);
+            setPromotionsData(promosData || { plans: [], boosts: [] });
+            setInvoices(invoicesData || []);
+            
+            if (promosData?.plans?.length > 0 || promosData?.boosts?.length > 0) {
+                setHasActivePromos(true);
+            }
         } catch (err) {
-            console.error('Failed to fetch offer plans', err);
+            console.error('Failed to fetch offer plans data', err);
         } finally {
             setLoading(false);
         }
@@ -183,6 +200,21 @@ function VendorOfferPlansPageInner() {
                             Purchase a plan to feature your offers & events and get more visibility
                         </p>
                     </div>
+                    <div className="ml-auto flex flex-col items-end gap-3">
+                        <Link 
+                            href="/vendor/offer-plans/invoices"
+                            className="inline-flex items-center gap-2 px-6 py-2.5 bg-white text-orange-600 rounded-xl font-black text-sm hover:bg-orange-50 transition-all hover:scale-[1.05] active:scale-[0.95] shadow-lg shadow-black/10"
+                        >
+                            <FileText className="w-4 h-4" />
+                            Billing & History
+                        </Link>
+                        {hasActivePromos && (
+                            <div className="flex items-center gap-2 px-3 py-1 bg-white/20 rounded-lg backdrop-blur-sm border border-white/10">
+                                <Sparkles className="w-3.5 h-3.5 text-white" />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-white">Active Boosts</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -225,16 +257,16 @@ function VendorOfferPlansPageInner() {
             {/* Tabs */}
             <div>
                 <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl w-fit mb-6">
-                    {(['offer', 'event'] as const).map(tab => (
+                    {(['offer', 'event', 'trajection'] as const).map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
                             className={`px-6 py-2.5 rounded-xl font-black text-sm transition-all capitalize flex items-center gap-2 ${activeTab === tab ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                         >
-                            {tab === 'offer' ? <Tag className="w-4 h-4" /> : <Calendar className="w-4 h-4" />}
-                            {tab} Plans
+                            {tab === 'offer' ? <Tag className="w-4 h-4" /> : tab === 'event' ? <Calendar className="w-4 h-4" /> : <Wallet className="w-4 h-4" />}
+                            {tab === 'trajection' ? 'My Trajection' : `${tab} Plans`}
                             <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black ${activeTab === tab ? 'bg-orange-100 text-orange-600' : 'bg-slate-200 text-slate-500'}`}>
-                                {tab === 'offer' ? offerCount : eventCount}
+                                {tab === 'offer' ? offerCount : tab === 'event' ? eventCount : (promotionsData.plans?.length || 0) + (promotionsData.boosts?.length || 0)}
                             </span>
                         </button>
                     ))}
@@ -245,6 +277,156 @@ function VendorOfferPlansPageInner() {
                     <div className="flex flex-col items-center justify-center py-20">
                         <Loader2 className="w-10 h-10 animate-spin text-orange-400 mb-3" />
                         <p className="font-bold text-slate-400">Loading plans...</p>
+                    </div>
+                ) : activeTab === 'trajection' ? (
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        {/* Active Boosts */}
+                        <section>
+                            <div className="flex items-center gap-2 mb-4">
+                                <Sparkles className="w-5 h-5 text-orange-500" />
+                                <h2 className="text-xl font-black text-slate-900">Active Boosts</h2>
+                            </div>
+                            
+                            {(!hasActivePromos) ? (
+                                <div className="bg-white border-2 border-dashed border-slate-200 rounded-3xl p-10 text-center">
+                                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <Sparkles className="w-8 h-8 text-slate-300" />
+                                    </div>
+                                    <h3 className="text-lg font-black text-slate-900 mb-1">No active boosts</h3>
+                                    <p className="text-slate-400 font-bold mb-6 max-w-sm mx-auto text-sm">
+                                        You don't have any active promotions at the moment.
+                                    </p>
+                                    <button 
+                                        onClick={() => setActiveTab('offer')}
+                                        className="inline-flex items-center gap-2 px-6 py-2.5 bg-orange-500 text-white rounded-xl font-black text-sm hover:bg-orange-600 transition-all shadow-lg shadow-orange-200"
+                                    >
+                                        Explore Plans
+                                        <ArrowRight className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                    {promotionsData.plans?.map((plan: any) => (
+                                        <div key={plan.id} className="bg-white border-2 border-slate-100 rounded-3xl p-6 relative overflow-hidden group hover:border-orange-200 transition-all shadow-sm">
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="w-10 h-10 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600">
+                                                    <TrendingUp className="w-5 h-5" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-black text-slate-900 line-clamp-1">{plan.name}</h3>
+                                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{plan.target || 'Business Listing'}</p>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-3">
+                                                <div className="flex items-center justify-between text-sm py-2 border-b border-slate-50">
+                                                    <span className="text-slate-400 font-bold flex items-center gap-2"><Clock className="w-4 h-4" /> Expires in</span>
+                                                    <span className="font-black text-orange-600">
+                                                        {Math.max(0, Math.ceil((new Date(plan.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))} days
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-slate-400 font-bold flex items-center gap-2"><Calendar className="w-4 h-4" /> Valid until</span>
+                                                    <span className="text-slate-900 font-black">{format(new Date(plan.endDate), 'MMM d, yyyy')}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {promotionsData.boosts?.map((boost: any) => (
+                                        <div key={boost.id} className="bg-white border-2 border-slate-100 rounded-3xl p-6 relative overflow-hidden group hover:border-orange-200 transition-all shadow-sm">
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="w-10 h-10 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600">
+                                                    <Sparkles className="w-5 h-5" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-black text-slate-900 line-clamp-1">{boost.target}</h3>
+                                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{boost.type} Boost</p>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-3">
+                                                <div className="flex items-center justify-between text-sm py-2 border-b border-slate-50">
+                                                    <span className="text-slate-400 font-bold flex items-center gap-2"><Clock className="w-4 h-4" /> Expires in</span>
+                                                    <span className="font-black text-orange-600">
+                                                        {Math.max(0, Math.ceil((new Date(boost.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))} days
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-slate-400 font-bold flex items-center gap-2"><Calendar className="w-4 h-4" /> Active until</span>
+                                                    <span className="text-slate-900 font-black">{format(new Date(boost.endDate), 'MMM d, yyyy')}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </section>
+
+                        {/* Recent Transactions */}
+                        <section>
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <FileText className="w-5 h-5 text-orange-500" />
+                                    <h2 className="text-xl font-black text-slate-900">Purchase History</h2>
+                                </div>
+                                <Link 
+                                    href="/vendor/offer-plans/invoices"
+                                    className="text-orange-500 font-black text-xs hover:underline flex items-center gap-1"
+                                >
+                                    View All <Download className="w-3 h-3" />
+                                </Link>
+                            </div>
+
+                            <div className="bg-white border-2 border-slate-100 rounded-3xl overflow-hidden shadow-sm">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left text-sm">
+                                        <thead className="bg-slate-50 border-b border-slate-200">
+                                            <tr>
+                                                <th className="px-6 py-4 font-black text-slate-400 uppercase tracking-widest text-[10px]">Date</th>
+                                                <th className="px-6 py-4 font-black text-slate-400 uppercase tracking-widest text-[10px]">Description</th>
+                                                <th className="px-6 py-4 font-black text-slate-400 uppercase tracking-widest text-[10px] text-right">Amount</th>
+                                                <th className="px-6 py-4 font-black text-slate-400 uppercase tracking-widest text-[10px] text-center">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {invoices.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan={4} className="px-6 py-10 text-center text-slate-400 font-bold">
+                                                        No transactions found.
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                invoices.slice(0, 5).map((invoice: any) => (
+                                                    <tr key={invoice.id} className="hover:bg-slate-50/50 transition-colors">
+                                                        <td className="px-6 py-4 whitespace-nowrap font-bold text-slate-900">
+                                                            {format(new Date(invoice.createdAt), 'MMM d, yyyy')}
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="font-bold text-slate-900">
+                                                                {invoice.subscription?.plan?.name || invoice.metadata?.planName || 'Feature Upgrade'}
+                                                            </div>
+                                                            <div className="text-[10px] text-orange-500 font-black uppercase tracking-tighter">
+                                                                {invoice.subscription ? 'Plan Subscription' : 'Promotion Boost'}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-right font-black text-slate-900">
+                                                            {invoice.currency} {parseFloat(invoice.amount).toLocaleString()}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-center">
+                                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${
+                                                                invoice.status === 'completed' 
+                                                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
+                                                                    : 'bg-amber-50 text-amber-600 border-amber-100'
+                                                            }`}>
+                                                                {invoice.status}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </section>
                     </div>
                 ) : filteredPlans.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200">

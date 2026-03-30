@@ -20,6 +20,7 @@ import { createPaginatedResponse, calculateSkip } from '../../common/utils/pagin
 import { SearchLog } from '../../entities/search-log.entity';
 import { OfferEventPricing } from '../../entities/offer-event-pricing.entity';
 import { SearchService } from '../search/search.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AdminService {
@@ -57,6 +58,7 @@ export class AdminService {
         @InjectRepository(OfferEventPricing)
         private offerPricingRepository: Repository<OfferEventPricing>,
         private searchService: SearchService,
+        private notificationsService: NotificationsService,
     ) { }
 
     /**
@@ -160,6 +162,22 @@ export class AdminService {
         }
 
         const moderated = await this.businessRepository.save(business);
+
+        // Fetch fully populated listing for notification (need category name, slug etc)
+        const result = await this.businessRepository.findOne({
+            where: { id: moderated.id },
+            relations: ['category']
+        });
+
+        if (dto.status === BusinessStatus.APPROVED && result) {
+            // Broadcast to all users: new listing is live
+            this.notificationsService.broadcast({
+                title: '📍 New Business Listed!',
+                message: `"${result.title}" just joined ${result.category?.name ? result.category.name + ' listings' : 'our directory'}. Check it out!`,
+                type: 'new_listing',
+                data: { businessId: result.id, slug: result.slug },
+            }).catch(() => {/* non-blocking */ });
+        }
 
         // Update in Elasticsearch (approval status changed)
         this.searchService.indexBusiness(moderated).catch(err => console.error('ES Approval Index Error:', err));

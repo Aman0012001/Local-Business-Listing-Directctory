@@ -120,7 +120,9 @@ export default function VendorChatDashboard() {
         );
     }
 
-    if (isVendor && !features.showChat) {
+    // Lock screen: only if vendor has a PAID subscription that explicitly disables showChat.
+    // Free plan vendors (no active sub) always have access.
+    if (isVendor && activeSub && features.showChat === false) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100">
                 <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center mb-6">

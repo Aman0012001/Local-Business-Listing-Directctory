@@ -303,6 +303,7 @@ export class AuthService {
             .createQueryBuilder('user')
             .leftJoinAndSelect('user.vendor', 'vendor')
             .leftJoinAndSelect('vendor.subscriptions', 'subscriptions')
+            .leftJoinAndSelect('vendor.activePlans', 'activePlans')
             .leftJoinAndSelect('subscriptions.plan', 'plan')
             .where('user.email = :email', { email })
             .getOne();
@@ -411,6 +412,7 @@ export class AuthService {
             .createQueryBuilder('user')
             .leftJoinAndSelect('user.vendor', 'vendor')
             .leftJoinAndSelect('vendor.subscriptions', 'subscriptions')
+            .leftJoinAndSelect('vendor.activePlans', 'activePlans')
             .leftJoinAndSelect('subscriptions.plan', 'plan')
             .where('user.id = :id', { id: user.id })
             .getOne() as User;

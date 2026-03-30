@@ -45,10 +45,6 @@ export default function VendorCommentsPage() {
     const isVendor = user?.role === 'vendor';
 
     const loadComments = async (p = 1) => {
-        if (isVendor && !features.showReviews) {
-            setLoading(false);
-            return;
-        }
         setLoading(true);
         try {
             const res = await api.comments.getVendorComments(p, 10);
@@ -62,12 +58,8 @@ export default function VendorCommentsPage() {
     };
 
     useEffect(() => {
-        if (user && isVendor && !features.showReviews) {
-            setLoading(false);
-            return;
-        }
         loadComments(1);
-    }, [user, isVendor, features.showReviews]);
+    }, [user]);
 
     if (loading) {
         return (
@@ -77,7 +69,8 @@ export default function VendorCommentsPage() {
         );
     }
 
-    if (isVendor && !features.showReviews) {
+    // Free plan vendors always see their reviews. Only lock if paid plan explicitly disables showReviews.
+    if (isVendor && activeSub && features.showReviews === false) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100 mt-20">
                 <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mb-6">

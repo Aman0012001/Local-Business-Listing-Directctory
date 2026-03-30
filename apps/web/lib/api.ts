@@ -541,6 +541,7 @@ export const api = {
     subscriptions: {
         getPlans: () => fetcher<any[]>('/subscriptions/plans'),
         getActive: () => fetcher<any>('/subscriptions/active'),
+        getActivePromotions: () => fetcher<any>('/subscriptions/active-promotions'),
         getMyInvoices: () => fetcher<any[]>('/subscriptions/my-invoices'),
         getInvoice: (id: string) => fetcher<any>(`/subscriptions/invoice/${id}`),
         mockCheckout: (planId: string) => fetcher<any>(`/subscriptions/mock-success/${planId}`, { method: 'POST' }),

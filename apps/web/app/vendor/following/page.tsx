@@ -45,7 +45,8 @@ export default function VendorFollowing() {
         );
     }
 
-    if (isVendor && !features.showFollowing) {
+    // Free plan vendors always have access to Following. Only lock if paid plan explicitly disables it.
+    if (isVendor && activeSub && features.showFollowing === false) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100 mt-20">
                 <div className="w-20 h-20 bg-violet-50 text-violet-600 rounded-3xl flex items-center justify-center mb-6">

@@ -140,14 +140,6 @@ export class BusinessesService {
         // Return fully populated listing
         const result = await this.findOne(savedListing.id, user);
 
-        // Broadcast to all users: new listing is live
-        this.notificationsService.broadcast({
-            title: '📍 New Business Listed!',
-            message: `"${result.title}" just joined ${result.category?.name ? result.category.name + ' listings' : 'our directory'}. Check it out!`,
-            type: 'new_listing',
-            data: { businessId: result.id, slug: result.slug },
-        }).catch(() => {/* non-blocking */ });
-
         // Notify Admin if there's a suggested category
         if (createBusinessDto.suggestedCategoryName) {
             this.notificationsService.notifyAdmin({

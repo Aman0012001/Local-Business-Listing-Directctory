@@ -31,6 +31,7 @@ export default function OfferEventDetailClient() {
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<any>(null);
     const markerRef = useRef<any>(null);
+    const initInProgress = useRef(false);
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -65,9 +66,10 @@ export default function OfferEventDetailClient() {
 
     // Initialize Map logic
     const initMap = async () => {
-        if (!mapContainerRef.current || !offer) return;
+        if (!mapContainerRef.current || !offer || initInProgress.current) return;
 
         try {
+            initInProgress.current = true;
             const lat = parseFloat(String(offer.business.latitude)) || 30.3753;
             const lng = parseFloat(String(offer.business.longitude)) || 69.3451;
             const center = { lat, lng };
@@ -76,6 +78,7 @@ export default function OfferEventDetailClient() {
 
             if (!(window as any).google?.maps?.importLibrary) {
                 console.warn('[OfferEventDetail] Google Maps importLibrary not available yet');
+                initInProgress.current = false;
                 return;
             }
 
@@ -85,7 +88,6 @@ export default function OfferEventDetailClient() {
                 mapRef.current = new Map(mapContainerRef.current, {
                     center,
                     zoom: 15,
-                    mapId: 'DEMO_MAP_ID',
                     mapTypeId: 'roadmap',
                     zoomControl: true,
                     streetViewControl: true,
@@ -97,25 +99,22 @@ export default function OfferEventDetailClient() {
                 console.log('[OfferEventDetail] Map instance created');
 
                 try {
-                    const { AdvancedMarkerElement } = await (window as any).google.maps.importLibrary("marker");
-                    markerRef.current = new AdvancedMarkerElement({
-                        position: center,
-                        map: mapRef.current,
-                        title: offer.business.title,
-                    });
-                    console.log('[OfferEventDetail] AdvancedMarkerElement initialized');
-                } catch (markerErr) {
-                    console.warn('[OfferEventDetail] AdvancedMarkerElement failed, using Legacy Marker:', markerErr);
                     const { Marker } = await (window as any).google.maps.importLibrary("marker");
                     markerRef.current = new Marker({
                         position: center,
                         map: mapRef.current,
                         title: offer.business.title,
+                        animation: (window as any).google?.maps?.Animation?.DROP
                     });
                     console.log('[OfferEventDetail] Legacy Marker initialized');
+                } catch (markerErr) {
+                    console.warn('[OfferEventDetail] Marker failed:', markerErr);
                 }
             } else {
                 mapRef.current.setCenter(center);
+                if ((window as any).google?.maps?.event) {
+                    (window as any).google.maps.event.trigger(mapRef.current, 'resize');
+                }
                 if (markerRef.current) {
                     if (markerRef.current.setPosition) {
                         markerRef.current.setPosition(center);
@@ -127,6 +126,8 @@ export default function OfferEventDetailClient() {
         } catch (err) {
             console.error('[OfferEventDetail] GOOGLE MAP CRITICAL ERROR:', err);
             setMapError(true);
+        } finally {
+            initInProgress.current = false;
         }
     };
 

@@ -163,6 +163,13 @@ export class SubscriptionsController {
         return this.subService.getTransactions(user.id);
     }
 
+    @Get('active-promotions')
+    @Roles(UserRole.VENDOR, UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Get all active promotions/boosts for the logged-in vendor' })
+    getActivePromotions(@CurrentUser() user: User) {
+        return this.subService.getActivePromotions(user.id);
+    }
+
     @Get('invoice/:id')
     @Roles(UserRole.VENDOR, UserRole.ADMIN, UserRole.SUPERADMIN)
     @ApiOperation({ summary: 'Get a single invoice detail for the logged-in vendor' })
@@ -220,8 +227,9 @@ export class SubscriptionsController {
     async offerPlanCheckout(
         @CurrentUser() user: User,
         @Param('planId') planId: string,
+        @Body() body: { targetId?: string },
     ) {
-        return this.subService.createOfferPlanCheckoutSession(user.id, planId);
+        return this.subService.createOfferPlanCheckoutSession(user.id, planId, body.targetId);
     }
 
     // --- Webhook ---

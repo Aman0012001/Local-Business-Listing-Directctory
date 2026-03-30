@@ -197,10 +197,7 @@ export default function VendorEnquiriesPage() {
     const isVendor = user?.role === 'vendor';
 
     const fetchEnquiries = useCallback(async (silent = false) => {
-        if (!user || (isVendor && !features.showQueries)) {
-            setLoading(false);
-            return;
-        }
+        if (!user) { setLoading(false); return; }
         if (!silent) setLoading(true); else setRefreshing(true);
         try {
             const params: any = { page, limit: LIMIT };
@@ -229,15 +226,11 @@ export default function VendorEnquiriesPage() {
             setLoading(false);
             setRefreshing(false);
         }
-    }, [user, isVendor, features.showQueries, page, filterStatus]);
+    }, [user, page, filterStatus]);
 
     useEffect(() => {
-        if (user && isVendor && !features.showQueries) {
-            setLoading(false);
-            return;
-        }
         fetchEnquiries();
-    }, [user, isVendor, features.showQueries, fetchEnquiries]);
+    }, [user, fetchEnquiries]);
 
     if (loading) {
         return (
@@ -248,7 +241,8 @@ export default function VendorEnquiriesPage() {
         );
     }
 
-    if (isVendor && !features.showQueries) {
+    // Free plan vendors always see their queries. Only lock if paid plan explicitly disables showQueries.
+    if (isVendor && activeSub && features.showQueries === false) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100 mt-20">
                 <div className="w-20 h-20 bg-violet-50 text-violet-600 rounded-3xl flex items-center justify-center mb-6">

@@ -68,7 +68,9 @@ export default function VendorDemandPage() {
         );
     }
 
-    if (!isAdmin && isVendor && !features.showDemand) {
+    // Lock screen: only if vendor has a PAID subscription that explicitly disables showDemand.
+    // Free plan vendors (no active sub) always have access.
+    if (!isAdmin && isVendor && activeSub && features.showDemand === false) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100">
                 <div className="w-20 h-20 bg-orange-50 text-[#FF7A30] rounded-3xl flex items-center justify-center mb-6">

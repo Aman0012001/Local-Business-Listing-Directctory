@@ -19,7 +19,9 @@ import { Listing } from '../../entities/business.entity';
 import { AffiliateReferral, ReferralStatus, ReferralType } from '../../entities/referral.entity';
 import { Affiliate } from '../../entities/affiliate.entity';
 import { CreatePlanDto, UpdatePlanDto, CheckoutDto, AssignPlanDto, CreateOfferPlanDto, UpdateOfferPlanDto } from './dto/subscription.dto';
-import { OfferEventPricing } from '../../entities/offer-event-pricing.entity';
+import { OfferEventPricing, PricingUnit } from '../../entities/offer-event-pricing.entity';
+import { OfferEvent } from '../../entities/offer-event.entity';
+
 
 import { ConfigService } from '@nestjs/config';
 import { AffiliateService } from '../affiliate/affiliate.service';
@@ -52,9 +54,12 @@ export class SubscriptionsService implements OnModuleInit {
         private affiliateRepository: Repository<Affiliate>,
         @InjectRepository(OfferEventPricing)
         private offerPricingRepository: Repository<OfferEventPricing>,
+        @InjectRepository(OfferEvent)
+        private offerEventRepository: Repository<OfferEvent>,
         private configService: ConfigService,
         private affiliateService: AffiliateService,
     ) {}
+
 
     onModuleInit() {
         const apiKey = this.configService.get<string>('STRIPE_SECRET_KEY');
@@ -397,6 +402,24 @@ export class SubscriptionsService implements OnModuleInit {
                             await this.processSubscriptionSuccess(vendorId, plan.id, session.id, 'Stripe');
                             return { success: true };
                         }
+                    }
+                }
+
+                if (session.metadata?.offerPlanId) {
+                    const vendorId = session.client_reference_id;
+                    const { offerPlanId, targetId } = session.metadata;
+                    if (vendorId && offerPlanId) {
+                        await this.processOfferPlanSuccess(vendorId, offerPlanId, session.id, 'Stripe', targetId);
+                        return { success: true };
+                    }
+                }
+
+                if (session.metadata?.planId) {
+                    const vendorId = session.client_reference_id;
+                    const { planId, targetId } = session.metadata;
+                    if (vendorId && planId) {
+                        await this.processActivePlanSuccess(vendorId, planId, session.id, 'Stripe', targetId);
+                        return { success: true };
                     }
                 }
             }
@@ -888,6 +911,59 @@ export class SubscriptionsService implements OnModuleInit {
     }
 
     /**
+     * Get all active promotions for a vendor (Business Plans, Offer/Event Boosts)
+     */
+    async getActivePromotions(userId: string) {
+        const vendor = await this.vendorRepository.findOne({ where: { userId } });
+        if (!vendor) throw new ForbiddenException('Vendor not found');
+        const now = new Date();
+
+        // 1. Get active feature plans (Featured Listing, Homepage, etc.)
+        const activePlans = await this.activePlanRepository.find({
+            where: {
+                vendorId: vendor.id,
+                status: ActivePlanStatus.ACTIVE,
+                endDate: MoreThan(now),
+            },
+            relations: ['plan', 'offerPlan'],
+            order: { endDate: 'ASC' },
+        });
+
+        // 2. Get active featured offers/events
+        const featuredOffers = await this.offerEventRepository.find({
+            where: {
+                vendorId: vendor.id,
+                isFeatured: true,
+                featuredUntil: MoreThan(now),
+            },
+            relations: ['business'],
+            order: { featuredUntil: 'ASC' },
+        });
+
+        return {
+            plans: activePlans.map(p => ({
+                id: p.id,
+                name: p.plan?.name || p.offerPlan?.name || 'Boost Plan',
+                type: p.plan?.type || p.offerPlan?.type,
+                startDate: p.startDate,
+                endDate: p.endDate,
+                status: p.status,
+                target: p.targetId ? 'Boosted Item' : 'Listing Feature',
+            })),
+            boosts: featuredOffers.map(o => ({
+                id: o.id,
+                name: `Feature ${o.type.toUpperCase()}`,
+                title: o.title,
+                business: o.business?.title,
+                startDate: o.startDate, 
+                endDate: o.featuredUntil,
+                type: o.type,
+                target: o.title,
+            })),
+        };
+    }
+
+    /**
      * Get single invoice/transaction detail for vendor
      */
     async getInvoiceDetail(transactionId: string, userId: string) {
@@ -964,24 +1040,9 @@ export class SubscriptionsService implements OnModuleInit {
                 // --- OFFER / EVENT PLAN (OfferEventPricing) ---
                 if (session.metadata?.offerPlanId) {
                     const vendorId = session.client_reference_id;
-                    const { offerPlanId } = session.metadata;
+                    const { offerPlanId, targetId } = session.metadata;
                     this.logger.log(`🎯 Activating offer/event plan: ${offerPlanId} for vendor: ${vendorId}`);
-                    // vendorId here is the vendor.id (client_reference_id)
-                    const plan = await this.offerPricingRepository.findOne({ where: { id: offerPlanId } });
-                    if (plan) {
-                        const transactionId = `OEP-STRIPE-${session.id.slice(-8)}`;
-                        const transaction = this.transactionRepository.create({
-                            vendorId,
-                            amount: plan.price,
-                            status: PaymentStatus.COMPLETED,
-                            paidAt: new Date(),
-                            gatewayTransactionId: session.id,
-                            paymentGateway: 'Stripe',
-                            invoiceNumber: `INV-OEP-${Date.now().toString().slice(-6)}`,
-                        });
-                        await this.transactionRepository.save(transaction);
-                        this.logger.log(`✅ Offer plan "${plan.name}" activated via Stripe for vendor ${vendorId}`);
-                    }
+                    await this.processOfferPlanSuccess(vendorId, offerPlanId, session.id, 'Stripe', targetId);
                     return { received: true };
                 }
 
@@ -1153,6 +1214,7 @@ export class SubscriptionsService implements OnModuleInit {
     async createOfferPlanCheckoutSession(
         userId: string,
         offerPlanId: string,
+        targetId?: string // Optional target ID (offer/event) to boost
     ): Promise<{ sessionId: string; checkoutUrl: string }> {
         const vendor = await this.vendorRepository.findOne({
             where: { userId },
@@ -1167,7 +1229,6 @@ export class SubscriptionsService implements OnModuleInit {
         const baseUrl = frontendUrl.split(',')[0].trim();
 
         // ── Ensure plan has a valid, price-matching Stripe Price (PKR recurring) ──
-        // Mirrors the self-healing price logic in createPricingCheckoutSession.
         let needsNewPrice = !plan.stripePriceId;
         if (plan.stripePriceId) {
             try {
@@ -1187,38 +1248,31 @@ export class SubscriptionsService implements OnModuleInit {
                 name: plan.name,
                 metadata: { offerPlanId: plan.id, type: plan.type },
             });
-            // Use recurring so there is no $0.50 minimum (same as subscription plans)
             const price = await this.stripe.prices.create({
                 product: product.id,
                 unit_amount: Math.round(Number(plan.price) * 100),
                 currency: 'pkr',
-                recurring: { interval: 'month' }, // recurring avoids one-time minimum
+                recurring: { interval: 'month' },
             });
             plan.stripePriceId = price.id;
             await this.offerPricingRepository.save(plan);
             this.logger.log(`Created Stripe price ${price.id} for offer plan "${plan.name}" at PKR ${plan.price}`);
         }
 
-        // ── Resolve Stripe Customer ID (self-healing) ─────────────────────────
+        // ── Resolve Stripe Customer ID (self-healing) ──
         let customerId = vendor.stripeCustomerId;
         if (customerId) {
             try {
-                // Synchronize customer details with Stripe
                 await this.stripe.customers.update(customerId, {
                     email: vendor.businessEmail || vendor.user?.email,
                     name: vendor.businessName || vendor.user?.fullName,
-                    phone: vendor.businessPhone || vendor.user?.phone || undefined,
                     address: { country: 'PK' },
                 });
-                this.logger.log(`Synchronized Stripe customer ${customerId} for vendor ${vendor.id}`);
             } catch (err: any) {
                 if (err?.code === 'resource_missing' || err?.message?.includes('No such customer')) {
-                    this.logger.warn(`Stale Stripe customer ID "${customerId}" — clearing and recreating.`);
                     customerId = null;
                     vendor.stripeCustomerId = null;
                     await this.vendorRepository.save(vendor);
-                } else {
-                    this.logger.error(`Failed to update Stripe customer ${customerId}: ${err.message}`);
                 }
             }
         }
@@ -1232,10 +1286,8 @@ export class SubscriptionsService implements OnModuleInit {
             customerId = customer.id;
             vendor.stripeCustomerId = customerId;
             await this.vendorRepository.save(vendor);
-            this.logger.log(`Created Stripe customer ${customerId} for vendor ${vendor.id}`);
         }
 
-        // ── Create checkout session (subscription mode = no $0.50 minimum) ────
         const session = await this.stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             customer: customerId,
@@ -1244,16 +1296,16 @@ export class SubscriptionsService implements OnModuleInit {
                 offerPlanId: plan.id,
                 planType: plan.type,
                 planName: plan.name,
+                targetId: targetId || '',
             },
             line_items: [{ price: plan.stripePriceId, quantity: 1 }],
             mode: 'subscription',
             locale: 'en',
             subscription_data: {
-                // Cancel after first period so it acts as a one-time charge
-                // Webhook will activate the plan on invoice.payment_succeeded
                 metadata: {
                     offerPlanId: plan.id,
                     vendorId: vendor.id,
+                    targetId: targetId || '',
                 },
             },
             success_url: `${baseUrl}/vendor/offer-plans/success?session_id={CHECKOUT_SESSION_ID}&plan=${encodeURIComponent(plan.name)}&duration=${plan.duration}&unit=${plan.unit}`,
@@ -1265,37 +1317,68 @@ export class SubscriptionsService implements OnModuleInit {
     }
 
     /**
-     * VENDOR: Activate an offer/event pricing plan purchase (used by webhook after Stripe payment)
-     * Uses offerPricingRepository — NOT pricingPlanRepository
+     * Activate an offer/event pricing plan purchase.
+     * Creates an ActivePlan record and updates featured flags if targetId is provided.
      */
-    async activateOfferPlan(
-        userId: string,
+    async processOfferPlanSuccess(
+        vendorId: string,
         offerPlanId: string,
-        gateway: string = 'Stripe',
-    ): Promise<{ success: boolean; plan: OfferEventPricing; transactionId: string }> {
-        const plan = await this.offerPricingRepository.findOne({ where: { id: offerPlanId, isActive: true } });
+        gatewayTransactionId: string,
+        gateway: string,
+        targetId?: string
+    ) {
+        const plan = await this.offerPricingRepository.findOne({ where: { id: offerPlanId } });
         if (!plan) throw new NotFoundException('Offer plan not found');
 
-        const vendor = await this.vendorRepository.findOne({ where: { userId } });
-        if (!vendor) throw new NotFoundException('Vendor profile not found');
-
-        const transactionId = `OEP-${gateway.toUpperCase()}-${Date.now()}`;
         const now = new Date();
+        const startDate = now;
+        const endDate = new Date(now);
+
+        // Calculate end date
+        switch (plan.unit) {
+            case PricingUnit.MINUTES: endDate.setMinutes(endDate.getMinutes() + plan.duration); break;
+            case PricingUnit.HOURS: endDate.setHours(endDate.getHours() + plan.duration); break;
+            case PricingUnit.DAYS: endDate.setDate(endDate.getDate() + plan.duration); break;
+        }
+
+        // Create ActivePlan record
+        const activePlan = this.activePlanRepository.create({
+            vendorId,
+            offerPlanId,
+            targetId: targetId || null,
+            status: ActivePlanStatus.ACTIVE,
+            startDate,
+            endDate,
+            amountPaid: plan.price,
+            transactionId: gatewayTransactionId,
+        });
+
+        const saved = await this.activePlanRepository.save(activePlan);
+
+        // Sync featured flags if it's an offer/event boost
+        if (targetId) {
+            await this.offerEventRepository.update(targetId, {
+                isFeatured: true,
+                featuredUntil: endDate,
+                pricingId: plan.id,
+            });
+            this.logger.log(`✨ Boosted offer/event ${targetId} until ${endDate}`);
+        }
 
         // Record transaction
         const transaction = this.transactionRepository.create({
-            vendorId: vendor.id,
+            vendorId,
             amount: plan.price,
             status: PaymentStatus.COMPLETED,
             paidAt: now,
-            gatewayTransactionId: transactionId,
+            gatewayTransactionId,
             paymentGateway: gateway,
             invoiceNumber: `INV-OEP-${Date.now().toString().slice(-6)}`,
         });
         await this.transactionRepository.save(transaction);
 
-        this.logger.log(`✅ Offer plan "${plan.name}" activated for vendor ${vendor.id}`);
-        return { success: true, plan, transactionId };
+        this.logger.log(`✅ Offer plan "${plan.name}" activated for vendor ${vendorId}`);
+        return saved;
     }
 }
 

@@ -47,7 +47,9 @@ export default function VendorAnalyticsPage() {
         );
     }
 
-    if (isVendor && !features.showAnalytics) {
+    // Lock screen: only if vendor has a PAID subscription that explicitly disables showAnalytics.
+    // Free plan vendors (no active sub) always have access.
+    if (isVendor && activeSub && features.showAnalytics === false) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100">
                 <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mb-6">

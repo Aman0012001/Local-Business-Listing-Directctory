@@ -62,10 +62,18 @@ export default function AddListingPage() {
     const [mapLoaded, setMapLoaded] = useState(false);
     const [suggestions, setSuggestions] = useState<Category[]>([]);
     const [suggestionsLoading, setSuggestionsLoading] = useState(false);
-    
+    const [myListingsCount, setMyListingsCount] = useState<number | null>(null);
+
+    // Free plan: always active, allows 1 listing. Paid plan: controlled by dashboardFeatures.
     const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
     const features = activeSub?.plan?.dashboardFeatures || {};
     const isVendor = user?.role === 'vendor';
+    // On free plan (no paid sub): 1 listing allowed. On paid plan: allowed unless explicitly disabled.
+    const canAdd = isVendor
+        ? activeSub
+            ? features.canAddListing !== false   // paid plan: show unless explicitly false
+            : myListingsCount !== null && myListingsCount < 1  // free plan: 1 listing max
+        : true;
 
     useEffect(() => {
         if (typeof window !== 'undefined' && (window as any).google?.maps?.importLibrary) {
@@ -193,6 +201,7 @@ export default function AddListingPage() {
     const mapRef = useRef<any>(null);
     const markerRef = useRef<any>(null);
     const mapContainerRef = useRef<HTMLDivElement>(null);
+    const initInProgress = useRef(false);
     const formDataRef = useRef(formData);
 
     // Keep ref in sync
@@ -275,13 +284,15 @@ export default function AddListingPage() {
     };
 
     const initAutocomplete = async () => {
-        if (!mapLoaded || !(window as any).google || !addressInputRef.current || !mapContainerRef.current) return;
+        if (!mapLoaded || !(window as any).google || !addressInputRef.current || !mapContainerRef.current || initInProgress.current) return;
 
         try {
+            initInProgress.current = true;
             const defaultCenter = { lat: formData.latitude, lng: formData.longitude };
 
             if (!(window as any).google?.maps?.importLibrary) {
                 console.warn('[AddListing] Google Maps importLibrary not available yet');
+                initInProgress.current = false;
                 return;
             }
 
@@ -292,7 +303,7 @@ export default function AddListingPage() {
                 mapRef.current = new Map(mapContainerRef.current, {
                     center: defaultCenter,
                     zoom: 15,
-                    mapId: 'DEMO_MAP_ID',
+                    mapTypeId: 'roadmap',
                     mapTypeControl: false,
                     streetViewControl: false,
                     fullscreenControl: false,
@@ -300,53 +311,54 @@ export default function AddListingPage() {
 
                 console.log('[AddListing] Map instance created');
 
-                // Try AdvancedMarkerElement
                 try {
-                    const { AdvancedMarkerElement } = await (window as any).google.maps.importLibrary("marker");
-                    markerRef.current = new AdvancedMarkerElement({
-                        position: defaultCenter,
-                        map: mapRef.current,
-                        gmpDraggable: true,
-                        title: "Drag to set location",
-                    });
-                    console.log('[AddListing] AdvancedMarkerElement initialized');
-                } catch (markerErr) {
-                    console.warn('[AddListing] AdvancedMarkerElement failed, using Legacy Marker:', markerErr);
                     const { Marker } = await (window as any).google.maps.importLibrary("marker");
                     markerRef.current = new Marker({
                         position: defaultCenter,
                         map: mapRef.current,
                         draggable: true,
                         title: "Drag to set location",
+                        animation: (window as any).google?.maps?.Animation?.DROP
                     });
                     console.log('[AddListing] Legacy Marker initialized');
+                } catch (markerErr) {
+                    console.warn('[AddListing] Marker failure:', markerErr);
                 }
 
-                markerRef.current.addListener("dragend", (e: any) => {
-                    let lat: number, lng: number;
-                    if (e && e.latLng) {
-                        lat = typeof e.latLng.lat === 'function' ? e.latLng.lat() : e.latLng.lat;
-                        lng = typeof e.latLng.lng === 'function' ? e.latLng.lng() : e.latLng.lng;
-                    } else {
-                        const pos = markerRef.current.position;
-                        if (!pos) return;
-                        lat = typeof pos.lat === 'function' ? pos.lat() : pos.lat;
-                        lng = typeof pos.lng === 'function' ? pos.lng() : pos.lng;
-                    }
-                    updateLocationFromCoords(lat, lng);
-                });
+                if (markerRef.current) {
+                    markerRef.current.addListener("dragend", (e: any) => {
+                        let lat: number, lng: number;
+                        if (e && e.latLng) {
+                            lat = typeof e.latLng.lat === 'function' ? e.latLng.lat() : e.latLng.lat;
+                            lng = typeof e.latLng.lng === 'function' ? e.latLng.lng() : e.latLng.lng;
+                        } else {
+                            const pos = markerRef.current.position;
+                            if (!pos) return;
+                            lat = typeof pos.lat === 'function' ? pos.lat() : pos.lat;
+                            lng = typeof pos.lng === 'function' ? pos.lng() : pos.lng;
+                        }
+                        updateLocationFromCoords(lat, lng);
+                    });
+                }
 
                 mapRef.current.addListener("click", (e: any) => {
                     if (e.latLng) {
                         const pos = { lat: e.latLng.lat(), lng: e.latLng.lng() };
-                        if (markerRef.current.setPosition) {
-                            markerRef.current.setPosition(pos);
-                        } else {
-                            markerRef.current.position = pos;
+                        if (markerRef.current) {
+                            if (markerRef.current.setPosition) {
+                                markerRef.current.setPosition(pos);
+                            } else {
+                                markerRef.current.position = pos;
+                            }
                         }
                         updateLocationFromCoords(pos.lat, pos.lng);
                     }
                 });
+            } else {
+                // Handle map resize if container was hidden
+                if ((window as any).google?.maps?.event) {
+                    (window as any).google.maps.event.trigger(mapRef.current, 'resize');
+                }
             }
 
             if (!autoCompleteRef.current) {
@@ -418,6 +430,8 @@ export default function AddListingPage() {
         } catch (err) {
             console.error('[AddListing] Map initialization error:', err);
             setMapError(true);
+        } finally {
+            initInProgress.current = false;
         }
     };
 
@@ -457,10 +471,11 @@ export default function AddListingPage() {
             setCatsLoading(true);
             setCatsError(null);
             try {
-                const [cats, cityList, amenityList] = await Promise.all([
+                const [cats, cityList, amenityList, myListings] = await Promise.all([
                     api.categories.getAll(),
                     api.cities.getAll(),
-                    api.listings.getAmenities()
+                    api.listings.getAmenities(),
+                    api.listings.getMyListings({ limit: 1 }).catch(() => ({ meta: { total: 0 } }))
                 ]);
                 // Normalise in case API wraps response
                 const catArray = Array.isArray(cats) ? cats : (cats as any)?.data ?? [];
@@ -468,6 +483,8 @@ export default function AddListingPage() {
                 setCategories(catArray);
                 setCities(cityArray);
                 setAmenities(amenityList || []);
+                // Track how many listings the vendor already has (for free plan limit)
+                setMyListingsCount((myListings as any)?.meta?.total ?? (myListings as any)?.length ?? 0);
                 setFormData(prev => ({
                     ...prev,
                     categoryId: catArray[0]?.id || '',
@@ -697,19 +714,45 @@ export default function AddListingPage() {
         }
     };
 
-    if (isVendor && !features.canAddListing) {
+    // Show upgrade screen if:
+    // (a) Free plan and already has 1 listing (limit reached), OR
+    // (b) Paid plan where canAddListing is explicitly false
+    if (isVendor && myListingsCount !== null && !canAdd) {
+        const isFreePlanLimit = !activeSub;
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100 mt-20">
-                <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mb-6">
-                    <Lock className="w-10 h-10" />
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100 mt-10">
+                <div className="w-20 h-20 bg-gradient-to-br from-orange-400 to-rose-500 rounded-3xl flex items-center justify-center mb-6 shadow-lg shadow-orange-200">
+                    <Lock className="w-10 h-10 text-white" />
                 </div>
-                <h2 className="text-3xl font-black text-slate-900 mb-3">Add New Listing</h2>
-                <p className="text-slate-500 max-w-md mx-auto mb-8 font-bold leading-relaxed">
-                    Expanding your business presence by adding new listings is a Basic feature. Upgrade your plan to list more branches or services!
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-orange-50 border border-orange-100 rounded-full mb-4">
+                    <span className="w-1.5 h-1.5 bg-orange-500 rounded-full" />
+                    <span className="text-xs font-black uppercase tracking-widest text-orange-600">
+                        {isFreePlanLimit ? 'Free Plan' : 'Plan Limit Reached'}
+                    </span>
+                </div>
+                <h2 className="text-3xl font-black text-slate-900 mb-3">Listing Limit Reached</h2>
+                <p className="text-slate-500 max-w-md mx-auto mb-2 font-bold leading-relaxed">
+                    {isFreePlanLimit
+                        ? 'Your free plan includes 1 business listing. You already have an active listing!'
+                        : 'Your current plan does not allow adding more listings.'}
                 </p>
-                <Link href="/vendor/subscription" className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black tracking-tight hover:bg-black transition-all active:scale-95 shadow-xl shadow-slate-200">
-                    Upgrade My Plan
-                </Link>
+                <p className="text-slate-400 max-w-sm mx-auto mb-8 text-sm font-bold">
+                    Upgrade to a paid plan to add unlimited listings, unlock premium features, and grow your business faster.
+                </p>
+                <div className="flex items-center gap-3">
+                    <Link
+                        href="/vendor/listings"
+                        className="px-7 py-3.5 bg-slate-100 text-slate-700 rounded-2xl font-black text-sm tracking-tight hover:bg-slate-200 transition-all active:scale-95"
+                    >
+                        View My Listing
+                    </Link>
+                    <Link
+                        href="/vendor/subscription"
+                        className="px-7 py-3.5 bg-gradient-to-r from-orange-500 to-rose-500 text-white rounded-2xl font-black text-sm tracking-tight hover:opacity-90 transition-all active:scale-95 shadow-lg shadow-orange-500/25"
+                    >
+                        🚀 Upgrade My Plan
+                    </Link>
+                </div>
             </div>
         );
     }

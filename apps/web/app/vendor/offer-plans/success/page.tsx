@@ -2,8 +2,9 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { CheckCircle2, ArrowRight, Gift, Tag, Calendar } from 'lucide-react';
+import { CheckCircle2, ArrowRight, Gift, Tag, Calendar, Loader2, XCircle } from 'lucide-react';
 import Link from 'next/link';
+import { api } from '../../../../lib/api';
 
 function SuccessContent() {
     const params = useSearchParams();
@@ -14,16 +15,45 @@ function SuccessContent() {
     const sessionId = params.get('session_id');
 
     const [countdown, setCountdown] = useState(8);
+    const [verifying, setVerifying] = useState(!!sessionId);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        if (!sessionId) return;
+
+        const verifyPayment = async () => {
+            try {
+                const response: any = await api.post('/subscriptions/verify', { sessionId });
+                if (response.success) {
+                    console.log('Payment verified successfully');
+                } else {
+                    setError('Payment verification failed. Please contact support if your plan is not active.');
+                }
+            } catch (err) {
+                console.error('Error verifying payment:', err);
+                setError('Could not verify payment automatically. Our system will sync shortly.');
+            } finally {
+                setVerifying(false);
+            }
+        };
+
+        verifyPayment();
+    }, [sessionId]);
+
+    useEffect(() => {
+        if (verifying) return; // Wait during verification
+        
         const t = setInterval(() => {
-            setCountdown(c => {
-                if (c <= 1) { clearInterval(t); router.push('/vendor/offers'); return 0; }
-                return c - 1;
-            });
+            setCountdown(c => (c > 0 ? c - 1 : 0));
         }, 1000);
         return () => clearInterval(t);
-    }, [router]);
+    }, [verifying]);
+
+    useEffect(() => {
+        if (countdown <= 0) {
+            router.push('/vendor/offers');
+        }
+    }, [countdown, router]);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 flex items-center justify-center p-6">
@@ -40,11 +70,26 @@ function SuccessContent() {
 
                 {/* Heading */}
                 <h1 className="text-4xl font-black text-slate-900 mb-3">
-                    Payment Successful! 🎉
+                    {verifying ? 'Verifying Payment...' : error ? 'Activation Pending' : 'Payment Successful! 🎉'}
                 </h1>
                 <p className="text-slate-500 font-bold mb-8 text-lg">
-                    Your offer & event boost is now <span className="text-orange-500">active</span>
+                    {verifying 
+                        ? 'We are confirming your transaction with Stripe...' 
+                        : error 
+                            ? error 
+                            : <>Your offer & event boost is now <span className="text-orange-500">active</span></>
+                    }
                 </p>
+
+                {verifying && (
+                    <div className="flex justify-center mb-12">
+                        <div className="relative">
+                            <div className="w-20 h-20 border-4 border-orange-100 rounded-full" />
+                            <div className="absolute top-0 left-0 w-20 h-20 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
+                            <Loader2 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 text-orange-500 animate-pulse" />
+                        </div>
+                    </div>
+                )}
 
                 {/* Plan card */}
                 <div className="bg-white border-2 border-orange-200 rounded-3xl p-6 mb-8 shadow-xl shadow-orange-500/10">

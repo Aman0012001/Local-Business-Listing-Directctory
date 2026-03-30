@@ -149,6 +149,7 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
     const mapRef = useRef<any>(null);
     const markerRef = useRef<any>(null);
     const mapContainerRef = useRef<HTMLDivElement>(null);
+    const initInProgress = useRef(false);
     const formDataRef = useRef(formData);
 
     useEffect(() => {
@@ -224,13 +225,15 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
     };
 
     const initAutocomplete = async () => {
-        if (!mapContainerRef.current || !addressInputRef.current) return;
+        if (!mapContainerRef.current || !addressInputRef.current || initInProgress.current) return;
 
         try {
+            initInProgress.current = true;
             const defaultCenter = { lat: formData.latitude, lng: formData.longitude };
             
             if (!(window as any).google?.maps?.importLibrary) {
                 console.warn('[AddBusiness] Google Maps importLibrary not available yet');
+                initInProgress.current = false;
                 return;
             }
 
@@ -241,7 +244,7 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                 mapRef.current = new Map(mapContainerRef.current, {
                     center: defaultCenter,
                     zoom: 15,
-                    mapId: 'DEMO_MAP_ID',
+                    mapTypeId: 'roadmap',
                     mapTypeControl: false,
                     streetViewControl: false,
                     fullscreenControl: false,
@@ -249,53 +252,54 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
 
                 console.log('[AddBusiness] Map instance created');
 
-                // Try AdvancedMarkerElement
                 try {
-                    const { AdvancedMarkerElement } = await (window as any).google.maps.importLibrary("marker");
-                    markerRef.current = new AdvancedMarkerElement({
-                        position: defaultCenter,
-                        map: mapRef.current,
-                        gmpDraggable: true,
-                        title: "Drag to set location",
-                    });
-                    console.log('[AddBusiness] AdvancedMarkerElement initialized');
-                } catch (markerErr) {
-                    console.warn('[AddBusiness] AdvancedMarkerElement failed, using Legacy Marker:', markerErr);
                     const { Marker } = await (window as any).google.maps.importLibrary("marker");
                     markerRef.current = new Marker({
                         position: defaultCenter,
                         map: mapRef.current,
                         draggable: true,
                         title: "Drag to set location",
+                        animation: (window as any).google?.maps?.Animation?.DROP
                     });
                     console.log('[AddBusiness] Legacy Marker initialized');
+                } catch (markerErr) {
+                    console.warn('[AddBusiness] Marker failure:', markerErr);
                 }
 
-                markerRef.current.addListener("dragend", (e: any) => {
-                    let lat: number, lng: number;
-                    if (e && e.latLng) {
-                        lat = typeof e.latLng.lat === 'function' ? e.latLng.lat() : e.latLng.lat;
-                        lng = typeof e.latLng.lng === 'function' ? e.latLng.lng() : e.latLng.lng;
-                    } else {
-                        const pos = markerRef.current.position;
-                        if (!pos) return;
-                        lat = typeof pos.lat === 'function' ? pos.lat() : pos.lat;
-                        lng = typeof pos.lng === 'function' ? pos.lng() : pos.lng;
-                    }
-                    updateLocationFromCoords(lat, lng);
-                });
+                if (markerRef.current) {
+                    markerRef.current.addListener("dragend", (e: any) => {
+                        let lat: number, lng: number;
+                        if (e && e.latLng) {
+                            lat = typeof e.latLng.lat === 'function' ? e.latLng.lat() : e.latLng.lat;
+                            lng = typeof e.latLng.lng === 'function' ? e.latLng.lng() : e.latLng.lng;
+                        } else {
+                            const pos = markerRef.current.position;
+                            if (!pos) return;
+                            lat = typeof pos.lat === 'function' ? pos.lat() : pos.lat;
+                            lng = typeof pos.lng === 'function' ? pos.lng() : pos.lng;
+                        }
+                        updateLocationFromCoords(lat, lng);
+                    });
+                }
 
                 mapRef.current.addListener("click", (e: any) => {
                     if (e.latLng) {
                         const pos = { lat: e.latLng.lat(), lng: e.latLng.lng() };
-                        if (markerRef.current.setPosition) {
-                            markerRef.current.setPosition(pos);
-                        } else {
-                            markerRef.current.position = pos;
+                        if (markerRef.current) {
+                            if (markerRef.current.setPosition) {
+                                markerRef.current.setPosition(pos);
+                            } else {
+                                markerRef.current.position = pos;
+                            }
                         }
                         updateLocationFromCoords(pos.lat, pos.lng);
                     }
                 });
+            } else {
+                // Handle map resize if container was hidden
+                if ((window as any).google?.maps?.event) {
+                    (window as any).google.maps.event.trigger(mapRef.current, 'resize');
+                }
             }
 
             if (!autoCompleteRef.current) {
@@ -363,6 +367,8 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
         } catch (err) {
             console.error('[AddBusiness] Map initialization error:', err);
             setMapError(true);
+        } finally {
+            initInProgress.current = false;
         }
     };
 

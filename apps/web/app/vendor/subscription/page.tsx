@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     CreditCard, CheckCircle2, Clock, Zap, Check,
     AlertTriangle, FileText, Download, X, ChevronRight, Loader2,
-    Receipt, BadgeCheck, RefreshCw, Eye
+    BadgeCheck, RefreshCw, Eye
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../../lib/api';
@@ -102,7 +102,7 @@ function InvoiceModal({ invoiceId, onClose, user }: { invoiceId: string; onClose
                 <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-2xl bg-orange-50 flex items-center justify-center">
-                            <Receipt className="w-5 h-5 text-orange-500" />
+                            <FileText className="w-5 h-5 text-orange-500" />
                         </div>
                         <div>
                             <h2 className="text-lg font-black text-slate-900">Invoice</h2>
@@ -583,7 +583,7 @@ export default function VendorSubscriptionPage() {
                         onClick={() => setTab(t as any)}
                         className={`px-6 py-2.5 rounded-xl text-sm font-black transition-all capitalize ${tab === t ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
                     >
-                        {t === 'plan' ? '📦 Plans' : '🧾 Invoices'}
+                        {t === 'plan' ? '📦 Plans' : '📑 Invoices'}
                     </button>
                 ))}
             </div>
@@ -617,14 +617,14 @@ export default function VendorSubscriptionPage() {
                         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                             <div className="px-6 py-5 border-b border-slate-100 flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
-                                    <Receipt className="w-4 h-4 text-orange-500" />
+                                    <FileText className="w-4 h-4 text-orange-500" />
                                 </div>
                                 <h3 className="font-black text-slate-900">Invoice History</h3>
                                 <span className="ml-auto text-xs font-black text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full">{invoices.length} records</span>
                             </div>
                             {invoices.length === 0 ? (
                                 <div className="text-center py-16 text-slate-400">
-                                    <Receipt className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                                    <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
                                     <p className="font-bold">No invoices yet</p>
                                     <p className="text-sm mt-1">Invoices will appear here after plan activation.</p>
                                 </div>
