@@ -1,127 +1,189 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { CheckCircle2, Loader2, Sparkles, ArrowRight, AlertTriangle } from 'lucide-react';
-import { api } from '../../../../lib/api';
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+    CheckCircle2, 
+    ArrowRight, 
+    Calendar, 
+    Tag, 
+    ChevronRight,
+    Loader2,
+    AlertCircle,
+    PartyPopper,
+    Zap,
+    Rocket
+} from 'lucide-react';
+import confetti from 'canvas-confetti';
+import { api } from '@/lib/api';
+import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
 
-export default function OfferFeatureSuccessPage() {
-    const searchParams = useSearchParams();
+function OfferSuccessContent() {
     const router = useRouter();
-    const sessionId = searchParams?.get('session_id');
-    const offerId = searchParams?.get('offer_id');
-
+    const searchParams = useSearchParams();
+    const sessionId = searchParams.get('session_id');
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-    const [errorMessage, setErrorMessage] = useState('');
+    const [details, setDetails] = useState<any>(null);
 
     useEffect(() => {
-        if (!sessionId || !offerId) {
+        if (sessionId) {
+            verifyPayment();
+        } else {
             setStatus('error');
-            setErrorMessage('Missing Session ID or Offer ID.');
-            return;
         }
+    }, [sessionId]);
 
-        const verifySession = async () => {
-            try {
-                const res = await api.offers.verifyFeature(offerId, sessionId);
-                if (res.success) {
-                    setStatus('success');
-                } else {
-                    setStatus('error');
-                    setErrorMessage('Payment verification failed. Please contact support if you were charged.');
-                }
-            } catch (err: any) {
+    const verifyPayment = async () => {
+        try {
+            const response = await api.subscriptions.verify(sessionId!);
+            if (response.success) {
+                setDetails(response);
+                setStatus('success');
+                confetti({
+                    particleCount: 150,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#3b82f6', '#22c55e', '#f59e0b']
+                });
+            } else {
                 setStatus('error');
-                setErrorMessage(err.message || 'Verification encountered an error.');
             }
-        };
+        } catch (error) {
+            console.error('Verification error:', error);
+            setStatus('error');
+        }
+    };
 
-        verifySession();
-    }, [sessionId, offerId]);
+    const containerVariants = {
+        hidden: { opacity: 0, scale: 0.95 },
+        visible: { 
+            opacity: 1, 
+            scale: 1,
+            transition: { duration: 0.5, staggerChildren: 0.1 }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 15 },
+        visible: { opacity: 1, y: 0 }
+    };
+
+    if (status === 'loading') {
+        return (
+            <div className="min-h-[60vh] flex flex-col items-center justify-center p-6">
+                <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
+                <p className="text-muted-foreground font-medium">Activating your feature boost...</p>
+            </div>
+        );
+    }
+
+    if (status === 'error') {
+        return (
+            <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
+                <AlertCircle className="w-16 h-16 text-destructive mb-6" />
+                <h1 className="text-2xl font-bold mb-2">Activation Pending</h1>
+                <p className="text-muted-foreground mb-8 max-w-sm">
+                    We're still processing your payment. It should appear in your active promotions shortly.
+                </p>
+                <Link href="/vendor/dashboard" className="px-6 py-3 bg-primary text-white rounded-full font-semibold">
+                    Go to Dashboard
+                </Link>
+            </div>
+        );
+    }
 
     return (
-        <div className="max-w-4xl mx-auto flex items-center justify-center min-h-[70vh] pb-16">
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="bg-white rounded-3xl border border-slate-100 shadow-2xl overflow-hidden w-full max-w-lg relative"
+        <div className="max-w-3xl mx-auto py-12 px-6">
+            <motion.div 
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="text-center"
             >
-                {/* Decorative background element */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-rose-500/10 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none" />
+                <motion.div variants={itemVariants} className="relative inline-block mb-8">
+                    <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center shadow-2xl shadow-primary/30">
+                        <Rocket className="w-12 h-12 text-white animate-bounce" />
+                    </div>
+                </motion.div>
 
-                <div className="relative p-10 flex flex-col items-center justify-center text-center">
-                    {status === 'loading' && (
-                        <>
-                            <div className="w-24 h-24 rounded-full bg-slate-50 flex items-center justify-center mb-6">
-                                <Loader2 className="w-10 h-10 text-orange-500 animate-spin" />
-                            </div>
-                            <h1 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">
-                                Verifying Payment
-                            </h1>
-                            <p className="text-slate-500 font-medium leading-relaxed">
-                                Please wait while we confirm your payment block...
-                            </p>
-                        </>
-                    )}
+                <motion.h1 variants={itemVariants} className="text-4xl font-extrabold mb-4">
+                    Feature Boost Active!
+                </motion.h1>
+                <motion.p variants={itemVariants} className="text-lg text-muted-foreground mb-12">
+                    Your offer is now being prioritized in search results and featured sections.
+                </motion.p>
 
-                    {status === 'success' && (
-                        <>
-                            <div className="w-24 h-24 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-6 relative">
-                                <motion.div
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    transition={{ type: "spring", bounce: 0.5 }}
-                                >
-                                    <CheckCircle2 className="w-12 h-12 text-emerald-500" />
-                                </motion.div>
-                                <motion.div 
-                                    className="absolute -top-1 -right-1"
-                                    animate={{ rotate: 360 }}
-                                    transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                                >
-                                    <Sparkles className="w-6 h-6 text-amber-400" />
-                                </motion.div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+                    <motion.div 
+                        variants={itemVariants}
+                        className="p-8 rounded-3xl border bg-white/40 dark:bg-slate-900/40 backdrop-blur-md text-left"
+                    >
+                        <h3 className="text-sm font-bold text-primary uppercase mb-6 flex items-center gap-2">
+                            <Tag className="w-4 h-4" /> Boost Details
+                        </h3>
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center pb-2 border-b">
+                                <span className="text-muted-foreground">Promotion</span>
+                                <span className="font-bold">{details?.planName || 'Offer Boost'}</span>
                             </div>
-                            <h1 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">
-                                Offer Promoted!
-                            </h1>
-                            <p className="text-slate-500 font-medium leading-relaxed mb-8">
-                                Payment successful. Your offer is now featured prominently across the platform. Watch your views and leads grow!
-                            </p>
-                            <Link
-                                href="/vendor/offers"
-                                className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-slate-900 hover:bg-black text-white rounded-xl font-black transition-all active:scale-95 group shadow-lg shadow-slate-200"
-                            >
-                                Back to Offers
-                                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                            </Link>
-                        </>
-                    )}
+                            <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground text-sm flex items-center gap-1">
+                                    <Calendar className="w-3.5 h-3.5" /> Valid Until
+                                </span>
+                                <span className="font-medium text-sm">
+                                    {details?.endDate ? new Date(details.endDate).toLocaleDateString() : 'N/A'}
+                                </span>
+                            </div>
+                        </div>
+                    </motion.div>
 
-                    {status === 'error' && (
-                        <>
-                            <div className="w-24 h-24 rounded-full bg-red-50 border border-red-100 flex items-center justify-center mb-6">
-                                <AlertTriangle className="w-12 h-12 text-red-500" />
-                            </div>
-                            <h1 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">
-                                Payment Issue
-                            </h1>
-                            <p className="text-red-500 font-bold leading-relaxed mb-6">
-                                {errorMessage}
-                            </p>
-                            <Link
-                                href="/vendor/offers"
-                                className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black transition-all active:scale-95"
-                            >
-                                Return to Offers
-                            </Link>
-                        </>
-                    )}
+                    <motion.div 
+                        variants={itemVariants}
+                        className="p-8 rounded-3xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-left relative overflow-hidden"
+                    >
+                        <h3 className="text-lg font-bold mb-4">What happens now?</h3>
+                        <ul className="space-y-3 text-sm opacity-80 mb-6">
+                            <li className="flex items-start gap-2">
+                                <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+                                Your offer is tagged as "Featured"
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+                                Boosted placement in categories
+                            </li>
+                        </ul>
+                        <Link href="/vendor/offers" className="inline-flex items-center gap-2 font-bold hover:gap-3 transition-all duration-300">
+                            Manage Offers <ChevronRight className="w-4 h-4" />
+                        </Link>
+                    </motion.div>
                 </div>
+
+                <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <Link href="/vendor/dashboard" className="px-8 py-4 bg-primary text-white rounded-2xl font-bold shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                        Back to Dashboard
+                    </Link>
+                    <Link href="/vendor/listings" className="px-8 py-4 border rounded-2xl font-bold hover:bg-muted transition-all">
+                        View Listings
+                    </Link>
+                </motion.div>
             </motion.div>
+        </div>
+    );
+}
+
+export default function OfferFeatureSuccessPage() {
+    return (
+        <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950">
+            <Navbar />
+            <main className="flex-grow flex items-center justify-center">
+                <Suspense fallback={<div>Loading...</div>}>
+                    <OfferSuccessContent />
+                </Suspense>
+            </main>
+            <Footer />
         </div>
     );
 }

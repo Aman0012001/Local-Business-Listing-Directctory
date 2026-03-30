@@ -11,6 +11,8 @@
     "dependencies": {
         "@googlemaps/markerclusterer": "^2.6.2",
         "@react-oauth/google": "^0.13.4",
+        "@types/canvas-confetti": "^1.9.0",
+        "canvas-confetti": "^1.9.4",
         "clsx": "^2.1.1",
         "date-fns": "^4.1.0",
         "framer-motion": "^11.1.7",

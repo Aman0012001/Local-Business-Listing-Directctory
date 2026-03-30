@@ -2,7 +2,7 @@ import { api } from '@/lib/api';
 import BusinessDetailClient from './BusinessDetailClient';
 
 export const revalidate = 60; // Revalidate every 60 seconds
-export const dynamicParams = false; // Required for static export
+export const dynamicParams = true; // Allow on-demand rendering for listings not in generateStaticParams
 
 export async function generateStaticParams() {
     try {

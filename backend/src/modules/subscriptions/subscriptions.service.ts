@@ -266,8 +266,11 @@ export class SubscriptionsService implements OnModuleInit {
         }
 
         const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
-        // Use only the first URL if FRONTEND_URL is a comma-separated list
-        const baseUrl = frontendUrl.split(',')[0].trim();
+        // Support comma-separated list of URLs (local and production)
+        const allowedUrls = frontendUrl.split(',').map(url => url.trim());
+        
+        // Default to the first allowed URL as our primary baseUrl
+        const baseUrl = allowedUrls[0];
 
         // ── Ensure plan has a valid Stripe Price ID (matching the current price) ────────────────
         let needsNewPrice = !plan.stripePriceId;
@@ -399,8 +402,14 @@ export class SubscriptionsService implements OnModuleInit {
                         
                         const plan = await this.planRepository.findOne({ where: { stripePriceId: priceId } });
                         if (plan) {
-                            await this.processSubscriptionSuccess(vendorId, plan.id, session.id, 'Stripe');
-                            return { success: true };
+                            const sub = await this.processSubscriptionSuccess(vendorId, plan.id, session.id, 'Stripe');
+                            return { 
+                                success: true, 
+                                planName: plan.name,
+                                planType: plan.planType,
+                                amount: plan.price,
+                                endDate: sub.endDate
+                            };
                         }
                     }
                 }
@@ -409,8 +418,13 @@ export class SubscriptionsService implements OnModuleInit {
                     const vendorId = session.client_reference_id;
                     const { offerPlanId, targetId } = session.metadata;
                     if (vendorId && offerPlanId) {
-                        await this.processOfferPlanSuccess(vendorId, offerPlanId, session.id, 'Stripe', targetId);
-                        return { success: true };
+                        const result = await this.processOfferPlanSuccess(vendorId, offerPlanId, session.id, 'Stripe', targetId);
+                        return { 
+                            success: true, 
+                            type: 'offer-promotion',
+                            planName: 'Offer Promotion',
+                            endDate: (result as any).endDate 
+                        };
                     }
                 }
 
@@ -418,8 +432,14 @@ export class SubscriptionsService implements OnModuleInit {
                     const vendorId = session.client_reference_id;
                     const { planId, targetId } = session.metadata;
                     if (vendorId && planId) {
-                        await this.processActivePlanSuccess(vendorId, planId, session.id, 'Stripe', targetId);
-                        return { success: true };
+                        const activePlan = await this.processActivePlanSuccess(vendorId, planId, session.id, 'Stripe', targetId);
+                        return { 
+                            success: true, 
+                            type: activePlan.plan?.type || 'plan',
+                            planName: activePlan.plan?.name || 'Active Plan',
+                            endDate: activePlan.endDate,
+                            amount: activePlan.amountPaid
+                        };
                     }
                 }
             }
@@ -695,7 +715,8 @@ export class SubscriptionsService implements OnModuleInit {
         }
 
         const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
-        const baseUrl = frontendUrl.split(',')[0].trim();
+        const allowedUrls = frontendUrl.split(',').map(url => url.trim());
+        const baseUrl = allowedUrls[0];
 
         // Ensure Stripe Price exists
         if (!plan.stripePriceId) {
