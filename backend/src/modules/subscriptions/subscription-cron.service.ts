@@ -10,6 +10,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { PushService } from '../notifications/push.service';
 import { Listing } from '../../entities/business.entity';
 import { PricingPlanType } from '../../entities/pricing-plan.entity';
+import { OfferEvent, OfferStatus } from '../../entities/offer-event.entity';
 
 @Injectable()
 export class SubscriptionCronService {
@@ -26,6 +27,8 @@ export class SubscriptionCronService {
         private userRepo: Repository<User>,
         @InjectRepository(Listing)
         private listingRepo: Repository<Listing>,
+        @InjectRepository(OfferEvent)
+        private offerEventRepo: Repository<OfferEvent>,
         private notificationsService: NotificationsService,
         private pushService: PushService,
     ) { }
@@ -72,6 +75,16 @@ export class SubscriptionCronService {
                     } else if (planType === PricingPlanType.LISTING_BOOST) {
                         await this.listingRepo.update(plan.targetId, { isSponsored: false });
                     }
+                }
+
+                // 3. If it was an offer/event promotion plan, deactivate the target offer/event
+                if (plan.offerPlanId && plan.targetId) {
+                    await this.offerEventRepo.update(plan.targetId, { 
+                        isActive: false, 
+                        status: OfferStatus.EXPIRED,
+                        isFeatured: false 
+                    });
+                    this.logger.log(`[Cron] Deactivated expired promo for offer/event ${plan.targetId}`);
                 }
                 
                 this.logger.log(`[Cron] Deactivated expired plan ${plan.id} for vendor ${plan.vendorId}`);
