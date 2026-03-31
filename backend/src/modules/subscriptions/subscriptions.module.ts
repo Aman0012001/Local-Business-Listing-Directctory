@@ -20,7 +20,7 @@ import { OfferEventPricing } from '../../entities/offer-event-pricing.entity';
 import { OfferEvent } from '../../entities/offer-event.entity';
 
 
-import { OffersModule } from '../offers/offers.module';
+
 @Module({
     imports: [
         TypeOrmModule.forFeature([
@@ -34,9 +34,10 @@ import { OffersModule } from '../offers/offers.module';
             Affiliate,
             AffiliateReferral,
             Listing,
+            OfferEventPricing,
+            OfferEvent,
         ]),
         AffiliateModule,
-        OffersModule,
     ],
     controllers: [SubscriptionsController],
     providers: [
