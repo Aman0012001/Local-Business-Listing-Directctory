@@ -34,8 +34,6 @@ import { OffersModule } from '../offers/offers.module';
             Affiliate,
             AffiliateReferral,
             Listing,
-            OfferEventPricing,
-            OfferEvent,
         ]),
         AffiliateModule,
         OffersModule,
