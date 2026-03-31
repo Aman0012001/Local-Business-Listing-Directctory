@@ -265,13 +265,12 @@ export class OffersService implements OnModuleInit {
         const now = new Date();
         let affected = 0;
 
-        // 1. Expire stale offers overall
+        // 1. Physically delete stale offers from the database
         const result = await this.offerRepository
             .createQueryBuilder()
-            .update(OfferEvent)
-            .set({ status: OfferStatus.EXPIRED })
+            .delete()
+            .from(OfferEvent)
             .where('expiry_date < :now', { now })
-            .andWhere('status != :expired', { expired: OfferStatus.EXPIRED })
             .execute();
         
         affected += result.affected || 0;

@@ -11,6 +11,7 @@ import { PushService } from '../notifications/push.service';
 import { Listing } from '../../entities/business.entity';
 import { PricingPlanType } from '../../entities/pricing-plan.entity';
 import { OfferEvent, OfferStatus } from '../../entities/offer-event.entity';
+import { OffersService } from '../offers/offers.service';
 
 @Injectable()
 export class SubscriptionCronService {
@@ -29,6 +30,7 @@ export class SubscriptionCronService {
         private listingRepo: Repository<Listing>,
         @InjectRepository(OfferEvent)
         private offerEventRepo: Repository<OfferEvent>,
+        private offersService: OffersService,
         private notificationsService: NotificationsService,
         private pushService: PushService,
     ) { }
@@ -77,20 +79,26 @@ export class SubscriptionCronService {
                     }
                 }
 
-                // 3. If it was an offer/event promotion plan, deactivate the target offer/event
+                // 3. If it was an offer/event promotion plan, PHYSICALLY DELETE the target offer/event
                 if (plan.offerPlanId && plan.targetId) {
-                    await this.offerEventRepo.update(plan.targetId, { 
-                        isActive: false, 
-                        status: OfferStatus.EXPIRED,
-                        isFeatured: false 
-                    });
-                    this.logger.log(`[Cron] Deactivated expired promo for offer/event ${plan.targetId}`);
+                    await this.offerEventRepo.delete(plan.targetId);
+                    this.logger.log(`[Cron] Permanently deleted expired offer/event ${plan.targetId} from database`);
                 }
                 
                 this.logger.log(`[Cron] Deactivated expired plan ${plan.id} for vendor ${plan.vendorId}`);
             } catch (err: any) {
-                this.logger.error(`[Cron] Failed to deactivate plan ${plan.id}: ${err.message}`);
+                this.logger.error(`[Cron] Error handling plan ${plan.id} expiry: ${err.message}`);
             }
+        }
+
+        // 4. Also run the general cleanup for non-boosted items (free ones) that have expired
+        try {
+            const staleAffected = await this.offersService.expireStaleOffers();
+            if (staleAffected > 0) {
+                this.logger.log(`[Cron] Cleaned up ${staleAffected} stale/un-featured items from database`);
+            }
+        } catch (err: any) {
+            this.logger.error(`[Cron] Error cleaning up stale offers: ${err.message}`);
         }
     }
 
