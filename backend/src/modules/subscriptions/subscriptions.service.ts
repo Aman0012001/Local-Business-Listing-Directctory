@@ -243,7 +243,7 @@ export class SubscriptionsService implements OnModuleInit {
      * Create a Stripe Checkout session for a vendor subscription.
      * Handles stale customer IDs gracefully by auto-recreating the Stripe customer.
      */
-    async createCheckoutSession(userId: string, checkoutDto: CheckoutDto) {
+    async createCheckoutSession(userId: string, checkoutDto: CheckoutDto, origin?: string) {
         const vendor = await this.vendorRepository.findOne({
             where: { userId },
             relations: ['user']
@@ -265,12 +265,12 @@ export class SubscriptionsService implements OnModuleInit {
             };
         }
 
-        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || '';
         // Support comma-separated list of URLs (local and production)
-        const allowedUrls = frontendUrl.split(',').map(url => url.trim());
+        const allowedUrls = frontendUrl ? frontendUrl.split(',').map(url => url.trim()) : [];
         
-        // Default to the first allowed URL as our primary baseUrl
-        const baseUrl = allowedUrls[0];
+        // Priority: 1. FRONTEND_URL config, 2. Dynamic origin from request, 3. Localhost fallback
+        const baseUrl = allowedUrls[0] || origin || 'http://localhost:3000';
 
         // ── Ensure plan has a valid Stripe Price ID (matching the current price) ────────────────
         let needsNewPrice = !plan.stripePriceId;
@@ -698,7 +698,7 @@ export class SubscriptionsService implements OnModuleInit {
     /**
      * Create a Stripe Checkout session for a new PricingPlan (Subscription or Boost)
      */
-    async createPricingCheckoutSession(userId: string, planId: string, targetId?: string) {
+    async createPricingCheckoutSession(userId: string, planId: string, targetId?: string, origin?: string) {
         const vendor = await this.vendorRepository.findOne({
             where: { userId },
             relations: ['user']
@@ -714,9 +714,11 @@ export class SubscriptionsService implements OnModuleInit {
             return { sessionId: 'FREE', checkoutUrl: null };
         }
 
-        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
-        const allowedUrls = frontendUrl.split(',').map(url => url.trim());
-        const baseUrl = allowedUrls[0];
+        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || '';
+        const allowedUrls = frontendUrl ? frontendUrl.split(',').map(url => url.trim()) : [];
+        
+        // Priority: 1. FRONTEND_URL config, 2. Dynamic origin from request, 3. Localhost fallback
+        const baseUrl = allowedUrls[0] || origin || 'http://localhost:3000';
 
         // Ensure Stripe Price exists
         if (!plan.stripePriceId) {
@@ -1020,10 +1022,10 @@ export class SubscriptionsService implements OnModuleInit {
     /**
      * Vendor: Change (Upgrade/Downgrade) Subscription Plan
      */
-    async changeSubscription(userId: string, planId: string) {
+    async changeSubscription(userId: string, planId: string, origin?: string) {
         // For a production-ready flow, we simply initiate a new checkout session.
         // The webhook will handle cancelling the previous one upon successful payment.
-        return this.createCheckoutSession(userId, { planId });
+        return this.createCheckoutSession(userId, { planId }, origin);
     }
 
     /**
@@ -1235,7 +1237,8 @@ export class SubscriptionsService implements OnModuleInit {
     async createOfferPlanCheckoutSession(
         userId: string,
         offerPlanId: string,
-        targetId?: string // Optional target ID (offer/event) to boost
+        targetId?: string, // Optional target ID (offer/event) to boost
+        origin?: string
     ): Promise<{ sessionId: string; checkoutUrl: string }> {
         const vendor = await this.vendorRepository.findOne({
             where: { userId },
@@ -1246,8 +1249,11 @@ export class SubscriptionsService implements OnModuleInit {
         const plan = await this.offerPricingRepository.findOne({ where: { id: offerPlanId, isActive: true } });
         if (!plan) throw new NotFoundException('Offer plan not found');
 
-        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
-        const baseUrl = frontendUrl.split(',')[0].trim();
+        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || '';
+        const allowedUrls = frontendUrl ? frontendUrl.split(',').map(url => url.trim()) : [];
+        
+        // Priority: 1. FRONTEND_URL config, 2. Dynamic origin from request, 3. Localhost fallback
+        const baseUrl = allowedUrls[0] || origin || 'http://localhost:3000';
 
         // ── Ensure plan has a valid, price-matching Stripe Price (PKR recurring) ──
         let needsNewPrice = !plan.stripePriceId;

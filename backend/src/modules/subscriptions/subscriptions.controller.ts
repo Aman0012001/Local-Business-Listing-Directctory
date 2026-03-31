@@ -130,15 +130,25 @@ export class SubscriptionsController {
     @Post('checkout')
     @Roles(UserRole.VENDOR, UserRole.ADMIN, UserRole.SUPERADMIN)
     @ApiOperation({ summary: 'Initiate a checkout session' })
-    createCheckout(@CurrentUser() user: User, @Body() checkoutDto: CheckoutDto) {
-        return this.subService.createCheckoutSession(user.id, checkoutDto);
+    createCheckout(
+        @CurrentUser() user: User, 
+        @Body() checkoutDto: CheckoutDto,
+        @Headers('origin') origin: string,
+        @Headers('referer') referer: string
+    ) {
+        return this.subService.createCheckoutSession(user.id, checkoutDto, origin || referer);
     }
 
     @Post('pricing/checkout')
     @Roles(UserRole.VENDOR, UserRole.ADMIN, UserRole.SUPERADMIN)
     @ApiOperation({ summary: 'Initiate a checkout session for a PricingPlan' })
-    createPricingCheckout(@CurrentUser() user: User, @Body() checkoutDto: CheckoutDto) {
-        return this.subService.createPricingCheckoutSession(user.id, checkoutDto.planId, checkoutDto.targetId);
+    createPricingCheckout(
+        @CurrentUser() user: User, 
+        @Body() checkoutDto: CheckoutDto,
+        @Headers('origin') origin: string,
+        @Headers('referer') referer: string
+    ) {
+        return this.subService.createPricingCheckoutSession(user.id, checkoutDto.planId, checkoutDto.targetId, origin || referer);
     }
 
     @Get('active')
@@ -182,9 +192,11 @@ export class SubscriptionsController {
     @ApiOperation({ summary: 'Upgrade or downgrade subscription plan' })
     async changePlan(
         @CurrentUser() user: User,
-        @Body() dto: ChangePlanDto
+        @Body() dto: ChangePlanDto,
+        @Headers('origin') origin: string,
+        @Headers('referer') referer: string
     ) {
-        return this.subService.changeSubscription(user.id, dto.planId);
+        return this.subService.changeSubscription(user.id, dto.planId, origin || referer);
     }
 
     @Post('mock-success/:planId')
@@ -228,8 +240,10 @@ export class SubscriptionsController {
         @CurrentUser() user: User,
         @Param('planId') planId: string,
         @Body() body: { targetId?: string },
+        @Headers('origin') origin: string,
+        @Headers('referer') referer: string
     ) {
-        return this.subService.createOfferPlanCheckoutSession(user.id, planId, body.targetId);
+        return this.subService.createOfferPlanCheckoutSession(user.id, planId, body.targetId, origin || referer);
     }
 
     // --- Webhook ---

@@ -331,7 +331,7 @@ export class OffersService implements OnModuleInit {
     /** 
      * Create a Stripe Checkout session to feature an offer/event 
      */
-    async createFeatureCheckoutSession(userId: string, offerId: string, pricingId: string) {
+    async createFeatureCheckoutSession(userId: string, offerId: string, pricingId: string, origin?: string) {
         const vendor = await this.getVendorByUserId(userId);
         const offer = await this.offerRepository.findOne({ where: { id: offerId, vendorId: vendor.id } });
         if (!offer) throw new NotFoundException('Offer not found');
@@ -348,8 +348,11 @@ export class OffersService implements OnModuleInit {
             };
         }
 
-        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
-        const baseUrl = frontendUrl.split(',')[0].trim();
+        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || '';
+        const allowedUrls = frontendUrl ? frontendUrl.split(',').map(url => url.trim()) : [];
+        
+        // Priority: 1. FRONTEND_URL config, 2. Dynamic origin from request, 3. Localhost fallback
+        const baseUrl = allowedUrls[0] || origin || 'http://localhost:3000';
 
         const product = await this.stripe.products.create({ name: `Feature ${offer.type}: ${plan.name}` });
         const price = await this.stripe.prices.create({
@@ -441,4 +444,3 @@ export class OffersService implements OnModuleInit {
         await this.offerRepository.save(offer);
     }
 }
-

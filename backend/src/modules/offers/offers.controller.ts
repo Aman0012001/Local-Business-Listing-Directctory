@@ -10,6 +10,7 @@ import {
     UseGuards,
     HttpCode,
     HttpStatus,
+    Headers,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { CacheInterceptor } from '@nestjs/cache-manager';
@@ -112,8 +113,10 @@ export class OffersController {
         @Param('id') id: string,
         @Body('pricingId') pricingId: string,
         @CurrentUser() user: User,
+        @Headers('origin') origin: string,
+        @Headers('referer') referer: string
     ) {
-        return this.offersService.createFeatureCheckoutSession(user.id, id, pricingId);
+        return this.offersService.createFeatureCheckoutSession(user.id, id, pricingId, origin || referer);
     }
 
     @Post(':id/verify-feature')
