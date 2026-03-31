@@ -1,7 +1,6 @@
 import CityVendorsClient from './CityVendorsClient';
 
-export const revalidate = 60;
-export const dynamicParams = false;
+
 
 // For static export
 export async function generateStaticParams() {

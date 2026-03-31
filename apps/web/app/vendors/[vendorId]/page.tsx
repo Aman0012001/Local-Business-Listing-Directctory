@@ -1,8 +1,7 @@
 import { api } from '../../../lib/api';
 import VendorProfileClient from './VendorProfileClient';
 
-export const revalidate = 60;
-export const dynamicParams = false;
+
 
 export async function generateStaticParams() {
     try {

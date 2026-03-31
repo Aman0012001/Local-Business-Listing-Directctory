@@ -18,8 +18,8 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { api } from '@/lib/api';
-import Navbar from '@/components/layout/Navbar';
-import Footer from '@/components/layout/Footer';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 function OfferSuccessContent() {
     const router = useRouter();

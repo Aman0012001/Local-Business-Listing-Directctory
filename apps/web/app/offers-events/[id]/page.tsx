@@ -1,8 +1,7 @@
 import { api } from '@/lib/api';
 import OfferEventDetailClient from './OfferEventDetailClient';
 
-export const revalidate = 60;
-export const dynamicParams = false;
+
 
 export async function generateStaticParams() {
     try {
