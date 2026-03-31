@@ -91,6 +91,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             );
 
             // Broadcast full message to conversation room
+            this.logger.log(`Broadcasting newMessage to room: ${data.conversationId}`);
             this.server.to(data.conversationId).emit('newMessage', message);
 
             // Also broadcast a lightweight update to vendor/user rooms
@@ -102,8 +103,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
                     lastMessage: data.content,
                     lastMessageAt: message.createdAt,
                 };
-                this.server.to(`vendor:${conversation.vendorId}`).emit('conversationUpdated', update);
-                this.server.to(`user:${conversation.userId}`).emit('conversationUpdated', update);
+                
+                const vendorRoom = `vendor:${conversation.vendorId}`;
+                const userRoom = `user:${conversation.userId}`;
+                
+                this.logger.log(`Broadcasting conversationUpdated to rooms: ${vendorRoom}, ${userRoom}`);
+                this.server.to(vendorRoom).emit('conversationUpdated', update);
+                this.server.to(userRoom).emit('conversationUpdated', update);
             }
 
             return { status: 'success', message };

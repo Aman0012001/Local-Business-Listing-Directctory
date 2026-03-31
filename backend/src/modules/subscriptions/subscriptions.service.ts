@@ -25,6 +25,7 @@ import { OfferEvent } from '../../entities/offer-event.entity';
 
 import { ConfigService } from '@nestjs/config';
 import { AffiliateService } from '../affiliate/affiliate.service';
+import { PromotionsService } from '../promotions/promotions.service';
 import Stripe from 'stripe';
 
 @Injectable()
@@ -58,6 +59,7 @@ export class SubscriptionsService implements OnModuleInit {
         private offerEventRepository: Repository<OfferEvent>,
         private configService: ConfigService,
         private affiliateService: AffiliateService,
+        private promotionsService: PromotionsService,
     ) {}
 
 
@@ -963,6 +965,9 @@ export class SubscriptionsService implements OnModuleInit {
             order: { featuredUntil: 'ASC' },
         });
 
+        // 3. Get dynamic promotion bookings
+        const dynamicBookings = await this.promotionsService.getActiveBookingsByVendor(vendor.id);
+
         return {
             plans: activePlans.map(p => ({
                 id: p.id,
@@ -982,6 +987,17 @@ export class SubscriptionsService implements OnModuleInit {
                 endDate: o.featuredUntil,
                 type: o.type,
                 target: o.title,
+            })),
+            dynamicBookings: dynamicBookings.map(b => ({
+                id: b.id,
+                name: `Promotion for ${b.offerEvent?.title}`,
+                title: b.offerEvent?.title,
+                business: b.offerEvent?.business?.title,
+                placements: b.placements,
+                startDate: b.startTime,
+                endDate: b.endTime,
+                status: b.status,
+                totalPrice: b.totalPrice,
             })),
         };
     }

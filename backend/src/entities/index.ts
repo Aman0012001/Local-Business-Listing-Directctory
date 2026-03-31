@@ -50,3 +50,7 @@ export * from './job-lead-response.entity';
 // Chat
 export * from './chat-conversation.entity';
 export * from './chat-message.entity';
+
+// Promotions
+export * from './promotion-pricing-rule.entity';
+export * from './promotion-booking.entity';

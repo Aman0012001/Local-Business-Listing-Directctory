@@ -29,6 +29,7 @@ import { FollowsModule } from './modules/follows/follows.module';
 import { AffiliateModule } from './modules/affiliate/affiliate.module';
 import { JobLeadsModule } from './modules/job-leads/job-leads.module';
 import { ChatModule } from './modules/chat/chat.module';
+import { PromotionsModule } from './modules/promotions/promotions.module';
 
 import { join } from 'path';
 
@@ -110,6 +111,7 @@ import { join } from 'path';
         AffiliateModule,
         JobLeadsModule,
         ChatModule,
+        PromotionsModule,
     ],
     providers: [
         {

@@ -7,14 +7,28 @@ import { chatApi } from '../services/chat.service';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL?.split('/api')[0] || 'http://process.env.NEXT_PUBLIC_API_URL';
 
-// Singleton socket so all components share the same connection
 let sharedSocket: Socket | null = null;
+let currentToken: string | null = null;
 
 function getSocket(token: string): Socket {
+    // If we have a socket but the token has changed, disconnect it
+    if (sharedSocket && currentToken !== token) {
+        console.log('[useChat] Token changed, reconnecting socket...');
+        sharedSocket.disconnect();
+        sharedSocket = null;
+    }
+
     if (!sharedSocket || !sharedSocket.connected) {
+        currentToken = token;
         sharedSocket = io(`${SOCKET_URL}/chat`, {
             auth: { token: `Bearer ${token}` },
             transports: ['websocket'],
+            reconnection: true,
+            reconnectionAttempts: 5,
+        });
+
+        sharedSocket.on('connect_error', (err) => {
+            console.error('[useChat] Socket connection error:', err.message);
         });
     }
     return sharedSocket;
@@ -36,18 +50,22 @@ export function useChat(conversationId?: string) {
         socketRef.current = socket;
 
         const onConnect = () => {
-            console.log('[useChat] Connected to socket');
+            console.log('[useChat] Connected to socket as:', user.email);
 
             // Join the specific conversation room
             if (conversationId) {
+                console.log('[useChat] Joining conversation room:', conversationId);
                 socket.emit('joinRoom', { conversationId });
             }
 
-            // Join personal rooms for real-time conversation list updates
+            // ALWAYS join personal user room for general notifications/updates
+            console.log('[useChat] Joining personal user room');
+            socket.emit('joinUserRoom');
+
+            // Also join vendor room if applicable
             if (user.role === 'vendor' && user.vendor?.id) {
+                console.log('[useChat] Joining vendor room:', user.vendor.id);
                 socket.emit('joinVendorRoom', { vendorId: user.vendor.id });
-            } else {
-                socket.emit('joinUserRoom');
             }
         };
 
@@ -109,7 +127,21 @@ export function useChat(conversationId?: string) {
             setIsLoading(true);
             try {
                 const history = await chatApi.getMessages(conversationId) as any[];
-                setMessages(history);
+                // Merge history with existing messages (like optimistic ones)
+                setMessages(prev => {
+                    // Filter out any messages from prev that are already in history (by ID or content match for optimistic)
+                    const filteredPrev = prev.filter(m => {
+                        const isInHistory = history.some(h => h.id === m.id);
+                        if (isInHistory) return false;
+                        
+                        // Also check for optimistic matches that might have arrived as real messages in history
+                        if (m.isOptimistic) {
+                            return !history.some(h => h.content === m.content && h.senderId === m.senderId);
+                        }
+                        return true;
+                    });
+                    return [...history, ...filteredPrev];
+                });
                 // Mark conversation as read
                 await chatApi.markAsRead(conversationId).catch(() => { });
             } catch (error) {
@@ -205,10 +237,13 @@ export function useChatSocket() {
 
         const onConnect = () => {
             setReady(true);
+            console.log('[useChatSocket] Socket connected, joining personal rooms');
+            
+            // Always join user room
+            socket.emit('joinUserRoom');
+            
             if (user.role === 'vendor' && user.vendor?.id) {
                 socket.emit('joinVendorRoom', { vendorId: user.vendor.id });
-            } else {
-                socket.emit('joinUserRoom');
             }
         };
 

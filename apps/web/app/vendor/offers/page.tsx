@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Megaphone, Plus, Pencil, Trash2, X, CheckCircle2,
     Loader2, Tag, Calendar, Clock, ImagePlus, Store,
-    AlertTriangle, ChevronLeft, ChevronRight, Sparkles, Star
+    AlertTriangle, ChevronLeft, ChevronRight, Sparkles, Star,
+    Home, Layout, Search, Zap
 } from 'lucide-react';
 import { api } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
@@ -56,6 +57,9 @@ const emptyForm = {
     expiryDate: '',
     highlights: [] as string[],
     terms: [] as string[],
+    placements: [] as string[],
+    promoStartTime: '',
+    promoEndTime: '',
     pricingId: '',
 };
 
@@ -70,6 +74,9 @@ export default function VendorOffersPage() {
     const [showModal, setShowModal] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [estimatedPrice, setEstimatedPrice] = useState(0);
+    const [isCalculating, setIsCalculating] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [imageUploading, setImageUploading] = useState(false);
     const [form, setForm] = useState<typeof emptyForm>(emptyForm);
@@ -103,7 +110,7 @@ export default function VendorOffersPage() {
 
     const loadPricing = async () => {
         try {
-            const res = await api.offers.getPublicPricing();
+            const res = await api.promotions.getPricingRules();
             setPricingOptions(res || []);
         } catch { }
     };
@@ -113,6 +120,42 @@ export default function VendorOffersPage() {
         loadBusinesses();
         loadPricing();
     }, [user]);
+
+    // Real-time price calculation & smart end-time adjustment
+    useEffect(() => {
+        if (form.promoStartTime && (!form.promoEndTime || new Date(form.promoEndTime) <= new Date(form.promoStartTime))) {
+            const newEnd = new Date(new Date(form.promoStartTime).getTime() + 60 * 60 * 1000);
+            setForm(prev => ({ ...prev, promoEndTime: newEnd.toISOString().slice(0, 16) }));
+        }
+    }, [form.promoStartTime]);
+
+    useEffect(() => {
+        const updatePrice = async () => {
+            const start = form.promoStartTime ? new Date(form.promoStartTime) : null;
+            const end = form.promoEndTime ? new Date(form.promoEndTime) : null;
+
+            if (form.placements.length > 0 && start && end && start < end) {
+                setIsCalculating(true);
+                try {
+                    const res = await api.promotions.calculatePrice({
+                        placements: form.placements,
+                        startTime: form.promoStartTime,
+                        endTime: form.promoEndTime,
+                    });
+                    setEstimatedPrice(res.totalPrice);
+                } catch (err) {
+                    console.error('Price calculation failed:', err);
+                } finally {
+                    setIsCalculating(false);
+                }
+            } else {
+                setEstimatedPrice(0);
+            }
+        };
+
+        const timer = setTimeout(updatePrice, 500);
+        return () => clearTimeout(timer);
+    }, [form.placements, form.promoStartTime, form.promoEndTime]);
 
     if (loading) {
         return (
@@ -140,8 +183,11 @@ export default function VendorOffersPage() {
             startDate: offer.startDate ? offer.startDate.slice(0, 16) : '',
             endDate: offer.endDate ? offer.endDate.slice(0, 16) : '',
             expiryDate: offer.expiryDate ? offer.expiryDate.slice(0, 16) : '',
-            highlights: offer.highlights || [],
-            terms: offer.terms || [],
+            highlights: Array.isArray(offer.highlights) ? offer.highlights : [],
+            terms: Array.isArray(offer.terms) ? offer.terms : [],
+            placements: [],
+            promoStartTime: '',
+            promoEndTime: '',
             pricingId: offer.pricingId || '',
         });
         setEditingId(offer.id);
@@ -191,13 +237,23 @@ export default function VendorOffersPage() {
                 setSuccess('Offer created successfully!');
             }
 
-            // Handle checkout if pricing was selected
-            if (form.pricingId && offerId) {
+            // Handle custom promotion booking if selected
+            if (form.placements.length > 0 && offerId) {
+                if (new Date(form.promoStartTime) >= new Date(form.promoEndTime)) {
+                    setError('Promotion end time must be after the start time.');
+                    setSaving(false);
+                    return;
+                }
                 setSaving(true);
-                const featureRes = await api.offers.feature(offerId, form.pricingId);
-                if (featureRes.checkoutUrl) {
-                    window.location.href = featureRes.checkoutUrl;
-                    return; // Don't hide modal or reload, let page redirect
+                const bookRes = await api.promotions.book({
+                    offerEventId: offerId,
+                    placements: form.placements,
+                    startTime: form.promoStartTime,
+                    endTime: form.promoEndTime,
+                });
+                if (bookRes.checkoutUrl) {
+                    window.location.href = bookRes.checkoutUrl;
+                    return;
                 }
             }
 
@@ -618,44 +674,88 @@ export default function VendorOffersPage() {
                                 </div>
 
                                 {/* Promote Offer Selection */}
-                                <div className="pt-4 border-t border-slate-50">
+                                <div className="pt-6 mt-6 border-t border-slate-100">
                                     <div className="flex items-center gap-2 mb-4">
-                                        <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
-                                        <label className={labelClass + " !mb-0"}>Promote this {form.type === 'event' ? 'Event' : 'Offer'} (Optional)</label>
+                                        <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+                                            <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+                                        </div>
+                                        <div>
+                                            <label className="text-base font-black text-slate-900 !mb-0">Boost Visibility (Custom Booking)</label>
+                                            <p className="text-xs font-bold text-slate-500">Pick where and when to feature your {form.type}</p>
+                                        </div>
                                     </div>
-                                    <p className="text-sm font-semibold text-slate-500 mb-4">
-                                        Get more views by featuring your {form.type} on the homepage and search results.
-                                    </p>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <button type="button"
-                                            onClick={() => setForm(p => ({ ...p, pricingId: '' }))}
-                                            className={`p-4 rounded-2xl border-2 text-left transition-all ${!form.pricingId
-                                                ? 'border-slate-800 bg-slate-50 shadow-sm'
-                                                : 'border-slate-200 hover:border-slate-300 bg-white'
-                                                }`}
-                                        >
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className={`font-black uppercase tracking-widest text-xs ${!form.pricingId ? 'text-slate-800' : 'text-slate-400'}`}>Standard</span>
+
+                                    <div className="space-y-4">
+                                        {/* Placements */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                            {[
+                                                { id: 'homepage', name: 'Homepage', icon: <Home className="w-4 h-4" /> },
+                                                { id: 'category', name: 'Category', icon: <Layout className="w-4 h-4" /> },
+                                                { id: 'listing', name: 'Search Result', icon: <Search className="w-4 h-4" /> },
+                                            ].map(place => (
+                                                <button
+                                                    key={place.id}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const exists = form.placements.includes(place.id);
+                                                        setForm(p => ({
+                                                            ...p,
+                                                            placements: exists ? p.placements.filter(i => i !== place.id) : [...p.placements, place.id]
+                                                        }));
+                                                    }}
+                                                    className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${form.placements.includes(place.id)
+                                                            ? 'border-slate-900 bg-slate-900 text-white shadow-lg scale-[1.02]'
+                                                            : 'border-slate-100 bg-slate-50 text-slate-600 hover:border-slate-300'
+                                                        }`}
+                                                >
+                                                    {place.icon}
+                                                    <span className="text-xs font-black uppercase tracking-wider">{place.name}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        {/* Timing */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className={labelClass}>Start Date & Time</label>
+                                                <input
+                                                    type="datetime-local"
+                                                    value={form.promoStartTime}
+                                                    onChange={e => setForm(p => ({ ...p, promoStartTime: e.target.value }))}
+                                                    className={inputClass}
+                                                    min={new Date().toISOString().slice(0, 16)}
+                                                />
                                             </div>
-                                            <p className={`font-black text-xl ${!form.pricingId ? 'text-slate-900' : 'text-slate-700'}`}>Free</p>
-                                        </button>
-                                        {pricingOptions.map(plan => (
-                                            <button key={plan.id} type="button"
-                                                onClick={() => setForm(p => ({ ...p, pricingId: plan.id }))}
-                                                className={`p-4 rounded-2xl border-2 text-left transition-all ${form.pricingId === plan.id
-                                                    ? 'border-amber-400 bg-amber-50 shadow-sm'
-                                                    : 'border-slate-200 hover:border-amber-200 bg-white'
-                                                    }`}
-                                            >
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <span className={`font-black uppercase tracking-widest text-xs ${form.pricingId === plan.id ? 'text-amber-700' : 'text-slate-500'}`}>{plan.name}</span>
-                                                    <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{plan.duration} {plan.unit}</span>
+                                            <div>
+                                                <label className={labelClass}>End Date & Time</label>
+                                                <input
+                                                    type="datetime-local"
+                                                    value={form.promoEndTime}
+                                                    onChange={e => setForm(p => ({ ...p, promoEndTime: e.target.value }))}
+                                                    className={inputClass}
+                                                    min={form.promoStartTime || new Date().toISOString().slice(0, 16)}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Price Summary */}
+                                        {(form.placements.length > 0 && form.promoStartTime && form.promoEndTime) && (
+                                            <div className="p-4 rounded-2xl bg-slate-900 text-white shadow-xl flex items-center justify-between border-4 border-slate-800">
+                                                <div>
+                                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Total Impact Price</p>
+                                                    <div className="flex items-baseline gap-1">
+                                                        <span className="text-2xl font-black">PKR {estimatedPrice.toLocaleString('en-PK')}</span>
+                                                        <span className="text-[10px] font-bold text-slate-400">incl. tax</span>
+                                                    </div>
                                                 </div>
-                                                <p className={`font-black text-xl ${form.pricingId === plan.id ? 'text-slate-900' : 'text-slate-700'}`}>
-                                                    PKR {Number(plan.price).toLocaleString('en-PK')}
-                                                </p>
-                                            </button>
-                                        ))}
+                                                <div className="bg-white/10 px-3 py-2 rounded-xl border border-white/10">
+                                                    <div className="flex items-center gap-2">
+                                                        <Zap className="w-4 h-4 text-amber-400 animate-pulse" />
+                                                        <span className="text-[10px] font-black uppercase">Realtime Pricing</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 

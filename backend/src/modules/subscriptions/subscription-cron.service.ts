@@ -12,6 +12,7 @@ import { Listing } from '../../entities/business.entity';
 import { PricingPlanType } from '../../entities/pricing-plan.entity';
 import { OfferEvent, OfferStatus } from '../../entities/offer-event.entity';
 import { OffersService } from '../offers/offers.service';
+import { PromotionsService } from '../promotions/promotions.service';
 
 @Injectable()
 export class SubscriptionCronService {
@@ -31,6 +32,7 @@ export class SubscriptionCronService {
         @InjectRepository(OfferEvent)
         private offerEventRepo: Repository<OfferEvent>,
         private offersService: OffersService,
+        private promotionsService: PromotionsService,
         private notificationsService: NotificationsService,
         private pushService: PushService,
     ) { }
@@ -99,6 +101,16 @@ export class SubscriptionCronService {
             }
         } catch (err: any) {
             this.logger.error(`[Cron] Error cleaning up stale offers: ${err.message}`);
+        }
+
+        // 5. Run promotion bookings expiration
+        try {
+            const promoAffected = await this.promotionsService.handleExpirations();
+            if (promoAffected > 0) {
+                this.logger.log(`[Cron] Expired ${promoAffected} custom promotion bookings`);
+            }
+        } catch (err: any) {
+            this.logger.error(`[Cron] Error cleaning up expired promotion bookings: ${err.message}`);
         }
     }
 

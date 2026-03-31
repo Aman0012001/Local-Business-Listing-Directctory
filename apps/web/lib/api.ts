@@ -667,5 +667,13 @@ export const api = {
         respond: (id: string, data: any) => fetcher<any>(`/broadcasts/${id}/respond`, { method: 'POST', body: JSON.stringify(data) }),
         getResponses: (id: string) => fetcher<any[]>(`/broadcasts/${id}/responses`),
     },
+    promotions: {
+        getPricingRules: () => fetcher<any[]>('/promotions/pricing-rules'),
+        calculatePrice: (data: { placements: string[], startTime: string, endTime: string }) => 
+            api.post<{ totalPrice: number }>('/promotions/calculate', data),
+        book: (data: { offerEventId: string; placements: string[]; startTime: string; endTime: string }) => 
+            api.post<{ sessionId: string; checkoutUrl: string }>('/promotions/book', data),
+        verifySession: (sessionId: string) => fetcher<any>(`/promotions/verify-session?session_id=${sessionId}`),
+    },
 };
 

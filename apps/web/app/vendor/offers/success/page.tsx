@@ -36,7 +36,7 @@ function OfferSuccessContent() {
 
     const verifyPayment = async () => {
         try {
-            const response = await api.subscriptions.verify(sessionId!);
+            const response = await api.promotions.verifySession(sessionId!);
             if (response.success) {
                 setDetails(response);
                 setStatus('success');

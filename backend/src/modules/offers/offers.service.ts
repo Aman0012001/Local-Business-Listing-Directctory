@@ -13,6 +13,7 @@ import { Listing } from '../../entities/business.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { UpdateOfferDto } from './dto/update-offer.dto';
+import { PromotionBooking, BookingStatus } from '../../entities/promotion-booking.entity';
 
 import { SearchOfferDto } from './dto/search-offer.dto';
 import { Brackets } from 'typeorm';
@@ -30,6 +31,8 @@ export class OffersService implements OnModuleInit {
         private vendorRepository: Repository<Vendor>,
         @InjectRepository(OfferEventPricing)
         private pricingRepository: Repository<OfferEventPricing>,
+        @InjectRepository(PromotionBooking)
+        private bookingRepo: Repository<PromotionBooking>,
         private configService: ConfigService,
     ) { }
 
@@ -128,10 +131,16 @@ export class OffersService implements OnModuleInit {
         try {
             const { query, city, latitude, longitude, radius, type, categoryId, isFeatured, limit = 10, page = 1 } = dto;
             const skip = (Number(page) - 1) * Number(limit);
+            const now = new Date();
 
             const qb = this.offerRepository.createQueryBuilder('o')
                 .leftJoinAndSelect('o.business', 'b')
                 .leftJoinAndSelect('b.category', 'cat')
+                // Join with active promotions
+                .leftJoin('promotion_bookings', 'pb', 'pb.offer_event_id = o.id AND pb.status = :activeStatus AND pb.start_time <= :now AND pb.end_time > :now', {
+                    activeStatus: BookingStatus.ACTIVE,
+                    now
+                })
                 .where('o.isActive = :isActive', { isActive: true })
                 .andWhere('o.status != :expired', { expired: OfferStatus.EXPIRED });
 
@@ -155,12 +164,20 @@ export class OffersService implements OnModuleInit {
                 qb.andWhere('b.categoryId = :categoryId', { categoryId });
             }
 
-            if (isFeatured !== undefined) {
-                qb.andWhere('o.isFeatured = :isFeatured', { isFeatured });
-                if (isFeatured) {
-                    qb.andWhere('(o.featuredUntil IS NULL OR o.featuredUntil > :now)', { now: new Date() });
-                }
+            // Placement logic
+            if (isFeatured === true) {
+                // Return only featured (either via old boolean or new booking 'homepage' or 'category')
+                qb.andWhere('(o.isFeatured = :trueVal OR pb.placements @> :hp OR pb.placements @> :catP)', {
+                    trueVal: true,
+                    hp: JSON.stringify(['homepage']),
+                    catP: JSON.stringify(['category'])
+                });
             }
+
+            // Ranking & Ordering
+            // 1. New Booking Boost (Listing placement)
+            qb.addSelect("CASE WHEN pb.placements @> :listingP THEN 1 ELSE 0 END", "boosted");
+            qb.setParameters({ listingP: JSON.stringify(['listing']) });
 
             if (latitude && longitude) {
                 const formula = `earth_distance(ll_to_earth(b.latitude, b.longitude), ll_to_earth(:lat, :lng))`;
@@ -171,10 +188,12 @@ export class OffersService implements OnModuleInit {
                     const radiusInMeters = radius * 1000;
                     qb.andWhere(`${formula} <= :radiusInMeters`, { radiusInMeters });
                 }
-                qb.orderBy('o.isFeatured', 'DESC');
+                qb.orderBy('boosted', 'DESC');
+                qb.addOrderBy('o.isFeatured', 'DESC');
                 qb.addOrderBy('distance', 'ASC');
             } else {
-                qb.orderBy('o.isFeatured', 'DESC');
+                qb.orderBy('boosted', 'DESC');
+                qb.addOrderBy('o.isFeatured', 'DESC');
                 qb.addOrderBy('o.createdAt', 'DESC');
             }
 
