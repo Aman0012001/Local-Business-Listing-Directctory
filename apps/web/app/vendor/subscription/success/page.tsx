@@ -18,8 +18,6 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { api } from '@/lib/api';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 
 function SuccessContent() {
     const router = useRouter();
@@ -254,14 +252,10 @@ function SuccessContent() {
 
 export default function SubscriptionSuccessPage() {
     return (
-        <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950">
-            <Navbar />
-            <main className="flex-grow flex items-center justify-center">
-                <Suspense fallback={<div className="animate-pulse text-muted-foreground">Loading...</div>}>
-                    <SuccessContent />
-                </Suspense>
-            </main>
-            <Footer />
-        </div>
+        <main className="min-h-[70vh] flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4">
+            <Suspense fallback={<div className="animate-pulse text-muted-foreground">Loading...</div>}>
+                <SuccessContent />
+            </Suspense>
+        </main>
     );
 }
