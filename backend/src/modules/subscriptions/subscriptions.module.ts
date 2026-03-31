@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SubscriptionsController } from './subscriptions.controller';
 import { SubscriptionsService } from './subscriptions.service';
@@ -18,6 +18,7 @@ import { PricingPlanSeederService } from './pricing-plan-seeder.service';
 import { AffiliateModule } from '../affiliate/affiliate.module';
 import { OfferEventPricing } from '../../entities/offer-event-pricing.entity';
 import { OfferEvent } from '../../entities/offer-event.entity';
+import { OffersModule } from '../offers/offers.module';
 
 
 
@@ -38,6 +39,7 @@ import { OfferEvent } from '../../entities/offer-event.entity';
             OfferEvent,
         ]),
         AffiliateModule,
+        OffersModule,
     ],
     controllers: [SubscriptionsController],
     providers: [
