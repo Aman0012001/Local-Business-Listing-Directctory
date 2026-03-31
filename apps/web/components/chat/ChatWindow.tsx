@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, X, MessageSquare, Loader2 } from 'lucide-react';
 import { useChat } from '../../hooks/useChat';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../hooks/useNotifications';
 
 interface ChatWindowProps {
     isOpen: boolean;
@@ -15,21 +16,48 @@ interface ChatWindowProps {
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ isOpen, onClose, businessId, businessName }) => {
     const { user } = useAuth();
-    const [conversationId, setConversationId] = useState<string | null>(null);
+    const [conversation, setConversation] = useState<any | null>(null);
+    const conversationId = conversation?.id;
     const { messages, isLoading, isTyping, sendMessage, sendTyping } = useChat(conversationId || undefined);
+    const { socket: notificationSocket } = useNotifications();
+    const [vendorOnline, setVendorOnline] = useState(false);
     const [input, setInput] = useState('');
     const scrollRef = useRef<HTMLDivElement>(null);
 
     // Initialize/Get conversation
     useEffect(() => {
-        if (isOpen && businessId && !conversationId) {
+        if (isOpen && businessId && !conversation) {
             import('../../services/chat.service').then(({ chatApi }) => {
                 chatApi.getOrCreateConversation(businessId).then((conv: any) => {
-                    setConversationId(conv.id);
+                    setConversation(conv);
+                    setVendorOnline(conv.vendor?.user?.isOnline || false);
                 });
             });
         }
-    }, [isOpen, businessId, conversationId]);
+    }, [isOpen, businessId, conversation]);
+
+    // Real-time online status
+    useEffect(() => {
+        if (!notificationSocket || !conversation?.vendor?.userId) return;
+
+        const vendorUserId = conversation.vendor.userId;
+
+        const onUserOnline = ({ userId }: { userId: string }) => {
+            if (userId === vendorUserId) setVendorOnline(true);
+        };
+
+        const onUserOffline = ({ userId }: { userId: string }) => {
+            if (userId === vendorUserId) setVendorOnline(false);
+        };
+
+        notificationSocket.on('userOnline', onUserOnline);
+        notificationSocket.on('userOffline', onUserOffline);
+
+        return () => {
+            notificationSocket.off('userOnline', onUserOnline);
+            notificationSocket.off('userOffline', onUserOffline);
+        };
+    }, [notificationSocket, conversation]);
 
     // Scroll to bottom
     useEffect(() => {
@@ -75,7 +103,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ isOpen, onClose, businessId, bu
                         </div>
                         <div>
                             <h3 className="font-semibold text-sm line-clamp-1">{businessName}</h3>
-                            <p className="text-[10px] text-white/70 tracking-wide uppercase font-bold">Live Chat</p>
+                            <div className="flex items-center gap-1.5">
+                                <div className={`w-1.5 h-1.5 rounded-full ${vendorOnline ? 'bg-emerald-400 animate-pulse' : 'bg-white/30'}`} />
+                                <p className="text-[10px] text-white/70 tracking-wide uppercase font-bold">
+                                    {vendorOnline ? 'Online' : 'Offline'}
+                                </p>
+                            </div>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-full transition-colors">

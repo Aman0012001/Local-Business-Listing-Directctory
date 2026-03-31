@@ -6,6 +6,7 @@ import { MessageSquare, Search, Send, User, ChevronRight, Loader2, ArrowLeft, Lo
 import { useAuth } from '../../../context/AuthContext';
 import { chatApi } from '../../../services/chat.service';
 import { useChat, useChatSocket } from '../../../hooks/useChat';
+import { useNotifications } from '../../../hooks/useNotifications';
 import { getImageUrl } from '../../../lib/api';
 import Link from 'next/link';
 
@@ -24,6 +25,7 @@ export default function VendorChatDashboard() {
     const currentConv = conversations.find(c => c.id === selectedConvId);
     const { messages, isLoading: messagesLoading, sendMessage, sendTyping, isTyping } = useChat(selectedConvId || undefined);
     const { socket } = useChatSocket();
+    const { socket: notificationSocket } = useNotifications();
     const [input, setInput] = useState('');
     const scrollRef = React.useRef<HTMLDivElement>(null);
 
@@ -64,13 +66,20 @@ export default function VendorChatDashboard() {
         };
 
         const onConversationUpdated = (update: any) => {
-            setConversations(prev =>
-                prev.map(c =>
+            setConversations(prev => {
+                const updated = prev.map(c =>
                     c.id === update.conversationId
                         ? { ...c, lastMessage: update.lastMessage, lastMessageAt: update.lastMessageAt }
                         : c
-                )
-            );
+                );
+                // Move updated conversation to top
+                const idx = updated.findIndex(c => c.id === update.conversationId);
+                if (idx > 0) {
+                    const [conv] = updated.splice(idx, 1);
+                    return [conv, ...updated];
+                }
+                return updated;
+            });
         };
 
         socket.on('newConversation', onNewConversation);
@@ -81,6 +90,31 @@ export default function VendorChatDashboard() {
             socket.off('conversationUpdated', onConversationUpdated);
         };
     }, [socket]);
+
+    // Real-time: listen for online status updates
+    useEffect(() => {
+        if (!notificationSocket) return;
+
+        const onUserOnline = ({ userId }: { userId: string }) => {
+            setConversations(prev => prev.map(c => 
+                c.userId === userId ? { ...c, user: { ...c.user, isOnline: true } } : c
+            ));
+        };
+
+        const onUserOffline = ({ userId }: { userId: string }) => {
+            setConversations(prev => prev.map(c => 
+                c.userId === userId ? { ...c, user: { ...c.user, isOnline: false } } : c
+            ));
+        };
+
+        notificationSocket.on('userOnline', onUserOnline);
+        notificationSocket.on('userOffline', onUserOffline);
+
+        return () => {
+            notificationSocket.off('userOnline', onUserOnline);
+            notificationSocket.off('userOffline', onUserOffline);
+        };
+    }, [notificationSocket]);
 
     useEffect(() => {
         if (scrollRef.current) {

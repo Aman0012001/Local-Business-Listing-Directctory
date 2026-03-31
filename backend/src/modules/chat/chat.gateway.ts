@@ -133,9 +133,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     /**
      * Called by frontend after getOrCreateConversation succeeds.
-     * Broadcasts the new conversation to vendor's room.
+     * Broadcasts the new conversation to both participants' rooms.
      */
     async notifyNewConversation(conversation: any) {
+        // Notify Vendor
         this.server.to(`vendor:${conversation.vendorId}`).emit('newConversation', conversation);
+        // Notify User
+        this.server.to(`user:${conversation.userId}`).emit('newConversation', conversation);
+        
+        this.logger.log(`Notified both vendor:${conversation.vendorId} and user:${conversation.userId} of new conversation ${conversation.id}`);
     }
 }

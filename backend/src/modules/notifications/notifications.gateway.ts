@@ -44,7 +44,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     }
 
     async handleDisconnect(client: Socket) {
-        this.logger.log(`Client disconnected: ${client.id}`);
+        this.logger.log(`Client disconnected from notifications: ${client.id}`);
         // Remove from connected users map
         for (const [userId, sockets] of this.connectedUsers.entries()) {
             if (sockets.includes(client.id)) {
@@ -54,6 +54,9 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
                     // Update DB status
                     await this.userRepository.update(userId, { isOnline: false });
                     this.logger.log(`User ${userId} is now offline (no active sessions)`);
+                    
+                    // Broadcast offline event to all connected clients
+                    this.server.emit('userOffline', { userId });
                 } else {
                     this.connectedUsers.set(userId, updatedSockets);
                 }
@@ -81,6 +84,9 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         
         // Update DB status
         await this.userRepository.update(userId, { isOnline: true });
+        
+        // Broadcast online event to all connected clients
+        this.server.emit('userOnline', { userId });
         
         this.logger.log(`User ${userId} authenticated on socket ${client.id} and is now online`);
         return { status: 'authenticated' };
