@@ -43,8 +43,12 @@ export class SubscriptionCronService {
      */
     @Cron(CronExpression.EVERY_DAY_AT_8AM)
     async handleExpiryReminders() {
-        this.logger.log('[Cron] Running subscription expiry check...');
-        await this.sendExpiryReminders();
+        try {
+            this.logger.log('[Cron] Running subscription expiry check...');
+            await this.sendExpiryReminders();
+        } catch (error) {
+            this.logger.error(`[Cron] Failed to send expiry reminders: ${error.message}`);
+        }
     }
 
     /**
@@ -52,65 +56,69 @@ export class SubscriptionCronService {
      */
     @Cron(CronExpression.EVERY_HOUR)
     async handlePlanExpirations() {
-        this.logger.log('[Cron] Checking for expired plans...');
-        const now = new Date();
+        try {
+            this.logger.log('[Cron] Checking for expired plans...');
+            const now = new Date();
 
-        const expiredPlans = await this.activePlanRepo.find({
-            where: {
-                status: ActivePlanStatus.ACTIVE,
-                endDate: LessThanOrEqual(now),
-            },
-            relations: ['plan'],
-        });
+            const expiredPlans = await this.activePlanRepo.find({
+                where: {
+                    status: ActivePlanStatus.ACTIVE,
+                    endDate: LessThanOrEqual(now),
+                },
+                relations: ['plan'],
+            });
 
-        if (expiredPlans.length === 0) return;
+            if (expiredPlans.length === 0) return;
 
-        for (const plan of expiredPlans) {
-            try {
-                // 1. Mark as expired
-                plan.status = ActivePlanStatus.EXPIRED;
-                await this.activePlanRepo.save(plan);
+            for (const plan of expiredPlans) {
+                try {
+                    // 1. Mark as expired
+                    plan.status = ActivePlanStatus.EXPIRED;
+                    await this.activePlanRepo.save(plan);
 
-                // 2. Clear listing flags if it was a boost
-                if (plan.targetId) {
-                    const planType = (plan.plan as any)?.type;
-                    if (planType === PricingPlanType.HOMEPAGE_FEATURED || planType === PricingPlanType.CATEGORY_FEATURED) {
-                        await this.listingRepo.update(plan.targetId, { isFeatured: false });
-                    } else if (planType === PricingPlanType.LISTING_BOOST) {
-                        await this.listingRepo.update(plan.targetId, { isSponsored: false });
+                    // 2. Clear listing flags if it was a boost
+                    if (plan.targetId) {
+                        const planType = (plan.plan as any)?.type;
+                        if (planType === PricingPlanType.HOMEPAGE_FEATURED || planType === PricingPlanType.CATEGORY_FEATURED) {
+                            await this.listingRepo.update(plan.targetId, { isFeatured: false });
+                        } else if (planType === PricingPlanType.LISTING_BOOST) {
+                            await this.listingRepo.update(plan.targetId, { isSponsored: false });
+                        }
                     }
-                }
 
-                // 3. If it was an offer/event promotion plan, PHYSICALLY DELETE the target offer/event
-                if (plan.offerPlanId && plan.targetId) {
-                    await this.offerEventRepo.delete(plan.targetId);
-                    this.logger.log(`[Cron] Permanently deleted expired offer/event ${plan.targetId} from database`);
+                    // 3. If it was an offer/event promotion plan, PHYSICALLY DELETE the target offer/event
+                    if (plan.offerPlanId && plan.targetId) {
+                        await this.offerEventRepo.delete(plan.targetId);
+                        this.logger.log(`[Cron] Permanently deleted expired offer/event ${plan.targetId} from database`);
+                    }
+
+                    this.logger.log(`[Cron] Deactivated expired plan ${plan.id} for vendor ${plan.vendorId}`);
+                } catch (err: any) {
+                    this.logger.error(`[Cron] Error handling plan ${plan.id} expiry: ${err.message}`);
                 }
-                
-                this.logger.log(`[Cron] Deactivated expired plan ${plan.id} for vendor ${plan.vendorId}`);
+            }
+
+            // 4. Also run the general cleanup for non-boosted items (free ones) that have expired
+            try {
+                const staleAffected = await this.offersService.expireStaleOffers();
+                if (staleAffected > 0) {
+                    this.logger.log(`[Cron] Cleaned up ${staleAffected} stale/un-featured items from database`);
+                }
             } catch (err: any) {
-                this.logger.error(`[Cron] Error handling plan ${plan.id} expiry: ${err.message}`);
+                this.logger.error(`[Cron] Error cleaning up stale offers: ${err.message}`);
             }
-        }
 
-        // 4. Also run the general cleanup for non-boosted items (free ones) that have expired
-        try {
-            const staleAffected = await this.offersService.expireStaleOffers();
-            if (staleAffected > 0) {
-                this.logger.log(`[Cron] Cleaned up ${staleAffected} stale/un-featured items from database`);
+            // 5. Run promotion bookings expiration
+            try {
+                const promoAffected = await this.promotionsService.handleExpirations();
+                if (promoAffected > 0) {
+                    this.logger.log(`[Cron] Expired ${promoAffected} custom promotion bookings`);
+                }
+            } catch (err: any) {
+                this.logger.error(`[Cron] Error cleaning up expired promotion bookings: ${err.message}`);
             }
-        } catch (err: any) {
-            this.logger.error(`[Cron] Error cleaning up stale offers: ${err.message}`);
-        }
-
-        // 5. Run promotion bookings expiration
-        try {
-            const promoAffected = await this.promotionsService.handleExpirations();
-            if (promoAffected > 0) {
-                this.logger.log(`[Cron] Expired ${promoAffected} custom promotion bookings`);
-            }
-        } catch (err: any) {
-            this.logger.error(`[Cron] Error cleaning up expired promotion bookings: ${err.message}`);
+        } catch (error) {
+            this.logger.error(`[Cron] Failed to process plan expirations: ${error.message}`);
         }
     }
 

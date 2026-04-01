@@ -28,8 +28,7 @@ export default function Sidebar() {
 
     // Fetch badge counts
     useEffect(() => {
-        const isVendorOrAdmin = user?.role === 'vendor' || user?.role === 'admin' || user?.role === 'superadmin';
-        if (!isVendorOrAdmin) return;
+        if (!user) return;
 
         const refreshStats = () => {
             api.leads.getStats()
@@ -72,7 +71,7 @@ export default function Sidebar() {
     const filteredItems = menuItems.filter(item => {
         const isVendorOrAdmin = user?.role === 'vendor' || user?.role === 'admin' || user?.role === 'superadmin';
         if (!isVendorOrAdmin) {
-            return ['Dashboard', 'Saved', 'Following', 'Notifications', 'Settings'].includes(item.name);
+            return ['Dashboard', 'Live Chat', 'Saved', 'Following', 'Notifications', 'Settings'].includes(item.name);
         }
         if (user?.role === 'superadmin' || user?.role === 'admin') return true;
 

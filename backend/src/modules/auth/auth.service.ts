@@ -145,15 +145,17 @@ export class AuthService {
             await this.handleReferral(registerDto.referralCode, savedUser.id);
         }
 
-        // Broadcast new vendor notification to all users
+        // Broadcast new vendor notification to all users (DISABLED per user request)
+        /*
         if (savedUser.role === UserRole.VENDOR) {
             this.notificationsService.broadcast({
                 title: '🏪 New Vendor Joined!',
                 message: `${savedUser.fullName || savedUser.email} just joined as a vendor. Check out their upcoming listings!`,
                 type: 'new_vendor',
                 data: { vendorUserId: savedUser.id },
-            }).catch(() => {/* non-blocking */ });
+            }).catch(() => { });
         }
+        */
 
         return { user: savedUser, tokens };
     }
