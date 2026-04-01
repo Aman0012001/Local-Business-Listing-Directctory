@@ -33,15 +33,6 @@ export class PricingPlanSeederService implements OnModuleInit {
                 isActive: true,
             },
             {
-                name: 'Basic',
-                type: PricingPlanType.SUBSCRIPTION,
-                price: 1500,
-                duration: 1,
-                unit: PricingPlanUnit.MONTHS,
-                features: { maxListings: 5, maxOffers: 2, maxEvents: 1, showAnalytics: true },
-                isActive: true,
-            },
-            {
                 name: 'Premium',
                 type: PricingPlanType.SUBSCRIPTION,
                 price: 4500,

@@ -229,16 +229,14 @@ function PlanCard({ plan, isActive, status, hasActivePaidPlan, onSelect, loading
     const getColor = (type: string) => {
         const colors: Record<string, { text: string; icon: string; accent: string }> = {
             free:  { text: 'text-slate-500', icon: 'text-slate-400', accent: 'bg-slate-100' },
-            basic: { text: 'text-blue-600',  icon: 'text-blue-500',  accent: 'bg-blue-100'  },
         };
-        return colors[type] || colors.basic;
+        return colors[type] || { text: 'text-orange-600',  icon: 'text-orange-500',  accent: 'bg-orange-100'  };
     };
 
     const getIcon = (type: string) => {
         switch (type) {
             case 'free':  return <Clock className="w-5 h-5" />;
-            case 'basic': return <Zap   className="w-5 h-5" />;
-            default:      return <CreditCard className="w-5 h-5" />;
+            default:      return <Zap className="w-5 h-5" />;
         }
     };
 

@@ -53,33 +53,6 @@ export class SubscriptionsSeederService implements OnModuleInit {
                 stripePriceId: null,
                 isActive: true,
             },
-            {
-                id: '00000000-0000-0000-0000-000000000003',
-                name: 'Basic',
-                planType: SubscriptionPlanType.BASIC,
-                description: 'Full access to every feature. Grow your local presence with unlimited listings, analytics, and direct customer engagement.',
-                price: 2000,
-                billingCycle: 'monthly',
-                maxListings: 999,
-                dashboardFeatures: {
-                    showListings: true,
-                    canAddListing: true,
-                    showSaved: true,
-                    showFollowing: true,
-                    showQueries: true,
-                    showLeads: true,
-                    showOffers: true,
-                    showReviews: true,
-                    showAnalytics: true,
-                    showChat: true,
-                    showDemand: true,
-                    showBroadcast: true,
-                    maxKeywords: 10,
-                },
-                isFeatured: true,
-                stripePriceId: 'price_1TFl84B8g7hLDd8UNvtGDhrg', // PKR 2,000/month – Basic Vendor Plan (Stripe)
-                isActive: true,
-            },
         ];
 
         // Seeding / Updating
