@@ -16,7 +16,7 @@ import { api, getImageUrl } from '../../../lib/api';
 import { Business } from '../../../types/api';
 import { useAuth } from '../../../context/AuthContext';
 import { getBusinessOpenStatus } from '../../../lib/business-status';
-import ChatTrigger from '../../../components/chat/ChatTrigger';
+import ChatTrigger, { ChatTriggerHandle } from '../../../components/chat/ChatTrigger';
 import { useChat } from '../../../hooks/useChat';
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
@@ -90,6 +90,7 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
     const [replyingTo, setReplyingTo] = useState<string | null>(null);
     const [replyContent, setReplyContent] = useState('');
     const [submittingReply, setSubmittingReply] = useState(false);
+    const chatRef = useRef<ChatTriggerHandle>(null);
 
     // Enquiry modal state
     const [showEnquiryModal, setShowEnquiryModal] = useState(false);
@@ -352,7 +353,7 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
 
         if (action === 'enquiry') {
             setPendingAction(null);
-            openEnquiryModal();
+            chatRef.current?.open();
             return;
         }
 
@@ -1104,23 +1105,24 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                     )}
                                 </div>
 
-                                {/* Live Chat Button */}
+                                 {/* Live Chat Button */}
                                 {!isOwner && (
                                     <ChatTrigger
+                                        ref={chatRef}
                                         businessId={business.id}
                                         businessName={business.title}
                                         className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/10 active:scale-95 mb-4"
                                     />
                                 )}
 
-                                {/* Enquiry Button - hidden for the owner */}
+                                {/* Quick Connect/Enquiry Button - Now opens Live Chat */}
                                 {!isOwner && (
                                     <button
                                         id="send-enquiry-btn"
                                         onClick={() => handleContactIntent('enquiry')}
                                         className="w-full py-4 bg-gradient-to-r from-violet-600 to-blue-600 text-white rounded-2xl font-bold flex items-center justify-center gap-3 hover:from-violet-700 hover:to-blue-700 transition-all shadow-lg shadow-violet-500/20 active:scale-95"
                                     >
-                                        <Send className="w-5 h-5" /> Send Enquiry
+                                        <Send className="w-5 h-5" /> Chat Now & Enquire
                                     </button>
                                 )}
                                 {isOwner && (

@@ -1,10 +1,14 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useImperativeHandle, forwardRef } from 'react';
 import { MessageCircle } from 'lucide-react';
 import ChatWindow from './ChatWindow';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'next/navigation';
+
+export interface ChatTriggerHandle {
+    open: () => void;
+}
 
 interface ChatTriggerProps {
     businessId: string;
@@ -13,10 +17,20 @@ interface ChatTriggerProps {
     className?: string;
 }
 
-const ChatTrigger: React.FC<ChatTriggerProps> = ({ businessId, businessName, variant = 'button', className = '' }) => {
+const ChatTrigger = forwardRef<ChatTriggerHandle, ChatTriggerProps>(({ businessId, businessName, variant = 'button', className = '' }, ref) => {
     const [isOpen, setIsOpen] = useState(false);
     const { user } = useAuth();
     const router = useRouter();
+
+    useImperativeHandle(ref, () => ({
+        open: () => {
+            if (!user) {
+                router.push(`/login?redirect=/business/${businessId}`);
+                return;
+            }
+            setIsOpen(true);
+        }
+    }));
 
     const handleToggle = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -58,6 +72,8 @@ const ChatTrigger: React.FC<ChatTriggerProps> = ({ businessId, businessName, var
             />
         </>
     );
-};
+});
+
+ChatTrigger.displayName = 'ChatTrigger';
 
 export default ChatTrigger;

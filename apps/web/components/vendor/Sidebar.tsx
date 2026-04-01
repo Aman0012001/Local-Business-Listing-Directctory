@@ -31,6 +31,9 @@ export default function Sidebar() {
         if (!user) return;
 
         const refreshStats = () => {
+            const isVendorOrAdmin = user?.role === 'vendor' || user?.role === 'admin' || user?.role === 'superadmin';
+            if (!isVendorOrAdmin) return;
+
             api.leads.getStats()
                 .then((stats: any) => setNewEnquiryCount(stats?.new || 0))
                 .catch(() => { });

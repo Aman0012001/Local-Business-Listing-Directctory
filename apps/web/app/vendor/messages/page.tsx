@@ -200,13 +200,19 @@ export default function VendorEnquiriesPage() {
         if (!user) { setLoading(false); return; }
         if (!silent) setLoading(true); else setRefreshing(true);
         try {
+            const isVendorOrAdmin = user.role === 'vendor' || user.role === 'admin';
             const params: any = { page, limit: LIMIT };
             if (filterStatus) params.status = filterStatus;
 
-            const [enqRes, statsRes] = await Promise.allSettled([
-                api.leads.getForVendor(params),
-                api.leads.getStats(),
-            ]);
+            // Only fetch stats if user has vendor or admin role to prevent 403 errors
+            const fetchPromises: Promise<any>[] = [api.leads.getForVendor(params)];
+            if (isVendorOrAdmin) {
+                fetchPromises.push(api.leads.getStats());
+            }
+
+            const results = await Promise.allSettled(fetchPromises);
+            const enqRes = results[0];
+            const statsRes = isVendorOrAdmin ? results[1] : null;
 
             if (enqRes.status === 'fulfilled') {
                 setEnquiries(enqRes.value.data || []);
@@ -216,7 +222,7 @@ export default function VendorEnquiriesPage() {
                 setEnquiries([]);
             }
 
-            if (statsRes.status === 'fulfilled') {
+            if (statsRes && statsRes.status === 'fulfilled') {
                 setStats(statsRes.value || {});
             }
         } catch (e) {

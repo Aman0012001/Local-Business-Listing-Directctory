@@ -22,7 +22,7 @@ function getSocket(token: string): Socket {
         currentToken = token;
         sharedSocket = io(`${SOCKET_URL}/chat`, {
             auth: { token: `Bearer ${token}` },
-            transports: ['websocket'],
+            transports: ['polling', 'websocket'],
             reconnection: true,
             reconnectionAttempts: 5,
         });

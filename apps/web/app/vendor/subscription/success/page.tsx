@@ -23,7 +23,7 @@ function SuccessContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const sessionId = searchParams.get('session_id');
-    const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+    const [status, setStatus] = useState<'loading' | 'celebrating' | 'success' | 'error'>('loading');
     const [planDetails, setPlanDetails] = useState<any>(null);
 
     useEffect(() => {
@@ -34,30 +34,40 @@ function SuccessContent() {
         }
     }, [sessionId]);
 
+    // Handle transition from celebrating to success
+    useEffect(() => {
+        if (status === 'celebrating') {
+            const timer = setTimeout(() => {
+                setStatus('success');
+            }, 3000); // 3 seconds of celebration
+            return () => clearTimeout(timer);
+        }
+    }, [status]);
+
     const verifyPayment = async () => {
         try {
             const response = await api.subscriptions.verify(sessionId!);
             if (response.success) {
                 setPlanDetails(response);
-                setStatus('success');
-                // Trigger confetti
-                const duration = 5 * 1000;
+                
+                // Trigger confetti immediately
+                const duration = 4 * 1000;
                 const animationEnd = Date.now() + duration;
-                const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+                const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 50 };
 
                 const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
                 const interval: any = setInterval(function() {
                     const timeLeft = animationEnd - Date.now();
-
-                    if (timeLeft <= 0) {
-                        return clearInterval(interval);
-                    }
+                    if (timeLeft <= 0) return clearInterval(interval);
 
                     const particleCount = 50 * (timeLeft / duration);
                     confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
                     confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
                 }, 250);
+
+                // Start celebration animation
+                setStatus('celebrating');
             } else {
                 setStatus('error');
             }
@@ -67,193 +77,223 @@ function SuccessContent() {
         }
     };
 
-    const containerVariants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: { 
-            opacity: 1, 
-            y: 0,
-            transition: { 
-                duration: 0.6,
-                staggerChildren: 0.1
-            }
-        }
-    };
-
-    const itemVariants = {
-        hidden: { opacity: 0, y: 10 },
-        visible: { opacity: 1, y: 0 }
-    };
-
-    if (status === 'loading') {
-        return (
-            <div className="min-h-[70vh] flex flex-col items-center justify-center p-6">
+    return (
+        <AnimatePresence mode="wait">
+            {status === 'loading' && (
                 <motion.div 
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="relative"
-                >
-                    <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse" />
-                    <Loader2 className="w-16 h-16 text-primary animate-spin relative z-10" />
-                </motion.div>
-                <motion.p 
+                    key="loading"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                    className="mt-8 text-xl font-medium text-muted-foreground animate-pulse"
+                    exit={{ opacity: 0 }}
+                    className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center"
                 >
-                    Verifying your premium activation...
-                </motion.p>
-            </div>
-        );
-    }
-
-    if (status === 'error') {
-        return (
-            <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center">
-                <motion.div 
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mb-8"
-                >
-                    <AlertCircle className="w-10 h-10 text-destructive" />
-                </motion.div>
-                <h1 className="text-3xl font-bold mb-4">Something went wrong</h1>
-                <p className="text-muted-foreground mb-8 max-w-md">
-                    We couldn't verify your payment. If you've been charged, don't worry—it might take a few minutes to process.
-                </p>
-                <div className="flex gap-4">
-                    <Link href="/vendor/subscription" className="px-6 py-3 bg-primary text-primary-foreground rounded-full font-medium hover:opacity-90 transition-all shadow-lg hover:shadow-primary/25">
-                        Back to Subscriptions
-                    </Link>
-                    <Link href="/contact" className="px-6 py-3 border rounded-full font-medium hover:bg-muted transition-all">
-                        Contact Support
-                    </Link>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="max-w-4xl mx-auto py-12 px-6">
-            <motion.div 
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="text-center"
-            >
-                {/* Success Icon */}
-                <motion.div variants={itemVariants} className="relative inline-block mb-8">
-                    <div className="absolute inset-0 bg-green-500/20 blur-2xl rounded-full scale-150" />
-                    <div className="relative w-24 h-24 bg-green-500 rounded-full flex items-center justify-center shadow-xl shadow-green-500/20">
-                        <CheckCircle2 className="w-12 h-12 text-white" />
+                    <div className="relative mb-8">
+                        <motion.div 
+                            animate={{ 
+                                scale: [1, 1.1, 1],
+                                rotate: [0, 180, 360]
+                            }}
+                            transition={{ 
+                                duration: 4,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                            }}
+                            className="w-24 h-24 rounded-3xl border-4 border-primary/10 border-t-primary shadow-[0_0_40px_-10px_rgba(var(--primary),0.3)]"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                        </div>
                     </div>
-                    <motion.div 
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: 0.5, type: 'spring' }}
-                        className="absolute -top-2 -right-2 w-10 h-10 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center shadow-lg"
+                    <motion.h2 
+                        initial={{ y: 10, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                        className="text-2xl font-black text-slate-900 dark:text-white tracking-tight"
                     >
-                        <PartyPopper className="w-5 h-5 text-green-500" />
-                    </motion.div>
+                        Authenticating Payment
+                    </motion.h2>
+                    <motion.p 
+                        initial={{ y: 10, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.4 }}
+                        className="mt-2 text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]"
+                    >
+                        Almost there, securing your account
+                    </motion.p>
                 </motion.div>
+            )}
 
-                <motion.h1 variants={itemVariants} className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-                    Subscription Activated!
-                </motion.h1>
-                <motion.p variants={itemVariants} className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto">
-                    Welcome to the next level of business growth. Your premium features are now being provisioned.
-                </motion.p>
-
-                {/* Glassmorphic Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-                    {/* Plan Details Card */}
+            {status === 'celebrating' && (
+                <motion.div 
+                    key="celebration"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0, scale: 1.05, filter: "blur(10px)" }}
+                    className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white dark:bg-slate-950 overflow-hidden"
+                >
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-green-500/5 blur-[120px] rounded-full animate-pulse" />
+                    
                     <motion.div 
-                        variants={itemVariants}
-                        className="relative group overflow-hidden rounded-3xl border bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl p-8 text-left transition-all hover:bg-white/80 dark:hover:bg-slate-900/80"
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ type: "spring", damping: 15, stiffness: 200 }}
+                        className="relative"
                     >
-                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <Zap className="w-16 h-16" />
+                        <div className="w-32 h-32 bg-green-500 rounded-[40px] flex items-center justify-center shadow-[0_20px_60px_rgba(34,197,94,0.4)] relative z-10">
+                            <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ delay: 0.3, type: "spring" }}
+                            >
+                                <CheckCircle2 className="w-16 h-16 text-white stroke-[3px]" />
+                            </motion.div>
                         </div>
-                        <h3 className="text-sm font-semibold text-primary uppercase tracking-wider mb-6 flex items-center gap-2">
-                            <ShieldCheck className="w-4 h-4" />
-                            Plan Activation
-                        </h3>
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center py-2 border-b border-border/50">
-                                <span className="text-muted-foreground flex items-center gap-2">
-                                    <Zap className="w-4 h-4" /> Plan Name
-                                </span>
-                                <span className="font-bold text-lg">{planDetails?.planName || 'Premium Plan'}</span>
-                            </div>
-                            <div className="flex justify-between items-center py-2 border-b border-border/50">
-                                <span className="text-muted-foreground flex items-center gap-2">
-                                    <CreditCard className="w-4 h-4" /> Status
-                                </span>
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 text-green-500 text-sm font-medium">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                                    Active
-                                </span>
-                            </div>
-                            <div className="flex justify-between items-center py-2">
-                                <span className="text-muted-foreground flex items-center gap-2">
-                                    <Calendar className="w-4 h-4" /> Renewal Date
-                                </span>
-                                <span className="font-medium">
-                                    {planDetails?.endDate ? new Date(planDetails.endDate).toLocaleDateString('en-US', {
-                                        month: 'long',
-                                        day: 'numeric',
-                                        year: 'numeric'
-                                    }) : 'N/A'}
-                                </span>
-                            </div>
-                        </div>
+
+                        {/* Ripple circles */}
+                        {[1, 2, 3].map((i) => (
+                            <motion.div
+                                key={i}
+                                initial={{ scale: 1, opacity: 0.5 }}
+                                animate={{ scale: 2, opacity: 0 }}
+                                transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.4 }}
+                                className="absolute inset-0 border-2 border-green-500/20 rounded-[40px]"
+                            />
+                        ))}
                     </motion.div>
 
-                    {/* Quick Access Card */}
-                    <motion.div 
-                        variants={itemVariants}
-                        className="bg-primary rounded-3xl p-8 text-left text-primary-foreground relative overflow-hidden shadow-2xl shadow-primary/20"
+                    <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.5 }}
+                        className="mt-12 text-center"
                     >
-                        <div className="absolute bottom-0 right-0 -mb-8 -mr-8 opacity-10">
-                            <ArrowRight className="w-48 h-48 -rotate-45" />
-                        </div>
-                        <h3 className="text-lg font-bold mb-2">What's Next?</h3>
-                        <p className="text-primary-foreground/80 mb-8 leading-relaxed">
-                            Your dashboard is now upgraded with advanced analytics, better visibility, and lead generation tools.
+                        <h1 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tighter mb-4">
+                            Success! Your Plan is <span className="text-green-500">Live</span>
+                        </h1>
+                        <p className="text-xl text-slate-400 font-bold tracking-tight">
+                            Hang tight while we prepare your <span className="text-primary italic">new tools</span>
                         </p>
-                        <div className="space-y-3">
-                            <Link 
-                                href="/vendor/dashboard" 
-                                className="flex items-center justify-between w-full p-4 bg-white/10 hover:bg-white/20 rounded-2xl transition-all group"
-                            >
-                                <span className="font-semibold">Go to Dashboard</span>
-                                <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                            </Link>
-                            <Link 
-                                href="/vendor/listings" 
-                                className="flex items-center justify-between w-full p-4 bg-white/10 hover:bg-white/20 rounded-2xl transition-all group"
-                            >
-                                <span className="font-semibold">Manage My Listings</span>
-                                <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                            </Link>
-                        </div>
                     </motion.div>
-                </div>
-
-                <motion.div variants={itemVariants} className="pt-8 border-t">
-                    <p className="text-muted-foreground mb-6">
-                        Need help with your subscription? Check our <Link href="/faq" className="text-primary hover:underline">FAQ</Link> or <Link href="/contact" className="text-primary hover:underline">Support</Link>.
-                    </p>
                 </motion.div>
-            </motion.div>
-        </div>
+            )}
+
+            {status === 'error' && (
+                <motion.div 
+                    key="error"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center"
+                >
+                    <div className="w-20 h-20 bg-red-100 dark:bg-red-900/10 rounded-3xl flex items-center justify-center mb-8">
+                        <AlertCircle className="w-10 h-10 text-red-500" />
+                    </div>
+                    <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-4 tracking-tight">Something went wrong</h1>
+                    <p className="text-slate-500 dark:text-slate-400 mb-10 max-w-md font-bold text-lg leading-relaxed">
+                        We couldn't confirm your subscription. It might still be processing. Please check your dashboard in a few minutes.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <Link href="/vendor/subscription" className="px-10 py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl font-black tracking-tight hover:scale-[1.02] transition-all">
+                            Back to Pricing
+                        </Link>
+                        <Link href="/contact" className="px-10 py-4 border-2 border-slate-100 dark:border-slate-800 rounded-2xl font-black text-slate-600 hover:bg-slate-50 transition-all">
+                            Support center
+                        </Link>
+                    </div>
+                </motion.div>
+            )}
+
+            {status === 'success' && (
+                <motion.div 
+                    key="success"
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="max-w-4xl mx-auto py-16 px-6"
+                >
+                    <div className="text-center mb-16">
+                        <div className="flex items-center justify-center gap-4 mb-4">
+                            <div className="h-px w-8 bg-slate-200 dark:bg-slate-800" />
+                            <ShieldCheck className="w-6 h-6 text-green-500" />
+                            <div className="h-px w-8 bg-slate-200 dark:bg-slate-800" />
+                        </div>
+                        <h1 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tighter mb-4">
+                            Welcome to the <span className="text-primary italic">Growth Tier.</span>
+                        </h1>
+                        <p className="text-xl text-slate-400 font-bold tracking-tight max-w-2xl mx-auto">
+                            Your subscription was successfully activated. Here's a quick summary of your account status.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+                        {/* Summary Card */}
+                        <div className="bg-white dark:bg-slate-900 border-2 border-slate-50 dark:border-slate-800 rounded-[32px] p-8 text-left relative group transition-all hover:border-primary/20">
+                            <div className="absolute top-8 right-8">
+                                <Zap className="w-8 h-8 text-primary/20" />
+                            </div>
+                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-8">Active Subscription</h3>
+                            
+                            <div className="space-y-6">
+                                <div className="flex justify-between items-baseline">
+                                    <span className="text-slate-400 font-bold text-sm">Plan</span>
+                                    <span className="text-2xl font-black text-slate-900 dark:text-white">{planDetails?.planName || 'Premium Plan'}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-slate-400 font-bold text-sm">Status</span>
+                                    <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-green-500/10 text-green-500 rounded-full text-xs font-black uppercase tracking-widest">
+                                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                                        Active
+                                    </span>
+                                </div>
+                                <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                                    <span className="text-slate-400 font-bold text-sm">Valid Until</span>
+                                    <span className="font-bold text-slate-600 dark:text-slate-300">
+                                        {planDetails?.endDate ? new Date(planDetails.endDate).toLocaleDateString('en-US', {
+                                            month: 'long', day: 'numeric', year: 'numeric'
+                                        }) : 'N/A'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Actions Card */}
+                        <div className="bg-slate-900 dark:bg-white rounded-[32px] p-8 text-left text-white dark:text-slate-900 relative overflow-hidden flex flex-col justify-between group h-full">
+                            <div className="absolute -bottom-8 -right-8 w-40 h-40 bg-primary opacity-10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
+                            
+                            <div>
+                                <h3 className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mb-4">Onboarding</h3>
+                                <h2 className="text-2xl font-black tracking-tight mb-4 leading-tight">Ready to boost your presence?</h2>
+                                <p className="text-slate-400 dark:text-slate-500 font-bold text-sm leading-relaxed mb-8">
+                                    Start using your premium analytics and AI content tools to attract more customers.
+                                </p>
+                            </div>
+
+                            <div className="space-y-3">
+                                <Link href="/vendor/dashboard" className="flex items-center justify-between w-full p-5 bg-white/5 dark:bg-slate-50 hover:bg-white/10 dark:hover:bg-slate-100 rounded-2xl transition-all group/btn">
+                                    <span className="font-black text-sm">Open Dashboard</span>
+                                    <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                                </Link>
+                                <Link href="/vendor/listings" className="flex items-center justify-between w-full p-5 bg-white/5 dark:bg-slate-50 hover:bg-white/10 dark:hover:bg-slate-100 rounded-2xl transition-all group/btn">
+                                    <span className="font-black text-sm">Optimize Listings</span>
+                                    <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="pt-10 border-t border-slate-100 dark:border-slate-800 text-center">
+                        <p className="text-slate-400 font-bold text-sm">
+                            Need help? Reach out to our <Link href="/contact" className="text-primary hover:underline">Priority Support</Link> team.
+                        </p>
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
     );
 }
 
 export default function SubscriptionSuccessPage() {
     return (
         <main className="min-h-[70vh] flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4">
-            <Suspense fallback={<div className="animate-pulse text-muted-foreground">Loading...</div>}>
+            <Suspense fallback={<div className="animate-pulse text-muted-foreground font-black uppercase tracking-widest text-[10px]">Verifying...</div>}>
                 <SuccessContent />
             </Suspense>
         </main>

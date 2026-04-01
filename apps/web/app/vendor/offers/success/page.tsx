@@ -14,7 +14,8 @@ import {
     AlertCircle,
     PartyPopper,
     Zap,
-    Rocket
+    Rocket,
+    ShieldCheck
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { api } from '@/lib/api';
@@ -23,7 +24,7 @@ function OfferSuccessContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const sessionId = searchParams.get('session_id');
-    const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+    const [status, setStatus] = useState<'loading' | 'celebrating' | 'success' | 'error'>('loading');
     const [details, setDetails] = useState<any>(null);
 
     useEffect(() => {
@@ -34,18 +35,32 @@ function OfferSuccessContent() {
         }
     }, [sessionId]);
 
+    // Handle transition from celebrating to success
+    useEffect(() => {
+        if (status === 'celebrating') {
+            const timer = setTimeout(() => {
+                setStatus('success');
+            }, 3000); 
+            return () => clearTimeout(timer);
+        }
+    }, [status]);
+
     const verifyPayment = async () => {
         try {
             const response = await api.promotions.verifySession(sessionId!);
             if (response.success) {
                 setDetails(response);
-                setStatus('success');
+                
+                // Trigger celebratory confetti
                 confetti({
                     particleCount: 150,
                     spread: 70,
                     origin: { y: 0.6 },
-                    colors: ['#3b82f6', '#22c55e', '#f59e0b']
+                    colors: ['#3b82f6', '#22c55e', '#f59e0b'],
+                    zIndex: 100
                 });
+
+                setStatus('celebrating');
             } else {
                 setStatus('error');
             }
@@ -55,127 +70,198 @@ function OfferSuccessContent() {
         }
     };
 
-    const containerVariants = {
-        hidden: { opacity: 0, scale: 0.95 },
-        visible: { 
-            opacity: 1, 
-            scale: 1,
-            transition: { duration: 0.5, staggerChildren: 0.1 }
-        }
-    };
-
-    const itemVariants = {
-        hidden: { opacity: 0, y: 15 },
-        visible: { opacity: 1, y: 0 }
-    };
-
-    if (status === 'loading') {
-        return (
-            <div className="min-h-[60vh] flex flex-col items-center justify-center p-6">
-                <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
-                <p className="text-muted-foreground font-medium">Activating your feature boost...</p>
-            </div>
-        );
-    }
-
-    if (status === 'error') {
-        return (
-            <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
-                <AlertCircle className="w-16 h-16 text-destructive mb-6" />
-                <h1 className="text-2xl font-bold mb-2">Activation Pending</h1>
-                <p className="text-muted-foreground mb-8 max-w-sm">
-                    We're still processing your payment. It should appear in your active promotions shortly.
-                </p>
-                <Link href="/vendor/dashboard" className="px-6 py-3 bg-primary text-white rounded-full font-semibold">
-                    Go to Dashboard
-                </Link>
-            </div>
-        );
-    }
-
     return (
-        <div className="max-w-3xl mx-auto py-12 px-6">
-            <motion.div 
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="text-center"
-            >
-                <motion.div variants={itemVariants} className="relative inline-block mb-8">
-                    <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center shadow-2xl shadow-primary/30">
-                        <Rocket className="w-12 h-12 text-white animate-bounce" />
-                    </div>
-                </motion.div>
-
-                <motion.h1 variants={itemVariants} className="text-4xl font-extrabold mb-4">
-                    Feature Boost Active!
-                </motion.h1>
-                <motion.p variants={itemVariants} className="text-lg text-muted-foreground mb-12">
-                    Your offer is now being prioritized in search results and featured sections.
-                </motion.p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-                    <motion.div 
-                        variants={itemVariants}
-                        className="p-8 rounded-3xl border bg-white/40 dark:bg-slate-900/40 backdrop-blur-md text-left"
-                    >
-                        <h3 className="text-sm font-bold text-primary uppercase mb-6 flex items-center gap-2">
-                            <Tag className="w-4 h-4" /> Boost Details
-                        </h3>
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center pb-2 border-b">
-                                <span className="text-muted-foreground">Promotion</span>
-                                <span className="font-bold">{details?.planName || 'Offer Boost'}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-muted-foreground text-sm flex items-center gap-1">
-                                    <Calendar className="w-3.5 h-3.5" /> Valid Until
-                                </span>
-                                <span className="font-medium text-sm">
-                                    {details?.endDate ? new Date(details.endDate).toLocaleDateString() : 'N/A'}
-                                </span>
-                            </div>
+        <AnimatePresence mode="wait">
+            {status === 'loading' && (
+                <motion.div 
+                    key="loading"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center"
+                >
+                    <div className="relative mb-8">
+                        <motion.div 
+                            animate={{ scale: [1, 1.1, 1] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                            className="w-20 h-20 rounded-full border-4 border-primary/10 border-t-primary shadow-xl"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <Loader2 className="w-6 h-6 text-primary animate-spin" />
                         </div>
-                    </motion.div>
+                    </div>
+                    <h2 className="text-xl font-black text-slate-900 dark:text-white mb-2">Verifying Boost Status</h2>
+                    <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Preparing your visibility jump</p>
+                </motion.div>
+            )}
+
+            {status === 'celebrating' && (status === 'celebrating') && (
+                <motion.div 
+                    key="celebration"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
+                    className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white dark:bg-slate-950 px-6 overflow-hidden"
+                >
+                    {/* Radial background animation */}
+                    <motion.div 
+                        animate={{ 
+                            scale: [1, 1.2, 1],
+                            opacity: [0.1, 0.2, 0.1]
+                        }}
+                        transition={{ duration: 3, repeat: Infinity }}
+                        className="absolute inset-0 bg-gradient-radial from-primary/20 to-transparent blur-3xl"
+                    />
 
                     <motion.div 
-                        variants={itemVariants}
-                        className="p-8 rounded-3xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-left relative overflow-hidden"
+                        initial={{ y: 100, scale: 0.5, opacity: 0 }}
+                        animate={{ y: 0, scale: 1, opacity: 1 }}
+                        transition={{ 
+                            type: "spring", 
+                            damping: 12, 
+                            stiffness: 100,
+                            duration: 0.8 
+                        }}
+                        className="relative"
                     >
-                        <h3 className="text-lg font-bold mb-4">What happens now?</h3>
-                        <ul className="space-y-3 text-sm opacity-80 mb-6">
-                            <li className="flex items-start gap-2">
-                                <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
-                                Your offer is tagged as "Featured"
-                            </li>
-                            <li className="flex items-start gap-2">
-                                <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
-                                Boosted placement in categories
-                            </li>
-                        </ul>
-                        <Link href="/vendor/offers" className="inline-flex items-center gap-2 font-bold hover:gap-3 transition-all duration-300">
-                            Manage Offers <ChevronRight className="w-4 h-4" />
-                        </Link>
+                        <div className="w-32 h-32 bg-primary rounded-[40px] flex items-center justify-center shadow-[0_20px_60px_rgba(var(--primary),0.3)] relative z-10">
+                            <Rocket className="w-16 h-16 text-white animate-pulse" />
+                        </div>
+                        
+                        {/* Thrust particles */}
+                        {[1, 2, 3].map((i) => (
+                            <motion.div
+                                key={i}
+                                initial={{ y: 0, opacity: 0.8 }}
+                                animate={{ y: 100, opacity: 0, x: (i - 2) * 20 }}
+                                transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+                                className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-4 bg-orange-500/50 rounded-full blur-sm"
+                            />
+                        ))}
                     </motion.div>
-                </div>
 
-                <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Link href="/vendor/dashboard" className="px-8 py-4 bg-primary text-white rounded-2xl font-bold shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.6 }}
+                        className="mt-12 text-center relative z-10"
+                    >
+                        <h1 className="text-5xl md:text-7xl font-black text-slate-900 dark:text-white tracking-tighter mb-4">
+                            Boost <span className="text-primary italic text-shadow-glow">Activated!</span>
+                        </h1>
+                        <p className="text-xl text-slate-400 font-bold tracking-tight">
+                            Your offer is now <span className="text-orange-500">featured</span> across the platform
+                        </p>
+                    </motion.div>
+                </motion.div>
+            )}
+
+            {status === 'error' && (
+                <motion.div 
+                    key="error"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center"
+                >
+                    <div className="w-20 h-20 bg-red-50 dark:bg-red-900/10 rounded-3xl flex items-center justify-center mb-8">
+                        <AlertCircle className="w-10 h-10 text-red-500" />
+                    </div>
+                    <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-4">Verification Pending</h1>
+                    <p className="text-slate-500 max-w-sm font-bold mb-8">
+                        We're still processing your boost. If your status doesn't update in 5 minutes, please contact support.
+                    </p>
+                    <Link href="/vendor/dashboard" className="px-10 py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl font-black tracking-tight hover:scale-[1.02] transition-all">
                         Back to Dashboard
                     </Link>
-                    <Link href="/vendor/listings" className="px-8 py-4 border rounded-2xl font-bold hover:bg-muted transition-all">
-                        View Listings
-                    </Link>
                 </motion.div>
-            </motion.div>
-        </div>
+            )}
+
+            {status === 'success' && (
+                <motion.div 
+                    key="success"
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="max-w-4xl mx-auto py-16 px-6"
+                >
+                    <div className="text-center mb-16">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500/10 text-orange-500 rounded-full text-[10px] font-black uppercase tracking-widest mb-6">
+                            <Zap className="w-3 h-3" /> Promotion Confirmed
+                        </div>
+                        <h1 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tighter mb-4">
+                            Taking Your Business <span className="text-primary">Higher</span>
+                        </h1>
+                        <p className="text-xl text-slate-400 font-bold tracking-tight max-w-2xl mx-auto">
+                            Your feature boost is now active and will be visible to all users searching for services in your area.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+                        {/* Boost Details */}
+                        <div className="bg-white dark:bg-slate-900 border-2 border-slate-50 dark:border-slate-800 rounded-[35px] p-10 text-left relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-10 transition-opacity">
+                                <Rocket className="w-32 h-32 -rotate-45" />
+                            </div>
+                            <h3 className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] mb-10 flex items-center gap-2">
+                                <Tag className="w-4 h-4" /> Boost Information
+                            </h3>
+                            <div className="space-y-6 relative z-10">
+                                <div className="flex justify-between items-baseline border-b border-slate-50 dark:border-slate-800 pb-4">
+                                    <span className="text-slate-400 font-bold text-sm">Promotion</span>
+                                    <span className="text-xl font-black text-slate-900 dark:text-white">{details?.planName || 'Offer Highlight'}</span>
+                                </div>
+                                <div className="flex justify-between items-center group/item">
+                                    <span className="text-slate-400 font-bold text-sm">Valid Until</span>
+                                    <span className="font-black text-slate-900 dark:text-white flex items-center gap-2">
+                                        <Calendar className="w-4 h-4 text-primary" />
+                                        {details?.endDate ? new Date(details.endDate).toLocaleDateString('en-US', {
+                                            month: 'short', day: 'numeric', year: 'numeric'
+                                        }) : 'N/A'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Impact Card */}
+                        <div className="bg-slate-900 dark:bg-white rounded-[35px] p-10 text-left text-white dark:text-slate-900 relative overflow-hidden h-full flex flex-col justify-between">
+                            <div>
+                                <h3 className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mb-4">Impact</h3>
+                                <h2 className="text-2xl font-black mb-6 leading-tight">Increased visibility means more leads.</h2>
+                                <ul className="space-y-4">
+                                    <li className="flex items-center gap-3 text-sm font-bold opacity-80">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                        Top-of-search priority
+                                    </li>
+                                    <li className="flex items-center gap-3 text-sm font-bold opacity-80">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                        Featured badges on listings
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div className="pt-10 flex gap-4">
+                                <Link href="/vendor/offers" className="flex-1 text-center py-4 bg-white/10 dark:bg-slate-50 rounded-2xl font-black text-sm hover:bg-white/20 dark:hover:bg-slate-100 transition-all">
+                                    Manage Boosts
+                                </Link>
+                                <Link href="/vendor/dashboard" className="flex-1 text-center py-4 bg-primary rounded-2xl font-black text-sm text-white hover:opacity-90 transition-all">
+                                    Dashboard
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p className="text-center text-slate-400 font-bold text-sm">
+                        Success! Your boost takes immediate effect. <Link href="/help" className="text-primary hover:underline">Learn more about ranking</Link>.
+                    </p>
+                </motion.div>
+            )}
+        </AnimatePresence>
     );
 }
 
 export default function OfferFeatureSuccessPage() {
     return (
         <main className="min-h-[70vh] flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4">
-            <Suspense fallback={<div>Loading...</div>}>
+            <Suspense fallback={<div className="font-black text-slate-400 uppercase tracking-widest text-xs animate-pulse">Initializing...</div>}>
                 <OfferSuccessContent />
             </Suspense>
         </main>

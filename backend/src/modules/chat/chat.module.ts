@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChatConversation, ChatMessage, User, Listing, Vendor } from '../../entities';
 import { ChatService } from './chat.service';
@@ -26,6 +26,7 @@ import { WsJwtGuard } from '../notifications/ws-jwt.guard';
         }),
         AuthModule,
         UsersModule,
+        forwardRef(() => import('../leads/leads.module').then(m => m.LeadsModule)),
     ],
     providers: [ChatService, ChatGateway, WsJwtGuard],
     controllers: [ChatController],

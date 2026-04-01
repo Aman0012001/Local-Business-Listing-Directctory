@@ -28,7 +28,7 @@ export function useNotifications() {
             currentToken = token;
             notificationSocket = io(`${SOCKET_URL}/notifications`, {
                 auth: { token: `Bearer ${token}` },
-                transports: ['websocket'],
+                transports: ['polling', 'websocket'],
             });
 
             notificationSocket.on('connect', () => {

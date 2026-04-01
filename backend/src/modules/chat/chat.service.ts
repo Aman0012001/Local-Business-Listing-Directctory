@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not } from 'typeorm';
 import { ChatConversation, ChatMessage, User, Listing, Vendor } from '../../entities';
+import { LeadsService } from '../leads/leads.service';
+import { Inject, forwardRef } from '@nestjs/common';
 
 @Injectable()
 export class ChatService {
@@ -14,7 +16,9 @@ export class ChatService {
         private listingRepository: Repository<Listing>,
         @InjectRepository(Vendor)
         private vendorRepository: Repository<Vendor>,
-    ) {}
+        @Inject(forwardRef(() => LeadsService))
+        private leadsService: LeadsService,
+    ) { }
 
     async getOrCreateConversation(userId: string, businessId: string) {
         let conversation = await this.conversationRepository.findOne({
@@ -44,6 +48,19 @@ export class ChatService {
                 where: { id: conversation.id },
                 relations: ['business', 'user', 'vendor'],
             });
+
+            // Create a Lead for this chat start if it's the first time
+            if (conversation) {
+                const userObj = await this.vendorRepository.manager.findOne(User, { where: { id: userId } });
+                await this.leadsService.create({
+                    businessId,
+                    name: userObj?.fullName || 'User',
+                    email: userObj?.email || '',
+                    phone: userObj?.phone || undefined,
+                    message: `Started a real-time live chat regarding "${conversation.business.title}"`,
+                    type: 'chat' as any,
+                }, userObj).catch(err => console.error('[ChatService] Lead creation failed:', err.message));
+            }
         }
 
         return conversation;
