@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { api, getImageUrl } from '../lib/api';
 import { Category, City } from '../types/api';
 import { usePushNotifications } from '../lib/usePushNotifications';
+import { chatApi } from '../services/chat.service';
 
 export default function Navbar() {
     const { user, logout } = useAuth();
@@ -21,15 +22,20 @@ export default function Navbar() {
     // ── Notifications ───────────────────────────────────────────────
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [unreadChatCount, setUnreadChatCount] = useState(0);
     const [showBell, setShowBell] = useState(false);
     const bellRef = useRef<HTMLDivElement>(null);
 
     const fetchNotifications = useCallback(async () => {
         if (!user) return;
         try {
-            const res = await api.notifications.getAll() as any;
-            setNotifications(res.notifications || []);
-            setUnreadCount(res.unreadCount || 0);
+            const [notifRes, chatRes] = await Promise.all([
+                api.notifications.getAll() as any,
+                chatApi.getUnreadCount() as any
+            ]);
+            setNotifications(notifRes.notifications || []);
+            setUnreadCount(notifRes.unreadCount || 0);
+            setUnreadChatCount(chatRes.count || 0);
         } catch { /* ignore */ }
     }, [user]);
 
@@ -355,7 +361,11 @@ export default function Navbar() {
                                         title="Messages"
                                     >
                                         <MessageSquare className="w-5 h-5" />
-                                        {/* Optional: Add unread message count here if available in future */}
+                                        {unreadChatCount > 0 && (
+                                            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-emerald-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                                                {unreadChatCount > 9 ? '9+' : unreadChatCount}
+                                            </span>
+                                        )}
                                     </Link>
                                 )}
 

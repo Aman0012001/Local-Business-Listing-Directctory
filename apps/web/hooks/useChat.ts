@@ -5,7 +5,7 @@ import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 import { chatApi } from '../services/chat.service';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL?.split('/api')[0] || 'http://process.env.NEXT_PUBLIC_API_URL';
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '')?.replace('/api', '') || '';
 
 let sharedSocket: Socket | null = null;
 let currentToken: string | null = null;
@@ -22,7 +22,7 @@ function getSocket(token: string): Socket {
         currentToken = token;
         sharedSocket = io(`${SOCKET_URL}/chat`, {
             auth: { token: `Bearer ${token}` },
-            transports: ['polling', 'websocket'],
+            transports: ['websocket', 'polling'],
             reconnection: true,
             reconnectionAttempts: 5,
         });

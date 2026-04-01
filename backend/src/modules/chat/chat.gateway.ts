@@ -19,7 +19,7 @@ import { SendMessageDto } from './dto/chat.dto';
         credentials: true,
     },
     namespace: 'chat',
-    transports: ['polling', 'websocket'],
+    transports: ['websocket', 'polling'],
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     constructor(private chatService: ChatService) {}

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL?.split('/api')[0] || 'http://localhost:3001';
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '')?.replace('/api', '') || '';
 
 let notificationSocket: Socket | null = null;
 let currentToken: string | null = null;
@@ -28,7 +28,7 @@ export function useNotifications() {
             currentToken = token;
             notificationSocket = io(`${SOCKET_URL}/notifications`, {
                 auth: { token: `Bearer ${token}` },
-                transports: ['polling', 'websocket'],
+                transports: ['websocket', 'polling'],
             });
 
             notificationSocket.on('connect', () => {
