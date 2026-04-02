@@ -109,7 +109,7 @@ export class OffersService {
         const limitKey = type === OfferType.EVENT ? 'maxEvents' : 'maxOffers';
         const limit = features[limitKey] !== undefined ? Number(features[limitKey]) : 0;
 
-        if (limit <= 0) {
+        if (limit <= 0 && !dto.pricingId) {
             throw new ForbiddenException(`Your current plan (${activeSub.plan.name}) does not allow creating ${type}s. Please upgrade your plan.`);
         }
 
@@ -122,7 +122,7 @@ export class OffersService {
             }
         });
 
-        if (currentCount >= limit) {
+        if (currentCount >= limit && !dto.pricingId) {
             throw new BadRequestException(
                 `You have reached the limit of ${limit} ${type}s for your ${activeSub.plan.name} plan. Please upgrade or delete an existing ${type}.`
             );

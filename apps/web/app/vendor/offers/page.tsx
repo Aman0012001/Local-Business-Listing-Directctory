@@ -984,7 +984,12 @@ export default function VendorOffersPage() {
                                             const limitKey = type === 'event' ? 'maxEvents' : 'maxOffers';
                                             const limit = Number(activeSub.plan?.features?.[limitKey] || 0);
                                             const currentCount = offers.filter(o => o.type === type && o.status !== 'expired').length;
-                                            return limit <= 0 || currentCount >= limit;
+                                            const hasReachedLimit = limit <= 0 || currentCount >= limit;
+                                            
+                                            // If they've reached the free limit, they MUST at least have a booster plan selected
+                                            if (hasReachedLimit && !form.boosterPlanId) return true;
+                                            
+                                            return false;
                                         })()}
                                         className="flex-[2] py-3.5 bg-gradient-to-r from-orange-500 to-rose-500 text-white rounded-xl font-black text-sm shadow-lg shadow-orange-500/20 hover:from-orange-600 hover:to-rose-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                     >
