@@ -12,7 +12,14 @@ import {
 import { api } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { format, isDate, isValid } from 'date-fns';
+
+const safeFormat = (date: any, formatStr: string, fallback = '—') => {
+    if (!date) return fallback;
+    const d = new Date(date);
+    if (!isValid(d)) return fallback;
+    return format(d, formatStr);
+};
 
 interface OfferItem {
     id: string;
@@ -155,6 +162,10 @@ function VendorOfferPlansPageInner() {
                           (promotionsData?.boosts?.length > 0) || 
                           (promotionsData?.dynamicBookings?.length > 0);
 
+    const activeBoostsCount = (promotionsData?.plans?.length || 0) + 
+                             (promotionsData?.boosts?.length || 0) + 
+                             (promotionsData?.dynamicBookings?.length || 0);
+
     return (
         <div className="max-w-5xl mx-auto space-y-8 pb-16">
 
@@ -216,7 +227,11 @@ function VendorOfferPlansPageInner() {
             <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl w-fit">
                 {[
                     { id: 'booking', label: 'New Booking', icon: Plus },
-                    { id: 'trajection', label: 'Active Boosts', icon: Zap },
+                    { 
+                        id: 'trajection', 
+                        label: `Active Boosts ${activeBoostsCount > 0 ? `(${activeBoostsCount})` : ''}`, 
+                        icon: Zap 
+                    },
                     { id: 'history', label: 'History', icon: FileText },
                 ].map(tab => (
                     <button
@@ -230,7 +245,7 @@ function VendorOfferPlansPageInner() {
                     >
                         <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? 'text-orange-500' : ''}`} />
                         {tab.label}
-                        {tab.id === 'trajection' && hasActivePromos && (
+                        {tab.id === 'trajection' && activeBoostsCount > 0 && (
                             <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse ml-1" />
                         )}
                     </button>
@@ -503,12 +518,42 @@ function VendorOfferPlansPageInner() {
                                                 <div className="flex items-center justify-between text-sm py-2 border-b border-slate-50">
                                                     <span className="text-slate-400 font-bold flex items-center gap-2"><Clock className="w-4 h-4" /> Expires in</span>
                                                     <span className="font-black text-orange-600">
-                                                        {Math.max(0, Math.ceil((new Date(plan.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))} days
+                                                        {plan.endDate ? Math.max(0, Math.ceil((new Date(plan.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))) : '—'} days
                                                     </span>
                                                 </div>
                                                 <div className="flex items-center justify-between text-sm">
                                                     <span className="text-slate-400 font-bold flex items-center gap-2"><Calendar className="w-4 h-4" /> Valid until</span>
-                                                    <span className="text-slate-900 font-black">{format(new Date(plan.endDate), 'MMM d, yyyy')}</span>
+                                                    <span className="text-slate-900 font-black">{safeFormat(plan.endDate, 'MMM d, yyyy')}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    {/* Traditional Feature Boosts */}
+                                    {promotionsData.boosts?.map((boost: any) => (
+                                        <div key={boost.id} className="bg-white border-2 border-slate-100 rounded-3xl p-6 relative overflow-hidden group hover:border-amber-200 transition-all shadow-sm">
+                                            <div className="absolute top-0 right-0 p-3">
+                                                <span className="px-2 py-1 bg-amber-500 text-white text-[8px] font-black uppercase rounded-lg">Featured</span>
+                                            </div>
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="w-10 h-10 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600">
+                                                    <Star className="w-5 h-5 fill-amber-500" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-black text-slate-900 line-clamp-1">{boost.title}</h3>
+                                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{boost.business || 'Business Listing'}</p>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-3">
+                                                <div className="flex items-center justify-between text-sm py-2 border-b border-slate-50">
+                                                    <span className="text-slate-400 font-bold flex items-center gap-2"><Clock className="w-4 h-4" /> Expires in</span>
+                                                    <span className="font-black text-amber-600">
+                                                        {boost.endDate ? Math.max(0, Math.ceil((new Date(boost.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))) : '—'} days
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-slate-400 font-bold flex items-center gap-2"><Calendar className="w-4 h-4" /> Valid until</span>
+                                                    <span className="text-slate-900 font-black">{safeFormat(boost.endDate, 'MMM d, yyyy')}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -549,7 +594,7 @@ function VendorOfferPlansPageInner() {
                                                 </div>
                                                 <div className="flex items-center justify-between text-sm">
                                                     <span className="text-slate-400 font-bold flex items-center gap-2"><Calendar className="w-4 h-4" /> Ends At</span>
-                                                    <span className="text-slate-900 font-black">{format(new Date(booking.endTime), 'MMM d, h:mm a')}</span>
+                                                    <span className="text-slate-900 font-black">{safeFormat(booking.endTime, 'MMM d, h:mm a')}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -591,7 +636,7 @@ function VendorOfferPlansPageInner() {
                                             invoices.map((invoice: any) => (
                                                 <tr key={invoice.id} className="group hover:bg-slate-50/50 transition-colors">
                                                     <td className="px-8 py-5 whitespace-nowrap font-bold text-slate-900">
-                                                        {format(new Date(invoice.createdAt), 'MMM d, yyyy')}
+                                                        {safeFormat(invoice.createdAt, 'MMM d, yyyy')}
                                                     </td>
                                                     <td className="px-8 py-5">
                                                         <div className="font-bold text-slate-900 group-hover:text-orange-600 transition-colors">

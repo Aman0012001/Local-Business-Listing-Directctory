@@ -16,7 +16,14 @@ import {
     ShieldCheck
 } from 'lucide-react';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
+
+const safeFormat = (date: any, formatStr: string, fallback = '—') => {
+    if (!date) return fallback;
+    const d = new Date(date);
+    if (!isValid(d)) return fallback;
+    return format(d, formatStr);
+};
 
 export default function VendorInvoicesPage() {
     const [invoices, setInvoices] = useState<any[]>([]);
@@ -147,12 +154,12 @@ export default function VendorInvoicesPage() {
                                         <div className="flex items-center justify-between text-sm py-2 border-b border-gray-50">
                                             <span className="text-gray-500 flex items-center gap-2"><Clock className="w-4 h-4" /> Expires in</span>
                                             <span className="font-bold text-blue-600">
-                                                {Math.ceil((new Date(plan.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days
+                                                {plan.endDate ? Math.max(0, Math.ceil((new Date(plan.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))) : '—'} days
                                             </span>
                                         </div>
                                         <div className="flex items-center justify-between text-sm">
                                             <span className="text-gray-500 flex items-center gap-2"><Calendar className="w-4 h-4" /> Valid until</span>
-                                            <span className="text-gray-900 font-medium">{format(new Date(plan.endDate), 'MMM d, yyyy')}</span>
+                                            <span className="text-gray-900 font-medium">{safeFormat(plan.endDate, 'MMM d, yyyy')}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -181,12 +188,12 @@ export default function VendorInvoicesPage() {
                                         <div className="flex items-center justify-between text-sm py-2 border-b border-gray-50">
                                             <span className="text-gray-500 flex items-center gap-2"><Clock className="w-4 h-4" /> Expires in</span>
                                             <span className="font-bold text-orange-600">
-                                                {Math.ceil((new Date(boost.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days
+                                                {boost.endDate ? Math.max(0, Math.ceil((new Date(boost.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))) : '—'} days
                                             </span>
                                         </div>
                                         <div className="flex items-center justify-between text-sm">
                                             <span className="text-gray-500 flex items-center gap-2"><Calendar className="w-4 h-4" /> Active until</span>
-                                            <span className="text-gray-900 font-medium">{format(new Date(boost.endDate), 'MMM d, yyyy')}</span>
+                                            <span className="text-gray-900 font-medium">{safeFormat(boost.endDate, 'MMM d, yyyy')}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -231,10 +238,10 @@ export default function VendorInvoicesPage() {
                                             <tr key={invoice.id} className="hover:bg-gray-50/50 transition-colors group">
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="font-semibold text-gray-900">
-                                                        {format(new Date(invoice.createdAt), 'MMM d, yyyy')}
+                                                        {safeFormat(invoice.createdAt, 'MMM d, yyyy')}
                                                     </div>
                                                     <div className="text-[10px] text-gray-400 font-mono">
-                                                        {format(new Date(invoice.createdAt), 'HH:mm')}
+                                                        {safeFormat(invoice.createdAt, 'HH:mm')}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
