@@ -45,6 +45,7 @@ function VendorOfferPlansPageInner() {
     // UI state
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'booking' | 'trajection' | 'history'>('booking');
+    const [isMinimumApplied, setIsMinimumApplied] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
@@ -109,6 +110,7 @@ function VendorOfferPlansPageInner() {
                     }, offerType);
                     setEstimatedPrice(res.totalPrice);
                     setPriceBreakup(res.breakup || []);
+                    setIsMinimumApplied(!!res.isMinimumApplied);
                 } catch (err) {
                     console.error('Price calculation failed:', err);
                 } finally {
@@ -117,6 +119,7 @@ function VendorOfferPlansPageInner() {
             } else {
                 setEstimatedPrice(0);
                 setPriceBreakup([]);
+                setIsMinimumApplied(false);
             }
         };
 
@@ -426,7 +429,14 @@ function VendorOfferPlansPageInner() {
                                     ))}
                                     
                                     <div className="pt-4 space-y-2 border-t border-white/10">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Total Price</p>
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Total Price</p>
+                                            {isMinimumApplied && (
+                                                <span className="text-[9px] font-black bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full border border-amber-500/30 animate-pulse">
+                                                    Stripe Minimum Applied
+                                                </span>
+                                            )}
+                                        </div>
                                         <div className="flex items-baseline gap-2">
                                             <span className="text-xs font-black text-white/60">PKR</span>
                                             <span className={`text-4xl font-black ${isCalculating ? 'opacity-30' : 'opacity-100'}`}>
@@ -434,6 +444,9 @@ function VendorOfferPlansPageInner() {
                                             </span>
                                             {isCalculating && <Loader2 className="w-5 h-5 animate-spin text-orange-400 inline-block mb-1 ml-2" />}
                                         </div>
+                                        {isMinimumApplied && (
+                                            <p className="text-[9px] text-white/40 font-medium">To satisfy payment gateway requirements, a minimum charge of ₨ 150 applies for all boosts.</p>
+                                        )}
                                     </div>
                                 </div>
 

@@ -68,9 +68,10 @@ export class PromotionsService implements OnModuleInit {
         return this.pricingRuleRepo.find({ where: { isActive: true } });
     }
 
-    async calculatePrice(dto: CalculatePriceDto, userId?: string, offerType: string = 'offer'): Promise<{ totalPrice: number; durationHours: number; breakup: any[] }> {
+    async calculatePrice(dto: CalculatePriceDto, userId?: string, offerType: string = 'offer'): Promise<{ totalPrice: number; durationHours: number; breakup: any[]; isMinimumApplied?: boolean }> {
         let totalPrice = 0;
         const breakup = [];
+        const MIN_STRIPE_AMOUNT_PKR = 150;
 
         // 2. Add duration-based placement costs if applicable
         let durationHours = 0;
@@ -101,7 +102,14 @@ export class PromotionsService implements OnModuleInit {
             }
         }
 
-        return { totalPrice, durationHours, breakup };
+        let isMinimumApplied = false;
+        // If there's a cost but it's below the Stripe minimum of roughly ₨ 140, we round up to ₨ 150
+        if (totalPrice > 0 && totalPrice < MIN_STRIPE_AMOUNT_PKR) {
+            totalPrice = MIN_STRIPE_AMOUNT_PKR;
+            isMinimumApplied = true;
+        }
+
+        return { totalPrice, durationHours, breakup, isMinimumApplied };
     }
 
     /**
