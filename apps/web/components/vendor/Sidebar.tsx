@@ -20,13 +20,15 @@ export default function Sidebar() {
     const [unreadChatCount, setUnreadChatCount] = useState(0);
     const [newBroadcastCount, setNewBroadcastCount] = useState(0);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
+    const [activeSub, setActiveSub] = useState<any>(null);
+    const [loadingSub, setLoadingSub] = useState(true);
 
     // Close mobile sidebar on route change
     useEffect(() => {
         setIsMobileOpen(false);
     }, [pathname]);
 
-    // Fetch badge counts
+    // Fetch badge counts & subscription
     useEffect(() => {
         if (!user) return;
 
@@ -45,7 +47,31 @@ export default function Sidebar() {
                 .catch(() => { });
         };
 
+        const fetchSub = async () => {
+            if (user?.role !== 'vendor') {
+                setLoadingSub(false);
+                return;
+            }
+
+            // If user already has activeSubscription from profile sync, use it as initial state
+            if (user?.vendor?.activeSubscription) {
+                setActiveSub(user.vendor.activeSubscription);
+            }
+
+            try {
+                const sub = await api.subscriptions.getActive();
+                if (sub) {
+                    setActiveSub(sub);
+                }
+            } catch (err) {
+                console.error('Failed to fetch active sub', err);
+            } finally {
+                setLoadingSub(false);
+            }
+        };
+
         refreshStats();
+        fetchSub();
         const interval = setInterval(refreshStats, 30000);
         return () => clearInterval(interval);
     }, [user]);
@@ -76,11 +102,41 @@ export default function Sidebar() {
         if (!isVendorOrAdmin) {
             return ['Dashboard', 'Live Chat', 'Saved', 'Following', 'Notifications', 'Settings'].includes(item.name);
         }
+        
+        // Admins see everything
         if (user?.role === 'superadmin' || user?.role === 'admin') return true;
 
         if (user?.role === 'vendor') {
-            // Vendors can see every feature in the sidebar. 
-            // Internal pages handle premium lock screens (e.g. Analytics, Chat).
+            // If still loading subscription, show basic set to avoid layout shift
+            if (loadingSub) return ['Dashboard', 'My Listings', 'Add Listing', 'Subscription & Billing', 'Settings'].includes(item.name);
+
+            // Gate features based on plan
+            // Use the most up-to-date subscription data available
+            const effectiveSub = activeSub || user?.vendor?.activeSubscription;
+            const features = effectiveSub?.plan?.dashboardFeatures || {};
+            
+            const featureMap: Record<string, string> = {
+                'Analytics': 'showAnalytics',
+                'Leads': 'showLeads',
+                'Offers & Events': 'showOffers',
+                'Demand Insights': 'showDemand',
+                'Queries': 'showQueries',
+                'Reviews': 'showReviews',
+                'Live Chat': 'showChat',
+                'Broadcast Feed': 'showBroadcast',
+                'Saved': 'showSaved',
+                'Following': 'showFollowing',
+                'My Listings': 'showListings',
+                'Add Listing': 'canAddListing'
+            };
+
+            const featureKey = featureMap[item.name];
+            
+            // If item has a feature key map, check if it's enabled in the plan
+            if (featureKey && features[featureKey] === false) {
+                return false;
+            }
+
             return true;
         }
         return true;

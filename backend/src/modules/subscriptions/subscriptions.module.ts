@@ -16,7 +16,6 @@ import { Listing } from '../../entities/business.entity';
 import { SubscriptionsSeederService } from './subscriptions-seeder.service';
 import { PricingPlanSeederService } from './pricing-plan-seeder.service';
 import { AffiliateModule } from '../affiliate/affiliate.module';
-import { OfferEventPricing } from '../../entities/offer-event-pricing.entity';
 import { OfferEvent } from '../../entities/offer-event.entity';
 import { OffersModule } from '../offers/offers.module';
 import { PromotionsModule } from '../promotions/promotions.module';
@@ -36,12 +35,11 @@ import { PromotionsModule } from '../promotions/promotions.module';
             Affiliate,
             AffiliateReferral,
             Listing,
-            OfferEventPricing,
             OfferEvent,
         ]),
         AffiliateModule,
         OffersModule,
-        PromotionsModule,
+        forwardRef(() => PromotionsModule),
     ],
     controllers: [SubscriptionsController],
     providers: [

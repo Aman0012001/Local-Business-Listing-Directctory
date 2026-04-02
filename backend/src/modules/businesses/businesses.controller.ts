@@ -44,7 +44,6 @@ export class BusinessesController {
     @Post()
     @Roles(UserRole.VENDOR, UserRole.ADMIN)
     @UseGuards(FeatureGateGuard)
-    @CheckFeature('maxListings')
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Create a new listing (Vendor only)' })
     @ApiResponse({ status: 201, description: 'Listing created successfully' })

@@ -32,10 +32,6 @@ export class CreatePlanDto {
     @IsString()
     billingCycle: string;
 
-    @ApiProperty({ example: 5 })
-    @IsNumber()
-    maxListings: number;
-
     @ApiProperty({ default: false })
     @IsOptional()
     @IsBoolean()
@@ -76,11 +72,6 @@ export class UpdatePlanDto {
     @IsOptional()
     @IsString()
     billingCycle?: string;
-
-    @ApiPropertyOptional()
-    @IsOptional()
-    @IsNumber()
-    maxListings?: number;
 
     @ApiPropertyOptional()
     @IsOptional()
@@ -134,64 +125,39 @@ export class ChangePlanDto {
     planId: string;
 }
 
-export class CreateOfferPlanDto {
-    @ApiProperty({ example: 'offer' })
-    @IsEnum(['offer', 'event'])
-    type: 'offer' | 'event';
-
-    @ApiProperty({ example: '1-Hour Spotlight' })
+export class CreatePricingPlanDto {
+    @ApiProperty({ example: '24 Hour Spotlight' })
     @IsString()
     name: string;
 
-    @ApiProperty({ example: 500 })
+    @ApiPropertyOptional({ example: 'Featured on home page for 24 hours' })
+    @IsOptional()
+    @IsString()
+    description?: string;
+
+    @ApiProperty({ example: 'homepage_featured' })
+    @IsString()
+    type: string;
+
+    @ApiProperty({ example: 499.00 })
     @IsNumber()
     price: number;
 
-    @ApiProperty({ example: 'hours', enum: ['hours', 'days', 'minutes'] })
-    @IsEnum(['hours', 'days', 'minutes'])
-    unit: 'hours' | 'days' | 'minutes';
-
-    @ApiProperty({ example: 1 })
+    @ApiProperty({ example: 24 })
     @IsNumber()
     duration: number;
 
-    @ApiPropertyOptional({ default: true })
-    @IsOptional()
-    @IsBoolean()
-    isActive?: boolean;
+    @ApiProperty({ example: 'hours' })
+    @IsString()
+    unit: string;
 
     @ApiPropertyOptional({ default: true })
     @IsOptional()
     @IsBoolean()
-    showOnHome?: boolean;
-
-    @ApiPropertyOptional({ default: true })
-    @IsOptional()
-    @IsBoolean()
-    showOnCategory?: boolean;
-
-    @ApiPropertyOptional({ default: true })
-    @IsOptional()
-    @IsBoolean()
-    showOnListing?: boolean;
-
-    @ApiPropertyOptional({ default: true })
-    @IsOptional()
-    @IsBoolean()
-    showOnOfferPage?: boolean;
-
-    @ApiPropertyOptional({ default: false })
-    @IsOptional()
-    @IsBoolean()
-    showOnEventPage?: boolean;
+    isActive?: boolean = true;
 }
 
-export class UpdateOfferPlanDto {
-    @ApiPropertyOptional()
-    @IsOptional()
-    @IsEnum(['offer', 'event'])
-    type?: 'offer' | 'event';
-
+export class UpdatePricingPlanDto {
     @ApiPropertyOptional()
     @IsOptional()
     @IsString()
@@ -199,13 +165,18 @@ export class UpdateOfferPlanDto {
 
     @ApiPropertyOptional()
     @IsOptional()
+    @IsString()
+    description?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    type?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
     @IsNumber()
     price?: number;
-
-    @ApiPropertyOptional({ enum: ['hours', 'days', 'minutes'] })
-    @IsOptional()
-    @IsEnum(['hours', 'days', 'minutes'])
-    unit?: 'hours' | 'days' | 'minutes';
 
     @ApiPropertyOptional()
     @IsOptional()
@@ -214,31 +185,11 @@ export class UpdateOfferPlanDto {
 
     @ApiPropertyOptional()
     @IsOptional()
+    @IsString()
+    unit?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
     @IsBoolean()
     isActive?: boolean;
-
-    @ApiPropertyOptional()
-    @IsOptional()
-    @IsBoolean()
-    showOnHome?: boolean;
-
-    @ApiPropertyOptional()
-    @IsOptional()
-    @IsBoolean()
-    showOnCategory?: boolean;
-
-    @ApiPropertyOptional()
-    @IsOptional()
-    @IsBoolean()
-    showOnListing?: boolean;
-
-    @ApiPropertyOptional()
-    @IsOptional()
-    @IsBoolean()
-    showOnOfferPage?: boolean;
-
-    @ApiPropertyOptional()
-    @IsOptional()
-    @IsBoolean()
-    showOnEventPage?: boolean;
 }

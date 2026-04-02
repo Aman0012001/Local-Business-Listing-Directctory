@@ -86,11 +86,7 @@ export class SubscriptionCronService {
                         }
                     }
 
-                    // 3. If it was an offer/event promotion plan, PHYSICALLY DELETE the target offer/event
-                    if (plan.offerPlanId && plan.targetId) {
-                        await this.offerEventRepo.delete(plan.targetId);
-                        this.logger.log(`[Cron] Permanently deleted expired offer/event ${plan.targetId} from database`);
-                    }
+                    // 3. Deletion of promotions is now handled by offersService and promotionsService respectively in steps 4 and 5 below.
 
                     this.logger.log(`[Cron] Deactivated expired plan ${plan.id} for vendor ${plan.vendorId}`);
                 } catch (err: any) {

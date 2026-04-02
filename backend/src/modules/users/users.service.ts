@@ -16,6 +16,7 @@ import {
 } from '../../common/utils/pagination.util';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import * as bcrypt from 'bcrypt';
+import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 
 @Injectable()
 export class UsersService {
@@ -28,6 +29,7 @@ export class UsersService {
         private notificationRepository: Repository<Notification>,
         @InjectRepository(Listing)
         private businessRepository: Repository<Listing>,
+        private subscriptionsService: SubscriptionsService,
     ) { }
 
     /**
@@ -36,11 +38,31 @@ export class UsersService {
     async getProfile(id: string): Promise<User> {
         const user = await this.userRepository.findOne({
             where: { id },
-            relations: ['vendor', 'vendor.subscriptions', 'vendor.subscriptions.plan'],
+            relations: ['vendor', 'vendor.subscriptions', 'vendor.subscriptions.plan', 'vendor.activePlans', 'vendor.activePlans.plan'],
         });
 
         if (!user) {
             throw new NotFoundException('User not found');
+        }
+
+        // Normalize subscription data for the frontend if vendor exists
+        if (user.vendor) {
+            let activeSubscription = null;
+            
+            // Check old system
+            const oldSub = user.vendor.subscriptions?.find(s => s.status === 'active');
+            if (oldSub) {
+                activeSubscription = this.subscriptionsService.normalizeSubOrActivePlan(oldSub, false);
+            }
+            
+            // Check new system if no old sub or to override
+            const newPlan = user.vendor.activePlans?.find(p => p.status === 'active');
+            if (newPlan) {
+                activeSubscription = this.subscriptionsService.normalizeSubOrActivePlan(newPlan, true);
+            }
+
+            // Attaching normalized sub to vendor for frontend consumption
+            (user.vendor as any).activeSubscription = activeSubscription;
         }
 
         user.isOnline = true;

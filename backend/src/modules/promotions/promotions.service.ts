@@ -43,15 +43,21 @@ export class PromotionsService implements OnModuleInit {
     }
 
     private async seedDefaultRules() {
-        const count = await this.pricingRuleRepo.count();
-        if (count === 0) {
-            this.logger.log('Seeding default promotion pricing rules...');
-            const defaults = [
-                { placement: PromotionPlacement.HOMEPAGE, pricePerHour: 100, pricePerDay: 2000 },
-                { placement: PromotionPlacement.CATEGORY, pricePerHour: 70, pricePerDay: 1400 },
-                { placement: PromotionPlacement.LISTING, pricePerHour: 50, pricePerDay: 1000 },
-            ];
-            await this.pricingRuleRepo.save(defaults);
+        const defaults = [
+            { placement: PromotionPlacement.HOMEPAGE, pricePerHour: 100, pricePerDay: 2400, basePrice: 0 },
+            { placement: PromotionPlacement.CATEGORY, pricePerHour: 70, pricePerDay: 1680, basePrice: 0 },
+            { placement: PromotionPlacement.LISTING, pricePerHour: 50, pricePerDay: 1200, basePrice: 0 },
+            { placement: PromotionPlacement.OFFER, pricePerHour: 40, pricePerDay: 960, basePrice: 0 },
+            { placement: PromotionPlacement.EVENT, pricePerHour: 60, pricePerDay: 1440, basePrice: 0 },
+            { placement: PromotionPlacement.PAGE, pricePerHour: 80, pricePerDay: 1920, basePrice: 0 },
+        ];
+
+        for (const ruleData of defaults) {
+            const exists = await this.pricingRuleRepo.findOne({ where: { placement: ruleData.placement } });
+            if (!exists) {
+                this.logger.log(`Seeding missing default pricing rule: ${ruleData.placement}`);
+                await this.pricingRuleRepo.save(ruleData);
+            }
         }
     }
 
@@ -62,40 +68,63 @@ export class PromotionsService implements OnModuleInit {
         return this.pricingRuleRepo.find({ where: { isActive: true } });
     }
 
-    /**
-     * Calculate price for a specific promotion configuration
-     */
-    async calculatePrice(dto: CalculatePriceDto): Promise<{ totalPrice: number; durationHours: number; breakup: any[] }> {
-        const start = new Date(dto.startTime);
-        const end = new Date(dto.endTime);
-        const now = new Date();
-
-        if (start >= end) throw new BadRequestException('Start time must be before end time');
-        // if (start < now) throw new BadRequestException('Start time cannot be in the past');
-
-        const diffMs = end.getTime() - start.getTime();
-        const durationHours = Math.ceil(diffMs / (1000 * 60 * 60));
-        const durationDays = Math.floor(durationHours / 24);
-        const remainingHours = durationHours % 24;
-
-        const rules = await this.pricingRuleRepo.find({ where: { placement: In(dto.placements) } });
+    async calculatePrice(dto: CalculatePriceDto, userId?: string, offerType: string = 'offer'): Promise<{ totalPrice: number; durationHours: number; breakup: any[] }> {
         let totalPrice = 0;
         const breakup = [];
 
-        for (const rule of rules) {
-            const dayPrice = Number(rule.pricePerDay) * durationDays;
-            const hourPrice = Number(rule.pricePerHour) * remainingHours;
-            const placementTotal = dayPrice + hourPrice;
-            
-            totalPrice += placementTotal;
-            breakup.push({
-                placement: rule.placement,
-                dayRate: Number(rule.pricePerDay),
-                hourRate: Number(rule.pricePerHour),
-                days: durationDays,
-                hours: remainingHours,
-                subtotal: placementTotal,
+        // 1. Check if Base Fee is applicable
+        let shouldAddBaseFee = true;
+        if (dto.offerEventId) {
+            const offer = await this.offerRepository.findOne({ where: { id: dto.offerEventId } });
+            if (offer && offer.isActive) {
+                shouldAddBaseFee = false; // Already paid / active
+            }
+        }
+
+        if (shouldAddBaseFee) {
+            const baseRule = await this.pricingRuleRepo.findOne({ 
+                where: { placement: offerType === 'event' ? PromotionPlacement.EVENT : PromotionPlacement.OFFER } 
             });
+            
+            if (baseRule && Number(baseRule.basePrice) > 0) {
+                const baseFee = Number(baseRule.basePrice);
+                totalPrice += baseFee;
+                breakup.push({
+                    placement: baseRule.placement + '_base',
+                    label: `Registration Fee`,
+                    subtotal: baseFee,
+                    isBaseFee: true
+                });
+            }
+        }
+
+        // 2. Add duration-based placement costs if applicable
+        let durationHours = 0;
+        if (dto.placements?.length > 0 && dto.startTime && dto.endTime) {
+            const start = new Date(dto.startTime);
+            const end = new Date(dto.endTime);
+            if (start >= end) throw new BadRequestException('Start time must be before end time for boosts');
+
+            const diffMs = end.getTime() - start.getTime();
+            durationHours = Math.ceil(diffMs / (1000 * 60 * 60));
+            const durationDays = Math.floor(durationHours / 24);
+            const remainingHours = durationHours % 24;
+
+            const rules = await this.pricingRuleRepo.find({ where: { placement: In(dto.placements) } });
+            for (const rule of rules) {
+                const hourRate = Number(rule.pricePerHour);
+                const dayRate = Number(rule.pricePerDay);
+                const placementTotal = (durationDays * dayRate) + (remainingHours * hourRate);
+                
+                totalPrice += placementTotal;
+                breakup.push({
+                    placement: rule.placement,
+                    subtotal: placementTotal,
+                    days: durationDays,
+                    hours: remainingHours,
+                    isBaseFee: false
+                });
+            }
         }
 
         return { totalPrice, durationHours, breakup };
@@ -111,7 +140,7 @@ export class PromotionsService implements OnModuleInit {
         const offer = await this.offerRepository.findOne({ where: { id: dto.offerEventId, vendorId: vendor.id } });
         if (!offer) throw new NotFoundException('Offer/Event not found');
 
-        const pricing = await this.calculatePrice(dto);
+        const pricing = await this.calculatePrice(dto, userId, offer.type);
         if (pricing.totalPrice === 0) {
             // Free promotion (if configured)
             return this.activateFreeBooking(vendor.id, offer, dto, pricing);
@@ -136,6 +165,7 @@ export class PromotionsService implements OnModuleInit {
         const allowedUrls = frontendUrl ? frontendUrl.split(',').map(url => url.trim()) : [];
         const baseUrl = allowedUrls[0] || origin || 'http://localhost:3000';
 
+        const info = pricing.breakup.map(b => b.label || b.placement).join(', ');
         const session = await this.stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             customer_email: vendor.businessEmail || undefined,
@@ -144,8 +174,8 @@ export class PromotionsService implements OnModuleInit {
                 price_data: {
                     currency: 'pkr',
                     product_data: {
-                        name: `Promotion for ${offer.title}`,
-                        description: `Placements: ${dto.placements.join(', ')}`,
+                        name: `Promotion and Registration for ${offer.title}`,
+                        description: `Fees: ${info}`,
                     },
                     unit_amount: Math.round(pricing.totalPrice * 100),
                 },
@@ -183,6 +213,13 @@ export class PromotionsService implements OnModuleInit {
             status: BookingStatus.ACTIVE,
         });
         await this.bookingRepo.save(booking);
+
+        // Ensure the offer itself is active (if it was pending payment)
+        if (!offer.isActive) {
+            offer.isActive = true;
+            await this.offerRepository.save(offer);
+        }
+
         return { success: true, bookingId: booking.id };
     }
 
@@ -190,32 +227,52 @@ export class PromotionsService implements OnModuleInit {
      * Verify and Activate Booking
      */
     async verifySession(sessionId: string, userId: string) {
-        const vendor = await this.vendorRepository.findOne({ where: { userId } });
-        if (!vendor) throw new NotFoundException('Vendor profile not found');
-
-        const booking = await this.bookingRepo.findOne({ where: { stripeSessionId: sessionId, vendorId: vendor.id } });
-        if (!booking) throw new NotFoundException('Booking not found');
-
-        if (booking.status === BookingStatus.ACTIVE) return { success: true, booking };
-
         try {
             const session = await this.stripe.checkout.sessions.retrieve(sessionId);
-            if (session.payment_status === 'paid' && session.metadata?.type === 'promotion_booking') {
-                booking.status = BookingStatus.ACTIVE;
-                booking.paymentIntentId = session.payment_intent as string;
-                await this.bookingRepo.save(booking);
+            if (session.payment_status === 'paid') {
+                const bookingId = session.metadata.bookingId;
+                const booking = await this.bookingRepo.findOne({ where: { id: bookingId } });
                 
-                // Note: We might want to sync some flags to OfferEvent for faster UI queries
-                // (e.g. if it includes homepage placement, set isFeatured = true)
-                // However, we can also use active bookings in the query builder.
-                
-                return { success: true, booking };
+                if (booking && booking.status === BookingStatus.PENDING) {
+                    booking.status = BookingStatus.ACTIVE;
+                    booking.paymentIntentId = session.payment_intent as string;
+                    await this.bookingRepo.save(booking);
+                    
+                    // Activate the offer/event as well
+                    const offer = await this.offerRepository.findOne({ where: { id: booking.offerEventId } });
+                    if (offer && !offer.isActive) {
+                        offer.isActive = true;
+                        await this.offerRepository.save(offer);
+                    }
+                    
+                    return { success: true, booking };
+                }
+                return { success: true, alreadyProcessed: true };
             }
             return { success: false, status: session.payment_status };
         } catch (error) {
-            console.error(`Failed to verify checkout session ${sessionId}:`, error);
-            throw new BadRequestException(`Verification failed`);
+            this.logger.error(`Failed to verify checkout session ${sessionId}:`, error);
+            throw new BadRequestException(`Verification failed: ${error.message}`);
         }
+    }
+
+    /**
+     * Admin: Update pricing rules
+     */
+    async updatePricingRule(id: string, dto: { pricePerHour?: number, basePrice?: number, isActive?: boolean }) {
+        const rule = await this.pricingRuleRepo.findOne({ where: { id } });
+        if (!rule) throw new NotFoundException('Pricing rule not found');
+
+        if (dto.pricePerHour !== undefined) {
+            rule.pricePerHour = dto.pricePerHour;
+            rule.pricePerDay = dto.pricePerHour * 24; // Sync day rate (24x hourly)
+        }
+        if (dto.basePrice !== undefined) {
+            rule.basePrice = dto.basePrice;
+        }
+        if (dto.isActive !== undefined) rule.isActive = dto.isActive;
+
+        return this.pricingRuleRepo.save(rule);
     }
 
     /**

@@ -12,11 +12,11 @@ import {
 } from 'typeorm';
 import { Vendor } from './vendor.entity';
 import { Listing } from './business.entity';
-import { OfferEventPricing } from './offer-event-pricing.entity';
 
 export enum OfferType {
     OFFER = 'offer',
     EVENT = 'event',
+    PAGE = 'page',
 }
 
 export enum OfferStatus {
@@ -104,13 +104,6 @@ export class OfferEvent {
     @ManyToOne(() => Listing, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'business_id' })
     business: Listing;
-
-    @Column({ name: 'pricing_id', type: 'uuid', nullable: true })
-    pricingId: string;
-
-    @ManyToOne(() => OfferEventPricing, { nullable: true })
-    @JoinColumn({ name: 'pricing_id' })
-    pricing: OfferEventPricing;
 
     // Auto-compute status based on dates
     @BeforeInsert()

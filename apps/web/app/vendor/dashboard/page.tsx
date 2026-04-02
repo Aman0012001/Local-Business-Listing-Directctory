@@ -157,7 +157,7 @@ export default function GenericDashboard() {
         };
     }, [socket]);
 
-    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+    const activeSub = user?.vendor?.activeSubscription || user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
     
     // Default features logic
     let features: Record<string, any> = activeSub?.plan?.dashboardFeatures || {};
@@ -189,7 +189,7 @@ export default function GenericDashboard() {
             color: 'bg-gradient-to-br from-[#3366CC] to-[#1144AA]',
             shadow: 'shadow-blue-500/20',
             onClick: () => router.push('/vendor/add-listing'),
-            show: features.showListings !== false // Default to true if not specified
+            show: !!features.showListings
         },
         {
             label: 'Live Chat',
@@ -198,7 +198,7 @@ export default function GenericDashboard() {
             color: 'bg-gradient-to-br from-indigo-500 to-indigo-700',
             shadow: 'shadow-indigo-500/20',
             onClick: () => router.push('/vendor/chat'),
-            show: features.showChat !== false
+            show: !!features.showChat
         },
         ...(features.showAnalytics ? [{
             label: 'Total Views',

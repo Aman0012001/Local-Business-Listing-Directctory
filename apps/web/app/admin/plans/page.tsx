@@ -18,7 +18,6 @@ interface Plan {
     description: string;
     price: string | number;
     billingCycle: string;
-    maxListings: number;
     isFeatured: boolean;
     isActive: boolean;
     dashboardFeatures: Record<string, boolean>;
@@ -39,7 +38,6 @@ export default function AdminPlansPage() {
         description: '',
         price: 0,
         billingCycle: 'monthly',
-        maxListings: 1,
         isFeatured: false,
         isActive: true,
         dashboardFeatures: {
@@ -83,7 +81,6 @@ export default function AdminPlansPage() {
                 description: plan.description || '',
                 price: Number(plan.price),
                 billingCycle: plan.billingCycle,
-                maxListings: plan.maxListings,
                 isFeatured: plan.isFeatured,
                 isActive: plan.isActive,
                 dashboardFeatures: (plan.dashboardFeatures as any) || {
@@ -105,17 +102,16 @@ export default function AdminPlansPage() {
             setEditingPlan(null);
             setFormData({
                 name: '',
-                planType: 'basic',
+                planType: 'free',
                 description: '',
                 price: 0,
                 billingCycle: 'monthly',
-                maxListings: 1,
                 isFeatured: false,
                 isActive: true,
                 dashboardFeatures: {
                     showAnalytics: false,
-                    showOffers: false,
                     showLeads: false,
+                    showOffers: false,
                     showDemand: false,
                     showQueries: false,
                     showReviews: false,
@@ -134,7 +130,10 @@ export default function AdminPlansPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
-        const payload = { ...formData };
+        const payload = {
+            ...formData,
+            price: Number(formData.price),
+        };
 
         try {
             if (editingPlan) {
@@ -144,8 +143,9 @@ export default function AdminPlansPage() {
             }
             await fetchPlans();
             setModalOpen(false);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Save failed', err);
+            alert(`Failed to save plan: ${err.message || 'Unknown error'}`);
         } finally {
             setSaving(false);
         }
@@ -177,6 +177,8 @@ export default function AdminPlansPage() {
         switch (type) {
             case 'free': return <Clock className="w-5 h-5 text-slate-400" />;
             case 'basic': return <Zap className="w-5 h-5 text-blue-500" />;
+            case 'premium': return <Crown className="w-5 h-5 text-amber-500" />;
+            case 'enterprise': return <Building2 className="w-5 h-5 text-indigo-600" />;
             default: return <CreditCard className="w-5 h-5 text-slate-400" />;
         }
     };
@@ -184,28 +186,35 @@ export default function AdminPlansPage() {
     if (loading && plans.length === 0) {
         return (
             <div className="flex items-center justify-center py-24">
-                <Loader2 className="w-10 h-10 animate-spin text-slate-300" />
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="w-10 h-10 animate-spin text-red-500" />
+                    <p className="text-slate-400 font-bold animate-pulse">Loading specialized tiers...</p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="max-w-7xl mx-auto space-y-10 pb-20">
+        <div className="max-w-7xl mx-auto space-y-12 pb-32">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 py-6">
                 <div>
-                    <h1 className="text-4xl font-black text-slate-900 tracking-tight">Subscription Plans</h1>
-                    <p className="text-slate-400 font-bold mt-2 flex items-center gap-2">
-                        <CreditCard className="w-4 h-4 text-red-500" />
-                        Manage business listing tiers and monetization.
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center">
+                            <CreditCard className="w-6 h-6 text-red-600" />
+                        </div>
+                        <h1 className="text-4xl font-black text-slate-900 tracking-tight">Subscription Engine</h1>
+                    </div>
+                    <p className="text-slate-400 font-bold text-lg max-w-xl leading-relaxed">
+                        Master your revenue streams. Define dashboard permissions and plan feature sets.
                     </p>
                 </div>
                 <button
                     onClick={() => handleOpenModal()}
-                    className="px-8 py-4 bg-slate-900 hover:bg-black text-white rounded-[16px] font-black text-sm flex items-center justify-center gap-3 shadow-2xl shadow-slate-900/10 transition-all active:scale-95 whitespace-nowrap"
+                    className="px-8 py-5 bg-slate-900 hover:bg-black text-white rounded-2xl font-black text-sm flex items-center justify-center gap-3 shadow-2xl shadow-slate-900/20 transition-all active:scale-95 whitespace-nowrap group"
                 >
-                    <Plus className="w-5 h-5" />
-                    Create New Plan
+                    <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
+                    Forge New Plan
                 </button>
             </div>
 
@@ -249,13 +258,7 @@ export default function AdminPlansPage() {
                             </p>
                         </div>
 
-                        <div className="space-y-3 mb-8 flex-grow">
-                            <div className="flex items-center gap-3 pt-2">
-                                <div className="w-4 h-4 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <Layers className="w-2.5 h-2.5 text-blue-500" />
-                                </div>
-                                <span className="text-slate-900 font-black text-sm">{plan.maxListings} Listings Allowed</span>
-                            </div>
+                        <div className="space-y-4 mb-8 flex-grow">
                         </div>
 
                         <div className="flex items-center gap-3 pt-6 border-t border-slate-50 mt-auto">
@@ -266,16 +269,16 @@ export default function AdminPlansPage() {
                                 <Edit2 className="w-3.5 h-3.5" />
                                 Edit Plan
                             </button>
-                            <button
-                                onClick={() => toggleStatus(plan)}
-                                className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all active:scale-95 ${plan.isActive
-                                    ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-500'
-                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-400'
-                                    }`}
-                                title={plan.isActive ? 'Deactivate Plan' : 'Activate Plan'}
-                            >
-                                {plan.isActive ? <CheckCircle2 className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
-                            </button>
+                                <button
+                                    onClick={() => toggleStatus(plan)}
+                                    className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all active:scale-95 shadow-sm ${plan.isActive
+                                        ? 'bg-emerald-50 hover:bg-emerald-500 hover:text-white text-emerald-600'
+                                        : 'bg-slate-100 hover:bg-slate-200 text-slate-400'
+                                        }`}
+                                    title={plan.isActive ? 'Deactivate Plan' : 'Activate Plan'}
+                                >
+                                    {plan.isActive ? <CheckCircle2 className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
+                                </button>
                             <button
                                 onClick={() => handleDelete(plan.id)}
                                 disabled={deletingId === plan.id}
@@ -317,161 +320,159 @@ export default function AdminPlansPage() {
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
                             className="relative w-full max-w-2xl bg-white rounded-[16px] "
                         >
-                            <div className="px-10 py-8 border-b border-slate-50 flex items-center justify-between">
+                            <div className="px-10 py-8 border-b border-slate-50 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
                                 <div>
-                                    <h2 className="text-2xl font-black text-slate-900">
-                                        {editingPlan ? 'Edit Plan' : 'Create New Plan'}
+                                    <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+                                        {editingPlan ? 'Refine Tier' : 'Construct New Tier'}
                                     </h2>
-                                    <p className="text-sm font-bold text-slate-400 mt-1">Configure your subscription tier details.</p>
+                                    <p className="text-sm font-bold text-slate-400 mt-1 uppercase tracking-widest">Monetization Configuration</p>
                                 </div>
                                 <button
                                     onClick={() => setModalOpen(false)}
-                                    className="w-12 h-12 rounded-2xl hover:bg-slate-50 text-slate-400 flex items-center justify-center transition-colors"
+                                    className="w-12 h-12 rounded-2xl hover:bg-red-50 hover:text-red-500 text-slate-400 flex items-center justify-center transition-all duration-300"
                                 >
                                     <X className="w-6 h-6" />
                                 </button>
                             </div>
 
-                            <form onSubmit={handleSubmit} className="p-10 overflow-y-auto max-h-[70vh]">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Plan Name</label>
-                                        <input
-                                            required
-                                            type="text"
-                                            value={formData.name}
-                                            onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                                            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-200 font-bold text-slate-900"
-                                            placeholder="Monthly Starter"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Plan Type</label>
-                                        <select
-                                            value={formData.planType}
-                                            onChange={e => setFormData(prev => ({ ...prev, planType: e.target.value }))}
-                                            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-200 font-bold text-slate-900"
-                                        >
-                                            <option value="free">Free</option>
-                                            <option value="basic">Basic</option>
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Price (PKR)</label>
-                                        <input
-                                            required
-                                            type="number"
-                                            value={formData.price}
-                                            onChange={e => setFormData(prev => ({ ...prev, price: Number(e.target.value) }))}
-                                            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-200 font-bold text-slate-900"
-                                            placeholder="0.00"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Billing Cycle</label>
-                                        <select
-                                            value={formData.billingCycle}
-                                            onChange={e => setFormData(prev => ({ ...prev, billingCycle: e.target.value }))}
-                                            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-200 font-bold text-slate-900"
-                                        >
-                                            <option value="monthly">Monthly</option>
-                                            <option value="quarterly">Quarterly</option>
-                                            <option value="yearly">Yearly</option>
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Max Listings</label>
-                                        <input
-                                            required
-                                            type="number"
-                                            value={formData.maxListings}
-                                            onChange={e => setFormData(prev => ({ ...prev, maxListings: Number(e.target.value) }))}
-                                            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-200 font-bold text-slate-900"
-                                            placeholder="1"
-                                        />
-                                    </div>
-                                    <div className="md:col-span-2 space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Description</label>
-                                        <textarea
-                                            rows={2}
-                                            value={formData.description}
-                                            onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                                            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-200 font-bold text-slate-900 resize-none"
-                                            placeholder="Short catchy description..."
-                                        />
-                                    </div>
-                                    <div className="md:col-span-2 flex flex-wrap gap-6 pt-6 border-t border-slate-50">
-                                        <label className="flex items-center gap-3 cursor-pointer group">
-                                            <div className="relative">
-                                                <input
-                                                    type="checkbox"
-                                                    className="sr-only"
-                                                    checked={formData.isFeatured}
-                                                    onChange={e => setFormData(prev => ({ ...prev, isFeatured: e.target.checked }))}
-                                                />
-                                                <div className={`w-10 h-6 rounded-full transition-colors ${formData.isFeatured ? 'bg-red-500' : 'bg-slate-200'}`} />
-                                                <div className={`absolute left-1 top-1 w-4 h-4 rounded-full bg-white transition-transform ${formData.isFeatured ? 'translate-x-4' : ''}`} />
+                            <form onSubmit={handleSubmit} className="overflow-y-auto max-h-[80vh] p-10 custom-scrollbar">
+                                <div className="space-y-10">
+                                    {/* Section 1: Core Pricing */}
+                                    <section>
+                                        <div className="flex items-center gap-2 mb-6">
+                                            <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                                                <Zap className="w-4 h-4 text-blue-500" />
                                             </div>
-                                            <span className="text-xs font-black text-slate-600 uppercase tracking-widest">Featured Plan</span>
-                                        </label>
-                                    </div>
+                                            <h3 className="text-base font-black text-slate-900 uppercase tracking-wider">Core Pricing & Identity</h3>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Plan Name</label>
+                                                <input required type="text" value={formData.name} onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all font-bold text-slate-900 placeholder:text-slate-200"
+                                                    placeholder="e.g. Platinum Plus" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Plan Type</label>
+                                                <select value={formData.planType} onChange={e => setFormData(prev => ({ ...prev, planType: e.target.value }))}
+                                                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all font-bold text-slate-900">
+                                                    <option value="free">Free Tier</option>
+                                                    <option value="basic">Basic Business</option>
+                                                    <option value="premium">Premium Growth</option>
+                                                    <option value="enterprise">Enterprise Elite</option>
+                                                </select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Base Price (PKR)</label>
+                                                <div className="relative">
+                                                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 font-black">Rs</span>
+                                                    <input required type="number" value={formData.price} onChange={e => setFormData(prev => ({ ...prev, price: Number(e.target.value) }))}
+                                                        className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all font-bold text-slate-900"
+                                                        placeholder="0" />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Billing Cycle</label>
+                                                <select value={formData.billingCycle} onChange={e => setFormData(prev => ({ ...prev, billingCycle: e.target.value }))}
+                                                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all font-bold text-slate-900">
+                                                    <option value="monthly">Every Month</option>
+                                                    <option value="quarterly">Every 3 Months</option>
+                                                    <option value="yearly">Every Year</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </section>
 
-                                    <div className="md:col-span-2 space-y-4 pt-6 border-t border-slate-50">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Dashboard Features (Visible to Vendor)</label>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                                    {/* Section 3: Features */}
+                                    <section>
+                                        <div className="flex items-center gap-2 mb-6">
+                                            <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center">
+                                                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <h3 className="text-base font-black text-slate-900 uppercase tracking-wider">Dashboard Ecosystem</h3>
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Toggle vendor-side interface capabilities</p>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                             {[
-                                                { id: 'showAnalytics', label: 'Analytics & Reports' },
-                                                { id: 'showLeads', label: 'Business Leads' },
-                                                { id: 'showOffers', label: 'Offers & Events' },
-                                                { id: 'showDemand', label: 'Hot Demand Insights' },
-                                                { id: 'showQueries', label: 'Direct Queries' },
-                                                { id: 'showReviews', label: 'Review Management' },
-                                                { id: 'showChat', label: 'Live Chat' },
-                                                { id: 'showBroadcast', label: 'Broadcast Feed' },
-                                                { id: 'showSaved', label: 'Saved Items' },
-                                                { id: 'showFollowing', label: 'Following List' },
-                                                { id: 'showListings', label: 'My Listings' },
-                                                { id: 'canAddListing', label: 'Add Listing' },
-                                            ].map((feature) => (
-                                                <label key={feature.id} className="flex items-center gap-3 cursor-pointer group bg-slate-50/50 p-4 rounded-2xl hover:bg-slate-50 transition-colors">
-                                                    <div className="relative">
-                                                        <input
-                                                            type="checkbox"
-                                                            className="sr-only"
-                                                            checked={formData.dashboardFeatures[feature.id as keyof typeof formData.dashboardFeatures]}
-                                                            onChange={e => setFormData(prev => ({
-                                                                ...prev,
-                                                                dashboardFeatures: {
-                                                                    ...prev.dashboardFeatures,
-                                                                    [feature.id]: e.target.checked
-                                                                }
-                                                            }))}
-                                                        />
-                                                        <div className={`w-10 h-6 rounded-full transition-colors ${formData.dashboardFeatures[feature.id as keyof typeof formData.dashboardFeatures] ? 'bg-blue-600' : 'bg-slate-200'}`} />
-                                                        <div className={`absolute left-1 top-1 w-4 h-4 rounded-full bg-white transition-transform ${formData.dashboardFeatures[feature.id as keyof typeof formData.dashboardFeatures] ? 'translate-x-4' : ''}`} />
-                                                    </div>
-                                                    <span className="text-xs font-black text-slate-600 uppercase tracking-widest">{feature.label}</span>
-                                                </label>
-                                            ))}
+                                                { id: 'showAnalytics', label: 'Analytics Hub' },
+                                                { id: 'showLeads', label: 'Sales Leads' },
+                                                { id: 'showOffers', label: 'Boost Engine' },
+                                                { id: 'showDemand', label: 'Hot Insights' },
+                                                { id: 'showQueries', label: 'Direct Mail' },
+                                                { id: 'showReviews', label: 'Reputation' },
+                                                { id: 'showChat', label: 'Live Messaging' },
+                                                { id: 'showBroadcast', label: 'Global Feed' },
+                                                { id: 'showListings', label: 'Inventory' },
+                                                { id: 'canAddListing', label: 'Creation access' },
+                                            ].map((feature) => {
+                                                const isActive = formData.dashboardFeatures[feature.id as keyof typeof formData.dashboardFeatures];
+                                                return (
+                                                    <button key={feature.id} type="button"
+                                                        onClick={() => setFormData(prev => ({
+                                                            ...prev,
+                                                            dashboardFeatures: { ...prev.dashboardFeatures, [feature.id]: !isActive }
+                                                        }))}
+                                                        className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all group ${isActive
+                                                                ? 'border-emerald-500 bg-emerald-50/30 text-slate-900'
+                                                                : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200'
+                                                            }`}>
+                                                        <span className={`text-[10px] font-black uppercase tracking-tight ${isActive ? 'text-emerald-700' : ''}`}>{feature.label}</span>
+                                                        <div className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors ${isActive ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-transparent'}`}>
+                                                            <Check className="w-3.5 h-3.5" />
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </section>
+
+                                    {/* Descriptions & Toggles */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-6 border-t border-slate-50">
+                                        <div className="md:col-span-2 space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Marketing Summary</label>
+                                            <textarea rows={3} value={formData.description} onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                                                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all font-bold text-slate-900 resize-none placeholder:text-slate-200"
+                                                placeholder="What makes this plan special?" />
+                                        </div>
+                                        <div className="flex flex-col gap-4">
+                                            <label className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl cursor-pointer group">
+                                                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Featured</span>
+                                                <div className="relative">
+                                                    <input type="checkbox" className="sr-only" checked={formData.isFeatured} onChange={e => setFormData(prev => ({ ...prev, isFeatured: e.target.checked }))} />
+                                                    <div className={`w-8 h-4 rounded-full transition-colors ${formData.isFeatured ? 'bg-red-500' : 'bg-slate-300'}`} />
+                                                    <div className={`absolute left-0.5 top-0.5 w-3 h-3 rounded-full bg-white transition-transform ${formData.isFeatured ? 'translate-x-4' : ''}`} />
+                                                </div>
+                                            </label>
+                                            <label className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl cursor-pointer group">
+                                                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Live Status</span>
+                                                <div className="relative">
+                                                    <input type="checkbox" className="sr-only" checked={formData.isActive} onChange={e => setFormData(prev => ({ ...prev, isActive: e.target.checked }))} />
+                                                    <div className={`w-8 h-4 rounded-full transition-colors ${formData.isActive ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                                                    <div className={`absolute left-0.5 top-0.5 w-3 h-3 rounded-full bg-white transition-transform ${formData.isActive ? 'translate-x-4' : ''}`} />
+                                                </div>
+                                            </label>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="mt-12 flex gap-4">
+                                <div className="mt-14 flex gap-4 sticky bottom-0 bg-white pt-6 border-t border-slate-50">
                                     <button
                                         type="button"
                                         onClick={() => setModalOpen(false)}
                                         className="flex-grow py-5 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-2xl font-black text-sm transition-all active:scale-95"
                                     >
-                                        Cancel
+                                        Discard Changes
                                     </button>
                                     <button
                                         type="submit"
                                         disabled={saving}
-                                        className="flex-[2] py-5 bg-slate-900 hover:bg-black text-white rounded-2xl font-black text-sm  shadow-slate-900/20 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+                                        className="flex-[2] py-5 bg-slate-900 hover:bg-black text-white rounded-2xl font-black text-sm shadow-xl shadow-slate-900/10 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
                                     >
                                         {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                                        {editingPlan ? 'Update Plan' : 'Create Plan'}
+                                        {editingPlan ? 'Lock In Updates' : 'Initialize Plan'}
                                     </button>
                                 </div>
                             </form>
@@ -479,6 +480,21 @@ export default function AdminPlansPage() {
                     </div>
                 )}
             </AnimatePresence>
+            <style jsx global>{`
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 6px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: #E2E8F0;
+                    border-radius: 10px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: #CBD5E1;
+                }
+            `}</style>
         </div>
     );
 }

@@ -33,7 +33,6 @@ export class SubscriptionsSeederService implements OnModuleInit {
                 description: 'Get your business online with a basic profile. No credit card required.',
                 price: 0,
                 billingCycle: 'monthly',
-                maxListings: 1,
                 dashboardFeatures: {
                     showListings: true,       // can see their 1 listing
                     canAddListing: true,       // can add 1 listing (enforced by maxListings)

@@ -19,6 +19,7 @@ import {
     Receipt,
     MapPin,
     Gift,
+    Zap,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getImageUrl } from '../../lib/api';
@@ -32,13 +33,13 @@ const menuItems = [
     { name: 'Businesses', icon: ListTree, href: '/admin/businesses', badge: null },
     { name: 'Listings Approval', icon: ShieldAlert, href: '/admin/listings', badge: null },
     { name: 'Plans', icon: CreditCard, href: '/admin/plans', badge: null },
-    { name: 'Offer Plans', icon: Gift, href: '/admin/offer-plans', badge: 'New' },
     { name: 'Subscriptions', icon: Receipt, href: '/admin/subscriptions', badge: null },
     { name: 'Demand Insights', icon: Activity, href: '/admin/demand', badge: null },
     { name: 'Search Analytics', icon: Activity, href: '/admin/analytics', badge: null },
     { name: 'Search Heatmap', icon: ShieldCheck, href: '/admin/heatmap', badge: null },
     { name: 'Review Moderation', icon: ShieldAlert, href: '/admin/reviews', badge: null },
-    { name: 'Verifications', icon: CheckCircle, href: '/admin/verifications', badge: null },
+    { name: 'Promotion Rules', icon: Zap, href: '/admin/promotion-rules', badge: null },
+    { name: 'Boost Plans', icon: Gift, href: '/admin/offer-event-plans', badge: null },
     { name: 'Settings', icon: Settings, href: '/admin/settings', badge: null },
 ];
 

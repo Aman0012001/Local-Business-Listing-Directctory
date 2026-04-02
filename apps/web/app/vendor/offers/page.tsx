@@ -78,10 +78,7 @@ export default function VendorOffersPage() {
     const [estimatedPrice, setEstimatedPrice] = useState(0);
     const [isCalculating, setIsCalculating] = useState(false);
     const [deleting, setDeleting] = useState(false);
-    const [imageUploading, setImageUploading] = useState(false);
-    const [form, setForm] = useState<typeof emptyForm>(emptyForm);
-    const [page, setPage] = useState(1);
-    const [meta, setMeta] = useState<any>(null);
+    const [priceBreakup, setPriceBreakup] = useState<any[]>([]);
     const [pricingOptions, setPricingOptions] = useState<any[]>([]);
     const fileRef = useRef<HTMLInputElement>(null);
 
@@ -131,31 +128,33 @@ export default function VendorOffersPage() {
 
     useEffect(() => {
         const updatePrice = async () => {
+            if (!showModal) return;
+
             const start = form.promoStartTime ? new Date(form.promoStartTime) : null;
             const end = form.promoEndTime ? new Date(form.promoEndTime) : null;
 
-            if (form.placements.length > 0 && start && end && start < end) {
-                setIsCalculating(true);
-                try {
-                    const res = await api.promotions.calculatePrice({
-                        placements: form.placements,
-                        startTime: form.promoStartTime,
-                        endTime: form.promoEndTime,
-                    });
-                    setEstimatedPrice(res.totalPrice);
-                } catch (err) {
-                    console.error('Price calculation failed:', err);
-                } finally {
-                    setIsCalculating(false);
-                }
-            } else {
+            // Always calculate if modal is open, to account for Base Registration Fees
+            setIsCalculating(true);
+            try {
+                const res = await api.promotions.calculatePrice({
+                    placements: form.placements,
+                    startTime: form.promoStartTime || new Date().toISOString(),
+                    endTime: form.promoEndTime || new Date(Date.now() + 3600000).toISOString(),
+                }, form.type);
+                setEstimatedPrice(res.totalPrice);
+                setPriceBreakup(res.breakup || []);
+            } catch (err) {
+                console.error('Price calculation failed:', err);
                 setEstimatedPrice(0);
+                setPriceBreakup([]);
+            } finally {
+                setIsCalculating(false);
             }
         };
 
         const timer = setTimeout(updatePrice, 500);
         return () => clearTimeout(timer);
-    }, [form.placements, form.promoStartTime, form.promoEndTime]);
+    }, [form.placements, form.promoStartTime, form.promoEndTime, form.type, showModal]);
 
     if (loading) {
         return (
@@ -237,23 +236,38 @@ export default function VendorOffersPage() {
                 setSuccess('Offer created successfully!');
             }
 
-            // Handle custom promotion booking if selected
-            if (form.placements.length > 0 && offerId) {
-                if (new Date(form.promoStartTime) >= new Date(form.promoEndTime)) {
+            // Handle promotion OR base price booking
+            if (offerId) {
+                // If the vendor selected placements, validate dates
+                if (form.placements.length > 0 && (!form.promoStartTime || !form.promoEndTime)) {
+                     setError('Promotion start and end times are required for boosting/placements.');
+                     setSaving(false);
+                     return;
+                }
+
+                if (form.promoStartTime && form.promoEndTime && new Date(form.promoStartTime) >= new Date(form.promoEndTime)) {
                     setError('Promotion end time must be after the start time.');
                     setSaving(false);
                     return;
                 }
-                setSaving(true);
-                const bookRes = await api.promotions.book({
-                    offerEventId: offerId,
-                    placements: form.placements,
-                    startTime: form.promoStartTime,
-                    endTime: form.promoEndTime,
-                });
-                if (bookRes.checkoutUrl) {
-                    window.location.href = bookRes.checkoutUrl;
-                    return;
+
+                // Trigger booking (which handles both base fee and boosts)
+                try {
+                    const bookRes = await api.promotions.book({
+                        offerEventId: offerId,
+                        placements: form.placements,
+                        startTime: form.promoStartTime || new Date().toISOString(),
+                        endTime: form.promoEndTime || new Date(Date.now() + 36 * 3600000).toISOString(), // Dummy if no placements
+                    });
+
+                    if (bookRes.checkoutUrl) {
+                        window.location.href = bookRes.checkoutUrl;
+                        return;
+                    }
+                } catch (paymentErr: any) {
+                    console.error('Promotion booking failed:', paymentErr);
+                    // If it was just a free registration that failed, we show warning
+                    if (estimatedPrice > 0) throw paymentErr;
                 }
             }
 
@@ -739,20 +753,30 @@ export default function VendorOffersPage() {
                                         </div>
 
                                         {/* Price Summary */}
-                                        {(form.placements.length > 0 && form.promoStartTime && form.promoEndTime) && (
-                                            <div className="p-4 rounded-2xl bg-slate-900 text-white shadow-xl flex items-center justify-between border-4 border-slate-800">
-                                                <div>
-                                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Total Impact Price</p>
-                                                    <div className="flex items-baseline gap-1">
-                                                        <span className="text-2xl font-black">PKR {estimatedPrice.toLocaleString('en-PK')}</span>
-                                                        <span className="text-[10px] font-bold text-slate-400">incl. tax</span>
+                                        {estimatedPrice > 0 && (
+                                            <div className="p-6 rounded-[28px] bg-slate-900 text-white shadow-2xl flex flex-col gap-4 border-4 border-slate-800">
+                                                <div className="flex justify-between items-center pb-4 border-b border-white/5">
+                                                    <div>
+                                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Impact Summary</p>
+                                                        <div className="flex items-baseline gap-1">
+                                                            <span className="text-3xl font-black">PKR {estimatedPrice.toLocaleString('en-PK')}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="bg-white/10 px-3 py-2 rounded-xl border border-white/10 flex items-center gap-2">
+                                                        <Zap className="w-4 h-4 text-amber-400 animate-pulse" />
+                                                        <span className="text-[10px] font-black uppercase tracking-widest leading-none">Checkout Required</span>
                                                     </div>
                                                 </div>
-                                                <div className="bg-white/10 px-3 py-2 rounded-xl border border-white/10">
-                                                    <div className="flex items-center gap-2">
-                                                        <Zap className="w-4 h-4 text-amber-400 animate-pulse" />
-                                                        <span className="text-[10px] font-black uppercase">Realtime Pricing</span>
-                                                    </div>
+
+                                                <div className="space-y-2">
+                                                    {priceBreakup.map((b, idx) => (
+                                                        <div key={idx} className="flex justify-between items-center text-xs">
+                                                            <span className={`font-bold ${b.isBaseFee ? 'text-orange-400' : 'text-slate-400'}`}>
+                                                                {b.label || (b.placement.charAt(0).toUpperCase() + b.placement.slice(1))}
+                                                            </span>
+                                                            <span className="font-black">PKR {b.subtotal.toLocaleString('en-PK')}</span>
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             </div>
                                         )}

@@ -1,17 +1,22 @@
-import { IsEnum, IsUUID, IsArray, IsDateString, IsOptional, ArrayNotEmpty } from 'class-validator';
+import { IsEnum, IsUUID, IsArray, IsDateString, IsOptional } from 'class-validator';
 import { PromotionPlacement } from '../../../entities/promotion-pricing-rule.entity';
 
 export class CalculatePriceDto {
     @IsArray()
-    @ArrayNotEmpty()
     @IsEnum(PromotionPlacement, { each: true })
     placements: PromotionPlacement[];
 
+    @IsOptional()
     @IsDateString()
-    startTime: string;
+    startTime?: string;
 
+    @IsOptional()
     @IsDateString()
-    endTime: string;
+    endTime?: string;
+
+    @IsOptional()
+    @IsUUID()
+    offerEventId?: string;
 }
 
 export class CreateBookingDto extends CalculatePriceDto {

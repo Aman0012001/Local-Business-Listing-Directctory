@@ -5,6 +5,8 @@ import {
     ForbiddenException,
     Logger,
     OnModuleInit,
+    Inject,
+    forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan, IsNull } from 'typeorm';
@@ -18,8 +20,7 @@ import { User } from '../../entities/user.entity';
 import { Listing } from '../../entities/business.entity';
 import { AffiliateReferral, ReferralStatus, ReferralType } from '../../entities/referral.entity';
 import { Affiliate } from '../../entities/affiliate.entity';
-import { CreatePlanDto, UpdatePlanDto, CheckoutDto, AssignPlanDto, CreateOfferPlanDto, UpdateOfferPlanDto } from './dto/subscription.dto';
-import { OfferEventPricing, PricingUnit } from '../../entities/offer-event-pricing.entity';
+import { CreatePlanDto, UpdatePlanDto, CheckoutDto, AssignPlanDto, CreatePricingPlanDto, UpdatePricingPlanDto } from './dto/subscription.dto';
 import { OfferEvent } from '../../entities/offer-event.entity';
 
 
@@ -53,12 +54,11 @@ export class SubscriptionsService implements OnModuleInit {
         private referralRepository: Repository<AffiliateReferral>,
         @InjectRepository(Affiliate)
         private affiliateRepository: Repository<Affiliate>,
-        @InjectRepository(OfferEventPricing)
-        private offerPricingRepository: Repository<OfferEventPricing>,
         @InjectRepository(OfferEvent)
         private offerEventRepository: Repository<OfferEvent>,
         private configService: ConfigService,
         private affiliateService: AffiliateService,
+        @Inject(forwardRef(() => PromotionsService))
         private promotionsService: PromotionsService,
     ) {}
 
@@ -122,6 +122,40 @@ export class SubscriptionsService implements OnModuleInit {
     async deletePlan(id: string): Promise<void> {
         const plan = await this.getPlanById(id);
         await this.planRepository.remove(plan);
+    }
+
+    /**
+     * ADMIN: Get all PricingPlans (Boost/Monetization)
+     */
+    async getPricingPlansForAdmin(): Promise<PricingPlan[]> {
+        return this.pricingPlanRepository.find({ order: { type: 'ASC', price: 'ASC' } });
+    }
+
+    /**
+     * ADMIN: Create a new PricingPlan
+     */
+    async createPricingPlan(dto: CreatePricingPlanDto): Promise<PricingPlan> {
+        const plan = this.pricingPlanRepository.create(dto as any);
+        return this.pricingPlanRepository.save(plan) as unknown as Promise<PricingPlan>;
+    }
+
+    /**
+     * ADMIN: Update a PricingPlan
+     */
+    async updatePricingPlan(id: string, dto: UpdatePricingPlanDto): Promise<PricingPlan> {
+        const plan = await this.pricingPlanRepository.findOne({ where: { id } });
+        if (!plan) throw new NotFoundException('Pricing plan not found');
+        Object.assign(plan, dto);
+        return this.pricingPlanRepository.save(plan);
+    }
+
+    /**
+     * ADMIN: Delete a PricingPlan
+     */
+    async deletePricingPlan(id: string): Promise<void> {
+        const plan = await this.pricingPlanRepository.findOne({ where: { id } });
+        if (!plan) throw new NotFoundException('Pricing plan not found');
+        await this.pricingPlanRepository.remove(plan);
     }
 
     /**
@@ -416,20 +450,6 @@ export class SubscriptionsService implements OnModuleInit {
                     }
                 }
 
-                if (session.metadata?.offerPlanId) {
-                    const vendorId = session.client_reference_id;
-                    const { offerPlanId, targetId } = session.metadata;
-                    if (vendorId && offerPlanId) {
-                        const result = await this.processOfferPlanSuccess(vendorId, offerPlanId, session.id, 'Stripe', targetId);
-                        return { 
-                            success: true, 
-                            type: 'offer-promotion',
-                            planName: 'Offer Promotion',
-                            endDate: (result as any).endDate 
-                        };
-                    }
-                }
-
                 if (session.metadata?.planId) {
                     const vendorId = session.client_reference_id;
                     const { planId, targetId } = session.metadata;
@@ -500,11 +520,17 @@ export class SubscriptionsService implements OnModuleInit {
             activeSub.autoRenew = gateway === 'Stripe';
             savedSub = await this.subscriptionRepository.save(activeSub);
         } else {
-            // New subscription or switching plans - cancel previous active ones first
-            await this.subscriptionRepository.update(
-                { vendorId: vendor.id, status: SubscriptionStatus.ACTIVE },
-                { status: SubscriptionStatus.CANCELLED, cancelledAt: now }
-            );
+            // New subscription or switching plans - cancel ALL previous active ones (both systems)
+            await Promise.all([
+                this.subscriptionRepository.update(
+                    { vendorId: vendor.id, status: SubscriptionStatus.ACTIVE },
+                    { status: SubscriptionStatus.CANCELLED, cancelledAt: now }
+                ),
+                this.activePlanRepository.update(
+                    { vendorId: vendor.id, status: ActivePlanStatus.ACTIVE },
+                    { status: ActivePlanStatus.CANCELLED }
+                )
+            ]);
 
             // Calculate "perfect" end date for new plan
             const endDate = new Date(now);
@@ -589,34 +615,56 @@ export class SubscriptionsService implements OnModuleInit {
         let result: any = null;
         let isNewSystem = false;
 
-        // 1. Try new PricingPlan system first (ActivePlan)
-        const activeNewPlan = await this.activePlanRepository.findOne({
-            where: { 
-                vendorId: vendor.id, 
-                status: ActivePlanStatus.ACTIVE,
-                endDate: MoreThan(new Date())
-            },
-            relations: ['plan'],
-            order: { endDate: 'DESC' }
-        });
-
-        if (activeNewPlan && activeNewPlan.plan?.type === PricingPlanType.SUBSCRIPTION) {
-            result = activeNewPlan;
-            isNewSystem = true;
-        } else {
-            // 2. Try old Subscription system
-            let activeSub = await this.subscriptionRepository.findOne({
+        // 1. Fetch from BOTH PricingPlan system (ActivePlan) and old Subscription system
+        const [activeNewPlan, activeOldSub] = await Promise.all([
+            this.activePlanRepository.findOne({
+                where: { 
+                    vendorId: vendor.id, 
+                    status: ActivePlanStatus.ACTIVE,
+                    endDate: MoreThan(new Date())
+                },
+                relations: ['plan'],
+                order: { startDate: 'DESC' }
+            }),
+            this.subscriptionRepository.findOne({
                 where: { 
                     vendorId: vendor.id, 
                     status: SubscriptionStatus.ACTIVE,
                     endDate: MoreThan(new Date())
                 },
                 relations: ['plan'],
-                order: { endDate: 'DESC' }
-            });
+                order: { startDate: 'DESC' }
+            })
+        ]);
 
+        // 2. Prioritize by most recent startDate if both exist
+        if (activeNewPlan && activeOldSub) {
+            const newStart = new Date(activeNewPlan.startDate).getTime();
+            const oldStart = new Date(activeOldSub.startDate).getTime();
+            
+            if (newStart >= oldStart) {
+                result = activeNewPlan;
+                isNewSystem = true;
+            } else {
+                result = activeOldSub;
+                isNewSystem = false;
+            }
+        } else if (activeNewPlan && activeNewPlan.plan?.type === PricingPlanType.SUBSCRIPTION) {
+            result = activeNewPlan;
+            isNewSystem = true;
+        } else if (activeOldSub) {
+            result = activeOldSub;
+            isNewSystem = false;
+        } else {
+            // Check for Offer plans if no main subscription found
+            if (activeNewPlan) {
+                result = activeNewPlan;
+                isNewSystem = true;
+            }
+            
             // --- FALLBACK: If no active subscription anywhere, try to assign Free Plan ---
-            if (!activeSub && !activeNewPlan) {
+            if (!result) {
+                // ... fallback logic continues ...
                 // Check for new Free Plan first
                 const newFreePlan = await this.pricingPlanRepository.findOne({
                     where: { name: 'Free', type: PricingPlanType.SUBSCRIPTION }
@@ -664,27 +712,67 @@ export class SubscriptionsService implements OnModuleInit {
                 // Determine which one to show. 
                 // If there's an active Subscription-type new plan, it won't reach here.
                 // If there's an active Offer plan and an active old Subscription, prioritize the Subscription.
-                result = activeSub || activeNewPlan;
+                result = activeOldSub || activeNewPlan;
                 isNewSystem = result === activeNewPlan;
             }
         }
 
         if (!result) return null;
+        return this.normalizeSubOrActivePlan(result, isNewSystem);
+    }
 
-        // Normalize the response object for the frontend
+    /**
+     * Internal helper to normalize either Subscription (old) or ActivePlan (new) 
+     * into a consistent shape for the Sidebar and other frontend components.
+     */
+    public normalizeSubOrActivePlan(result: any, isNewSystem: boolean) {
+        if (!result) return null;
+
+        const plan = result.plan ? {
+            ...result.plan,
+            planType: isNewSystem 
+                ? (result.plan.name?.toLowerCase() === 'free' ? 'free' : (result.plan.type === PricingPlanType.SUBSCRIPTION ? 'premium' : result.plan.type)) 
+                : result.plan.planType,
+            // Harmonize features into dashboardFeatures
+            dashboardFeatures: isNewSystem 
+                ? {
+                    showAnalytics: !!result.plan.features?.showAnalytics,
+                    showLeads: !!result.plan.features?.showLeads,
+                    showOffers: !!result.plan.features?.maxOffers || !!result.plan.features?.maxEvents || !!result.plan.features?.showOffers,
+                    showDemand: !!result.plan.features?.showDemand,
+                    showQueries: !!result.plan.features?.showQueries,
+                    showReviews: !!result.plan.features?.showReviews,
+                    showChat: !!result.plan.features?.showChat,
+                    showBroadcast: !!result.plan.features?.showBroadcast,
+                    showSaved: true,
+                    showFollowing: true,
+                    showListings: true,
+                    canAddListing: (result.plan.features?.maxListings || 0) > 0,
+                    ...result.plan.features 
+                }
+                : {
+                    showAnalytics: !!result.plan.dashboardFeatures?.showAnalytics,
+                    showLeads: !!result.plan.dashboardFeatures?.showLeads,
+                    showOffers: !!result.plan.dashboardFeatures?.showOffers || !!result.plan.dashboardFeatures?.maxOffers,
+                    showDemand: !!result.plan.dashboardFeatures?.showDemand,
+                    showQueries: !!result.plan.dashboardFeatures?.showQueries,
+                    showReviews: !!result.plan.dashboardFeatures?.showReviews,
+                    showChat: !!result.plan.dashboardFeatures?.showChat,
+                    showBroadcast: !!result.plan.dashboardFeatures?.showBroadcast,
+                    showSaved: true,
+                    showFollowing: true,
+                    showListings: true,
+                    canAddListing: true,
+                    ...(result.plan.dashboardFeatures || {})
+                }
+        } : null;
+
         return {
             ...result,
-            // Ensure amount and endDate are consistently named
             amount: isNewSystem ? result.amountPaid : result.amount,
             endDate: result.endDate,
             isNewSystem,
-            // Pass the plan object through, adding planType for frontend compatibility
-            plan: result.plan ? {
-                ...result.plan,
-                planType: isNewSystem 
-                    ? (result.plan.name?.toLowerCase() === 'free' ? 'free' : (result.plan.type === PricingPlanType.SUBSCRIPTION ? 'premium' : result.plan.type)) 
-                    : result.plan.planType
-            } : null
+            plan
         };
     }
 
@@ -852,10 +940,16 @@ export class SubscriptionsService implements OnModuleInit {
 
         // Only deactivate if it's a DIFFERENT plan category or the user explicitly chose an upgrade
         if (plan.type === PricingPlanType.SUBSCRIPTION && (!existingActivePlan || existingActivePlan.plan?.type !== plan.type)) {
-            await this.activePlanRepository.update(
-                { vendorId, status: ActivePlanStatus.ACTIVE, plan: { type: PricingPlanType.SUBSCRIPTION } as any },
-                { status: ActivePlanStatus.CANCELLED }
-            );
+            await Promise.all([
+                this.activePlanRepository.update(
+                    { vendorId, status: ActivePlanStatus.ACTIVE, plan: { type: PricingPlanType.SUBSCRIPTION } as any },
+                    { status: ActivePlanStatus.CANCELLED }
+                ),
+                this.subscriptionRepository.update(
+                    { vendorId, status: SubscriptionStatus.ACTIVE },
+                    { status: SubscriptionStatus.CANCELLED, cancelledAt: now }
+                )
+            ]);
         }
 
         const activePlan = this.activePlanRepository.create({
@@ -906,17 +1000,11 @@ export class SubscriptionsService implements OnModuleInit {
         const limit = features[feature];
 
         if (limit === true) return true;
-        if (typeof limit === 'number') {
-            const vendor = await this.vendorRepository.findOne({ where: { userId } });
-            if (!vendor) return false;
-
-            // Check specific limits
-            if (feature === 'maxListings') {
-                const count = await this.listingRepo.count({ where: { vendorId: vendor.id } });
-                return count < limit;
-            }
-            // Add other limit checks (maxOffers, etc.) as needed
-        }
+        
+        // Add other numeric limit checks (maxOffers, etc.) as needed as they arise 
+        // For now, we are removing the maxListings capacity limit as per the requirement
+        
+        return false;
 
         return false;
     }
@@ -950,7 +1038,7 @@ export class SubscriptionsService implements OnModuleInit {
                 status: ActivePlanStatus.ACTIVE,
                 endDate: MoreThan(now),
             },
-            relations: ['plan', 'offerPlan'],
+            relations: ['plan'],
             order: { endDate: 'ASC' },
         });
 
@@ -971,8 +1059,8 @@ export class SubscriptionsService implements OnModuleInit {
         return {
             plans: activePlans.map(p => ({
                 id: p.id,
-                name: p.plan?.name || p.offerPlan?.name || 'Boost Plan',
-                type: p.plan?.type || p.offerPlan?.type,
+                name: p.plan?.name || 'Boost Plan',
+                type: p.plan?.type,
                 startDate: p.startDate,
                 endDate: p.endDate,
                 status: p.status,
@@ -1076,15 +1164,6 @@ export class SubscriptionsService implements OnModuleInit {
                 const session = event.data.object as Stripe.Checkout.Session;
                 this.logger.log(`💳 Checkout session completed: ${session.id} for customer: ${session.customer}`);
 
-                // --- OFFER / EVENT PLAN (OfferEventPricing) ---
-                if (session.metadata?.offerPlanId) {
-                    const vendorId = session.client_reference_id;
-                    const { offerPlanId, targetId } = session.metadata;
-                    this.logger.log(`🎯 Activating offer/event plan: ${offerPlanId} for vendor: ${vendorId}`);
-                    await this.processOfferPlanSuccess(vendorId, offerPlanId, session.id, 'Stripe', targetId);
-                    return { received: true };
-                }
-
                 // --- NEW SYSTEM (ActivePlan / PricingPlan) ---
                 if (session.metadata?.planId) {
                     const vendorId = session.client_reference_id;
@@ -1185,245 +1264,4 @@ export class SubscriptionsService implements OnModuleInit {
         }
         return { received: true };
     }
-
-    // ─── Offer & Event Pricing Plans ────────────────────────────────────────────
-
-    /**
-     * PUBLIC: Get all active offer/event pricing plans
-     */
-    async getOfferPlans(type?: 'offer' | 'event'): Promise<OfferEventPricing[]> {
-        const where: any = { isActive: true };
-        if (type) where.type = type;
-        return this.offerPricingRepository.find({ where, order: { price: 'ASC' } });
-    }
-
-    /**
-     * ADMIN: Get all offer/event pricing plans (including inactive)
-     */
-    async getOfferPlansAdmin(type?: 'offer' | 'event'): Promise<OfferEventPricing[]> {
-        const where: any = {};
-        if (type) where.type = type;
-        return this.offerPricingRepository.find({ where, order: { type: 'ASC', price: 'ASC' } });
-    }
-
-    /**
-     * ADMIN: Create a new offer/event pricing plan
-     */
-    async createOfferPlan(dto: CreateOfferPlanDto): Promise<OfferEventPricing> {
-        const plan = this.offerPricingRepository.create({
-            name: dto.name,
-            type: dto.type,
-            price: dto.price,
-            unit: dto.unit as any,
-            duration: dto.duration,
-            isActive: dto.isActive ?? true,
-        });
-        return this.offerPricingRepository.save(plan);
-    }
-
-    /**
-     * ADMIN: Update an offer/event pricing plan
-     */
-    async updateOfferPlan(id: string, dto: UpdateOfferPlanDto): Promise<OfferEventPricing> {
-        const plan = await this.offerPricingRepository.findOne({ where: { id } });
-        if (!plan) throw new NotFoundException('Offer plan not found');
-        Object.assign(plan, dto);
-        return this.offerPricingRepository.save(plan);
-    }
-
-    /**
-     * ADMIN: Delete an offer/event pricing plan
-     */
-    async deleteOfferPlan(id: string): Promise<void> {
-        const plan = await this.offerPricingRepository.findOne({ where: { id } });
-        if (!plan) throw new NotFoundException('Offer plan not found');
-        await this.offerPricingRepository.remove(plan);
-    }
-
-    /**
-     * VENDOR: Create a Stripe Checkout session for an Offer/Event pricing plan.
-     *
-     * Uses recurring/subscription mode (not one-time payment) because Stripe's
-     * $0.50 USD minimum only applies to one-time payments. Subscription mode
-     * accepts any PKR amount, mirroring how vendor subscription billing plans work.
-     *
-     * The Stripe Price ID is cached on the plan row (stripe_price_id) so we don't
-     * create a new price on every checkout — identical to how PricingPlan works.
-     */
-    async createOfferPlanCheckoutSession(
-        userId: string,
-        offerPlanId: string,
-        targetId?: string, // Optional target ID (offer/event) to boost
-        origin?: string
-    ): Promise<{ sessionId: string; checkoutUrl: string }> {
-        const vendor = await this.vendorRepository.findOne({
-            where: { userId },
-            relations: ['user'],
-        });
-        if (!vendor) throw new ForbiddenException('Only vendors can purchase offer plans');
-
-        const plan = await this.offerPricingRepository.findOne({ where: { id: offerPlanId, isActive: true } });
-        if (!plan) throw new NotFoundException('Offer plan not found');
-
-        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || '';
-        const allowedUrls = frontendUrl ? frontendUrl.split(',').map(url => url.trim()) : [];
-        
-        // Priority: 1. FRONTEND_URL config, 2. Dynamic origin from request, 3. Localhost fallback
-        const baseUrl = allowedUrls[0] || origin || 'http://localhost:3000';
-
-        // ── Ensure plan has a valid, price-matching Stripe Price (PKR recurring) ──
-        let needsNewPrice = !plan.stripePriceId;
-        if (plan.stripePriceId) {
-            try {
-                const existing = await this.stripe.prices.retrieve(plan.stripePriceId);
-                const expected = Math.round(Number(plan.price) * 100);
-                if (existing.unit_amount !== expected || !existing.active) {
-                    this.logger.warn(`Offer plan Stripe price mismatch — regenerating (${existing.unit_amount} vs ${expected})`);
-                    needsNewPrice = true;
-                }
-            } catch {
-                this.logger.warn(`Offer plan Stripe price ${plan.stripePriceId} not found — regenerating`);
-                needsNewPrice = true;
-            }
-        }
-        if (needsNewPrice) {
-            const product = await this.stripe.products.create({
-                name: plan.name,
-                metadata: { offerPlanId: plan.id, type: plan.type },
-            });
-            const price = await this.stripe.prices.create({
-                product: product.id,
-                unit_amount: Math.round(Number(plan.price) * 100),
-                currency: 'pkr',
-                recurring: { interval: 'month' },
-            });
-            plan.stripePriceId = price.id;
-            await this.offerPricingRepository.save(plan);
-            this.logger.log(`Created Stripe price ${price.id} for offer plan "${plan.name}" at PKR ${plan.price}`);
-        }
-
-        // ── Resolve Stripe Customer ID (self-healing) ──
-        let customerId = vendor.stripeCustomerId;
-        if (customerId) {
-            try {
-                await this.stripe.customers.update(customerId, {
-                    email: vendor.businessEmail || vendor.user?.email,
-                    name: vendor.businessName || vendor.user?.fullName,
-                    address: { country: 'PK' },
-                });
-            } catch (err: any) {
-                if (err?.code === 'resource_missing' || err?.message?.includes('No such customer')) {
-                    customerId = null;
-                    vendor.stripeCustomerId = null;
-                    await this.vendorRepository.save(vendor);
-                }
-            }
-        }
-        if (!customerId) {
-            const customer = await this.stripe.customers.create({
-                email: vendor.businessEmail || vendor.user?.email,
-                name: vendor.businessName || vendor.user?.fullName,
-                metadata: { vendorId: vendor.id },
-                address: { country: 'PK' },
-            });
-            customerId = customer.id;
-            vendor.stripeCustomerId = customerId;
-            await this.vendorRepository.save(vendor);
-        }
-
-        const session = await this.stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            customer: customerId,
-            client_reference_id: vendor.id,
-            metadata: {
-                offerPlanId: plan.id,
-                planType: plan.type,
-                planName: plan.name,
-                targetId: targetId || '',
-            },
-            line_items: [{ price: plan.stripePriceId, quantity: 1 }],
-            mode: 'subscription',
-            locale: 'en',
-            subscription_data: {
-                metadata: {
-                    offerPlanId: plan.id,
-                    vendorId: vendor.id,
-                    targetId: targetId || '',
-                },
-            },
-            success_url: `${baseUrl}/vendor/offer-plans/success?session_id={CHECKOUT_SESSION_ID}&plan=${encodeURIComponent(plan.name)}&duration=${plan.duration}&unit=${plan.unit}`,
-            cancel_url: `${baseUrl}/vendor/offer-plans?canceled=true`,
-        });
-
-        this.logger.log(`🛒 Offer plan checkout session ${session.id} created for vendor ${vendor.id}`);
-        return { sessionId: session.id, checkoutUrl: session.url };
-    }
-
-    /**
-     * Activate an offer/event pricing plan purchase.
-     * Creates an ActivePlan record and updates featured flags if targetId is provided.
-     */
-    async processOfferPlanSuccess(
-        vendorId: string,
-        offerPlanId: string,
-        gatewayTransactionId: string,
-        gateway: string,
-        targetId?: string
-    ) {
-        const plan = await this.offerPricingRepository.findOne({ where: { id: offerPlanId } });
-        if (!plan) throw new NotFoundException('Offer plan not found');
-
-        const now = new Date();
-        const startDate = now;
-        const endDate = new Date(now);
-
-        // Calculate end date
-        switch (plan.unit) {
-            case PricingUnit.MINUTES: endDate.setMinutes(endDate.getMinutes() + plan.duration); break;
-            case PricingUnit.HOURS: endDate.setHours(endDate.getHours() + plan.duration); break;
-            case PricingUnit.DAYS: endDate.setDate(endDate.getDate() + plan.duration); break;
-        }
-
-        // Create ActivePlan record
-        const activePlan = this.activePlanRepository.create({
-            vendorId,
-            offerPlanId,
-            targetId: targetId || null,
-            status: ActivePlanStatus.ACTIVE,
-            startDate,
-            endDate,
-            amountPaid: plan.price,
-            transactionId: gatewayTransactionId,
-        });
-
-        const saved = await this.activePlanRepository.save(activePlan);
-
-        // Sync featured flags if it's an offer/event boost
-        if (targetId) {
-            await this.offerEventRepository.update(targetId, {
-                isFeatured: true,
-                featuredUntil: endDate,
-                pricingId: plan.id,
-            });
-            this.logger.log(`✨ Boosted offer/event ${targetId} until ${endDate}`);
-        }
-
-        // Record transaction
-        const transaction = this.transactionRepository.create({
-            vendorId,
-            amount: plan.price,
-            status: PaymentStatus.COMPLETED,
-            paidAt: now,
-            gatewayTransactionId,
-            paymentGateway: gateway,
-            invoiceNumber: `INV-OEP-${Date.now().toString().slice(-6)}`,
-        });
-        await this.transactionRepository.save(transaction);
-
-        this.logger.log(`✅ Offer plan "${plan.name}" activated for vendor ${vendorId}`);
-        return saved;
-    }
 }
-
-
-

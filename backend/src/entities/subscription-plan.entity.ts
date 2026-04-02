@@ -39,9 +39,6 @@ export class SubscriptionPlan {
     @Column({ name: 'billing_cycle', length: 20, default: 'monthly' })
     billingCycle: string;
 
-    @Column({ name: 'max_listings', default: 1 })
-    maxListings: number;
-
     @Column({ name: 'stripe_price_id', nullable: true })
     stripePriceId: string;
 

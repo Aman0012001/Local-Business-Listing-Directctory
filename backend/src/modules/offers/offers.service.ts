@@ -3,12 +3,12 @@ import {
     NotFoundException,
     ForbiddenException,
     BadRequestException,
-    OnModuleInit,
+    Inject,
+    forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OfferEvent, OfferStatus } from '../../entities/offer-event.entity';
-import { OfferEventPricing } from '../../entities/offer-event-pricing.entity';
 import { Listing } from '../../entities/business.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { CreateOfferDto } from './dto/create-offer.dto';
@@ -17,11 +17,10 @@ import { PromotionBooking, BookingStatus } from '../../entities/promotion-bookin
 
 import { SearchOfferDto } from './dto/search-offer.dto';
 import { Brackets } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
-import Stripe from 'stripe';
+import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 
 @Injectable()
-export class OffersService implements OnModuleInit {
+export class OffersService {
     constructor(
         @InjectRepository(OfferEvent)
         private offerRepository: Repository<OfferEvent>,
@@ -29,25 +28,10 @@ export class OffersService implements OnModuleInit {
         private listingRepository: Repository<Listing>,
         @InjectRepository(Vendor)
         private vendorRepository: Repository<Vendor>,
-        @InjectRepository(OfferEventPricing)
-        private pricingRepository: Repository<OfferEventPricing>,
-        @InjectRepository(PromotionBooking)
-        private bookingRepo: Repository<PromotionBooking>,
-        private configService: ConfigService,
+        @Inject(forwardRef(() => SubscriptionsService))
+        private subscriptionsService: any,
     ) { }
 
-    private stripe: Stripe;
-
-    onModuleInit() {
-        const apiKey = this.configService.get<string>('STRIPE_SECRET_KEY');
-        if (!apiKey || apiKey === 'sk_test_your_secret_key_here') {
-            console.error('❌ STRIPE_SECRET_KEY is missing! Offer payments will fail.');
-        }
-
-        this.stripe = new Stripe(apiKey || 'sk_test_not_configured', {
-            apiVersion: '2026-02-25.clover' as any,
-        });
-    }
 
     /** Helper: recompute status from dates (same logic as entity hook, but for query results) */    private computeStatus(offer: OfferEvent): OfferEvent {
         const now = new Date();
@@ -93,6 +77,7 @@ export class OffersService implements OnModuleInit {
             startDate: dto.startDate ? new Date(dto.startDate) : null,
             endDate: dto.endDate ? new Date(dto.endDate) : null,
             expiryDate: dto.expiryDate ? new Date(dto.expiryDate) : null,
+            isActive: false, // Wait for promotion check / activation
         });
 
         // computeStatus is called via @BeforeInsert on the entity
@@ -336,130 +321,4 @@ export class OffersService implements OnModuleInit {
         };
     }
 
-    /**
-     * Get available promotion pricing for offers/events
-     */
-    async getPricing(type?: 'offer' | 'event') {
-        const query: any = { where: { isActive: true }, order: { price: 'ASC' } };
-        if (type) {
-            query.where.type = type;
-        }
-        return this.pricingRepository.find(query);
-    }
-
-    /** 
-     * Create a Stripe Checkout session to feature an offer/event 
-     */
-    async createFeatureCheckoutSession(userId: string, offerId: string, pricingId: string, origin?: string) {
-        const vendor = await this.getVendorByUserId(userId);
-        const offer = await this.offerRepository.findOne({ where: { id: offerId, vendorId: vendor.id } });
-        if (!offer) throw new NotFoundException('Offer not found');
-        
-        const plan = await this.pricingRepository.findOne({ where: { id: pricingId, isActive: true } });
-        if (!plan) throw new NotFoundException('Pricing plan not found');
-
-        // Free plan logic
-        if (plan.price === 0) {
-            await this.activateFeature(offer.id, plan.id);
-            return {
-                sessionId: `MOCK-${Date.now()}`,
-                checkoutUrl: null,
-            };
-        }
-
-        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || '';
-        const allowedUrls = frontendUrl ? frontendUrl.split(',').map(url => url.trim()) : [];
-        
-        // Priority: 1. FRONTEND_URL config, 2. Dynamic origin from request, 3. Localhost fallback
-        const baseUrl = allowedUrls[0] || origin || 'http://localhost:3000';
-
-        const product = await this.stripe.products.create({ name: `Feature ${offer.type}: ${plan.name}` });
-        const price = await this.stripe.prices.create({
-            product: product.id,
-            unit_amount: Math.round(Number(plan.price) * 100),
-            currency: 'usd',
-        });
-
-        // Resolve customer
-        let customerId = vendor.stripeCustomerId;
-        if (!customerId) {
-            const customer = await this.stripe.customers.create({
-                email: vendor.businessEmail || undefined,
-                name: vendor.businessName || undefined,
-                metadata: { vendorId: vendor.id },
-            });
-            customerId = customer.id;
-            vendor.stripeCustomerId = customerId;
-            await this.vendorRepository.save(vendor);
-        }
-
-        const session = await this.stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            customer: customerId,
-            client_reference_id: vendor.id,
-            line_items: [{ price: price.id, quantity: 1 }],
-            mode: 'payment',
-            metadata: {
-                offerId: offer.id,
-                pricingId: plan.id,
-                type: 'feature_offer'
-            },
-            success_url: `${baseUrl}/vendor/offers/success?session_id={CHECKOUT_SESSION_ID}&offer_id=${offer.id}`,
-            cancel_url:  `${baseUrl}/vendor/offers?canceled=true`,
-        });
-
-        return {
-            sessionId: session.id,
-            checkoutUrl: session.url,
-        };
-    }
-
-    /**
-     * Manually verify a checkout session
-     */
-    async verifyFeatureSession(sessionId: string, userId: string) {
-        const vendor = await this.getVendorByUserId(userId);
-        
-        try {
-            if (sessionId.startsWith('MOCK-')) {
-                return { success: true };
-            }
-
-            const session = await this.stripe.checkout.sessions.retrieve(sessionId);
-            if (session.payment_status === 'paid' && session.metadata?.type === 'feature_offer') {
-                const offerId = session.metadata.offerId;
-                const pricingId = session.metadata.pricingId;
-                
-                const offer = await this.offerRepository.findOne({ where: { id: offerId, vendorId: vendor.id } });
-                if (offer && !offer.isFeatured) {
-                    await this.activateFeature(offer.id, pricingId);
-                }
-                return { success: true };
-            }
-            return { success: false, status: session.payment_status };
-        } catch (error) {
-            console.error(`Failed to verify checkout session ${sessionId}:`, error);
-            throw new BadRequestException(`Verification failed`);
-        }
-    }
-
-    /** Activate featured status based on plan */
-    private async activateFeature(offerId: string, pricingId: string) {
-        const offer = await this.offerRepository.findOne({ where: { id: offerId } });
-        const plan = await this.pricingRepository.findOne({ where: { id: pricingId } });
-        if (!offer || !plan) return;
-
-        const now = new Date();
-        const until = new Date(now);
-
-        if (plan.unit === 'minutes') until.setMinutes(until.getMinutes() + plan.duration);
-        else if (plan.unit === 'hours') until.setHours(until.getHours() + plan.duration);
-        else if (plan.unit === 'days') until.setDate(until.getDate() + plan.duration);
-
-        offer.isFeatured = true;
-        offer.featuredUntil = until;
-        offer.pricingId = pricingId;
-
-        await this.offerRepository.save(offer);
-    }
 }

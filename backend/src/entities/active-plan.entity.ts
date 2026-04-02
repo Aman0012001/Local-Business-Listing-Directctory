@@ -11,7 +11,6 @@ import {
 import { Vendor } from './vendor.entity';
 import { PricingPlan } from './pricing-plan.entity';
 import { Listing } from './business.entity';
-import { OfferEventPricing } from './offer-event-pricing.entity';
 
 export enum ActivePlanStatus {
     ACTIVE = 'active',
@@ -31,9 +30,6 @@ export class ActivePlan {
 
     @Column({ name: 'plan_id', type: 'uuid', nullable: true })
     planId: string;
-
-    @Column({ name: 'offer_plan_id', type: 'uuid', nullable: true })
-    offerPlanId: string;
 
     @Column({ name: 'target_id', type: 'uuid', nullable: true })
     targetId: string; // The specific listing, offer, or event being promoted
@@ -71,10 +67,6 @@ export class ActivePlan {
     @ManyToOne(() => PricingPlan, (plan) => plan.activePlans, { nullable: true })
     @JoinColumn({ name: 'plan_id' })
     plan: PricingPlan;
-
-    @ManyToOne(() => OfferEventPricing, { nullable: true })
-    @JoinColumn({ name: 'offer_plan_id' })
-    offerPlan: OfferEventPricing;
 
     // Optional target listing (if appropriate for the plan type)
     @ManyToOne(() => Listing, { nullable: true, onDelete: 'SET NULL' })

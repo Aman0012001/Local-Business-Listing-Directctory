@@ -11,6 +11,9 @@ export enum PromotionPlacement {
     HOMEPAGE = 'homepage',
     CATEGORY = 'category',
     LISTING = 'listing',
+    OFFER = 'offer',
+    EVENT = 'event',
+    PAGE = 'page',
 }
 
 @Entity('promotion_pricing_rules')
@@ -30,6 +33,9 @@ export class PromotionPricingRule {
 
     @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
     pricePerDay: number;
+
+    @Column({ name: 'base_price', type: 'decimal', precision: 10, scale: 2, default: 0 })
+    basePrice: number;
 
     @Column({ name: 'is_active', default: true })
     isActive: boolean;

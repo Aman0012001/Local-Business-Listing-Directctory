@@ -18,7 +18,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { PricingPlanType } from '../../entities/pricing-plan.entity';
 import { SubscriptionsService } from './subscriptions.service';
 import { SubscriptionCronService } from './subscription-cron.service';
-import { CreatePlanDto, UpdatePlanDto, CheckoutDto, AssignPlanDto, ChangePlanDto, CreateOfferPlanDto, UpdateOfferPlanDto } from './dto/subscription.dto';
+import { CreatePlanDto, UpdatePlanDto, CheckoutDto, AssignPlanDto, ChangePlanDto, CreatePricingPlanDto, UpdatePricingPlanDto } from './dto/subscription.dto';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -84,6 +84,34 @@ export class SubscriptionsController {
     @ApiOperation({ summary: 'Delete a plan (Admin only)' })
     deletePlan(@Param('id') id: string) {
         return this.subService.deletePlan(id);
+    }
+
+    @Get('pricing/plans/admin')
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'List all PricingPlans for Admin' })
+    getPricingPlansForAdmin() {
+        return this.subService.getPricingPlansForAdmin();
+    }
+
+    @Post('pricing/plans')
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Create a new PricingPlan (Admin only)' })
+    createPricingPlan(@Body() dto: CreatePricingPlanDto) {
+        return this.subService.createPricingPlan(dto);
+    }
+
+    @Patch('pricing/plans/:id')
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Update a PricingPlan (Admin only)' })
+    updatePricingPlan(@Param('id') id: string, @Body() dto: UpdatePricingPlanDto) {
+        return this.subService.updatePricingPlan(id, dto);
+    }
+
+    @Delete('pricing/plans/:id')
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Delete a PricingPlan (Admin only)' })
+    deletePricingPlan(@Param('id') id: string) {
+        return this.subService.deletePricingPlan(id);
     }
 
     // ─── Admin Subscription Management ─────────────────────────────────────────
@@ -229,23 +257,6 @@ export class SubscriptionsController {
         );
     }
 
-    /**
-     * Create a Stripe Checkout session for an Offer/Event pricing plan.
-     * Returns { checkoutUrl } — frontend redirects to Stripe.
-     */
-    @Post('offer-plan-checkout/:planId')
-    @Roles(UserRole.VENDOR, UserRole.ADMIN, UserRole.SUPERADMIN)
-    @ApiOperation({ summary: 'Create Stripe checkout for an offer/event pricing plan' })
-    async offerPlanCheckout(
-        @CurrentUser() user: User,
-        @Param('planId') planId: string,
-        @Body() body: { targetId?: string },
-        @Headers('origin') origin: string,
-        @Headers('referer') referer: string
-    ) {
-        return this.subService.createOfferPlanCheckoutSession(user.id, planId, body.targetId, origin || referer);
-    }
-
     // --- Webhook ---
     @Public()
     @Post('webhook')
@@ -266,42 +277,5 @@ export class SubscriptionsController {
     @ApiOperation({ summary: 'Get transaction history (deprecated, use /my-invoices)' })
     getTransactions(@CurrentUser() user: User) {
         return this.subService.getTransactions(user.id);
-    }
-
-    // ─── Offer & Event Pricing Plan Endpoints ──────────────────────────────────
-
-    @Public()
-    @Get('offer-plans')
-    @ApiOperation({ summary: 'List active offer/event pricing plans (public)' })
-    getOfferPlans(@Query('type') type?: 'offer' | 'event') {
-        return this.subService.getOfferPlans(type);
-    }
-
-    @Get('offer-plans/admin')
-    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
-    @ApiOperation({ summary: 'List all offer/event pricing plans including inactive (admin)' })
-    getOfferPlansAdmin(@Query('type') type?: 'offer' | 'event') {
-        return this.subService.getOfferPlansAdmin(type);
-    }
-
-    @Post('offer-plans')
-    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
-    @ApiOperation({ summary: 'Create a new offer/event pricing plan (admin)' })
-    createOfferPlan(@Body() dto: CreateOfferPlanDto) {
-        return this.subService.createOfferPlan(dto);
-    }
-
-    @Patch('offer-plans/:id')
-    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
-    @ApiOperation({ summary: 'Update an offer/event pricing plan (admin)' })
-    updateOfferPlan(@Param('id') id: string, @Body() dto: UpdateOfferPlanDto) {
-        return this.subService.updateOfferPlan(id, dto);
-    }
-
-    @Delete('offer-plans/:id')
-    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
-    @ApiOperation({ summary: 'Delete an offer/event pricing plan (admin)' })
-    deleteOfferPlan(@Param('id') id: string) {
-        return this.subService.deleteOfferPlan(id);
     }
 }

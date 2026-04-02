@@ -22,7 +22,6 @@ import { SearchLog } from '../../entities/search-log.entity';
 import { AdminSearchController } from './admin-search.controller';
 import { Category } from '../../entities/category.entity';
 import { City } from '../../entities/city.entity';
-import { OfferEventPricing } from '../../entities/offer-event-pricing.entity';
 
 @Module({
     imports: [
@@ -44,7 +43,6 @@ import { OfferEventPricing } from '../../entities/offer-event-pricing.entity';
             SearchLog,
             Category,
             City,
-            OfferEventPricing,
         ]),
         SearchModule,
     ],

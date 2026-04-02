@@ -47,6 +47,7 @@ function VendorOfferPlansPageInner() {
     const [promoStartTime, setPromoStartTime] = useState('');
     const [promoEndTime, setPromoEndTime] = useState('');
     const [estimatedPrice, setEstimatedPrice] = useState(0);
+    const [priceBreakup, setPriceBreakup] = useState<any[]>([]);
     const [isCalculating, setIsCalculating] = useState(false);
     const [isBooking, setIsBooking] = useState(false);
 
@@ -91,12 +92,16 @@ function VendorOfferPlansPageInner() {
             if (selectedPlacements.length > 0 && start && end && start < end) {
                 setIsCalculating(true);
                 try {
+                    const selectedOffer = vendorOffers.find(o => o.id === selectedOfferId);
+                    const offerType = selectedOffer?.type || 'offer';
+
                     const res = await api.promotions.calculatePrice({
                         placements: selectedPlacements,
                         startTime: promoStartTime,
                         endTime: promoEndTime,
-                    });
+                    }, offerType);
                     setEstimatedPrice(res.totalPrice);
+                    setPriceBreakup(res.breakup || []);
                 } catch (err) {
                     console.error('Price calculation failed:', err);
                 } finally {
@@ -104,6 +109,7 @@ function VendorOfferPlansPageInner() {
                 }
             } else {
                 setEstimatedPrice(0);
+                setPriceBreakup([]);
             }
         };
 
@@ -376,13 +382,35 @@ function VendorOfferPlansPageInner() {
                                         <span className="font-bold">Placements</span>
                                         <span className="font-black text-white">{selectedPlacements.length} selected</span>
                                     </div>
-                                    {selectedPlacements.map(p => (
+                                    
+                                    {priceBreakup.length > 0 && (
+                                        <div className="space-y-3 py-2">
+                                            {priceBreakup.map((item, idx) => (
+                                                <div key={idx} className="space-y-1">
+                                                    <div className="flex justify-between text-[11px] font-black uppercase tracking-wider text-orange-400">
+                                                        <span>{item.placement}</span>
+                                                        <span>PKR {item.subtotal.toLocaleString()}</span>
+                                                    </div>
+                                                    <div className="flex justify-between text-[10px] text-white/40 font-bold">
+                                                        <span>Rate</span>
+                                                        <span>PKR {item.hourRate}/{item.isCustomRate ? 'hr (Plan)' : 'hr'}</span>
+                                                    </div>
+                                                    <div className="flex justify-between text-[10px] text-white/40 font-bold">
+                                                        <span>Duration</span>
+                                                        <span>{item.days > 0 ? `${item.days}d ` : ''}{item.hours}h</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {!priceBreakup.length && selectedPlacements.map(p => (
                                         <div key={p} className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/5 text-[10px] font-black uppercase tracking-wider">
                                             <TrendingUp className="w-3 h-3 text-orange-400" /> {p}
                                         </div>
                                     ))}
                                     
-                                    <div className="pt-4 space-y-2">
+                                    <div className="pt-4 space-y-2 border-t border-white/10">
                                         <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Total Price</p>
                                         <div className="flex items-baseline gap-2">
                                             <span className="text-xs font-black text-white/60">PKR</span>

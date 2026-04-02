@@ -480,40 +480,26 @@ export const api = {
                 method: 'DELETE',
             }),
         },
+        pricingPlans: {
+            getAll: () => fetcher<any[]>('/subscriptions/pricing/plans/admin'),
+            create: (data: any) => fetcher<any>('/subscriptions/pricing/plans', {
+                method: 'POST',
+                body: JSON.stringify(data),
+            }),
+            update: (id: string, data: any) => fetcher<any>(`/subscriptions/pricing/plans/${id}`, {
+                method: 'PATCH',
+                body: JSON.stringify(data),
+            }),
+            delete: (id: string) => fetcher<any>(`/subscriptions/pricing/plans/${id}`, {
+                method: 'DELETE',
+            }),
+        },
         globalSearch: (q: string) => fetcher<{ 
             businesses: any[], 
             users: any[], 
             categories: any[], 
             cities: any[] 
         }>(`/admin/search/global?q=${encodeURIComponent(q)}`),
-        offerPricing: {
-            getAll: () => fetcher<any[]>('/admin/offer-pricing'),
-            save: (data: any) => fetcher<any>('/admin/offer-pricing', {
-                method: 'POST',
-                body: JSON.stringify(data),
-            }),
-            delete: (id: string) => fetcher<any>(`/admin/offer-pricing/${id}`, {
-                method: 'DELETE',
-            }),
-        },
-        // New offer plan endpoints
-        offerPlans: {
-            getAll: (type?: 'offer' | 'event') => {
-                const q = type ? `?type=${type}` : '';
-                return fetcher<any[]>(`/subscriptions/offer-plans/admin${q}`);
-            },
-            create: (data: any) => fetcher<any>('/subscriptions/offer-plans', {
-                method: 'POST',
-                body: JSON.stringify(data),
-            }),
-            update: (id: string, data: any) => fetcher<any>(`/subscriptions/offer-plans/${id}`, {
-                method: 'PATCH',
-                body: JSON.stringify(data),
-            }),
-            delete: (id: string) => fetcher<any>(`/subscriptions/offer-plans/${id}`, {
-                method: 'DELETE',
-            }),
-        },
     },
     notifications: {
         getAll: () => fetcher('/notifications'),
@@ -578,14 +564,6 @@ export const api = {
         remove: (id: string) => fetcher<any>(`/offers/${id}`, {
             method: 'DELETE',
         }),
-        feature: (id: string, pricingId: string) => fetcher<{ sessionId: string; checkoutUrl: string | null }>(`/offers/${id}/feature`, {
-            method: 'POST',
-            body: JSON.stringify({ pricingId }),
-        }),
-        verifyFeature: (id: string, sessionId: string) => fetcher<{ success: boolean; status?: string }>(`/offers/${id}/verify-feature`, {
-            method: 'POST',
-            body: JSON.stringify({ sessionId }),
-        }),
         // Admin
         adminGetAll: (page = 1, limit = 20) => fetcher<{ data: any[]; meta: any }>(`/offers/admin/all?page=${page}&limit=${limit}`),
         adminToggleFeatured: (id: string, isFeatured: boolean) => fetcher(`/offers/admin/${id}/feature`, {
@@ -603,15 +581,6 @@ export const api = {
             });
             const query = new URLSearchParams(sanitizedParams).toString();
             return fetcher<{ data: any[]; meta: any }>(`/offers/public/search?${query}`);
-        },
-        getPublicPricing: (type?: 'offer' | 'event') => {
-            const query = type ? `?type=${type}` : '';
-            return fetcher<any[]>(`/offers/public/pricing${query}`);
-        },
-        // Public offer/event plan pricing from subscriptions module
-        getOfferPlans: (type?: 'offer' | 'event') => {
-            const query = type ? `?type=${type}` : '';
-            return fetcher<any[]>(`/subscriptions/offer-plans${query}`);
         },
     },
     comments: {
@@ -669,8 +638,8 @@ export const api = {
     },
     promotions: {
         getPricingRules: () => fetcher<any[]>('/promotions/pricing-rules'),
-        calculatePrice: (data: { placements: string[], startTime: string, endTime: string }) => 
-            api.post<{ totalPrice: number }>('/promotions/calculate', data),
+        calculatePrice: (data: { placements: string[], startTime: string, endTime: string }, type: string = 'offer') => 
+            api.post<{ totalPrice: number; durationHours: number; breakup: any[] }>(`/promotions/calculate?type=${type}`, data),
         book: (data: { offerEventId: string; placements: string[]; startTime: string; endTime: string }) => 
             api.post<{ sessionId: string; checkoutUrl: string }>('/promotions/book', data),
         verifySession: (sessionId: string) => fetcher<any>(`/promotions/verify-session?session_id=${sessionId}`),

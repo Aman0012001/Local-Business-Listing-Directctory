@@ -40,7 +40,6 @@ export * from './system-setting.entity';
 
 // Offers & Events
 export * from './offer-event.entity';
-export * from './offer-event-pricing.entity';
 export * from './comment.entity';
 export * from './comment-reply.entity';
 // Job Leads

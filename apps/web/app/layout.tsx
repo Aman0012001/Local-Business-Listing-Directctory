@@ -1,6 +1,7 @@
 import "./globals.css";
 import { AuthProvider } from "../context/AuthContext";
 import { SocketProvider } from "../context/SocketContext";
+import { Toaster } from 'react-hot-toast';
 import { Roboto } from "next/font/google";
 import Script from "next/script";
 import "slick-carousel/slick/slick.css";

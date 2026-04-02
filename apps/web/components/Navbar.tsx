@@ -24,6 +24,8 @@ export default function Navbar() {
     const [unreadCount, setUnreadCount] = useState(0);
     const [unreadChatCount, setUnreadChatCount] = useState(0);
     const [showBell, setShowBell] = useState(false);
+    const [activeSub, setActiveSub] = useState<any>(null);
+    const [loadingSub, setLoadingSub] = useState(true);
     const bellRef = useRef<HTMLDivElement>(null);
 
     const fetchNotifications = useCallback(async () => {
@@ -41,9 +43,26 @@ export default function Navbar() {
 
     useEffect(() => {
         fetchNotifications();
+        
+        const fetchSub = async () => {
+            if (!user || user.role !== 'vendor') {
+                setLoadingSub(false);
+                return;
+            }
+            try {
+                const sub = await api.subscriptions.getActive();
+                setActiveSub(sub);
+            } catch (err) {
+                console.error('Failed to fetch active sub in navbar', err);
+            } finally {
+                setLoadingSub(false);
+            }
+        };
+
+        fetchSub();
         const interval = setInterval(fetchNotifications, 30000);
         return () => clearInterval(interval);
-    }, [fetchNotifications]);
+    }, [fetchNotifications, user]);
 
     // Close bell dropdown on outside click
     useEffect(() => {
@@ -354,10 +373,10 @@ export default function Navbar() {
                                     </button>
                                 )}
 
-                                {user && (
+                                {user && (user.role === 'admin' || user.role === 'superadmin' || (activeSub?.plan?.dashboardFeatures?.showChat !== false)) && (
                                     <Link
                                         href="/vendor/chat"
-                                        className="relative p-2.5 rounded-xl text-slate-500 hover:text-[#FF7A30] hover:bg-orange-50 transition-all"
+                                        className={`relative p-2.5 rounded-xl text-slate-500 hover:text-[#FF7A30] hover:bg-orange-50 transition-all ${loadingSub && user.role === 'vendor' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
                                         title="Messages"
                                     >
                                         <MessageSquare className="w-5 h-5" />

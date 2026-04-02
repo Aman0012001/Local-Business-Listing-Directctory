@@ -40,12 +40,6 @@ export class OffersController {
         return this.offersService.findAllPublic(dto);
     }
 
-    @Public()
-    @Get('public/pricing')
-    @ApiOperation({ summary: 'Get available promotion pricing for offers/events' })
-    async getPricing(@Query('type') type?: 'offer' | 'event') {
-        return this.offersService.getPricing(type);
-    }
 
     @Post()
     @UseGuards(JwtAuthGuard, RolesGuard)
@@ -104,33 +98,7 @@ export class OffersController {
         return this.offersService.remove(id, user.id);
     }
 
-    @Post(':id/feature')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.VENDOR, UserRole.ADMIN)
-    @ApiBearerAuth()
-    @ApiOperation({ summary: 'Initiate checkout to feature an offer' })
-    async featureOffer(
-        @Param('id') id: string,
-        @Body('pricingId') pricingId: string,
-        @CurrentUser() user: User,
-        @Headers('origin') origin: string,
-        @Headers('referer') referer: string
-    ) {
-        return this.offersService.createFeatureCheckoutSession(user.id, id, pricingId, origin || referer);
-    }
 
-    @Post(':id/verify-feature')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.VENDOR, UserRole.ADMIN)
-    @ApiBearerAuth()
-    @ApiOperation({ summary: 'Verify checkout session for featuring an offer' })
-    async verifyFeature(
-        @Param('id') id: string,
-        @Body('sessionId') sessionId: string,
-        @CurrentUser() user: User,
-    ) {
-        return this.offersService.verifyFeatureSession(sessionId, user.id);
-    }
 
     // ─── Public Endpoint ─────────────────────────────────────────────────────
 
