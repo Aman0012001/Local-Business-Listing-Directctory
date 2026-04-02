@@ -7,6 +7,7 @@ import { PromotionBooking } from '../../entities/promotion-booking.entity';
 import { OfferEvent } from '../../entities/offer-event.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { Listing } from '../../entities/business.entity';
+import { PricingPlan } from '../../entities/pricing-plan.entity';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 
 @Module({
@@ -17,6 +18,7 @@ import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
             OfferEvent,
             Vendor,
             Listing,
+            PricingPlan,
         ]),
         forwardRef(() => SubscriptionsModule),
     ],

@@ -29,7 +29,14 @@ export class PricingPlanSeederService implements OnModuleInit {
                 price: 0,
                 duration: 365,
                 unit: PricingPlanUnit.DAYS,
-                features: { maxListings: 1, maxOffers: 0, maxEvents: 0, showAnalytics: false },
+                features: { 
+                    maxListings: 1, 
+                    maxOffers: 1, 
+                    maxEvents: 1, 
+                    maxOfferDurationDays: 15,
+                    maxEventDurationDays: 7,
+                    showAnalytics: false 
+                },
                 isActive: true,
             },
             {
@@ -38,7 +45,15 @@ export class PricingPlanSeederService implements OnModuleInit {
                 price: 4500,
                 duration: 1,
                 unit: PricingPlanUnit.MONTHS,
-                features: { maxListings: 20, maxOffers: 10, maxEvents: 5, showAnalytics: true, prioritySupport: true },
+                features: { 
+                    maxListings: 20, 
+                    maxOffers: 10, 
+                    maxEvents: 5, 
+                    maxOfferDurationDays: 90,
+                    maxEventDurationDays: 30,
+                    showAnalytics: true, 
+                    prioritySupport: true 
+                },
                 isActive: true,
             },
             // One-off Boosts

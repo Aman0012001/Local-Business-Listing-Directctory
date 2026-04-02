@@ -25,5 +25,9 @@ export class CreateBookingDto extends CalculatePriceDto {
 
     @IsOptional()
     @IsUUID()
-    businessId?: string; // Optional if we want to infer from offerEvent
+    businessId?: string; 
+
+    @IsOptional()
+    @IsUUID()
+    pricingId?: string; // ID of a Booster Plan (PricingPlan)
 }

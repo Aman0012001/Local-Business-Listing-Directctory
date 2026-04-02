@@ -7,8 +7,8 @@ import {
     forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { OfferEvent, OfferStatus } from '../../entities/offer-event.entity';
+import { Repository, Not } from 'typeorm';
+import { OfferEvent, OfferStatus, OfferType } from '../../entities/offer-event.entity';
 import { Listing } from '../../entities/business.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { CreateOfferDto } from './dto/create-offer.dto';
@@ -66,10 +66,70 @@ export class OffersService {
         return listing;
     }
 
+    /** Helper: Validate that the requested duration does not exceed plan limits */
+    private validateOfferDuration(dto: CreateOfferDto | UpdateOfferDto, activeSub: any) {
+        const type = dto.type || OfferType.OFFER;
+        const features = activeSub.plan?.dashboardFeatures || activeSub.plan?.features || {};
+        
+        const durationLimitKey = type === OfferType.EVENT ? 'maxEventDurationDays' : 'maxOfferDurationDays';
+        // Default fallbacks if keys are missing from older plans
+        const maxDays = features[durationLimitKey] || (type === OfferType.EVENT ? 7 : 15);
+
+        const startDateStr = dto.startDate;
+        const endDateStr = dto.endDate || dto.expiryDate;
+
+        if (startDateStr && endDateStr) {
+            const start = new Date(startDateStr);
+            const end = new Date(endDateStr);
+            
+            const diffMs = end.getTime() - start.getTime();
+            const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+            if (diffDays > maxDays) {
+                throw new BadRequestException(
+                    `The selected duration (${diffDays} days) exceeds your ${activeSub.plan.name} plan limit of ${maxDays} days for ${type}s.`
+                );
+            }
+        }
+    }
+
     /** Create a new offer/event */
     async create(userId: string, dto: CreateOfferDto): Promise<OfferEvent> {
         const vendor = await this.getVendorByUserId(userId);
         await this.verifyBusinessOwnership(dto.businessId, vendor.id);
+
+        // --- Plan-based Gating ---
+        const activeSub = await this.subscriptionsService.getActiveSubscription(userId);
+        if (!activeSub || !activeSub.plan) {
+            throw new BadRequestException('No active subscription found. Please purchase a plan to create offers or events.');
+        }
+
+        const features = activeSub.plan.features || {};
+        const type = dto.type || OfferType.OFFER;
+        const limitKey = type === OfferType.EVENT ? 'maxEvents' : 'maxOffers';
+        const limit = features[limitKey] !== undefined ? Number(features[limitKey]) : 0;
+
+        if (limit <= 0) {
+            throw new ForbiddenException(`Your current plan (${activeSub.plan.name}) does not allow creating ${type}s. Please upgrade your plan.`);
+        }
+
+        // Count current non-expired entries of this type
+        const currentCount = await this.offerRepository.count({
+            where: {
+                vendorId: vendor.id,
+                type: type,
+                status: Not(OfferStatus.EXPIRED)
+            }
+        });
+
+        if (currentCount >= limit) {
+            throw new BadRequestException(
+                `You have reached the limit of ${limit} ${type}s for your ${activeSub.plan.name} plan. Please upgrade or delete an existing ${type}.`
+            );
+        }
+
+        // Validate Duration
+        this.validateOfferDuration(dto, activeSub);
 
         const offer = this.offerRepository.create({
             ...dto,
@@ -213,6 +273,19 @@ export class OffersService {
 
         if (dto.businessId && dto.businessId !== offer.businessId) {
             await this.verifyBusinessOwnership(dto.businessId, vendor.id);
+        }
+
+        // Validate Duration on Update
+        const activeSub = await this.subscriptionsService.getActiveSubscription(userId);
+        if (activeSub && activeSub.plan) {
+            // Merge existing dates with updates for validation
+            const validationDto = {
+                ...dto,
+                type: dto.type || offer.type,
+                startDate: dto.startDate || offer.startDate?.toISOString(),
+                endDate: dto.endDate || offer.endDate?.toISOString() || offer.expiryDate?.toISOString(),
+            };
+            this.validateOfferDuration(validationDto as any, activeSub);
         }
 
         Object.assign(offer, {

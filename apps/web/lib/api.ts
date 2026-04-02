@@ -526,6 +526,7 @@ export const api = {
     },
     subscriptions: {
         getPlans: () => fetcher<any[]>('/subscriptions/plans'),
+        getPricingPlans: (type?: string) => fetcher<any[]>(`/subscriptions/pricing/plans${type ? `?type=${type}` : ''}`),
         getActive: () => fetcher<any>('/subscriptions/active'),
         getActivePromotions: () => fetcher<any>('/subscriptions/active-promotions'),
         getMyInvoices: () => fetcher<any[]>('/subscriptions/my-invoices'),
@@ -640,7 +641,7 @@ export const api = {
         getPricingRules: () => fetcher<any[]>('/promotions/pricing-rules'),
         calculatePrice: (data: { placements: string[], startTime: string, endTime: string }, type: string = 'offer') => 
             api.post<{ totalPrice: number; durationHours: number; breakup: any[]; isMinimumApplied?: boolean }>(`/promotions/calculate?type=${type}`, data),
-        book: (data: { offerEventId: string; placements: string[]; startTime: string; endTime: string }) => 
+        book: (data: { offerEventId: string; placements: string[]; startTime: string; endTime: string; pricingId?: string }) => 
             api.post<{ sessionId: string; checkoutUrl: string }>('/promotions/book', data),
         verifySession: (sessionId: string) => fetcher<any>(`/promotions/verify-session?session_id=${sessionId}`),
     },

@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module, forwardRef, OnModuleInit } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SubscriptionsController } from './subscriptions.controller';
 import { SubscriptionsService } from './subscriptions.service';
@@ -50,4 +50,19 @@ import { PromotionsModule } from '../promotions/promotions.module';
     ],
     exports: [SubscriptionsService],
 })
-export class SubscriptionsModule { }
+export class SubscriptionsModule implements OnModuleInit {
+    constructor(
+        private readonly pricingPlanSeeder: PricingPlanSeederService,
+        private readonly subscriptionSeeder: SubscriptionsSeederService,
+    ) { }
+
+    onModuleInit() {
+        // Run seeders on application startup
+        this.pricingPlanSeeder.seed().catch(err => {
+            console.error('Failed to seed pricing plans:', err);
+        });
+        this.subscriptionSeeder.seedPlans().catch(err => {
+            console.error('Failed to seed subscription plans:', err);
+        });
+    }
+}

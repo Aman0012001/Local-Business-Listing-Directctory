@@ -11,9 +11,13 @@ import { PromotionPricingRule, PromotionPlacement } from '../../entities/promoti
 import { PromotionBooking, BookingStatus } from '../../entities/promotion-booking.entity';
 import { OfferEvent, OfferType } from '../../entities/offer-event.entity';
 import { Vendor } from '../../entities/vendor.entity';
+import { PricingPlan } from '../../entities/pricing-plan.entity';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import { CalculatePriceDto, CreateBookingDto } from './dto/create-booking.dto';
+import { SubscriptionsService } from '../subscriptions/subscriptions.service';
+import { forwardRef, Inject } from '@nestjs/common';
+import { SubscriptionPlanType } from '../../entities/subscription-plan.entity';
 
 @Injectable()
 export class PromotionsService implements OnModuleInit {
@@ -29,7 +33,11 @@ export class PromotionsService implements OnModuleInit {
         private offerRepository: Repository<OfferEvent>,
         @InjectRepository(Vendor)
         private vendorRepository: Repository<Vendor>,
+        @InjectRepository(PricingPlan)
+        private pricingPlanRepo: Repository<PricingPlan>,
         private configService: ConfigService,
+        @Inject(forwardRef(() => SubscriptionsService))
+        private subscriptionsService: SubscriptionsService,
     ) {}
 
     onModuleInit() {
@@ -72,6 +80,25 @@ export class PromotionsService implements OnModuleInit {
         let totalPrice = 0;
         const breakup = [];
         const MIN_STRIPE_AMOUNT_PKR = 150;
+
+        // 1. Check if a fixed-price booster plan is selected
+        const bookDto = dto as CreateBookingDto;
+        if (bookDto.pricingId) {
+            const plan = await this.pricingPlanRepo.findOne({ where: { id: bookDto.pricingId, isActive: true } });
+            if (plan) {
+                totalPrice = Number(plan.price);
+                breakup.push({
+                    placement: plan.type,
+                    label: plan.name,
+                    subtotal: totalPrice,
+                    isBaseFee: false,
+                    isFixedPlan: true
+                });
+                
+                // Return early for fixed plans, or could merge with other rules if needed
+                return { totalPrice, durationHours: plan.duration * (plan.unit === 'days' ? 24 : 1), breakup, isMinimumApplied: false };
+            }
+        }
 
         // 2. Add duration-based placement costs if applicable
         let durationHours = 0;
@@ -121,6 +148,12 @@ export class PromotionsService implements OnModuleInit {
 
         const offer = await this.offerRepository.findOne({ where: { id: dto.offerEventId, vendorId: vendor.id } });
         if (!offer) throw new NotFoundException('Offer/Event not found');
+
+        // Check if vendor has a valid plan for promotions
+        const activeSub = await this.subscriptionsService.getActiveSubscription(userId);
+        if (!activeSub || activeSub.plan?.planType === SubscriptionPlanType.FREE) {
+            throw new BadRequestException('Your current plan does not allow promotions. Please upgrade to a Paid Plan to boost your visibility.');
+        }
 
         const pricing = await this.calculatePrice(dto, userId, offer.type);
         if (pricing.totalPrice === 0) {
