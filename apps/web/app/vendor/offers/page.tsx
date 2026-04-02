@@ -62,7 +62,6 @@ const emptyForm = {
     promoEndTime: '',
     pricingId: '',
     boosterPlanId: '',
-    promoEnabled: false, // New toggle
 };
 
 export default function VendorOffersPage() {
@@ -152,13 +151,17 @@ export default function VendorOffersPage() {
         }
     }, [form.promoStartTime, form.boosterPlanId]);
 
-    // Handle Booster Plan selection
+    // Always calculate dates starting from promoStartTime (or now) based on plan duration
     useEffect(() => {
         if (form.boosterPlanId) {
             const plan = boosterPlans.find(p => p.id === form.boosterPlanId);
             if (plan) {
-                const start = form.promoStartTime ? new Date(form.promoStartTime) : new Date();
-                let end = new Date(start.getTime());
+                const now = new Date();
+                const start = form.promoStartTime ? new Date(form.promoStartTime) : now;
+                
+                // If a past date is selected for start, default to now for recording
+                const effectiveStart = start < now ? now : start;
+                let end = new Date(effectiveStart.getTime());
                 
                 const d = Number(plan.duration);
                 if (plan.unit === 'days') end.setDate(end.getDate() + d);
@@ -166,7 +169,7 @@ export default function VendorOffersPage() {
                 else if (plan.unit === 'hours') end.setHours(end.getHours() + d);
                 else if (plan.unit === 'months') end.setMonth(end.getMonth() + d);
 
-                const sStr = start.toISOString().slice(0, 16);
+                const sStr = effectiveStart.toISOString().slice(0, 16);
                 const eStr = end.toISOString().slice(0, 16);
 
                 setForm(prev => ({
@@ -176,15 +179,15 @@ export default function VendorOffersPage() {
                     expiryDate: eStr,
                     promoStartTime: sStr,
                     promoEndTime: eStr,
-                    placements: [plan.type] 
+                    placements: prev.placements.length > 0 ? prev.placements : [plan.type]
                 }));
             }
         }
-    }, [form.boosterPlanId, boosterPlans]);
+    }, [form.boosterPlanId, form.promoStartTime, boosterPlans]);
 
     useEffect(() => {
         const updatePrice = async () => {
-            if (!showModal || (!form.promoEnabled && !form.boosterPlanId)) {
+            if (!showModal || !form.boosterPlanId) {
                 setEstimatedPrice(0);
                 setPriceBreakup([]);
                 return;
@@ -193,8 +196,8 @@ export default function VendorOffersPage() {
             const start = form.promoStartTime ? new Date(form.promoStartTime) : null;
             const end = form.promoEndTime ? new Date(form.promoEndTime) : null;
 
-                // Always calculate if modal is open to get real-time price breakup
-                setIsCalculating(true);
+            // Always calculate if modal is open to get real-time price breakup
+            setIsCalculating(true);
             try {
                 const res = await api.promotions.calculatePrice({
                     placements: form.placements,
@@ -215,7 +218,7 @@ export default function VendorOffersPage() {
 
         const timer = setTimeout(updatePrice, 500);
         return () => clearTimeout(timer);
-    }, [form.placements, form.promoStartTime, form.promoEndTime, form.type, showModal, form.promoEnabled, form.boosterPlanId]);
+    }, [form.placements, form.promoStartTime, form.promoEndTime, form.type, showModal, form.boosterPlanId]);
 
     if (loading) {
         return (
@@ -234,6 +237,7 @@ export default function VendorOffersPage() {
 
     const openEdit = (offer: OfferItem) => {
         setForm({
+            ...emptyForm,
             title: offer.title || '',
             description: offer.description || '',
             type: offer.type || 'offer',
@@ -246,11 +250,11 @@ export default function VendorOffersPage() {
             highlights: Array.isArray(offer.highlights) ? offer.highlights : [],
             terms: Array.isArray(offer.terms) ? offer.terms : [],
             placements: [],
-            promoStartTime: '',
-            promoEndTime: '',
+            // Set start now so they can edit from today
+            promoStartTime: new Date().toISOString().slice(0, 16),
+            promoEndTime: offer.endDate ? offer.endDate.slice(0, 16) : '',
             pricingId: offer.pricingId || '',
-            boosterPlanId: '',
-            promoEnabled: false,
+            boosterPlanId: offer.pricingId || '',
         });
         setEditingId(offer.id);
         setShowModal(true);
@@ -275,8 +279,13 @@ export default function VendorOffersPage() {
         e.preventDefault();
         if (!form.businessId) { setError('Please select a business'); return; }
         setSaving(true);
-        setError(null);
         try {
+            if (!form.boosterPlanId) {
+                setError('Please select a plan to determine the listing duration.');
+                setSaving(false);
+                return;
+            }
+
             const payload: any = {
                 ...form,
                 startDate: form.startDate || undefined,
@@ -289,20 +298,6 @@ export default function VendorOffersPage() {
                 terms: form.terms.filter(t => t.trim() !== ''),
             };
 
-            // Frontend Duration Validation based on Plan
-            const maxDays = (form.type === 'event' 
-                ? activeSub?.plan?.dashboardFeatures?.maxEventDurationDays || 7
-                : activeSub?.plan?.dashboardFeatures?.maxOfferDurationDays || 15);
-            
-            if (form.startDate && (form.endDate || form.expiryDate)) {
-                const diff = (new Date(form.endDate || form.expiryDate).getTime() - new Date(form.startDate).getTime()) / (1000 * 3600 * 24);
-                if (diff > maxDays) {
-                    setError(`Your ${activeSub?.plan?.name || 'current'} plan allowed maximum duration for ${form.type}s is ${maxDays} days. (Selected: ${Math.ceil(diff)} days)`);
-                    setSaving(false);
-                    return;
-                }
-            }
-            
             let offerId = editingId;
             if (editingId) {
                 await api.offers.update(editingId, payload);
@@ -313,27 +308,8 @@ export default function VendorOffersPage() {
                 setSuccess('Offer created successfully!');
             }
 
-            // Handle promotion OR base price booking
-            if (offerId && (form.promoEnabled || form.boosterPlanId)) {
-                // If the vendor selected placements, validate dates
-                if (form.promoEnabled && !form.boosterPlanId) {
-                    if (form.placements.length === 0) {
-                        setError('Please select at least one placement to promote.');
-                        setSaving(false);
-                        return;
-                    }
-                    if (!form.promoStartTime || !form.promoEndTime) {
-                        setError('Promotion start and end times are required.');
-                        setSaving(false);
-                        return;
-                    }
-                    if (new Date(form.promoStartTime) >= new Date(form.promoEndTime)) {
-                        setError('Promotion end time must be after the start time.');
-                        setSaving(false);
-                        return;
-                    }
-                }
-
+            // Handle promotion / Unified Listing Booking
+            if (offerId && form.boosterPlanId) {
                 // Trigger booking (which handles both base fee and boosts)
                 try {
                     const bookRes = await api.promotions.book({
@@ -692,143 +668,113 @@ export default function VendorOffersPage() {
                                     </div>
                                 </div>
 
-                                {/* Dynamic Promotion Section */}
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between p-4 bg-slate-900 rounded-2xl shadow-lg border border-slate-800">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${form.promoEnabled ? 'bg-orange-500 shadow-lg shadow-orange-500/20' : 'bg-slate-800'}`}>
-                                                <Sparkles className={`w-5 h-5 ${form.promoEnabled ? 'text-white' : 'text-slate-500'}`} />
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-black text-white leading-tight">Promote this {form.type.charAt(0).toUpperCase() + form.type.slice(1)}</p>
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-tight mt-1">Boost visibility & reach more users</p>
-                                            </div>
+                                {/* Listing Plan Section */}
+                                <div className="space-y-6 pt-4 border-t border-slate-100">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-orange-500 shadow-lg shadow-orange-500/20 flex items-center justify-center">
+                                            <Sparkles className="w-5 h-5 text-white" />
                                         </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                const isFree = activeSub?.plan?.planType === 'free';
-                                                if (isFree) {
-                                                    setError('Promotions are only available for Paid plans. Please upgrade your plan.');
-                                                    return;
-                                                }
-                                                setForm(p => ({ ...p, promoEnabled: !p.promoEnabled, boosterPlanId: '' }));
-                                                setError(null);
-                                            }}
-                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${form.promoEnabled ? 'bg-orange-500' : 'bg-slate-700'}`}
-                                        >
-                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${form.promoEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-                                        </button>
+                                        <div>
+                                            <p className="text-sm font-black text-slate-900 leading-tight">Listing Visibility & Duration</p>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-tight mt-1">Select where you want to be seen</p>
+                                        </div>
                                     </div>
 
-                                    <AnimatePresence>
-                                        {form.promoEnabled && (
-                                            <motion.div
-                                                initial={{ opacity: 0, height: 0 }}
-                                                animate={{ opacity: 1, height: 'auto' }}
-                                                exit={{ opacity: 0, height: 0 }}
-                                                className="overflow-hidden space-y-6"
-                                            >
-                                                <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl space-y-6">
-                                                    {/* Placement Selection */}
-                                                    <div>
-                                                        <label className={labelClass}>Select Placements</label>
-                                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                                            {[
-                                                                { id: 'homepage', label: 'Homepage', icon: Home, desc: 'Pinned on home screen' },
-                                                                { id: 'category', label: 'Category Page', icon: Layout, desc: 'Top of category results' },
-                                                                { id: 'listing', label: 'Listing Boost', icon: Search, desc: 'Highlighted in search' }
-                                                            ].map(item => {
-                                                                const Icon = item.icon;
-                                                                const isSelected = form.placements.includes(item.id);
-                                                                return (
-                                                                    <button
-                                                                        key={item.id}
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            setForm(p => ({
-                                                                                ...p,
-                                                                                placements: isSelected 
-                                                                                    ? p.placements.filter(id => id !== item.id)
-                                                                                    : [...p.placements, item.id]
-                                                                            }));
-                                                                        }}
-                                                                        className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${isSelected 
-                                                                            ? 'border-orange-500 bg-white shadow-md' 
-                                                                            : 'border-slate-200 bg-slate-50 opacity-60 hover:opacity-100 hover:border-slate-300'}`}
-                                                                    >
-                                                                        <Icon className={`w-6 h-6 ${isSelected ? 'text-orange-500' : 'text-slate-400'}`} />
-                                                                        <p className={`text-xs font-black ${isSelected ? 'text-slate-900' : 'text-slate-500'}`}>{item.label}</p>
-                                                                        <p className="text-[10px] text-slate-400 text-center leading-tight font-medium">{item.desc}</p>
-                                                                    </button>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </div>
+                                    <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl space-y-6">
+                                        {/* Placement Selection */}
+                                        <div>
+                                            <label className={labelClass}>Select Placements</label>
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                {[
+                                                    { id: 'homepage', label: 'Homepage', icon: Home, desc: 'Pinned on home screen' },
+                                                    { id: 'category', label: 'Category Page', icon: Layout, desc: 'Top of category results' },
+                                                    { id: 'listing', label: 'Listing Boost', icon: Search, desc: 'Highlighted in search' }
+                                                ].map(item => {
+                                                    const Icon = item.icon;
+                                                    const isSelected = form.placements.includes(item.id);
+                                                    return (
+                                                        <button
+                                                            key={item.id}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setForm(p => {
+                                                                    const isSelectedNow = p.placements.includes(item.id);
+                                                                    return {
+                                                                        ...p,
+                                                                        placements: isSelectedNow 
+                                                                            ? p.placements.filter(id => id !== item.id)
+                                                                            : [...p.placements, item.id]
+                                                                    };
+                                                                });
+                                                            }}
+                                                            className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${isSelected 
+                                                                ? 'border-orange-500 bg-white shadow-md' 
+                                                                : 'border-slate-200 bg-slate-50 opacity-60 hover:opacity-100 hover:border-slate-300'}`}
+                                                        >
+                                                            <Icon className={`w-6 h-6 ${isSelected ? 'text-orange-500' : 'text-slate-400'}`} />
+                                                            <p className={`text-xs font-black ${isSelected ? 'text-slate-900' : 'text-slate-500'}`}>{item.label}</p>
+                                                            <p className="text-[10px] text-slate-400 text-center leading-tight font-medium">{item.desc}</p>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
 
-                                                    {/* Promotion Dates */}
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                        <div>
-                                                            <label className={labelClass}>Promotion Start</label>
-                                                            <div className="relative">
-                                                                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                                                <input 
-                                                                    type="datetime-local" 
-                                                                    value={form.promoStartTime}
-                                                                    onChange={e => setForm(p => ({ ...p, promoStartTime: e.target.value }))}
-                                                                    className={inputClass + " pl-10"} 
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                        <div>
-                                                            <label className={labelClass}>Promotion End</label>
-                                                            <div className="relative">
-                                                                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                                                <input 
-                                                                    type="datetime-local" 
-                                                                    value={form.promoEndTime}
-                                                                    onChange={e => setForm(p => ({ ...p, promoEndTime: e.target.value }))}
-                                                                    className={inputClass + " pl-10"} 
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                                        {/* Promotion Start */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className={labelClass}>Launch Date & Time</label>
+                                                <div className="relative">
+                                                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                                    <input 
+                                                        type="datetime-local" 
+                                                        value={form.promoStartTime}
+                                                        onChange={e => setForm(p => ({ ...p, promoStartTime: e.target.value }))}
+                                                        className={inputClass + " pl-10"} 
+                                                    />
+                                                </div>
+                                                <p className="text-[10px] text-slate-400 mt-1.5 font-bold uppercase tracking-wider">The listing will start at this time.</p>
+                                            </div>
+                                            <div className="bg-slate-100/50 rounded-xl p-4 flex flex-col justify-center">
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Auto-Calculated End</p>
+                                                <p className="text-sm font-black text-slate-700 mt-2">
+                                                    {form.promoEndTime ? new Date(form.promoEndTime).toLocaleString('en-PK', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Select a plan first'}
+                                                </p>
+                                            </div>
+                                        </div>
 
-                                                    {/* Price Summary */}
-                                                    <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm">
-                                                        <div className="flex items-center justify-between mb-4">
-                                                            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Boost Summary</h3>
-                                                            {isCalculating && <Loader2 className="w-3 h-3 animate-spin text-orange-500" />}
+                                        {/* Price Summary */}
+                                        <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Listing Price Summary</h3>
+                                                {isCalculating && <Loader2 className="w-3 h-3 animate-spin text-orange-500" />}
+                                            </div>
+                                            
+                                            {priceBreakup.length > 0 ? (
+                                                <div className="space-y-3">
+                                                    {priceBreakup.map((b, i) => (
+                                                        <div key={i} className="flex items-center justify-between">
+                                                            <div>
+                                                                <p className="text-xs font-black text-slate-700 capitalize">{b.placement} Boost</p>
+                                                                <p className="text-[10px] font-bold text-slate-400 font-mono">
+                                                                    {b.hours}H {b.days ? `/ ${b.days}D` : ''}
+                                                                </p>
+                                                            </div>
+                                                            <p className="text-sm font-black text-slate-900 font-mono">PKR {Number(b.subtotal).toLocaleString()}</p>
                                                         </div>
-                                                        
-                                                        {priceBreakup.length > 0 ? (
-                                                            <div className="space-y-3">
-                                                                {priceBreakup.map((b, i) => (
-                                                                    <div key={i} className="flex items-center justify-between">
-                                                                        <div>
-                                                                            <p className="text-xs font-black text-slate-700 capitalize">{b.placement} Boost</p>
-                                                                            <p className="text-[10px] font-bold text-slate-400 font-mono">
-                                                                                {b.hours}H {b.days ? `/ ${b.days}D` : ''}
-                                                                            </p>
-                                                                        </div>
-                                                                        <p className="text-sm font-black text-slate-900 font-mono">PKR {Number(b.subtotal).toLocaleString()}</p>
-                                                                    </div>
-                                                                ))}
-                                                                <div className="pt-3 border-t border-dashed border-slate-200 flex items-center justify-between">
-                                                                    <p className="text-sm font-black text-slate-900 uppercase">Total Estimated</p>
-                                                                    <p className="text-xl font-black text-orange-600 font-mono">PKR {estimatedPrice.toLocaleString()}</p>
-                                                                </div>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="py-4 text-center">
-                                                                <p className="text-xs font-bold text-slate-400 italic font-medium">Select boost placements to see pricing</p>
-                                                            </div>
-                                                        )}
+                                                    ))}
+                                                    <div className="pt-3 border-t border-dashed border-slate-200 flex items-center justify-between">
+                                                        <p className="text-sm font-black text-slate-900 uppercase">Total Fee</p>
+                                                        <p className="text-xl font-black text-orange-600 font-mono">PKR {estimatedPrice.toLocaleString()}</p>
                                                     </div>
                                                 </div>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
+                                            ) : (
+                                                <div className="py-4 text-center">
+                                                    <p className="text-xs font-bold text-slate-400 italic font-medium">Select a plan to see pricing</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {/* Business selector */}
@@ -885,47 +831,46 @@ export default function VendorOffersPage() {
                                         className={`${inputClass} resize-none leading-relaxed`} />
                                 </div>
 
-                                 {/* Managed Dates Visibility */}
-                                {!form.boosterPlanId ? (
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                        <div>
-                                            <label className={labelClass}>Start Date</label>
-                                            <input type="datetime-local" value={form.startDate}
-                                                onChange={e => setForm(p => ({ ...p, startDate: e.target.value }))}
-                                                className={inputClass} />
-                                        </div>
-                                        <div>
-                                            <label className={labelClass}>End Date</label>
-                                            <input type="datetime-local" value={form.endDate}
-                                                onChange={e => setForm(p => ({ ...p, endDate: e.target.value }))}
-                                                className={inputClass} />
-                                        </div>
-                                        <div>
-                                            <label className={labelClass}>Expiry Date</label>
-                                            <input type="datetime-local" value={form.expiryDate}
-                                                onChange={e => setForm(p => ({ ...p, expiryDate: e.target.value }))}
-                                                className={inputClass} />
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="p-4 bg-orange-50/50 border border-orange-100 rounded-2xl flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
-                                                <Calendar className="w-5 h-5 text-orange-600" />
-                                            </div>
-                                            <div>
-                                                <p className="text-xs font-black text-orange-950 uppercase tracking-wider">Scheduled for Plan</p>
-                                                <p className="text-xs font-bold text-orange-600">
-                                                    Starts Now · Ends {new Date(form.endDate).toLocaleDateString()} at {new Date(form.endDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <button type="button" onClick={() => setForm(p => ({ ...p, boosterPlanId: '' }))}
-                                            className="text-[10px] font-black text-orange-500 uppercase hover:underline">
-                                            Switch to Custom
-                                        </button>
-                                    </div>
-                                )}
+                                 {/* Plan Selection (MANDATORY) */}
+                                 <div className="pt-4 border-t border-slate-50">
+                                     <label className={labelClass}>Choose Your Plan (Visibility Period) *</label>
+                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                                         {boosterPlans.map(plan => {
+                                             const isSelected = form.boosterPlanId === plan.id;
+                                             return (
+                                                 <button
+                                                     key={plan.id}
+                                                     type="button"
+                                                     onClick={() => setForm(p => ({ ...p, boosterPlanId: plan.id, promoStartTime: p.promoStartTime || new Date().toISOString().slice(0, 16) }))}
+                                                     className={`text-left p-4 rounded-2xl border-2 transition-all ${isSelected 
+                                                         ? 'border-orange-500 bg-orange-50/50' 
+                                                         : 'border-slate-100 hover:border-slate-200 bg-white'}`}
+                                                 >
+                                                     <div className="flex justify-between items-start mb-1">
+                                                         <p className={`font-black text-sm ${isSelected ? 'text-orange-700' : 'text-slate-900'}`}>{plan.name}</p>
+                                                         {isSelected && <CheckCircle2 className="w-4 h-4 text-orange-500" />}
+                                                     </div>
+                                                     <p className="text-[10px] font-bold text-slate-500 uppercase">Duration: {plan.duration} {plan.unit}</p>
+                                                     <p className="text-xs font-black text-orange-600 mt-2">PKR {Number(plan.price).toLocaleString()}</p>
+                                                 </button>
+                                             );
+                                         })}
+                                     </div>
+
+                                     {form.boosterPlanId && (
+                                         <div className="mt-4 p-4 bg-orange-50/50 border border-orange-100 rounded-2xl flex items-center gap-3">
+                                             <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
+                                                 <Calendar className="w-5 h-5 text-orange-600" />
+                                             </div>
+                                             <div>
+                                                 <p className="text-xs font-black text-orange-950 uppercase tracking-wider">Scheduled for Plan</p>
+                                                 <p className="text-xs font-bold text-orange-600">
+                                                     Ends {form.endDate ? new Date(form.endDate).toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' }) : '...'} at {form.endDate ? new Date(form.endDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...'}
+                                                 </p>
+                                             </div>
+                                         </div>
+                                     )}
+                                 </div>
 
                                 {/* Highlights */}
                                 <div className="pt-4 border-t border-slate-50">

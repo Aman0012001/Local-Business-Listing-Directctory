@@ -189,8 +189,8 @@ export class PromotionsService implements OnModuleInit {
                 price_data: {
                     currency: 'pkr',
                     product_data: {
-                        name: `Promotion and Registration for ${offer.title}`,
-                        description: `Fees: ${info}`,
+                        name: `${offer.type === 'offer' ? 'Offer' : 'Event'} Listing - ${pricing.breakup[0]?.label || 'Standard'}`,
+                        description: `Visibility: ${info}`,
                     },
                     unit_amount: Math.round(pricing.totalPrice * 100),
                 },
