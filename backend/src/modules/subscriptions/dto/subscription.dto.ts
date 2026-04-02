@@ -155,6 +155,10 @@ export class CreatePricingPlanDto {
     @IsOptional()
     @IsBoolean()
     isActive?: boolean = true;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    features?: Record<string, any>;
 }
 
 export class UpdatePricingPlanDto {
@@ -192,4 +196,8 @@ export class UpdatePricingPlanDto {
     @IsOptional()
     @IsBoolean()
     isActive?: boolean;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    features?: Record<string, any>;
 }

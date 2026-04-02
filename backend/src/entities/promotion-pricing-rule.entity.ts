@@ -34,8 +34,6 @@ export class PromotionPricingRule {
     @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
     pricePerDay: number;
 
-    @Column({ name: 'base_price', type: 'decimal', precision: 10, scale: 2, default: 0 })
-    basePrice: number;
 
     @Column({ name: 'is_active', default: true })
     isActive: boolean;

@@ -133,8 +133,8 @@ export default function VendorOffersPage() {
             const start = form.promoStartTime ? new Date(form.promoStartTime) : null;
             const end = form.promoEndTime ? new Date(form.promoEndTime) : null;
 
-            // Always calculate if modal is open, to account for Base Registration Fees
-            setIsCalculating(true);
+                // Always calculate if modal is open to get real-time price breakup
+                setIsCalculating(true);
             try {
                 const res = await api.promotions.calculatePrice({
                     placements: form.placements,
@@ -771,7 +771,7 @@ export default function VendorOffersPage() {
                                                 <div className="space-y-2">
                                                     {priceBreakup.map((b, idx) => (
                                                         <div key={idx} className="flex justify-between items-center text-xs">
-                                                            <span className={`font-bold ${b.isBaseFee ? 'text-orange-400' : 'text-slate-400'}`}>
+                                                            <span className="font-bold text-slate-400">
                                                                 {b.label || (b.placement.charAt(0).toUpperCase() + b.placement.slice(1))}
                                                             </span>
                                                             <span className="font-black">PKR {b.subtotal.toLocaleString('en-PK')}</span>

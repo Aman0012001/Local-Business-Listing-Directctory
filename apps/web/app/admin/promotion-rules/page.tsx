@@ -17,7 +17,6 @@ interface PricingRule {
     placement: 'homepage' | 'category' | 'listing' | 'offer' | 'event' | 'page';
     pricePerHour: number;
     pricePerDay: number;
-    basePrice: number;
     isActive: boolean;
 }
 
@@ -223,29 +222,6 @@ export default function PromotionRulesPage() {
                                             </div>
                                         </div>
 
-                                        {/* Base Posting Fee (Only for Offer/Event) */}
-                                        {(rule.placement === 'offer' || rule.placement === 'event') && (
-                                            <div className="space-y-3 pt-4 border-t border-slate-50">
-                                                <div className="flex justify-between items-end">
-                                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500 ml-1">Base Registration Fee</label>
-                                                    <span className="text-[10px] font-black text-orange-600 uppercase tracking-widest bg-orange-50 px-2 py-0.5 rounded-full">One-time Flat Fee</span>
-                                                </div>
-                                                <div className="relative">
-                                                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 font-extrabold text-xl">Rs</div>
-                                                    <input
-                                                        type="number"
-                                                        defaultValue={rule.basePrice}
-                                                        onBlur={(e) => {
-                                                            const val = Number(e.target.value);
-                                                            if (val !== rule.basePrice) handleUpdate(rule.id, { basePrice: val });
-                                                        }}
-                                                        className="w-full px-8 py-5 pr-20 pl-16 bg-orange-50/30 border-2 border-transparent rounded-[24px] focus:outline-none focus:border-orange-500 focus:bg-white transition-all font-black text-2xl text-slate-900 placeholder:text-slate-200 shadow-inner"
-                                                        placeholder="0"
-                                                    />
-                                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 font-black text-xs uppercase tracking-widest">Flat</div>
-                                                </div>
-                                            </div>
-                                        )}
                                     </div>
 
                                     {/* Action Footnote */}
@@ -262,9 +238,6 @@ export default function PromotionRulesPage() {
                                         </button>
                                     </div>
                                 </div>
-
-                                {/* Status Badge */}
-                                <div className={`absolute bottom-0 left-0 w-full h-1 transition-colors ${rule.isActive ? info.color : 'bg-slate-100'}`} />
                             </motion.div>
                         );
                     })}

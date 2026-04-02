@@ -44,12 +44,12 @@ export class PromotionsService implements OnModuleInit {
 
     private async seedDefaultRules() {
         const defaults = [
-            { placement: PromotionPlacement.HOMEPAGE, pricePerHour: 100, pricePerDay: 2400, basePrice: 0 },
-            { placement: PromotionPlacement.CATEGORY, pricePerHour: 70, pricePerDay: 1680, basePrice: 0 },
-            { placement: PromotionPlacement.LISTING, pricePerHour: 50, pricePerDay: 1200, basePrice: 0 },
-            { placement: PromotionPlacement.OFFER, pricePerHour: 40, pricePerDay: 960, basePrice: 0 },
-            { placement: PromotionPlacement.EVENT, pricePerHour: 60, pricePerDay: 1440, basePrice: 0 },
-            { placement: PromotionPlacement.PAGE, pricePerHour: 80, pricePerDay: 1920, basePrice: 0 },
+            { placement: PromotionPlacement.HOMEPAGE, pricePerHour: 100, pricePerDay: 2400 },
+            { placement: PromotionPlacement.CATEGORY, pricePerHour: 70, pricePerDay: 1680 },
+            { placement: PromotionPlacement.LISTING, pricePerHour: 50, pricePerDay: 1200 },
+            { placement: PromotionPlacement.OFFER, pricePerHour: 40, pricePerDay: 960 },
+            { placement: PromotionPlacement.EVENT, pricePerHour: 60, pricePerDay: 1440 },
+            { placement: PromotionPlacement.PAGE, pricePerHour: 80, pricePerDay: 1920 },
         ];
 
         for (const ruleData of defaults) {
@@ -71,32 +71,6 @@ export class PromotionsService implements OnModuleInit {
     async calculatePrice(dto: CalculatePriceDto, userId?: string, offerType: string = 'offer'): Promise<{ totalPrice: number; durationHours: number; breakup: any[] }> {
         let totalPrice = 0;
         const breakup = [];
-
-        // 1. Check if Base Fee is applicable
-        let shouldAddBaseFee = true;
-        if (dto.offerEventId) {
-            const offer = await this.offerRepository.findOne({ where: { id: dto.offerEventId } });
-            if (offer && offer.isActive) {
-                shouldAddBaseFee = false; // Already paid / active
-            }
-        }
-
-        if (shouldAddBaseFee) {
-            const baseRule = await this.pricingRuleRepo.findOne({ 
-                where: { placement: offerType === 'event' ? PromotionPlacement.EVENT : PromotionPlacement.OFFER } 
-            });
-            
-            if (baseRule && Number(baseRule.basePrice) > 0) {
-                const baseFee = Number(baseRule.basePrice);
-                totalPrice += baseFee;
-                breakup.push({
-                    placement: baseRule.placement + '_base',
-                    label: `Registration Fee`,
-                    subtotal: baseFee,
-                    isBaseFee: true
-                });
-            }
-        }
 
         // 2. Add duration-based placement costs if applicable
         let durationHours = 0;
@@ -259,16 +233,13 @@ export class PromotionsService implements OnModuleInit {
     /**
      * Admin: Update pricing rules
      */
-    async updatePricingRule(id: string, dto: { pricePerHour?: number, basePrice?: number, isActive?: boolean }) {
+    async updatePricingRule(id: string, dto: { pricePerHour?: number, isActive?: boolean }) {
         const rule = await this.pricingRuleRepo.findOne({ where: { id } });
         if (!rule) throw new NotFoundException('Pricing rule not found');
 
         if (dto.pricePerHour !== undefined) {
             rule.pricePerHour = dto.pricePerHour;
             rule.pricePerDay = dto.pricePerHour * 24; // Sync day rate (24x hourly)
-        }
-        if (dto.basePrice !== undefined) {
-            rule.basePrice = dto.basePrice;
         }
         if (dto.isActive !== undefined) rule.isActive = dto.isActive;
 
