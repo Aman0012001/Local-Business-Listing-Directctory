@@ -129,7 +129,7 @@ export default function PromotionRulesPage() {
     return (
         <div className="max-w-6xl mx-auto space-y-12 pb-32">
             {/* Header Dashboard */}
-            <div className="relative overflow-hidden bg-slate-900 rounded-[32px] p-8 md:p-12 text-white shadow-2xl">
+            <div className="relative overflow-hidden bg-slate-900 rounded-[20px] p-8 md:p-12 text-white shadow-2xl">
                 <div className="absolute top-0 right-0 w-96 h-96 bg-red-500/10 rounded-full blur-3xl -mr-48 -mt-48" />
                 <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
                     <div className="space-y-4">
@@ -178,7 +178,7 @@ export default function PromotionRulesPage() {
                                 key={rule.id}
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className={`group relative bg-white rounded-[32px] overflow-hidden border-2 transition-all duration-500 ${rule.isActive ? 'border-slate-50 shadow-xl hover:shadow-2xl hover:scale-[1.02]' : 'border-slate-100 opacity-60 grayscale'}`}
+                                className={`group relative bg-white rounded-[20px] overflow-hidden border-2 transition-all duration-500 ${rule.isActive ? 'border-slate-50 shadow-xl hover:shadow-2xl hover:scale-[1.02]' : 'border-slate-100 opacity-60 grayscale'}`}
                             >
                                 {/* Placement Header */}
                                 <div className={`${info.lightColor} p-8 relative`}>
@@ -215,7 +215,7 @@ export default function PromotionRulesPage() {
                                                         const val = Number(e.target.value);
                                                         if (val !== rule.pricePerHour) handleUpdate(rule.id, { pricePerHour: val });
                                                     }}
-                                                    className="w-full px-8 py-5 pr-20 pl-16 bg-slate-50 border-2 border-transparent rounded-[24px] focus:outline-none focus:border-red-500 focus:bg-white transition-all font-black text-2xl text-slate-900 placeholder:text-slate-200 shadow-inner"
+                                                    className="w-full px-8 py-3 pr-20 pl-16 bg-slate-50 border-2 border-transparent rounded-[24px] focus:outline-none focus:border-red-500 focus:bg-white transition-all font-black text-2xl text-slate-900 placeholder:text-slate-200 shadow-inner"
                                                     placeholder="0"
                                                 />
                                                 <div className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 font-black text-xs uppercase tracking-widest">/ Hr</div>
@@ -243,7 +243,7 @@ export default function PromotionRulesPage() {
                     })}
 
                     {rules.length === 0 && (
-                        <div className="col-span-full py-20 flex flex-col items-center justify-center bg-white rounded-[32px] border-2 border-dashed border-slate-100">
+                        <div className="col-span-full py-20 flex flex-col items-center justify-center bg-white rounded-[20px] border-2 border-dashed border-slate-100">
                             <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mb-6">
                                 <MinusSquare className="w-10 h-10 text-slate-200" />
                             </div>
@@ -257,7 +257,7 @@ export default function PromotionRulesPage() {
             </div>
 
             {/* Strategy Insight */}
-            {/* <div className="bg-emerald-50 rounded-[32px] p-10 border-2 border-emerald-100/50 flex flex-col md:flex-row items-center gap-8">
+            {/* <div className="bg-emerald-50 rounded-[20px] p-10 border-2 border-emerald-100/50 flex flex-col md:flex-row items-center gap-8">
                 <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-lg flex-shrink-0">
                     <TrendingUp className="w-10 h-10 text-emerald-600" />
                 </div>

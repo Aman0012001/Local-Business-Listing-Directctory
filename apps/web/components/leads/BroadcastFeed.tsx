@@ -115,7 +115,7 @@ export default function BroadcastFeed() {
             </div>
 
             {leads.length === 0 ? (
-                <div className="bg-slate-50/50 p-20 rounded-[32px] border-2 border-dashed border-slate-100 text-center">
+                <div className="bg-slate-50/50 p-20 rounded-[20px] border-2 border-dashed border-slate-100 text-center">
                     <div className="w-20 h-20 bg-white text-slate-200 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm">
                         <Megaphone className="w-10 h-10" />
                     </div>

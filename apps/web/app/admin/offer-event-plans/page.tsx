@@ -67,11 +67,7 @@ const OfferEventPlansPage = () => {
             setPlans(data);
         } catch (error) {
             console.error('Failed to fetch plans:', error);
-            toast({
-                title: 'Error',
-                description: 'Failed to load plans.',
-                variant: 'destructive',
-            });
+            toast.error('Failed to load plans.');
         } finally {
             setLoading(false);
         }
@@ -85,11 +81,7 @@ const OfferEventPlansPage = () => {
         e.preventDefault();
         
         if (!formData.name || !formData.price || !formData.duration) {
-            toast({
-                title: 'Validation Error',
-                description: 'Please fill in all required fields.',
-                variant: 'destructive',
-            });
+            toast.error('Please fill in all required fields.');
             return;
         }
 
@@ -114,21 +106,17 @@ const OfferEventPlansPage = () => {
 
             if (formData.id) {
                 await api.admin.pricingPlans.update(formData.id, payload);
-                toast({ title: 'Success', description: 'Plan updated successfully.' });
+                toast.success('Plan updated successfully.');
             } else {
                 await api.admin.pricingPlans.create(payload);
-                toast({ title: 'Success', description: 'Plan created successfully.' });
+                toast.success('Plan created successfully.');
             }
 
             resetForm();
             fetchPlans();
         } catch (error) {
             console.error('Failed to save plan:', error);
-            toast({
-                title: 'Error',
-                description: 'Failed to save plan.',
-                variant: 'destructive',
-            });
+            toast.error('Failed to save plan.');
         } finally {
             setIsSubmitting(false);
         }
@@ -157,14 +145,10 @@ const OfferEventPlansPage = () => {
 
         try {
             await api.admin.pricingPlans.delete(id);
-            toast({ title: 'Success', description: 'Plan deleted successfully.' });
+            toast.success('Plan deleted successfully.');
             fetchPlans();
         } catch (error) {
-            toast({
-                title: 'Error',
-                description: 'Failed to delete plan.',
-                variant: 'destructive',
-            });
+            toast.error('Failed to delete plan.');
         }
     };
 

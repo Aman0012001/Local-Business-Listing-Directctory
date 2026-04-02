@@ -33,7 +33,7 @@ export default function AdminOfferPricingPage() {
     const loadPrices = async () => {
         setLoading(true);
         try {
-            const res = await api.admin.offerPricing.getAll();
+            const res = await api.admin.pricingPlans.getAll();
             setPrices(res);
         } catch (err: any) {
             setError(err.message || 'Failed to load pricing');
@@ -52,7 +52,11 @@ export default function AdminOfferPricingPage() {
         e.preventDefault();
         setSaving(true);
         try {
-            await api.admin.offerPricing.save(currentPricing);
+            if (currentPricing.id) {
+                await api.admin.pricingPlans.update(currentPricing.id, currentPricing);
+            } else {
+                await api.admin.pricingPlans.create(currentPricing);
+            }
             setShowModal(false);
             loadPrices();
             setCurrentPricing({
@@ -73,7 +77,7 @@ export default function AdminOfferPricingPage() {
     const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to delete this pricing?')) return;
         try {
-            await api.admin.offerPricing.delete(id);
+            await api.admin.pricingPlans.delete(id);
             setPrices(prev => prev.filter(p => p.id !== id));
         } catch (err: any) {
             alert(err.message || 'Failed to delete pricing');

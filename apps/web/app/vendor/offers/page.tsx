@@ -80,6 +80,10 @@ export default function VendorOffersPage() {
     const [deleting, setDeleting] = useState(false);
     const [priceBreakup, setPriceBreakup] = useState<any[]>([]);
     const [pricingOptions, setPricingOptions] = useState<any[]>([]);
+    const [form, setForm] = useState(emptyForm);
+    const [imageUploading, setImageUploading] = useState(false);
+    const [page, setPage] = useState(1);
+    const [meta, setMeta] = useState<any>(null);
     const fileRef = useRef<HTMLInputElement>(null);
 
     // Offers & Events is freely available to all vendors.

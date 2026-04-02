@@ -142,7 +142,7 @@ export default function BroadcastRequestForm({ onSuccess }: BroadcastRequestForm
                 animate={{ opacity: 1, scale: 1 }}
                 className="bg-emerald-50 p-12 rounded-[24px] border-2 border-emerald-100 text-center shadow-2xl shadow-emerald-200/50"
             >
-                <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-[32px] flex items-center justify-center mx-auto mb-8 shadow-inner">
+                <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-[20px] flex items-center justify-center mx-auto mb-8 shadow-inner">
                     <CheckCircle2 className="w-12 h-12" />
                 </div>
                 <h3 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Signal Sent!</h3>
@@ -245,7 +245,7 @@ export default function BroadcastRequestForm({ onSuccess }: BroadcastRequestForm
                                     required
                                     rows={5}
                                     placeholder="Describe your issue, timeline, and any specific requirements..."
-                                    className="w-full px-8 py-6 rounded-[32px] bg-slate-50 border-4 border-transparent focus:border-blue-600 focus:bg-white outline-none transition-all font-bold text-lg text-slate-900 placeholder:text-slate-300 resize-none shadow-inner"
+                                    className="w-full px-8 py-6 rounded-[20px] bg-slate-50 border-4 border-transparent focus:border-blue-600 focus:bg-white outline-none transition-all font-bold text-lg text-slate-900 placeholder:text-slate-300 resize-none shadow-inner"
                                     value={formData.description}
                                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                 />
@@ -271,7 +271,7 @@ export default function BroadcastRequestForm({ onSuccess }: BroadcastRequestForm
                                     <h2 className="text-3xl font-black text-slate-900 tracking-tight">Your Location</h2>
                                     <p className="text-slate-400 font-bold">We match you with experts nearby</p>
                                 </div>
-                                <div className="bg-slate-50 p-8 rounded-[32px] border-2 border-slate-100/50 shadow-inner">
+                                <div className="bg-slate-50 p-8 rounded-[20px] border-2 border-slate-100/50 shadow-inner">
                                     <CitySearchSelect
                                         cities={cities}
                                         value={formData.city}
@@ -290,8 +290,8 @@ export default function BroadcastRequestForm({ onSuccess }: BroadcastRequestForm
                                         onClick={detectLocation}
                                         disabled={gettingLocation}
                                         className={`w-full py-5 rounded-2xl border-4 border-dashed transition-all flex items-center justify-center gap-3 font-black text-sm ${formData.latitude
-                                                ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
-                                                : 'bg-white border-slate-100 text-blue-600 hover:border-blue-200 hover:bg-blue-50/30'
+                                            ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
+                                            : 'bg-white border-slate-100 text-blue-600 hover:border-blue-200 hover:bg-blue-50/30'
                                             }`}
                                     >
                                         {gettingLocation ? <Loader2 className="w-5 h-5 animate-spin" /> : <Navigation className="w-5 h-5" />}
@@ -307,7 +307,7 @@ export default function BroadcastRequestForm({ onSuccess }: BroadcastRequestForm
                                     <h2 className="text-3xl font-black text-slate-900 tracking-tight">Review Signal</h2>
                                     <p className="text-slate-400 font-bold">Confirm your details before broadcasting</p>
                                 </div>
-                                <div className="bg-slate-900 rounded-[32px] p-10 text-white shadow-2xl relative overflow-hidden group">
+                                <div className="bg-slate-900 rounded-[20px] p-10 text-white shadow-2xl relative overflow-hidden group">
                                     <Megaphone className="absolute -right-8 -bottom-8 w-48 h-48 text-white/5 rotate-12 group-hover:scale-110 transition-transform duration-700" />
 
                                     <div className="relative space-y-6">

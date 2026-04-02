@@ -49,7 +49,7 @@ export default function MyJobLeads() {
             </div>
 
             {leads.length === 0 ? (
-                <div className="bg-slate-50/50 p-20 rounded-[32px] border-2 border-dashed border-slate-100 text-center">
+                <div className="bg-slate-50/50 p-20 rounded-[20px] border-2 border-dashed border-slate-100 text-center">
                     <div className="w-20 h-20 bg-white text-slate-200 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm">
                         <Megaphone className="w-10 h-10" />
                     </div>
@@ -64,7 +64,7 @@ export default function MyJobLeads() {
                     {leads.map(lead => (
                         <div
                             key={lead.id}
-                            className="bg-white p-8 rounded-[32px] border-2 border-slate-50 shadow-sm hover:shadow-xl hover:border-blue-100 transition-all cursor-pointer group"
+                            className="bg-white p-8 rounded-[20px] border-2 border-slate-50 shadow-sm hover:shadow-xl hover:border-blue-100 transition-all cursor-pointer group"
                             onClick={() => setSelectedLead(lead)}
                         >
                             <div className="flex justify-between items-start mb-6">
@@ -120,7 +120,7 @@ export default function MyJobLeads() {
                         <div className="flex-1 overflow-y-auto p-10 space-y-8 custom-scrollbar">
                             {selectedLead.responses && selectedLead.responses.length > 0 ? (
                                 selectedLead.responses.map(resp => (
-                                    <div key={resp.id} className="bg-white p-8 rounded-[32px] border-2 border-slate-50 hover:border-blue-100 transition-all shadow-sm">
+                                    <div key={resp.id} className="bg-white p-8 rounded-[20px] border-2 border-slate-50 hover:border-blue-100 transition-all shadow-sm">
                                         <div className="flex justify-between items-start mb-6">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-14 h-14 bg-blue-600 text-white rounded-[20px] flex items-center justify-center font-black text-xl shadow-lg shadow-blue-200">

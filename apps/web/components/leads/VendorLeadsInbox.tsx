@@ -66,7 +66,7 @@ export default function VendorLeadsInbox() {
 
     if (leads.length === 0) {
         return (
-            <div className="p-12 bg-slate-50/50 rounded-[32px] border-2 border-dashed border-slate-100 text-center">
+            <div className="p-12 bg-slate-50/50 rounded-[20px] border-2 border-dashed border-slate-100 text-center">
                 <div className="w-16 h-16 bg-white text-slate-200 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
                     <User className="w-8 h-8" />
                 </div>
@@ -92,7 +92,7 @@ export default function VendorLeadsInbox() {
                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-1">Direct Enquiries</p>
                     </div>
                 </div>
-                <button 
+                <button
                     onClick={fetchRecentLeads}
                     className="p-2 text-slate-300 hover:text-blue-600 transition-colors"
                     title="Refresh Leads"
@@ -102,49 +102,49 @@ export default function VendorLeadsInbox() {
             </div>
 
             <div className="space-y-3">
-            {leads.map((lead) => {
-                const Config = TYPE_CONFIG[lead.type] || TYPE_CONFIG.website;
-                const Icon = Config.icon;
-                
-                return (
-                    <Link 
-                        key={lead.id} 
-                        href="/vendor/leads"
-                        className="group flex items-center gap-4 p-4 bg-slate-50/50 hover:bg-white rounded-[24px] border-2 border-transparent hover:border-slate-100 transition-all active:scale-[0.99] hover:shadow-xl hover:shadow-slate-200/50"
-                    >
-                        <div className={`w-12 h-12 ${Config.bg} ${Config.color} rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110`}>
-                            <Icon className="w-6 h-6" />
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2 mb-0.5">
-                                <h4 className="font-black text-slate-900 truncate tracking-tight">{lead.name || 'Anonymous User'}</h4>
-                                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-1 flex-shrink-0">
-                                    <Clock className="w-3 h-3" />
-                                    {new Date(lead.createdAt).toLocaleDateString()}
-                                </span>
+                {leads.map((lead) => {
+                    const Config = TYPE_CONFIG[lead.type] || TYPE_CONFIG.website;
+                    const Icon = Config.icon;
+
+                    return (
+                        <Link
+                            key={lead.id}
+                            href="/vendor/leads"
+                            className="group flex items-center gap-4 p-4 bg-slate-50/50 hover:bg-white rounded-[24px] border-2 border-transparent hover:border-slate-100 transition-all active:scale-[0.99] hover:shadow-xl hover:shadow-slate-200/50"
+                        >
+                            <div className={`w-12 h-12 ${Config.bg} ${Config.color} rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110`}>
+                                <Icon className="w-6 h-6" />
                             </div>
-                            <p className="text-xs text-slate-400 font-bold truncate group-hover:text-slate-600 transition-colors">
-                                {lead.message || 'Interested in your services'}
-                            </p>
-                        </div>
 
-                        <div className="w-8 h-8 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 group-hover:text-blue-600 group-hover:border-blue-100 transition-all fle-shrink-0">
-                            <ChevronRight className="w-4 h-4" />
-                        </div>
-                    </Link>
-                );
-            })}
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2 mb-0.5">
+                                    <h4 className="font-black text-slate-900 truncate tracking-tight">{lead.name || 'Anonymous User'}</h4>
+                                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-1 flex-shrink-0">
+                                        <Clock className="w-3 h-3" />
+                                        {new Date(lead.createdAt).toLocaleDateString()}
+                                    </span>
+                                </div>
+                                <p className="text-xs text-slate-400 font-bold truncate group-hover:text-slate-600 transition-colors">
+                                    {lead.message || 'Interested in your services'}
+                                </p>
+                            </div>
 
-            <Link 
-                href="/vendor/leads" 
-                className="flex items-center justify-center gap-2 p-4 text-xs font-black text-slate-400 hover:text-blue-600 uppercase tracking-[.2em] transition-all group pt-2"
-            >
-                See All Leads
-                <div className="w-6 h-6 bg-slate-50 rounded-lg flex items-center justify-center group-hover:bg-blue-50 transition-all">
-                    <ChevronRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
-                </div>
-            </Link>
+                            <div className="w-8 h-8 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 group-hover:text-blue-600 group-hover:border-blue-100 transition-all fle-shrink-0">
+                                <ChevronRight className="w-4 h-4" />
+                            </div>
+                        </Link>
+                    );
+                })}
+
+                <Link
+                    href="/vendor/leads"
+                    className="flex items-center justify-center gap-2 p-4 text-xs font-black text-slate-400 hover:text-blue-600 uppercase tracking-[.2em] transition-all group pt-2"
+                >
+                    See All Leads
+                    <div className="w-6 h-6 bg-slate-50 rounded-lg flex items-center justify-center group-hover:bg-blue-50 transition-all">
+                        <ChevronRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+                    </div>
+                </Link>
             </div>
         </div>
     );

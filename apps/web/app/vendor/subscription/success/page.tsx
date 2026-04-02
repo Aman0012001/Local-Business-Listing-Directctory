@@ -4,11 +4,11 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    CheckCircle2, 
-    ArrowRight, 
-    Calendar, 
-    CreditCard, 
+import {
+    CheckCircle2,
+    ArrowRight,
+    Calendar,
+    CreditCard,
     ChevronRight,
     Loader2,
     AlertCircle,
@@ -49,7 +49,7 @@ function SuccessContent() {
             const response = await api.subscriptions.verify(sessionId!);
             if (response.success) {
                 setPlanDetails(response);
-                
+
                 // Trigger confetti immediately
                 const duration = 4 * 1000;
                 const animationEnd = Date.now() + duration;
@@ -57,7 +57,7 @@ function SuccessContent() {
 
                 const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
-                const interval: any = setInterval(function() {
+                const interval: any = setInterval(function () {
                     const timeLeft = animationEnd - Date.now();
                     if (timeLeft <= 0) return clearInterval(interval);
 
@@ -80,7 +80,7 @@ function SuccessContent() {
     return (
         <AnimatePresence mode="wait">
             {status === 'loading' && (
-                <motion.div 
+                <motion.div
                     key="loading"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -88,12 +88,12 @@ function SuccessContent() {
                     className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center"
                 >
                     <div className="relative mb-8">
-                        <motion.div 
-                            animate={{ 
+                        <motion.div
+                            animate={{
                                 scale: [1, 1.1, 1],
                                 rotate: [0, 180, 360]
                             }}
-                            transition={{ 
+                            transition={{
                                 duration: 4,
                                 repeat: Infinity,
                                 ease: "easeInOut"
@@ -104,7 +104,7 @@ function SuccessContent() {
                             <Loader2 className="w-8 h-8 text-primary animate-spin" />
                         </div>
                     </div>
-                    <motion.h2 
+                    <motion.h2
                         initial={{ y: 10, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: 0.2 }}
@@ -112,7 +112,7 @@ function SuccessContent() {
                     >
                         Authenticating Payment
                     </motion.h2>
-                    <motion.p 
+                    <motion.p
                         initial={{ y: 10, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: 0.4 }}
@@ -124,7 +124,7 @@ function SuccessContent() {
             )}
 
             {status === 'celebrating' && (
-                <motion.div 
+                <motion.div
                     key="celebration"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -132,8 +132,8 @@ function SuccessContent() {
                     className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white dark:bg-slate-950 overflow-hidden"
                 >
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-green-500/5 blur-[120px] rounded-full animate-pulse" />
-                    
-                    <motion.div 
+
+                    <motion.div
                         initial={{ scale: 0.5, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ type: "spring", damping: 15, stiffness: 200 }}
@@ -178,7 +178,7 @@ function SuccessContent() {
             )}
 
             {status === 'error' && (
-                <motion.div 
+                <motion.div
                     key="error"
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -203,7 +203,7 @@ function SuccessContent() {
             )}
 
             {status === 'success' && (
-                <motion.div 
+                <motion.div
                     key="success"
                     initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -225,12 +225,12 @@ function SuccessContent() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
                         {/* Summary Card */}
-                        <div className="bg-white dark:bg-slate-900 border-2 border-slate-50 dark:border-slate-800 rounded-[32px] p-8 text-left relative group transition-all hover:border-primary/20">
+                        <div className="bg-white dark:bg-slate-900 border-2 border-slate-50 dark:border-slate-800 rounded-[20px] p-8 text-left relative group transition-all hover:border-primary/20">
                             <div className="absolute top-8 right-8">
                                 <Zap className="w-8 h-8 text-primary/20" />
                             </div>
                             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-8">Active Subscription</h3>
-                            
+
                             <div className="space-y-6">
                                 <div className="flex justify-between items-baseline">
                                     <span className="text-slate-400 font-bold text-sm">Plan</span>
@@ -255,9 +255,9 @@ function SuccessContent() {
                         </div>
 
                         {/* Actions Card */}
-                        <div className="bg-slate-900 dark:bg-white rounded-[32px] p-8 text-left text-white dark:text-slate-900 relative overflow-hidden flex flex-col justify-between group h-full">
+                        <div className="bg-slate-900 dark:bg-white rounded-[20px] p-8 text-left text-white dark:text-slate-900 relative overflow-hidden flex flex-col justify-between group h-full">
                             <div className="absolute -bottom-8 -right-8 w-40 h-40 bg-primary opacity-10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
-                            
+
                             <div>
                                 <h3 className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mb-4">Onboarding</h3>
                                 <h2 className="text-2xl font-black tracking-tight mb-4 leading-tight">Ready to boost your presence?</h2>

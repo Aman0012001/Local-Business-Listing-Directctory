@@ -205,29 +205,51 @@ export class PromotionsService implements OnModuleInit {
             const session = await this.stripe.checkout.sessions.retrieve(sessionId);
             if (session.payment_status === 'paid') {
                 const bookingId = session.metadata.bookingId;
-                const booking = await this.bookingRepo.findOne({ where: { id: bookingId } });
+                const paymentIntentId = session.payment_intent as string;
                 
-                if (booking && booking.status === BookingStatus.PENDING) {
-                    booking.status = BookingStatus.ACTIVE;
-                    booking.paymentIntentId = session.payment_intent as string;
-                    await this.bookingRepo.save(booking);
-                    
-                    // Activate the offer/event as well
-                    const offer = await this.offerRepository.findOne({ where: { id: booking.offerEventId } });
-                    if (offer && !offer.isActive) {
-                        offer.isActive = true;
-                        await this.offerRepository.save(offer);
-                    }
-                    
-                    return { success: true, booking };
-                }
-                return { success: true, alreadyProcessed: true };
+                const result = await this.activateBooking(bookingId, paymentIntentId);
+                return { success: true, ...result };
             }
             return { success: false, status: session.payment_status };
         } catch (error) {
             this.logger.error(`Failed to verify checkout session ${sessionId}:`, error);
             throw new BadRequestException(`Verification failed: ${error.message}`);
         }
+    }
+
+    /**
+     * Activate a booking and sync with OfferEvent (called by Webhook or Manual Verification)
+     */
+    async activateBooking(bookingId: string, gatewayTransactionId: string) {
+        const booking = await this.bookingRepo.findOne({ where: { id: bookingId } });
+        if (!booking) throw new NotFoundException('Booking not found');
+
+        if (booking.status === BookingStatus.ACTIVE) {
+            return { alreadyProcessed: true, booking };
+        }
+
+        // 1. Activate Booking
+        booking.status = BookingStatus.ACTIVE;
+        booking.paymentIntentId = gatewayTransactionId;
+        await this.bookingRepo.save(booking);
+
+        // 2. Sync with OfferEvent (Apply the Boost)
+        const offer = await this.offerRepository.findOne({ where: { id: booking.offerEventId } });
+        if (offer) {
+            // All boosts make the offer active and featured
+            offer.isActive = true;
+            offer.isFeatured = true;
+            
+            // Set featuredUntil to the end of the booking duration
+            if (!offer.featuredUntil || offer.featuredUntil < booking.endTime) {
+                offer.featuredUntil = booking.endTime;
+            }
+            
+            await this.offerRepository.save(offer);
+            this.logger.log(`🚀 Boost activated for Offer: ${offer.title} until ${offer.featuredUntil}`);
+        }
+
+        return { success: true, booking, offer };
     }
 
     /**

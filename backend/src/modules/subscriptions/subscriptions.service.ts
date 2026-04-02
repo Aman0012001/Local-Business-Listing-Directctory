@@ -1173,6 +1173,14 @@ export class SubscriptionsService implements OnModuleInit {
                     return { received: true };
                 }
 
+                // --- NEW SYSTEM (Promotion Booking / Boost) ---
+                if (session.metadata?.type === 'promotion_booking' && session.metadata?.bookingId) {
+                    const bookingId = session.metadata.bookingId;
+                    this.logger.log(`🚀 Activating Promotion Booking: ${bookingId}`);
+                    await this.promotionsService.activateBooking(bookingId, session.id);
+                    return { received: true };
+                }
+
                 // --- OLD SYSTEM (FALLBACK) ---
                 if (session.mode === 'subscription') {
                     const vendorId = session.client_reference_id;
