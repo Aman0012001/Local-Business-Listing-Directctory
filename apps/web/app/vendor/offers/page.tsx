@@ -179,7 +179,7 @@ export default function VendorOffersPage() {
                     expiryDate: eStr,
                     promoStartTime: sStr,
                     promoEndTime: eStr,
-                    placements: prev.placements.length > 0 ? prev.placements : [plan.type]
+                    placements: prev.placements.length > 0 ? prev.placements : ['listing']
                 }));
             }
         }
@@ -748,9 +748,11 @@ export default function VendorOffersPage() {
                                                     {priceBreakup.map((b, i) => (
                                                         <div key={i} className="flex items-center justify-between">
                                                             <div>
-                                                                <p className="text-xs font-black text-slate-700 capitalize">{b.placement} Boost</p>
+                                                                <p className="text-xs font-black text-slate-700 capitalize">
+                                                                    {b.isBaseFee ? (b.label || 'Base Registration Fee') : `${b.placement} Boost`}
+                                                                </p>
                                                                 <p className="text-[10px] font-bold text-slate-400 font-mono">
-                                                                    {b.hours}H {b.days ? `/ ${b.days}D` : ''}
+                                                                    {b.isBaseFee ? b.durationText : `${b.hours}H ${b.days ? `/ ${b.days}D` : ''}`}
                                                                 </p>
                                                             </div>
                                                             <p className="text-sm font-black text-slate-900 font-mono">PKR {Number(b.subtotal).toLocaleString()}</p>

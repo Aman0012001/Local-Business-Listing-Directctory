@@ -82,21 +82,18 @@ export class PromotionsService implements OnModuleInit {
         const MIN_STRIPE_AMOUNT_PKR = 150;
 
         // 1. Check if a fixed-price booster plan is selected
-        const bookDto = dto as CreateBookingDto;
-        if (bookDto.pricingId) {
-            const plan = await this.pricingPlanRepo.findOne({ where: { id: bookDto.pricingId, isActive: true } });
+        if (dto.pricingId) {
+            const plan = await this.pricingPlanRepo.findOne({ where: { id: dto.pricingId, isActive: true } });
             if (plan) {
-                totalPrice = Number(plan.price);
+                const planPrice = Number(plan.price);
+                totalPrice += planPrice;
                 breakup.push({
                     placement: plan.type,
                     label: plan.name,
-                    subtotal: totalPrice,
-                    isBaseFee: false,
+                    subtotal: planPrice,
+                    isBaseFee: true,
                     isFixedPlan: true
                 });
-                
-                // Return early for fixed plans, or could merge with other rules if needed
-                return { totalPrice, durationHours: plan.duration * (plan.unit === 'days' ? 24 : 1), breakup, isMinimumApplied: false };
             }
         }
 
