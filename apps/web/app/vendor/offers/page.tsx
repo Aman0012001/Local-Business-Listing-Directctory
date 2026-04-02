@@ -286,24 +286,29 @@ export default function VendorOffersPage() {
                 return;
             }
 
-            const payload: any = {
-                ...form,
+            // CLEAN PAYLOAD: Only core offer fields for Create/Update Offer
+            // (Excludes placements, boosterPlanId, etc. which are for Promotions)
+            const offerPayload = {
+                title: form.title,
+                description: form.description || undefined,
+                type: form.type,
+                offerBadge: form.offerBadge || undefined,
+                imageUrl: form.imageUrl || undefined,
+                businessId: form.businessId,
                 startDate: form.startDate || undefined,
                 endDate: form.endDate || undefined,
                 expiryDate: form.expiryDate || undefined,
-                imageUrl: form.imageUrl || undefined,
-                offerBadge: form.offerBadge || undefined,
-                description: form.description || undefined,
                 highlights: form.highlights.filter(h => h.trim() !== ''),
                 terms: form.terms.filter(t => t.trim() !== ''),
+                pricingId: form.boosterPlanId || undefined, // Must be UUID or undefined
             };
 
             let offerId = editingId;
             if (editingId) {
-                await api.offers.update(editingId, payload);
+                await api.offers.update(editingId, offerPayload);
                 setSuccess('Offer updated successfully!');
             } else {
-                const res = await api.offers.create(payload);
+                const res = await api.offers.create(offerPayload);
                 offerId = res.id;
                 setSuccess('Offer created successfully!');
             }
@@ -583,7 +588,7 @@ export default function VendorOffersPage() {
                                 </button>
                             </div>
 
-                            {/* Plan Usage Warning */}
+                            {/* Plan Usage Warning & Info */}
                             {showModal && activeSub && !editingId && (
                                 <div className="px-8 pt-6">
                                     {(() => {
@@ -594,47 +599,35 @@ export default function VendorOffersPage() {
                                         const hasReachedLimit = limit > 0 && currentCount >= limit;
                                         const hasNoSlots = limit <= 0;
 
-                                        if (hasNoSlots) {
-                                            return (
-                                                <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-4">
-                                                    <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-                                                        <AlertTriangle className="w-5 h-5 text-amber-600" />
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <p className="text-sm font-black text-slate-900">Upgrade Required</p>
-                                                        <p className="text-xs font-bold text-slate-500 mt-0.5">Your {activeSub.plan.name} plan doesn't include {type} slots.</p>
-                                                        <Link href="/vendor/offer-plans" className="inline-block mt-2 text-xs font-black text-orange-500 hover:text-orange-600 underline underline-offset-4">
-                                                            Browse Offer Plans →
-                                                        </Link>
-                                                    </div>
-                                                </div>
-                                            );
-                                        }
+                                        let icon = <CheckCircle2 className="w-5 h-5 text-green-500" />;
+                                        let title = "Standard Slots Available";
+                                        let desc = `${limit - currentCount} standard ${type} slots remaining in your plan.`;
+                                        let bg = "bg-green-50 border-green-100";
+                                        let titleCls = "text-green-700";
 
-                                        if (hasReachedLimit) {
-                                            return (
-                                                <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-4">
-                                                    <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center flex-shrink-0">
-                                                        <AlertTriangle className="w-5 h-5 text-rose-600" />
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <p className="text-sm font-black text-slate-900">Limit Reached</p>
-                                                        <p className="text-xs font-bold text-slate-500 mt-0.5">You've used all {limit} {type} slots in your plan. Upgrade or delete old items to create more.</p>
-                                                        <Link href="/vendor/offer-plans" className="inline-block mt-2 text-xs font-black text-orange-500 hover:text-orange-600 underline underline-offset-4">
-                                                            Increase My Limit →
-                                                        </Link>
-                                                    </div>
-                                                </div>
-                                            );
+                                        if (hasNoSlots) {
+                                            icon = <AlertTriangle className="w-5 h-5 text-amber-500" />;
+                                            title = "Boost Only Mode";
+                                            desc = `Your ${activeSub.plan.name} plan doesn't include free ${type} slots. Launch this listing by picking a Booster Plan below.`;
+                                            bg = "bg-amber-50 border-amber-200";
+                                            titleCls = "text-amber-800";
+                                        } else if (hasReachedLimit) {
+                                            icon = <AlertTriangle className="w-5 h-5 text-rose-500" />;
+                                            title = "Limit Reached";
+                                            desc = `You've used all ${limit} standard slots. You can still create this listing by picking a Booster Plan below.`;
+                                            bg = "bg-rose-50 border-rose-200";
+                                            titleCls = "text-rose-800";
                                         }
 
                                         return (
-                                            <div className="px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-2 h-2 rounded-full bg-green-500" />
-                                                    <span className="text-xs font-black text-slate-700 uppercase tracking-wider">{type} Slots Remaining</span>
+                                            <div className={`p-4 ${bg} border rounded-2xl flex items-start gap-4 shadow-sm`}>
+                                                <div className="w-10 h-10 rounded-xl bg-white/50 flex items-center justify-center flex-shrink-0">
+                                                    {icon}
                                                 </div>
-                                                <span className="text-xs font-black text-slate-900">{currentCount} / {limit} USED</span>
+                                                <div className="flex-1">
+                                                    <p className={`text-sm font-black ${titleCls}`}>{title}</p>
+                                                    <p className="text-[11px] font-bold text-slate-500 mt-0.5 leading-relaxed">{desc}</p>
+                                                </div>
                                             </div>
                                         );
                                     })()}
