@@ -26,6 +26,9 @@ export async function generateStaticParams() {
     }
 }
 
+// Ensure pages that weren't pre-generated are still accessible on-demand
+export const dynamicParams = true;
+
 export default async function VendorProfilePage({ params }: { params: Promise<{ vendorId: string }> }) {
     const { vendorId } = await params;
     return <VendorProfileClient vendorId={vendorId} />;

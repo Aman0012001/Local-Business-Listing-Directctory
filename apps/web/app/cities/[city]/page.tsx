@@ -20,6 +20,9 @@ export async function generateStaticParams() {
     }
 }
 
+// Ensure pages that weren't pre-generated are still accessible on-demand
+export const dynamicParams = true;
+
 export default async function CityVendorsPage({ params }: { params: Promise<{ city: string }> }) {
     const { city } = await params;
     return <CityVendorsClient city={city} />;

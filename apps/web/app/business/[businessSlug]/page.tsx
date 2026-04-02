@@ -24,6 +24,9 @@ export async function generateStaticParams() {
     }
 }
 
+// Ensure pages that weren't pre-generated are still accessible on-demand
+export const dynamicParams = true;
+
 export default async function BusinessPage({ params }: { params: Promise<{ businessSlug: string }> }) {
     const { businessSlug } = await params;
     return <BusinessDetailClient slug={businessSlug} />;

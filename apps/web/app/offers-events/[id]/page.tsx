@@ -21,6 +21,9 @@ export async function generateStaticParams() {
     }
 }
 
+// Ensure pages that weren't pre-generated are still accessible on-demand
+export const dynamicParams = true;
+
 export default async function OfferEventDetailPage({ params }: { params: Promise<{ id: string }> }) {
     // We can also extract ID here and pass it down, but the client component uses useParams.
     // Just rendering the client component is fine.

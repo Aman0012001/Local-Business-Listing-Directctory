@@ -137,6 +137,7 @@ export class OffersService {
             startDate: dto.startDate ? new Date(dto.startDate) : null,
             endDate: dto.endDate ? new Date(dto.endDate) : null,
             expiryDate: dto.expiryDate ? new Date(dto.expiryDate) : null,
+            pricingId: dto.pricingId || null,
             isActive: false, // Wait for promotion check / activation
         });
 

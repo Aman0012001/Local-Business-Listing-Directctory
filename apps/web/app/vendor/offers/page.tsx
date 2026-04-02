@@ -322,7 +322,6 @@ export default function VendorOffersPage() {
                         placements: form.placements,
                         startTime: form.promoStartTime || new Date().toISOString(),
                         endTime: form.promoEndTime || new Date(Date.now() + 36 * 3600000).toISOString(),
-                        pricingId: form.boosterPlanId || undefined,
                     });
 
                     if (bookRes.checkoutUrl) {
@@ -994,7 +993,7 @@ export default function VendorOffersPage() {
                                         className="flex-[2] py-3.5 bg-gradient-to-r from-orange-500 to-rose-500 text-white rounded-xl font-black text-sm shadow-lg shadow-orange-500/20 hover:from-orange-600 hover:to-rose-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                     >
                                         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                        {editingId ? 'Save Changes' : (form.promoEnabled || form.boosterPlanId) ? 'Create & Promote' : 'Create Offer'}
+                                        {editingId ? 'Save Changes' : (form.pricingId || form.boosterPlanId) ? 'Create & Promote' : 'Create Offer'}
                                     </button>
                                 </div>
                             </form>

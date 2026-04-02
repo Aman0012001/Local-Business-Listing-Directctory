@@ -19,6 +19,9 @@ export async function generateStaticParams() {
     }
 }
 
+// Ensure pages that weren't pre-generated are still accessible on-demand
+export const dynamicParams = true;
+
 export default async function CategoryPage({ params }: { params: Promise<{ categorySlug: string }> }) {
     const { categorySlug } = await params;
     return <CategoryDetailClient slug={categorySlug} />;

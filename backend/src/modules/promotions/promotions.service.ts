@@ -82,8 +82,18 @@ export class PromotionsService implements OnModuleInit {
         const MIN_STRIPE_AMOUNT_PKR = 150;
 
         // 1. Check if a fixed-price booster plan is selected
-        if (dto.pricingId) {
-            const plan = await this.pricingPlanRepo.findOne({ where: { id: dto.pricingId, isActive: true } });
+        let activePricingId = dto.pricingId;
+        
+        // If pricingId is missing but offerEventId is present, try to fetch it from the entity
+        if (!activePricingId && dto.offerEventId) {
+            const offer = await this.offerRepository.findOne({ where: { id: dto.offerEventId } });
+            if (offer?.pricingId) {
+                activePricingId = offer.pricingId;
+            }
+        }
+
+        if (activePricingId) {
+            const plan = await this.pricingPlanRepo.findOne({ where: { id: activePricingId, isActive: true } });
             if (plan) {
                 const planPrice = Number(plan.price);
                 totalPrice += planPrice;

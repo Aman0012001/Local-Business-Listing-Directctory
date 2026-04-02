@@ -641,7 +641,7 @@ export const api = {
         getPricingRules: () => fetcher<any[]>('/promotions/pricing-rules'),
         calculatePrice: (data: { placements: string[], startTime: string, endTime: string, pricingId?: string }, type: string = 'offer') => 
             api.post<{ totalPrice: number; durationHours: number; breakup: any[]; isMinimumApplied?: boolean }>(`/promotions/calculate?type=${type}`, data),
-        book: (data: { offerEventId: string; placements: string[]; startTime: string; endTime: string; pricingId?: string }) => 
+        book: (data: { offerEventId: string; placements: string[]; startTime: string; endTime: string }) => 
             api.post<{ sessionId: string; checkoutUrl: string }>('/promotions/book', data),
         verifySession: (sessionId: string) => fetcher<any>(`/promotions/verify-session?session_id=${sessionId}`),
     },

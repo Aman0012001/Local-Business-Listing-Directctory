@@ -1,7 +1,7 @@
 import { IsEnum, IsUUID, IsArray, IsDateString, IsOptional } from 'class-validator';
 import { PromotionPlacement } from '../../../entities/promotion-pricing-rule.entity';
 
-export class CalculatePriceDto {
+export class BasePromotionDto {
     @IsArray()
     @IsEnum(PromotionPlacement, { each: true })
     placements: PromotionPlacement[];
@@ -13,7 +13,9 @@ export class CalculatePriceDto {
     @IsOptional()
     @IsDateString()
     endTime?: string;
+}
 
+export class CalculatePriceDto extends BasePromotionDto {
     @IsOptional()
     @IsUUID()
     offerEventId?: string;
@@ -23,15 +25,11 @@ export class CalculatePriceDto {
     pricingId?: string; // ID of a Booster Plan (PricingPlan)
 }
 
-export class CreateBookingDto extends CalculatePriceDto {
+export class CreateBookingDto extends BasePromotionDto {
     @IsUUID()
     offerEventId: string;
 
     @IsOptional()
     @IsUUID()
     businessId?: string; 
-
-    @IsOptional()
-    @IsUUID()
-    pricingId?: string; // ID of a Booster Plan (PricingPlan)
 }

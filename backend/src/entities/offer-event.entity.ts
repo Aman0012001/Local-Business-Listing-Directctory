@@ -90,6 +90,10 @@ export class OfferEvent {
     @Column({ type: 'jsonb', nullable: true, default: '[]' })
     terms: string[];
 
+    @Column({ name: 'pricing_id', type: 'uuid', nullable: true })
+    @Index()
+    pricingId: string;
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
