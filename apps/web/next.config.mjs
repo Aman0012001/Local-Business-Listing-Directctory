@@ -5,7 +5,7 @@ const nextConfig = {
 
     // Static export for Netlify / static hosting
     // Standard dynamic build (required for live data and ISR)
-    // output: "export", 
+    output: "export", 
 
     // Disable Next image optimization (required for static export)
     images: {
