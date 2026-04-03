@@ -6,17 +6,14 @@ import {
     Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike } from 'typeorm';
 import { Affiliate } from '../../entities/affiliate.entity';
 import { AffiliateReferral, ReferralStatus, ReferralType } from '../../entities/referral.entity';
 import { Payout, PayoutStatus } from '../../entities/payout.entity';
 import { User } from '../../entities/user.entity';
 import { SystemSetting } from '../../entities/system-setting.entity';
 import { Subscription, SubscriptionStatus } from '../../entities/subscription.entity';
-import { customAlphabet } from 'nanoid';
-
-const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-const generateReferralCode = customAlphabet(alphabet, 10);
+import { generateReferralCode } from '../../common/utils/referral-code';
 
 @Injectable()
 export class AffiliateService {
@@ -123,19 +120,21 @@ export class AffiliateService {
             throw new BadRequestException('You have already been referred');
         }
 
-        // Find the affiliate with this code (case-insensitive)
-        const affiliate = await this.affiliateRepository.findOne({
-            where: [
-                { referralCode: code.toUpperCase() },
-                { referralCode: code.toLowerCase() },
-                { referralCode: code }
-            ],
-            relations: ['user']
-        });
+        const normalizedCode = code.trim();
+        this.logger.log(`Applying referral code: "${normalizedCode}" (length: ${normalizedCode.length})`);
+        
+        // Find the affiliate with this code (case-insensitive) using explicit LOWER() for maximum reliability
+        const affiliate = await this.affiliateRepository.createQueryBuilder('affiliate')
+            .leftJoinAndSelect('affiliate.user', 'user')
+            .where('LOWER(affiliate.referral_code) = LOWER(:code)', { code: normalizedCode })
+            .getOne();
 
         if (!affiliate) {
+            this.logger.warn(`Referral code not found: "${normalizedCode}"`);
             throw new NotFoundException('Invalid referral code');
         }
+
+        this.logger.log(`Found affiliate: ${affiliate.id} (user: ${affiliate.user?.id})`);
 
         if (affiliate.user.id === userId) {
             throw new BadRequestException('You cannot refer yourself');

@@ -20,9 +20,9 @@ import { SubscriptionPlan, SubscriptionPlanType } from '../../entities/subscript
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { GoogleAuthDto } from './dto/google-auth.dto';
-import { nanoid } from 'nanoid';
 import { JwtPayload, JwtTokens } from '../../common/interfaces/jwt-payload.interface';
 import { NotificationsService } from '../notifications/notifications.service';
+import { generateReferralCode } from '../../common/utils/referral-code';
 
 @Injectable()
 export class AuthService {
@@ -128,7 +128,7 @@ export class AuthService {
 
             const affiliate = this.affiliateRepository.create({
                 user: savedUser,
-                referralCode: nanoid(10),
+                referralCode: generateReferralCode(),
             });
             await this.affiliateRepository.save(affiliate);
             this.logger.log(`Auto-created affiliate record for vendor ${savedUser.id}`);
@@ -144,18 +144,6 @@ export class AuthService {
         if (registerDto.referralCode && savedUser.role === UserRole.VENDOR) {
             await this.handleReferral(registerDto.referralCode, savedUser.id);
         }
-
-        // Broadcast new vendor notification to all users (DISABLED per user request)
-        /*
-        if (savedUser.role === UserRole.VENDOR) {
-            this.notificationsService.broadcast({
-                title: '🏪 New Vendor Joined!',
-                message: `${savedUser.fullName || savedUser.email} just joined as a vendor. Check out their upcoming listings!`,
-                type: 'new_vendor',
-                data: { vendorUserId: savedUser.id },
-            }).catch(() => { });
-        }
-        */
 
         return { user: savedUser, tokens };
     }
@@ -355,7 +343,7 @@ export class AuthService {
                 try {
                     const affiliate = this.affiliateRepository.create({
                         user: user,
-                        referralCode: nanoid(10),
+                        referralCode: generateReferralCode(),
                     });
                     await this.affiliateRepository.save(affiliate);
                     this.logger.log(`[GoogleAuth] Auto-created affiliate profile for upgraded user`);
@@ -399,7 +387,7 @@ export class AuthService {
 
                 const affiliate = this.affiliateRepository.create({
                     user: user,
-                    referralCode: nanoid(10),
+                    referralCode: generateReferralCode(),
                 });
                 await this.affiliateRepository.save(affiliate);
                 this.logger.log(`[GoogleAuth] Auto-created affiliate record for vendor ${user.id}`);
@@ -534,9 +522,10 @@ export class AuthService {
      */
     private async handleReferral(referralCode: string, referredUserId: string): Promise<void> {
         try {
-            const affiliate = await this.affiliateRepository.findOne({
-                where: { referralCode }
-            });
+            const normalizedCode = referralCode.trim();
+            const affiliate = await this.affiliateRepository.createQueryBuilder('affiliate')
+                .where('LOWER(affiliate.referral_code) = LOWER(:code)', { code: normalizedCode })
+                .getOne();
 
             if (affiliate) {
                 // Check if referral already exists to avoid duplicates
