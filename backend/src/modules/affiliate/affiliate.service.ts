@@ -13,7 +13,10 @@ import { Payout, PayoutStatus } from '../../entities/payout.entity';
 import { User } from '../../entities/user.entity';
 import { SystemSetting } from '../../entities/system-setting.entity';
 import { Subscription, SubscriptionStatus } from '../../entities/subscription.entity';
-import { nanoid } from 'nanoid';
+import { customAlphabet } from 'nanoid';
+
+const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const generateReferralCode = customAlphabet(alphabet, 10);
 
 @Injectable()
 export class AffiliateService {
@@ -44,7 +47,7 @@ export class AffiliateService {
             if (user && user.role === 'vendor') {
                 affiliate = this.affiliateRepository.create({
                     user: { id: userId } as any,
-                    referralCode: nanoid(10),
+                    referralCode: generateReferralCode(),
                 });
                 affiliate = await this.affiliateRepository.save(affiliate);
             } else {
@@ -90,7 +93,7 @@ export class AffiliateService {
 
         const affiliate = this.affiliateRepository.create({
             user: { id: userId } as any,
-            referralCode: nanoid(10), // Short unique code
+            referralCode: generateReferralCode(), // Short unique code
         });
 
         return this.affiliateRepository.save(affiliate);
@@ -120,9 +123,13 @@ export class AffiliateService {
             throw new BadRequestException('You have already been referred');
         }
 
-        // Find the affiliate with this code
+        // Find the affiliate with this code (case-insensitive)
         const affiliate = await this.affiliateRepository.findOne({
-            where: { referralCode: code },
+            where: [
+                { referralCode: code.toUpperCase() },
+                { referralCode: code.toLowerCase() },
+                { referralCode: code }
+            ],
             relations: ['user']
         });
 
