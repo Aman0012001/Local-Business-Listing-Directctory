@@ -8,6 +8,8 @@ import { Payout } from '../../entities/payout.entity';
 import { User } from '../../entities/user.entity';
 import { SystemSetting } from '../../entities/system-setting.entity';
 import { Subscription } from '../../entities/subscription.entity';
+import { ActivePlan } from '../../entities/active-plan.entity';
+
 
 @Module({
     imports: [
@@ -17,7 +19,8 @@ import { Subscription } from '../../entities/subscription.entity';
             Payout,
             User,
             SystemSetting,
-            Subscription
+            Subscription,
+            ActivePlan
         ]),
     ],
     controllers: [AffiliateController],

@@ -684,7 +684,7 @@ export default function GenericDashboard() {
                                             <input 
                                                 type="text"
                                                 value={referralInput}
-                                                onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
+                                                onChange={(e) => setReferralInput(e.target.value)}
                                                 placeholder="Enter Expert Code"
                                                 className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500 transition-all"
                                             />

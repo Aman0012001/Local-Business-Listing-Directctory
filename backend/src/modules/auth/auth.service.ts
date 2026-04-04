@@ -524,10 +524,11 @@ export class AuthService {
         try {
             const normalizedCode = referralCode.trim();
             const affiliate = await this.affiliateRepository.findOne({
-                where: { referralCode: ILike(normalizedCode) }
+                where: { referralCode: ILike(normalizedCode) },
+                relations: ['user']
             });
 
-            if (affiliate) {
+            if (affiliate && affiliate.user && affiliate.user.role === 'vendor') {
                 // Check if referral already exists to avoid duplicates
                 const existingReferral = await this.referralRepository.findOne({
                     where: { referredUserId }

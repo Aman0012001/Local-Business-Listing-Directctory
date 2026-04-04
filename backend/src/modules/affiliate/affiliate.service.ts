@@ -13,7 +13,10 @@ import { Payout, PayoutStatus } from '../../entities/payout.entity';
 import { User } from '../../entities/user.entity';
 import { SystemSetting } from '../../entities/system-setting.entity';
 import { Subscription, SubscriptionStatus } from '../../entities/subscription.entity';
+import { ActivePlan, ActivePlanStatus } from '../../entities/active-plan.entity';
+import { PricingPlanType } from '../../entities/pricing-plan.entity';
 import { generateReferralCode } from '../../common/utils/referral-code';
+
 
 @Injectable()
 export class AffiliateService {
@@ -31,7 +34,10 @@ export class AffiliateService {
         private systemSettingRepository: Repository<SystemSetting>,
         @InjectRepository(Subscription)
         private subscriptionRepository: Repository<Subscription>,
+        @InjectRepository(ActivePlan)
+        private activePlanRepository: Repository<ActivePlan>,
     ) { }
+
 
     async getStats(userId: string) {
         let affiliate = await this.affiliateRepository.findOne({
@@ -88,6 +94,11 @@ export class AffiliateService {
             throw new ConflictException('Already an affiliate');
         }
 
+        const user = await this.userRepository.findOne({ where: { id: userId } });
+        if (!user || user.role !== 'vendor') {
+            throw new BadRequestException('Only registered vendors can join the affiliate program');
+        }
+
         const affiliate = this.affiliateRepository.create({
             user: { id: userId } as any,
             referralCode: generateReferralCode(), // Short unique code
@@ -129,12 +140,11 @@ export class AffiliateService {
             relations: ['user']
         });
 
-        if (!affiliate) {
-            this.logger.warn(`Referral code not found: "${normalizedCode}"`);
+        if (!affiliate || !affiliate.user || affiliate.user.role !== 'vendor') {
+            const reason = !affiliate ? 'not found' : 'belongs to a non-vendor user';
+            this.logger.warn(`Referral code "${normalizedCode}" ${reason}`);
             throw new NotFoundException('Invalid referral code');
         }
-
-        this.logger.log(`Found affiliate: ${affiliate.id} (user: ${affiliate.user?.id})`);
 
         if (affiliate.user.id === userId) {
             throw new BadRequestException('You cannot refer yourself');
@@ -315,46 +325,51 @@ export class AffiliateService {
             throw new NotFoundException('Referral not found');
         }
 
-        if (referral.status !== ReferralStatus.PENDING) {
-            throw new BadRequestException('Referral is already processed');
+        return this.processSuccessfulReferral(referral.referredUserId);
+    }
+
+    /**
+     * Common logic to process a successful referral (signup -> purchase)
+     * Automatically called after successful payment or by admin override.
+     */
+    async processSuccessfulReferral(referredUserId: string) {
+        const referral = await this.referralRepository.findOne({
+            where: [
+                { referredUserId, status: ReferralStatus.PENDING, type: ReferralType.SIGNUP },
+                { referredUserId, status: ReferralStatus.PENDING, type: ReferralType.SUBSCRIPTION }
+            ],
+            relations: ['affiliate', 'affiliate.user']
+        });
+
+        if (!referral) {
+            this.logger.debug(`No pending referral found for user ${referredUserId}`);
+            return { success: false, reason: 'No pending referral' };
         }
 
-        // 1. Activate the Referral
-        // Get dynamic settings
-        const settings = await this.getSettings();
-        const commissionRate = parseFloat(settings.commissionRate) || 0;
-        const commissionType = settings.commissionType || 'percent';
-
-        // Find the newly ACTIVE subscription for this user
-        const subscription = await this.subscriptionRepository.findOne({
-            where: { 
-                vendorId: referral.referredUserId,
-                status: SubscriptionStatus.ACTIVE 
-            },
-            relationships: { vendor: true },
-            order: { createdAt: 'DESC' }
-        } as any);
-
-        if (!subscription) {
-            // Find any subscription for this vendor that is active
-            const anyActiveSub = await this.subscriptionRepository.findOne({
-                where: { 
-                    vendor: { userId: referral.referredUserId },
-                    status: SubscriptionStatus.ACTIVE 
-                },
-                order: { createdAt: 'DESC' }
-            });
-            
-            if (!anyActiveSub) {
-                throw new BadRequestException('No active subscription found for this referred user');
-            }
-            
-            // Use this one if found via relation
-            (subscription as any) = anyActiveSub;
-        }
-
-        // 2. Grant 30-day Extension to the Referrer (Affiliate)
         const referrerId = referral.affiliate.user.id;
+        let extensionGranted = false;
+
+        // 1. Extend NEW System PLAN (ActivePlan) if exists
+        const referrerActivePlan = await this.activePlanRepository.findOne({
+            where: { 
+                vendor: { userId: referrerId },
+                status: ActivePlanStatus.ACTIVE,
+                plan: { type: PricingPlanType.SUBSCRIPTION } as any
+            },
+            relations: ['plan'],
+            order: { endDate: 'DESC' }
+        });
+
+        if (referrerActivePlan) {
+            const currentEndDate = new Date(referrerActivePlan.endDate);
+            currentEndDate.setDate(currentEndDate.getDate() + 30);
+            referrerActivePlan.endDate = currentEndDate;
+            await this.activePlanRepository.save(referrerActivePlan);
+            this.logger.log(`Extended referrer ${referrerId} ActivePlan by 30 days`);
+            extensionGranted = true;
+        }
+
+        // 2. Extend OLD System Subscription if exists
         const referrerActiveSub = await this.subscriptionRepository.findOne({
             where: { 
                 vendor: { userId: referrerId },
@@ -368,28 +383,24 @@ export class AffiliateService {
             currentEndDate.setDate(currentEndDate.getDate() + 30);
             referrerActiveSub.endDate = currentEndDate;
             await this.subscriptionRepository.save(referrerActiveSub);
-            this.logger.log(`Extended referrer ${referrerId} subscription by 30 days`);
+            this.logger.log(`Extended referrer ${referrerId} legacy subscription by 30 days`);
+            extensionGranted = true;
         }
 
         // 3. Update Referral Status
         referral.status = ReferralStatus.CONVERTED;
-        referral.commissionAmount = 0; // No PKR commission anymore
-        referral.type = ReferralType.SUBSCRIPTION;
+        referral.type = ReferralType.SUBSCRIPTION; // Mark as converted via purchase
         await this.referralRepository.save(referral);
 
-        // 4. Update Affiliate Balance (optional: keep tracking conversions count)
-        const affiliate = referral.affiliate;
-        // We don't update balance/totalEarnings PKR, just keep it as is or log it
-        await this.affiliateRepository.save(affiliate);
-
-        // 5. Activate the Referred Vendor's Subscription
-        subscription.status = SubscriptionStatus.ACTIVE;
-        await this.subscriptionRepository.save(subscription);
+        this.logger.log(`✅ Referral ${referral.id} for user ${referredUserId} successfully converted. Extension granted: ${extensionGranted}`);
 
         return {
             success: true,
-            message: 'Referral activated and Referrer plan extended by 30 days',
-            extensionGranted: !!referrerActiveSub
+            message: extensionGranted 
+                ? 'Referral activated and Referrer plan extended by 30 days' 
+                : 'Referral activated (Referrer has no active plan to extend)',
+            extensionGranted
         };
     }
 }
+

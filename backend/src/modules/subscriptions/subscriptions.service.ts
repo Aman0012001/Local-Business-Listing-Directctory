@@ -572,20 +572,13 @@ export class SubscriptionsService implements OnModuleInit {
 
         await this.transactionRepository.save(transaction);
 
-        // 5. Affiliate Integration
-        const referral = await this.referralRepository.findOne({
-            where: [
-                { referredUserId: vendor.userId, status: ReferralStatus.PENDING, type: ReferralType.SIGNUP },
-                { referredUserId: vendor.userId, status: ReferralStatus.PENDING, type: ReferralType.SUBSCRIPTION }
-            ],
-            order: { createdAt: 'DESC' }
-        });
-
-        if (referral) {
-            referral.type = ReferralType.SUBSCRIPTION;
-            await this.referralRepository.save(referral);
-            this.logger.log(`Affiliate referral ${referral.id} for user ${vendor.userId} is now AWAITING ADMIN ACTIVATION`);
+        // 5. Affiliate Integration - AUTOMATED
+        try {
+            await this.affiliateService.processSuccessfulReferral(vendor.userId);
+        } catch (err) {
+            this.logger.error(`Failed to process referral for user ${vendor.userId}: ${err.message}`);
         }
+
 
         this.logger.log(`✅ Subscription [${savedSub.id}] activated/extended for vendor [${vendor.id}] via ${gateway} until ${savedSub.endDate.toDateString()}`);
         return savedSub;
@@ -985,6 +978,27 @@ export class SubscriptionsService implements OnModuleInit {
             invoiceNumber: `INV-${plan.type.toUpperCase()}-${Date.now().toString().slice(-6)}`,
         });
         await this.transactionRepository.save(transaction);
+        
+        // 5. Affiliate Integration - AUTOMATED
+        if (plan.type === PricingPlanType.SUBSCRIPTION) {
+            try {
+                const vendorUser = await this.userRepository.findOne({ where: { id: vendorId } });
+                if (vendorUser) {
+                    await this.affiliateService.processSuccessfulReferral(vendorUser.id);
+                } else {
+                    // Try to get from vendor relation
+                    const vendorWithUser = await this.vendorRepository.findOne({ 
+                        where: { id: vendorId },
+                        relations: ['user']
+                    });
+                    if (vendorWithUser?.user) {
+                        await this.affiliateService.processSuccessfulReferral(vendorWithUser.user.id);
+                    }
+                }
+            } catch (err) {
+                this.logger.error(`Failed to process referral for vendor ${vendorId} in active plan: ${err.message}`);
+            }
+        }
 
         return saved;
     }

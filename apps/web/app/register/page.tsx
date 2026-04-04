@@ -25,9 +25,23 @@ function RegisterForm() {
 
     useEffect(() => {
         const queryRole = searchParams.get('role');
+        const ref = searchParams.get('ref');
+        
+        // Priority for referral code: URL 'ref' parameter -> session storage fallback
+        if (ref) {
+            setReferralCode(ref);
+            setSelectedRole('vendor'); // Auto-switch to vendor role for referrals
+        } else if (typeof window !== 'undefined') {
+            const storedRef = sessionStorage.getItem('referralCode');
+            if (storedRef) {
+                setReferralCode(storedRef);
+                setSelectedRole('vendor');
+            }
+        }
+        
         if (queryRole === 'vendor') {
             setSelectedRole('vendor');
-        } else {
+        } else if (queryRole === 'user') {
             setSelectedRole('user');
         }
     }, [searchParams]);
@@ -183,7 +197,7 @@ function RegisterForm() {
                                             className="w-full pl-14 pr-6 py-4 bg-blue-50/30 border-2 border-transparent focus:border-blue-500/20 focus:bg-white focus:ring-4 focus:ring-blue-500/5 rounded-2xl text-slate-900 font-bold transition-all outline-none uppercase placeholder:normal-case"
                                             placeholder="Enter your expert's code"
                                             value={referralCode}
-                                            onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                                            onChange={(e) => setReferralCode(e.target.value)}
                                         />
                                     </div>
                                 </div>
