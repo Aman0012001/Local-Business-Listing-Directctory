@@ -68,14 +68,17 @@ async function fetcher<T>(endpoint: string, options?: FetcherOptions): Promise<T
                     window.location.href = '/login?error=expired';
                 }
             } else {
-                console.error(`[api.ts] API Error on ${endpoint}:`, response.status, response.statusText, JSON.stringify(error, null, 2));
+                // Only log stack traces for 500 errors to avoid console noise for expected validation constraints (400, 404)
+                if (response.status >= 500) {
+                    console.error(`[api.ts] API Error on ${endpoint}:`, response.status, response.statusText, JSON.stringify(error, null, 2));
+                }
             }
 
             if (options?.silent && response.status === 404) {
                 console.warn(`[api.ts] Silent 404 on ${endpoint}`);
                 return [] as any;
             }
-            throw new Error(`[${endpoint}] ${error.message || 'API request failed'}`);
+            throw new Error(error.message || 'API request failed');
         }
 
         // Check if the response has content before parsing as JSON
@@ -511,7 +514,7 @@ export const api = {
         join: (dto: any) => fetcher('/affiliate/join', { method: 'POST', body: JSON.stringify(dto) }),
         getStats: () => fetcher<any>('/affiliate/stats'),
         getReferrals: () => fetcher<any[]>('/affiliate/referrals'),
-        trackClick: (code: string) => fetcher(`/affiliate/track-click?code=${code}`, { method: 'POST' }),
+        trackClick: (code: string) => fetcher(`/affiliate/track-click?code=${code}`, { method: 'POST', silent: true }),
         applyReferral: (code: string) => fetcher<{ success: boolean; message: string }>('/affiliate/apply-referral', {
             method: 'POST',
             body: JSON.stringify({ code }),

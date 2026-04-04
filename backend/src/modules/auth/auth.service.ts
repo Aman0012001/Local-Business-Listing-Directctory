@@ -8,7 +8,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { OAuth2Client } from 'google-auth-library';
 import { User, UserRole, AuthProvider } from '../../entities/user.entity';
@@ -523,9 +523,9 @@ export class AuthService {
     private async handleReferral(referralCode: string, referredUserId: string): Promise<void> {
         try {
             const normalizedCode = referralCode.trim();
-            const affiliate = await this.affiliateRepository.createQueryBuilder('affiliate')
-                .where('LOWER(affiliate.referral_code) = LOWER(:code)', { code: normalizedCode })
-                .getOne();
+            const affiliate = await this.affiliateRepository.findOne({
+                where: { referralCode: ILike(normalizedCode) }
+            });
 
             if (affiliate) {
                 // Check if referral already exists to avoid duplicates

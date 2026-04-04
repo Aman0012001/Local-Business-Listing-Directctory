@@ -1,9 +1,9 @@
 import {
     Injectable,
+    Logger,
     NotFoundException,
     BadRequestException,
     ConflictException,
-    Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike } from 'typeorm';
@@ -123,11 +123,11 @@ export class AffiliateService {
         const normalizedCode = code.trim();
         this.logger.log(`Applying referral code: "${normalizedCode}" (length: ${normalizedCode.length})`);
         
-        // Find the affiliate with this code (case-insensitive) using explicit LOWER() for maximum reliability
-        const affiliate = await this.affiliateRepository.createQueryBuilder('affiliate')
-            .leftJoinAndSelect('affiliate.user', 'user')
-            .where('LOWER(affiliate.referral_code) = LOWER(:code)', { code: normalizedCode })
-            .getOne();
+        // Find the affiliate with this code
+        const affiliate = await this.affiliateRepository.findOne({
+            where: { referralCode: ILike(normalizedCode) },
+            relations: ['user']
+        });
 
         if (!affiliate) {
             this.logger.warn(`Referral code not found: "${normalizedCode}"`);
