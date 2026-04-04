@@ -3,10 +3,10 @@
 const nextConfig = {
     reactStrictMode: true,
 
-    // Standard dynamic build (required for live data and ISR)
-    // output: "export", 
+    // ✅ THIS IS MUST (Next 16 export)
+    // ✅ Switch to dynamic build for production (Netlify support)
+    // output: "export",
 
-    // Disable Next image optimization (required for static export)
     images: {
         unoptimized: true,
         remotePatterns: [
@@ -17,9 +17,7 @@ const nextConfig = {
         ],
     },
 
-    // Enable trailing slash for static hosting compatibility
     trailingSlash: true,
-
 
     typescript: {
         ignoreBuildErrors: false,

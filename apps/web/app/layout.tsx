@@ -16,7 +16,7 @@ const roboto = Roboto({
 });
 
 const baseUrl = process.env.NODE_ENV === 'production' 
-    ? "https://local-business-listing-directctory-production.up.railway.app"
+    ? "https://nampata.netlify.app"
     : "http://localhost:3000";
 
 export const metadata = {

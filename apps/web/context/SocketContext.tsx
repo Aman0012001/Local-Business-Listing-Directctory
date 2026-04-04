@@ -14,7 +14,7 @@ const SocketContext = createContext<SocketContextType>({
     connected: false
 });
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://process.env.NEXT_PUBLIC_API_URL/notifications';
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || (process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api/v1', '') : 'http://localhost:3001');
 
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     const { user } = useAuth();
