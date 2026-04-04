@@ -25,8 +25,8 @@ export async function generateStaticParams() {
 }
 
 // Ensure pages that weren't pre-generated are still accessible on-demand
-// Ensure standard static export compatibility
-export const dynamicParams = false;
+// Standard dynamic build support
+export const dynamicParams = true;
 
 export default async function BusinessPage({ params }: { params: Promise<{ businessSlug: string }> }) {
     const { businessSlug } = await params;

@@ -42,9 +42,9 @@ export default function CategoriesPage() {
         return (
             <div className="min-h-screen bg-white">
                 <Navbar />
-                <div className="max-w-7xl mx-auto px-4 py-32 flex flex-col items-center">
+                <div className="max-w-7xl mx-auto px-4 py-32 flex flex-col items-center justify-center">
                     <div className="w-12 h-12 border-t-2 border-blue-600 rounded-full animate-spin mb-6" />
-                    <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Synchronizing Collections</p>
+                    <p className="text-slate-400 font-black uppercase tracking-[0.2em] text-[10px]">Synchronizing Collections</p>
                 </div>
                 <Footer />
             </div>
@@ -58,6 +58,12 @@ export default function CategoriesPage() {
             {/* Premium Header Section */}
             <div className="pt-24 pb-16  border-b border-slate-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    {/* Breadcrumbs */}
+                    <div className="flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.15em] text-slate-400 mb-10">
+                        <Link href="/" className="hover:text-blue-600 transition-colors">Home</Link>
+                        <ChevronRight className="w-3 h-3 text-slate-200" />
+                        <span className="text-slate-900">Categories</span>
+                    </div>
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}

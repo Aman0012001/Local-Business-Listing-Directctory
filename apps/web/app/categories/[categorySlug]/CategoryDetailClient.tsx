@@ -131,11 +131,11 @@ export default function CategoryDetailClient({ slug }: CategoryDetailClientProps
             {/* Minimalist Sub-Header */}
             <div className="bg-white border-b border-slate-50 pt-10 pb-16 lg:pt-16 lg:pb-24">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-300 mb-10">
-                        <Link href="/" className="hover:text-blue-600">Home</Link>
-                        <span>/</span>
-                        <Link href="/categories" className="hover:text-blue-600">Categories</Link>
-                        <span>/</span>
+                    <div className="flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.15em] text-slate-400 mb-10">
+                        <Link href="/" className="hover:text-blue-600 transition-colors">Home</Link>
+                        <ChevronRight className="w-3 h-3 text-slate-200" />
+                        <Link href="/categories" className="hover:text-blue-600 transition-colors">Categories</Link>
+                        <ChevronRight className="w-3 h-3 text-slate-200" />
                         <span className="text-slate-900">{category.name}</span>
                     </div>
 

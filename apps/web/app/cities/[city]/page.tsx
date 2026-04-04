@@ -20,8 +20,8 @@ export async function generateStaticParams() {
     }
 }
 
-// Ensure standard static export compatibility
-export const dynamicParams = false;
+// Standard dynamic build support
+export const dynamicParams = true;
 
 export default async function CityVendorsPage({ params }: { params: Promise<{ city: string }> }) {
     const { city } = await params;

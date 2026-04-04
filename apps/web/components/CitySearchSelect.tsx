@@ -44,7 +44,7 @@ export default function CitySearchSelect({ cities, value, onChange, placeholder 
         navigator.geolocation.getCurrentPosition(
             async (position) => {
                 const { latitude, longitude } = position.coords;
-                
+
                 if ((window as any).google && (window as any).google.maps && (window as any).google.maps.Geocoder) {
                     const geocoder = new (window as any).google.maps.Geocoder();
                     geocoder.geocode({ location: { lat: latitude, lng: longitude } }, (results: any, status: any) => {
@@ -60,7 +60,7 @@ export default function CitySearchSelect({ cities, value, onChange, placeholder 
                             });
 
                             if (detectedCity) {
-                                const matched = cities.find(c => 
+                                const matched = cities.find(c =>
                                     c.name.toLowerCase() === detectedCity.toLowerCase() ||
                                     c.name.toLowerCase().includes(detectedCity.toLowerCase())
                                 );
@@ -92,9 +92,8 @@ export default function CitySearchSelect({ cities, value, onChange, placeholder 
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className={`w-full flex items-center justify-between px-6 py-5 bg-white transition-all duration-300 group ${
-                    isOpen ? 'rounded-t-[20px]' : 'rounded-[20px]'
-                }`}
+                className={`w-full flex items-center justify-between px-6 py-5 bg-white transition-all duration-300 group ${isOpen ? 'rounded-t-[20px]' : 'rounded-[20px]'
+                    }`}
             >
                 <div className="flex items-center gap-4">
                     <div className={`p-2 rounded-xl transition-colors ${value ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400'}`}>
@@ -131,7 +130,7 @@ export default function CitySearchSelect({ cities, value, onChange, placeholder 
                                 ) : (
                                     <div className="relative">
                                         <Navigation className="w-4 h-4" />
-                                        <motion.div 
+                                        <motion.div
                                             animate={{ scale: [1, 2, 1], opacity: [0.5, 0, 0.5] }}
                                             transition={{ repeat: Infinity, duration: 2 }}
                                             className="absolute inset-0 bg-white rounded-full -z-10"
@@ -178,11 +177,10 @@ export default function CitySearchSelect({ cities, value, onChange, placeholder 
                                                     setIsOpen(false);
                                                     setSearch('');
                                                 }}
-                                                className={`w-full flex items-center justify-between px-6 py-4 rounded-xl transition-all duration-300 ${
-                                                    isSelected 
-                                                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' 
-                                                        : 'hover:bg-slate-50 text-slate-600 font-bold'
-                                                }`}
+                                                className={`w-full flex items-center justify-between px-6 py-4 rounded-xl transition-all duration-300 ${isSelected
+                                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-100'
+                                                    : 'hover:bg-slate-50 text-slate-600 font-bold'
+                                                    }`}
                                             >
                                                 <div className="flex items-center gap-4">
                                                     <MapPin className={`w-4 h-4 ${isSelected ? 'text-white' : 'text-slate-300'}`} />

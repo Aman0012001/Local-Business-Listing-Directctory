@@ -979,3 +979,24 @@ Stack: QueryFailedError: Connection terminated unexpectedly
 [2026-04-04T11:08:56.093Z] NotificationsService Constructor Called
 [2026-04-04T11:09:08.267Z] NotificationsService Constructor Called
 [2026-04-04T11:26:37.668Z] NotificationsService Constructor Called
+[2026-04-04T11:41:01.948Z] NotificationsService Constructor Called
+[2026-04-04T14:07:01.003Z] NotificationsService Constructor Called
+[2026-04-04T14:07:12.717Z] NotificationsService Constructor Called
+[2026-04-04T14:17:15.527Z] NotificationsService Constructor Called
+[2026-04-04T15:03:12.544Z] findAllForUser FALLBACK for user 98a1be33-bc83-4cc7-b0f6-3ddc0dcf94eb: Connection terminated unexpectedly
+[2026-04-04T15:15:55.332Z] NotificationsService Constructor Called
+[2026-04-04T15:16:06.550Z] NotificationsService Constructor Called
+[2026-04-04T16:15:59.595Z] NotificationsService Constructor Called
+[2026-04-04T16:16:16.435Z] NotificationsService Constructor Called
+[Search ERROR] 2026-04-04T16:22:46.123Z: Connection terminated due to connection timeout
+Stack: Error: Connection terminated due to connection timeout
+    at Client._connectionCallback (E:\localweb\Local-Business-Listing-Directctory\node_modules\pg-pool\index.js:262:17)
+    at Connection.<anonymous> (E:\localweb\Local-Business-Listing-Directctory\node_modules\pg\lib\client.js:190:18)
+    at Object.onceWrapper (node:events:622:28)
+    at Connection.emit (node:events:508:28)
+    at Socket.<anonymous> (E:\localweb\Local-Business-Listing-Directctory\node_modules\pg\lib\connection.js:61:12)
+    at Socket.emit (node:events:520:35)
+    at TCP.<anonymous> (node:net:346:12)
+Details: {}
+
+[2026-04-04T16:47:09.656Z] NotificationsService Constructor Called
