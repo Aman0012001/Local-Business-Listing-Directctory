@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getImageUrl, api } from '../../lib/api';
+import VendorAvatar from '../VendorAvatar';
 import { chatApi } from '../../services/chat.service';
 
 export default function Sidebar() {
@@ -144,17 +145,14 @@ export default function Sidebar() {
 
     const SidebarInner = () => (
         <>
-            {/* Profile */}
             <div className="flex flex-col items-center mb-10 pt-4">
                 <div className="relative mb-4 group cursor-pointer">
-                    <div className="w-24 h-24 rounded-[20px] overflow-hidden border-4 border-white shadow-2xl transition-transform duration-500 group-hover:scale-105">
-                        <img
-                            src={getImageUrl(user?.avatarUrl) || "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
-                            alt="Profile"
-                            className="w-full h-full object-cover"
-                            key={user?.avatarUrl}
-                        />
-                    </div>
+                    <VendorAvatar 
+                        src={user?.avatarUrl} 
+                        alt={user?.fullName || 'Vendor'} 
+                        size="lg" 
+                        className="shadow-2xl transition-transform duration-500 group-hover:scale-105 border-4 border-white"
+                    />
                     <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-600 rounded-xl border-4 border-[#F8FAFC] flex items-center justify-center text-white shadow-lg">
                         <Shield className="w-4 h-4" />
                     </div>

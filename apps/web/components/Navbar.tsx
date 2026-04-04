@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Menu, ChevronDown, MapPin, User as UserIcon, LogOut, X, Search, Building2, Globe, Bell, Check, Trash2, BellRing, Megaphone, MessageSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api, getImageUrl } from '../lib/api';
+import VendorAvatar from './VendorAvatar';
 import { Category, City } from '../types/api';
 import { usePushNotifications } from '../lib/usePushNotifications';
 import { chatApi } from '../services/chat.service';
@@ -340,18 +341,12 @@ export default function Navbar() {
                         {user ? (
                             <div className="flex items-center gap-3">
                                 <Link href={user.role === 'admin' || user.role === 'superadmin' ? '/admin' : '/vendor/dashboard'} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer group">
-                                    <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform overflow-hidden">
-                                        {user.avatarUrl ? (
-                                            <img
-                                                src={getImageUrl(user.avatarUrl) as string}
-                                                alt="Avatar"
-                                                className="w-full h-full object-cover"
-                                                key={user.avatarUrl}
-                                            />
-                                        ) : (
-                                            <UserIcon className="w-4 h-4 text-[#FF7A30]" />
-                                        )}
-                                    </div>
+                                    <VendorAvatar 
+                                        src={user.avatarUrl} 
+                                        alt={user.fullName || user.email} 
+                                        size="sm" 
+                                        className="shadow-sm group-hover:scale-110 transition-transform"
+                                    />
                                     <div className="flex flex-col">
                                         <span className="text-xs font-bold text-[#112D4E] leading-tight max-w-[80px] truncate">{user.fullName || user.email}</span>
                                         <span className="text-[8px] text-orange-600 font-bold uppercase tracking-widest">

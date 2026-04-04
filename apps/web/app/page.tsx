@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Search, MapPin, ArrowRight, TrendingUp, Compass, Sliders, Users, Heart, Phone, ShieldCheck, Star, ChefHat, Stethoscope, Sparkles, Wrench, ChevronDown } from 'lucide-react';
+import { Search, MapPin, ArrowRight, TrendingUp, Compass, Sliders, Users, Heart, Phone, ShieldCheck, Star, ChefHat, Stethoscope, Sparkles, Wrench, ChevronDown, Plane, GraduationCap, Gamepad2, Ticket, Smartphone, Headset, CheckCircle2 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import BusinessCard from '../components/BusinessCard';
@@ -39,12 +39,18 @@ export default function HomePage() {
 
     const [loading, setLoading] = useState(true);
     const [statsComments, setStatsComments] = useState<any[]>([]);
-    const heroImages = [
-        "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4",
-        "https://images.unsplash.com/photo-1504674900247-0877df9cc836",
-        "https://images.unsplash.com/photo-1528605248644-14dd04022da1",
-        "https://images.unsplash.com/photo-1552566626-52f8b828add9",
-        "https://images.unsplash.com/photo-1498654896293-37aacf113fd9"
+    // heroImages slider removed in favor of clean design
+    const badgeText = "Your Local. Your Choice.";
+    const highlights = [
+        { icon: <ShieldCheck className="w-5 h-5 text-orange-500" />, title: "Verified Businesses", desc: "Trusted and reliable listings" },
+        { icon: <Search className="w-5 h-5 text-green-500" />, title: "Fast & Easy Search", desc: "Find what you need instantly" },
+        { icon: <Headset className="w-5 h-5 text-blue-500" />, title: "Local Support", desc: "We're here to help" },
+    ];
+    const quickCategories = [
+        { name: "Education", icon: <GraduationCap className="w-5 h-5" />, color: "bg-orange-50 text-orange-600", slug: "education" },
+        { name: "Airport", icon: <Plane className="w-5 h-5" />, color: "bg-blue-50 text-blue-600", slug: "airport" },
+        { name: "Amusement park", icon: <Gamepad2 className="w-5 h-5" />, color: "bg-purple-50 text-purple-600", slug: "amusement-park" },
+        { name: "Car repair", icon: <Wrench className="w-5 h-5" />, color: "bg-green-50 text-green-600", slug: "car-repair" },
     ];
     const sliderSettings = {
         dots: false,
@@ -211,60 +217,67 @@ export default function HomePage() {
 
 
             {/* Hero Section */}
-            <section className="relative pt-32 pb-44 px-4 overflow-visible" style={{ height: "100vh" }}>
-                <div className="absolute inset-0 z-0">
-
-                    <Slider {...sliderSettings}>
-                        {heroImages.map((img, index) => (
-                            <div key={index}>
-                                <div
-                                    className="h-[750px] w-full"
-                                    style={{
-                                        backgroundImage: `url(${img})`,
-                                        backgroundSize: "cover",
-                                        backgroundPosition: "center"
-                                    }}
-                                >
-                                    <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
-                                </div>
-                            </div>
-                        ))}
-                    </Slider>
-
+            <section className="relative pt-32 pb-44 px-4 overflow-hidden bg-[#FBFBFC]" style={{ minHeight: "100vh" }}>
+                {/* Decorative Elements */}
+                <div className="absolute top-20 left-10 opacity-20 hidden md:block">
+                    <div className="grid grid-cols-4 gap-2">
+                        {[...Array(16)].map((_, i) => <div key={i} className="w-1 h-1 bg-orange-400 rounded-full" />)}
+                    </div>
+                </div>
+                <div className="absolute top-40 right-20 opacity-20 hidden md:block">
+                   <ShieldCheck className="w-12 h-12 text-slate-300" />
+                </div>
+                <div className="absolute bottom-40 right-10 opacity-20 hidden md:block">
+                    <div className="grid grid-cols-4 gap-2">
+                        {[...Array(16)].map((_, i) => <div key={i} className="w-1 h-1 bg-orange-400 rounded-full" />)}
+                    </div>
+                </div>
+                <div className="absolute inset-x-0 bottom-0 pointer-events-none opacity-5">
+                    <svg viewBox="0 0 1440 320" className="w-full h-auto">
+                        <path fill="#FF7A30" fillOpacity="1" d="M0,160L48,176C96,192,192,224,288,224C384,224,480,192,576,165.3C672,139,768,117,864,128C960,139,1056,181,1152,186.7C1248,192,1344,160,1392,144L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+                    </svg>
                 </div>
 
-                <div className="max-w-7xl mx-auto relative z-10 text-center text-white">
+                <div className="max-w-7xl mx-auto relative z-10 text-center">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8 }}
                     >
-                        <h1 className="text-4xl md:text-7xl font-extrabold mb-6 tracking-tight drop-">
-                            Discover Trusted Local Businesses Instantly
+                        {/* Badge */}
+                        <div className="inline-flex items-center gap-2 px-6 py-2 bg-orange-50 rounded-full mb-8 border border-orange-100/50 shadow-sm">
+                            <span className="text-[#FF7A30] font-black text-xs uppercase tracking-widest leading-none">* {badgeText}</span>
+                        </div>
+
+                        <h1 className="text-4xl md:text-7xl font-black mb-6 tracking-tighter text-[#112D4E] leading-[1.05]">
+                            Discover Trusted Local Businesses <br/>
+                            <span className="text-[#FF7A30]">Instantly</span>
                         </h1>
-                        <p className="text-lg md:text-2xl text-white/95 mb-12 max-w-3xl mx-auto font-medium drop-shadow-lg">
-                            Search, compare & contact the best services near you — fast and reliable.
+                        <p className="text-lg md:text-xl text-slate-500 mb-12 max-w-2xl mx-auto font-medium leading-relaxed">
+                            Search, compare & contact the best services near you — <br className="hidden md:block" /> fast and reliable.
                         </p>
                     </motion.div>
+
                     {/* Search Bar Container */}
                     <motion.div
                         ref={searchRef}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2, duration: 0.5 }}
-                        className="relative z-[70] max-w-5xl mx-auto flex flex-col md:flex-row items-stretch gap-3 drop-shadow-2xl"
+                        className="max-w-5xl mx-auto bg-white rounded-[24px] shadow-[0_20px_50px_rgba(0,0,0,0.06)] p-2 md:p-3 flex flex-col md:flex-row items-stretch gap-2 border border-slate-100"
                     >
-                        <div className="flex-1 relative z-50">
+                        <div className="md:w-1/3 relative group">
                             <CitySearchSelect
                                 cities={citiesList}
                                 value={selectedCity}
                                 onChange={setSelectedCity}
                             />
+                            <div className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 w-[1px] h-10 bg-slate-100 group-hover:bg-orange-500 transition-colors" />
                         </div>
 
-                        <div className="flex-[1.5] relative z-50">
+                        <div className="flex-1 relative">
                             <div className="relative h-full">
-                                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10" />
+                                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 z-10" />
                                 <input
                                     type="text"
                                     placeholder="Search categories or businesses..."
@@ -275,8 +288,7 @@ export default function HomePage() {
                                     }}
                                     onFocus={() => setIsSuggestionsOpen(true)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                    className="w-full pl-14 pr-8 py-5 bg-white text-slate-900 placeholder:text-slate-400 border-none outline-none transition-all shadow-sm focus:ring-2 focus:ring-orange-500 font-bold text-lg" 
-                                    style={{ borderRadius: "12px" }}
+                                    className="w-full h-full pl-14 pr-8 py-5 bg-transparent text-slate-900 placeholder:text-slate-400 border-none outline-none font-bold text-lg rounded-[20px]" 
                                 />
                             </div>
 
@@ -284,11 +296,11 @@ export default function HomePage() {
                                 <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 4 }}
-                                    className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 py-4 z-[100] max-h-[400px] overflow-y-auto shadow-2xl rounded-b-[12px]"
+                                    className="absolute top-full left-0 right-0 mt-4 bg-white border border-slate-100 p-2 z-[100] max-h-[400px] overflow-y-auto shadow-2xl rounded-[20px]"
                                 >
                                     {filteredCategories.length > 0 && (
-                                        <div className="px-6 py-2">
-                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Categories</p>
+                                        <div className="p-2">
+                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3 px-4 py-2 bg-slate-50 rounded-xl">Categories</p>
                                             {filteredCategories.map(cat => (
                                                 <button
                                                     key={cat.id}
@@ -297,40 +309,14 @@ export default function HomePage() {
                                                         setIsSuggestionsOpen(false);
                                                         window.location.href = `/search?category=${cat.slug}`;
                                                     }}
-                                                    className="w-full px-4 py-3 text-left hover:bg-slate-50 rounded-xl text-slate-700 font-bold transition-all flex items-center justify-between group"
+                                                    className="w-full flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl text-slate-700 font-bold transition-all group"
                                                 >
                                                     <div className="flex items-center gap-4">
                                                         <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-[#FF7A30] group-hover:scale-110 transition-transform">
-                                                            <Search className="w-5 h-5" />
+                                                            <Search className="w-4 h-4" />
                                                         </div>
-                                                        <span className="group-hover:text-[#FF7A30] transition-colors">{cat.name}</span>
+                                                        <span>{cat.name}</span>
                                                     </div>
-                                                    <ChevronDown className="w-4 h-4 opacity-0 group-hover:opacity-100 -rotate-90 transition-all" />
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    {filteredCities.length > 0 && (
-                                        <div className="px-6 py-2 border-t border-slate-50 mt-2">
-                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 mt-2">Locations</p>
-                                            {filteredCities.map(city => (
-                                                <button
-                                                    key={city.id}
-                                                    onClick={() => {
-                                                        setSearchQuery(city.name);
-                                                        setIsSuggestionsOpen(false);
-                                                        window.location.href = `/search?city=${encodeURIComponent(city.name)}`;
-                                                    }}
-                                                    className="w-full px-4 py-3 text-left hover:bg-slate-50 rounded-xl text-slate-700 font-bold transition-all flex items-center justify-between group"
-                                                >
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
-                                                            <MapPin className="w-5 h-5" />
-                                                        </div>
-                                                        <span className="group-hover:text-blue-600 transition-colors">{city.name}</span>
-                                                    </div>
-                                                    <ChevronDown className="w-4 h-4 opacity-0 group-hover:opacity-100 -rotate-90 transition-all" />
                                                 </button>
                                             ))}
                                         </div>
@@ -341,24 +327,41 @@ export default function HomePage() {
 
                         <button
                             onClick={handleSearch}
-                            className="bg-[#FF7A30] hover:bg-[#E86920] text-white px-10 py-5 font-bold text-xl transition-all shadow-sm active:scale-95 flex items-center justify-center group shrink-0" 
-                            style={{ borderRadius: "12px" }}
+                            className="bg-[#FF7A30] hover:bg-[#E86920] text-white px-10 py-5 rounded-[20px] font-black text-lg transition-all shadow-lg shadow-orange-100 flex items-center justify-center gap-3 active:scale-95 shrink-0" 
                         >
-                            <Search className="w-6 h-6 me-3" />
+                            <Search className="w-5 h-5" />
                             Search
                         </button>
                     </motion.div>
 
-
-                    <div className="mt-12 flex flex-wrap justify-center gap-4 md:gap-8 text-white/95">
-                        {categories.slice(0, 4).map(cat => (
-                            <Link key={cat.id} href={`/search?category=${cat.slug}`} className="flex items-center gap-3 px-4 py-2 bg-white/10 rounded-xl hover:bg-white/20 transition-all backdrop-blur-sm border border-white/10 group">
-                                <DynamicIcon name={cat.icon} className="w-6 h-6" />
-                                <span className="text-base font-bold tracking-wide">{cat.name}</span>
+                    {/* Quick Category Pills */}
+                    <div className="mt-12 flex flex-wrap justify-center gap-4">
+                        {quickCategories.map((cat, i) => (
+                            <Link 
+                                key={i} 
+                                href={`/search?category=${cat.slug}`} 
+                                className={`flex items-center gap-3 px-6 py-3 rounded-full transition-all hover:shadow-xl hover:-translate-y-1 ${cat.color} border border-transparent hover:border-current/10 font-bold group shadow-sm`}
+                            >
+                                <span className="group-hover:scale-110 transition-transform">{cat.icon}</span>
+                                <span className="text-base tracking-tight">{cat.name}</span>
                             </Link>
                         ))}
                     </div>
 
+                    {/* Feature Highlights Bar */}
+                    <div className="mt-20 max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 bg-white/50 backdrop-blur-md rounded-[24px] border border-slate-100 shadow-sm p-4 overflow-hidden">
+                        {highlights.map((h, i) => (
+                            <div key={i} className={`flex items-center gap-5 p-6 ${i !== highlights.length - 1 ? 'md:border-r border-slate-100' : ''}`}>
+                                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm border border-slate-50 shrink-0">
+                                    {h.icon}
+                                </div>
+                                <div className="text-left">
+                                    <h4 className="font-black text-[#112D4E] text-sm uppercase tracking-tight">{h.title}</h4>
+                                    <p className="text-slate-500 text-xs font-medium">{h.desc}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </section>
 

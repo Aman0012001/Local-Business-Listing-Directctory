@@ -92,12 +92,12 @@ export default function CitySearchSelect({ cities, value, onChange, placeholder 
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className={`w-full flex items-center justify-between px-6 py-4 bg-white transition-all duration-300 group shadow-sm ${
-                    isOpen ? 'rounded-t-[12px] ring-2 ring-orange-500' : 'rounded-[12px] hover:shadow-md'
+                className={`w-full flex items-center justify-between px-6 py-5 bg-white transition-all duration-300 group ${
+                    isOpen ? 'rounded-t-[20px]' : 'rounded-[20px]'
                 }`}
             >
                 <div className="flex items-center gap-4">
-                    <div className={`p-2.5 rounded-xl transition-colors ${value ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-300'}`}>
+                    <div className={`p-2 rounded-xl transition-colors ${value ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400'}`}>
                         <MapPin className="w-5 h-5" />
                     </div>
                     <div className="text-left">

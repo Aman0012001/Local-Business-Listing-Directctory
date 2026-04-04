@@ -6,6 +6,7 @@ import {
     BadgeCheck, Phone, Mail, Star, Building2,
     Facebook, Instagram, Twitter, Globe, Linkedin, Youtube,
 } from 'lucide-react';
+import VendorAvatar from './VendorAvatar';
 import { getImageUrl } from '../lib/api';
 import { getBusinessStatus } from '../lib/business-status';
 
@@ -75,36 +76,18 @@ const SOCIAL_COLORS: Record<string, string> = {
 };
 
 export default function VendorProfileCard({ vendor, city }: Props) {
-    const avatar = vendor.avatarUrl ? getImageUrl(vendor.avatarUrl) : null;
-    const initials = vendor.businessName?.slice(0, 2).toUpperCase() || 'VD';
-
     return (
         <div className="bg-white rounded-2xl border border-slate-200 transition-all duration-300 hover:-translate-y-1 overflow-hidden flex flex-col">
 
             {/* ── Profile photo ── */}
             <div className="flex flex-col items-center pt-8 pb-4 px-5">
                 <div className="relative mb-4">
-                    <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[#112D4E] to-[#1a3a70] flex items-center justify-center overflow-hidden shadow-lg ring-4 ring-white">
-                        {avatar ? (
-                            <img
-                                src={avatar as string}
-                                alt={vendor.businessName}
-                                className="w-full h-full object-cover"
-                                onError={e => {
-                                    (e.target as HTMLImageElement).style.display = 'none';
-                                    const parent = (e.target as HTMLImageElement).parentElement;
-                                    if (parent) {
-                                        const span = document.createElement('span');
-                                        span.className = 'text-white font-black text-3xl';
-                                        span.textContent = initials;
-                                        parent.appendChild(span);
-                                    }
-                                }}
-                            />
-                        ) : (
-                            <span className="text-white font-black text-3xl">{initials}</span>
-                        )}
-                    </div>
+                    <VendorAvatar 
+                        src={vendor.avatarUrl} 
+                        alt={vendor.businessName} 
+                        size="lg" 
+                        className="shadow-lg ring-4 ring-white"
+                    />
                     {vendor.isVerified && (
                         <span className="absolute -bottom-2 -right-2 w-7 h-7 bg-emerald-500 rounded-full flex items-center justify-center shadow-md ring-2 ring-white" title="Verified">
                             <BadgeCheck className="w-4 h-4 text-white" />

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { api, getImageUrl } from '../../../lib/api';
 import Navbar from '../../../components/Navbar';
+import VendorAvatar from '../../../components/VendorAvatar';
 import ChatTrigger from '../../../components/chat/ChatTrigger';
 
 interface VendorProfile {
@@ -107,17 +108,12 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
                     <div className="flex flex-col md:flex-row items-center md:items-start gap-10">
                         {/* Avatar Section */}
                         <div className="relative group">
-                            <div className="w-32 h-32 rounded-3xl bg-white p-1 shadow-sm border border-slate-100 overflow-hidden">
-                                <div className="w-full h-full rounded-[1.3rem] overflow-hidden bg-slate-50 flex items-center justify-center">
-                                    {avatar ? (
-                                        <img src={avatar as string} alt={vendor.vendorName} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                                    ) : (
-                                        <span className="text-3xl font-black text-slate-200 uppercase">
-                                            {vendor.vendorName.substring(0, 2)}
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
+                            <VendorAvatar 
+                                src={vendor.avatarUrl} 
+                                alt={vendor.vendorName} 
+                                size="lg" 
+                                className="shadow-sm border border-slate-100 rounded-3xl"
+                            />
                             {vendor.isVerified && (
                                 <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-white rounded-xl shadow-lg flex items-center justify-center border border-slate-50">
                                     <BadgeCheck className="w-5 h-5 text-indigo-500" />
