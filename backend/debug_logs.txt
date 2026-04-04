@@ -753,3 +753,9 @@ NotFoundException: Listing not found
 [2026-04-02T13:04:31.428Z] findBySlug: test-mnh4cfax (User: amanjeetthakur644@gmail.com)
 [2026-04-02T13:04:32.432Z] findBySlug: test-mnh4cfax - Found in DB. Status: pending
 [2026-04-02T13:04:32.433Z] findBySlug: test-mnh4cfax - SUCCESS
+[2026-04-04T02:00:46.879Z] findBySlug: dsczx-mnip9kwi (User: superadmin@example.com)
+[2026-04-04T02:00:47.733Z] findBySlug: dsczx-mnip9kwi - Found in DB. Status: pending
+[2026-04-04T02:00:48.139Z] findBySlug: dsczx-mnip9kwi - SUCCESS
+[2026-04-04T02:14:15.901Z] findBySlug: dsczx-mnip9kwi (User: sss@gmail.com)
+[2026-04-04T02:14:16.962Z] findBySlug: dsczx-mnip9kwi - Found in DB. Status: pending
+[2026-04-04T02:14:17.417Z] findBySlug: dsczx-mnip9kwi - SUCCESS

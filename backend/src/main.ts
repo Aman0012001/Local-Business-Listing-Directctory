@@ -49,6 +49,7 @@ async function bootstrap() {
      */
     const corsOrigin = configService.get<string>('CORS_ORIGIN');
     const allowedOrigins = corsOrigin ? corsOrigin.split(',').map(o => o.trim()) : [];
+    const nodeEnv = configService.get('NODE_ENV');
 
     app.enableCors({
         origin: (origin, callback) => {
@@ -58,6 +59,12 @@ async function bootstrap() {
             // 1. Check explicit allowed origins from ENV
             if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
                 return callback(null, true);
+            }
+
+            // 1b. During development, allow all localhost and 127.0.0.1 variants automatically
+            if (nodeEnv !== 'production') {
+                const isLocal = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+                if (isLocal) return callback(null, true);
             }
 
             // 2. Allow dynamic subdomains via Regex
@@ -126,7 +133,6 @@ async function bootstrap() {
      */
 
     const showSwaggerEnv = configService.get('SHOW_SWAGGER');
-    const nodeEnv = configService.get('NODE_ENV');
 
     const showSwagger =
         showSwaggerEnv === 'true' ||
@@ -136,9 +142,10 @@ async function bootstrap() {
     if (nodeEnv === 'production') {
         app.use(helmet());
     } else {
-        // Basic helmet for dev without restrictive HSTS
+        // Basic helmet for dev without restrictive HSTS or CSP that might block local sockets
         app.use(helmet({
             hsts: false,
+            contentSecurityPolicy: false,
         }));
     }
 

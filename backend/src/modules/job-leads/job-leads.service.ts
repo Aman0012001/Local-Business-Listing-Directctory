@@ -291,9 +291,42 @@ export class JobLeadsService {
     }
 
     async getVendorInboxStats(userId: string): Promise<{ newCount: number }> {
-        const leads = await this.getLeadsForVendor(userId);
-        // "New" means not responded yet. We could also filter by date if needed.
-        const newCount = (leads as any[]).filter(l => !l.hasResponded).length;
+        const vendor = await this.vendorRepository.findOne({ 
+            where: { userId }, 
+            relations: ['businesses'] 
+        });
+        
+        if (!vendor || !vendor.businesses?.length) return { newCount: 0 };
+
+        const categoryIds = vendor.businesses.map(b => b.categoryId).filter(id => !!id);
+        const cities = vendor.businesses.map(b => b.city).filter(c => !!c);
+
+        if (categoryIds.length === 0) return { newCount: 0 };
+
+        const query = this.jobLeadRepository
+            .createQueryBuilder('lead')
+            .where('lead.categoryId IN (:...categoryIds)', { categoryIds })
+            .andWhere('lead.userId != :userId', { userId })
+            .andWhere('lead.status IN (:...statuses)', { 
+                statuses: [JobLeadStatus.OPEN, JobLeadStatus.BROADCASTED, JobLeadStatus.RESPONDED] 
+            });
+
+        if (cities.length > 0) {
+            query.andWhere('(lead.city IS NULL OR lead.city IN (:...cities))', { cities });
+        }
+
+        // Optimized check: "New" means NOT responded yet
+        query.andWhere(qb => {
+            const subQuery = qb.subQuery()
+                .select('1')
+                .from(JobLeadResponse, 'response')
+                .where('response.jobLeadId = lead.id')
+                .andWhere('response.vendorId = :vendorId', { vendorId: vendor.id })
+                .getQuery();
+            return 'NOT EXISTS ' + subQuery;
+        });
+
+        const newCount = await query.getCount();
         return { newCount };
     }
 }

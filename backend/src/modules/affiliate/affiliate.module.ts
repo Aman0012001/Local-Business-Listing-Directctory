@@ -9,6 +9,10 @@ import { User } from '../../entities/user.entity';
 import { SystemSetting } from '../../entities/system-setting.entity';
 import { Subscription } from '../../entities/subscription.entity';
 import { ActivePlan } from '../../entities/active-plan.entity';
+import { PricingPlan } from '../../entities/pricing-plan.entity';
+import { Vendor } from '../../entities/vendor.entity';
+
+
 
 
 @Module({
@@ -20,7 +24,9 @@ import { ActivePlan } from '../../entities/active-plan.entity';
             User,
             SystemSetting,
             Subscription,
-            ActivePlan
+            ActivePlan,
+            PricingPlan,
+            Vendor
         ]),
     ],
     controllers: [AffiliateController],

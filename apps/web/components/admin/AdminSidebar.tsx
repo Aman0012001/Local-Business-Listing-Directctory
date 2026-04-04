@@ -41,8 +41,10 @@ const menuItems = [
     { name: 'Review Moderation', icon: ShieldAlert, href: '/admin/reviews', badge: null },
     { name: 'Promotion Rules', icon: Zap, href: '/admin/promotion-rules', badge: null },
     { name: 'Boost Plans', icon: Gift, href: '/admin/offer-event-plans', badge: null },
+    { name: 'Referrals', icon: Users, href: '/admin/referrals', badge: null },
     { name: 'Settings', icon: Settings, href: '/admin/settings', badge: null },
 ];
+
 
 export default function AdminSidebar() {
     const { user, logout } = useAuth();

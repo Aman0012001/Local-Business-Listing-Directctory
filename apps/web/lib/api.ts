@@ -503,7 +503,22 @@ export const api = {
             categories: any[], 
             cities: any[] 
         }>(`/admin/search/global?q=${encodeURIComponent(q)}`),
+        affiliate: {
+            getReferrals: () => fetcher<any[]>('/affiliate/admin/referrals'),
+            activateReferral: (id: string) => fetcher<any>(`/affiliate/admin/activate-referral/${id}`, { method: 'POST' }),
+            getStats: () => fetcher<any>('/affiliate/admin/stats'),
+            getPayouts: () => fetcher<any[]>('/affiliate/admin/payouts'),
+            updatePayout: (id: string, status: string, notes?: string) => fetcher<any>(`/affiliate/admin/payouts/${id}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ status, notes }),
+            }),
+            updateSettings: (settings: any) => fetcher<any>('/affiliate/admin/settings', {
+                method: 'PATCH',
+                body: JSON.stringify(settings),
+            }),
+        },
     },
+
     notifications: {
         getAll: () => fetcher('/notifications'),
         markRead: (id: string) => fetcher(`/notifications/${id}/read`, { method: 'PATCH' }),

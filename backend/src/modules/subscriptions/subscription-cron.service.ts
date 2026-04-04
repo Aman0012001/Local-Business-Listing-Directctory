@@ -60,13 +60,16 @@ export class SubscriptionCronService {
             this.logger.log('[Cron] Checking for expired plans...');
             const now = new Date();
 
-            const expiredPlans = await this.activePlanRepo.find({
+            const allExpired = await this.activePlanRepo.find({
                 where: {
                     status: ActivePlanStatus.ACTIVE,
                     endDate: LessThanOrEqual(now),
                 },
                 relations: ['plan'],
             });
+
+            // SKIP expiration for plans with price 0 (Basic/Free plans are perpetual)
+            const expiredPlans = allExpired.filter(p => Number(p.plan?.price || 0) > 0);
 
             if (expiredPlans.length === 0) return;
 

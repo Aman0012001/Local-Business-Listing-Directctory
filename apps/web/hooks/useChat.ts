@@ -20,11 +20,25 @@ function getSocket(token: string): Socket {
 
     if (!sharedSocket || !sharedSocket.connected) {
         currentToken = token;
-        sharedSocket = io(`${SOCKET_URL}/chat`, {
+        
+        // Ensure SOCKET_URL doesn't have a trailing slash for consistency
+        const cleanUrl = SOCKET_URL.endsWith('/') ? SOCKET_URL.slice(0, -1) : SOCKET_URL || '';
+        
+        console.log(`[useChat] Connecting to socket at: ${cleanUrl}/chat`);
+        
+        sharedSocket = io(`${cleanUrl}/chat`, {
             auth: { token: `Bearer ${token}` },
-            transports: ['websocket', 'polling'],
+            // Prioritize polling first for a more stable handshake then upgrade to websocket
+            transports: ['polling', 'websocket'],
             reconnection: true,
             reconnectionAttempts: 5,
+            reconnectionDelay: 1000,
+            withCredentials: true,
+            forceNew: false, // Ensure we reuse the connection
+        });
+
+        sharedSocket.on('connect', () => {
+            console.log('[useChat] Socket connection established successfully');
         });
 
         sharedSocket.on('connect_error', (err) => {

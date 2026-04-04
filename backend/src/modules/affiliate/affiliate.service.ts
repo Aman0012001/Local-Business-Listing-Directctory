@@ -6,7 +6,7 @@ import {
     ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike } from 'typeorm';
+import { Repository, ILike, MoreThan } from 'typeorm';
 import { Affiliate } from '../../entities/affiliate.entity';
 import { AffiliateReferral, ReferralStatus, ReferralType } from '../../entities/referral.entity';
 import { Payout, PayoutStatus } from '../../entities/payout.entity';
@@ -14,8 +14,10 @@ import { User } from '../../entities/user.entity';
 import { SystemSetting } from '../../entities/system-setting.entity';
 import { Subscription, SubscriptionStatus } from '../../entities/subscription.entity';
 import { ActivePlan, ActivePlanStatus } from '../../entities/active-plan.entity';
-import { PricingPlanType } from '../../entities/pricing-plan.entity';
+import { PricingPlan, PricingPlanType } from '../../entities/pricing-plan.entity';
+import { Vendor } from '../../entities/vendor.entity';
 import { generateReferralCode } from '../../common/utils/referral-code';
+
 
 
 @Injectable()
@@ -36,7 +38,12 @@ export class AffiliateService {
         private subscriptionRepository: Repository<Subscription>,
         @InjectRepository(ActivePlan)
         private activePlanRepository: Repository<ActivePlan>,
+        @InjectRepository(PricingPlan)
+        private pricingPlanRepository: Repository<PricingPlan>,
+        @InjectRepository(Vendor)
+        private vendorRepo: Repository<Vendor>,
     ) { }
+
 
 
     async getStats(userId: string) {
@@ -349,41 +356,109 @@ export class AffiliateService {
         const referrerId = referral.affiliate.user.id;
         let extensionGranted = false;
 
-        // 1. Extend NEW System PLAN (ActivePlan) if exists
-        const referrerActivePlan = await this.activePlanRepository.findOne({
+        // --- 1. NEW PRICING SYSTEM (ActivePlan) ---
+        // Find most recent subscription-type plan (any status)
+        const referrerPlans = await this.activePlanRepository.find({
             where: { 
                 vendor: { userId: referrerId },
-                status: ActivePlanStatus.ACTIVE,
                 plan: { type: PricingPlanType.SUBSCRIPTION } as any
             },
             relations: ['plan'],
             order: { endDate: 'DESC' }
         });
 
-        if (referrerActivePlan) {
-            const currentEndDate = new Date(referrerActivePlan.endDate);
-            currentEndDate.setDate(currentEndDate.getDate() + 30);
-            referrerActivePlan.endDate = currentEndDate;
-            await this.activePlanRepository.save(referrerActivePlan);
-            this.logger.log(`Extended referrer ${referrerId} ActivePlan by 30 days`);
+        const latestPlan = referrerPlans[0];
+
+        if (latestPlan) {
+            // Re-activate if expired/cancelled
+            latestPlan.status = ActivePlanStatus.ACTIVE;
+            
+            const now = new Date();
+            const currentEndDate = new Date(latestPlan.endDate);
+
+            if (currentEndDate > now) {
+                // Still active: Add 30 days to the end
+                currentEndDate.setDate(currentEndDate.getDate() + 30);
+                latestPlan.endDate = currentEndDate;
+            } else {
+                // Already expired: Reactivate from NOW + 30 days
+                latestPlan.startDate = now;
+                const newEndDate = new Date(now);
+                newEndDate.setDate(newEndDate.getDate() + 30);
+                latestPlan.endDate = newEndDate;
+            }
+
+            await this.activePlanRepository.save(latestPlan);
+            this.logger.log(`Extended/Re-activated referrer ${referrerId} ActivePlan by 30 days`);
             extensionGranted = true;
+        } else {
+            // FALLBACK: Assign a new plan if they have NONE
+            try {
+                // Find a plan with price > 0 (Standard/Reward type)
+                const defaultPlan = await this.pricingPlanRepository.findOne({
+                    where: { 
+                        type: PricingPlanType.SUBSCRIPTION, 
+                        isActive: true,
+                        price: MoreThan(0) // Prefer a paid plan for reward features
+                    },
+                    order: { price: 'ASC' }
+                }) || await this.pricingPlanRepository.findOne({
+                    where: { type: PricingPlanType.SUBSCRIPTION, isActive: true },
+                    order: { price: 'ASC' }
+                });
+
+                if (defaultPlan) {
+                    const vendor = await this.vendorRepo.findOne({ where: { userId: referrerId } });
+                    if (vendor) {
+                        const now = new Date();
+                        const endDate = new Date(now);
+                        endDate.setDate(endDate.getDate() + 30);
+
+                        const newActivePlan = this.activePlanRepository.create({
+                            vendorId: vendor.id,
+                            planId: defaultPlan.id,
+                            status: ActivePlanStatus.ACTIVE,
+                            startDate: now,
+                            endDate: endDate,
+                            amountPaid: 0,
+                            transactionId: 'REFERRAL_REWARD'
+                        });
+                        await this.activePlanRepository.save(newActivePlan);
+                        this.logger.log(`Assigned NEW 30-day reward plan to referrer ${referrerId}`);
+                        extensionGranted = true;
+                    }
+                }
+            } catch (err) {
+                this.logger.error(`Failed to assign fallback plan to referrer ${referrerId}: ${err.message}`);
+            }
         }
 
-        // 2. Extend OLD System Subscription if exists
+        // --- 2. OLD LEGACY SYSTEM (Subscription) ---
         const referrerActiveSub = await this.subscriptionRepository.findOne({
             where: { 
                 vendor: { userId: referrerId },
-                status: SubscriptionStatus.ACTIVE 
+                // We keep it simple for legacy: only extend if active or recently expired
             },
             order: { endDate: 'DESC' }
         });
 
         if (referrerActiveSub) {
+            referrerActiveSub.status = SubscriptionStatus.ACTIVE;
+            const now = new Date();
             const currentEndDate = new Date(referrerActiveSub.endDate);
-            currentEndDate.setDate(currentEndDate.getDate() + 30);
-            referrerActiveSub.endDate = currentEndDate;
+
+            if (currentEndDate > now) {
+                currentEndDate.setDate(currentEndDate.getDate() + 30);
+                referrerActiveSub.endDate = currentEndDate;
+            } else {
+                referrerActiveSub.startDate = now;
+                const newEndDate = new Date(now);
+                newEndDate.setDate(newEndDate.getDate() + 30);
+                referrerActiveSub.endDate = newEndDate;
+            }
+
             await this.subscriptionRepository.save(referrerActiveSub);
-            this.logger.log(`Extended referrer ${referrerId} legacy subscription by 30 days`);
+            this.logger.log(`Extended/Re-activated referrer ${referrerId} legacy subscription by 30 days`);
             extensionGranted = true;
         }
 
@@ -397,10 +472,11 @@ export class AffiliateService {
         return {
             success: true,
             message: extensionGranted 
-                ? 'Referral activated and Referrer plan extended by 30 days' 
-                : 'Referral activated (Referrer has no active plan to extend)',
+                ? 'Referral activated and Referrer plan extended/re-activated by 30 days' 
+                : 'Referral activated (Referrer has no valid account to reward)',
             extensionGranted
         };
     }
+
 }
 

@@ -104,13 +104,13 @@ export default function AffiliateDashboard() {
         }
     };
 
-    const copyLink = () => {
+    const copyCode = () => {
         if (!isMounted || !stats?.referralCode) return;
-        const link = `${window.location.origin}/?ref=${stats.referralCode}`;
-        navigator.clipboard.writeText(link);
+        navigator.clipboard.writeText(stats.referralCode);
         setCopySuccess(true);
         setTimeout(() => setCopySuccess(false), 2000);
     };
+
 
     if (loading && user) {
         return (
@@ -144,8 +144,9 @@ export default function AffiliateDashboard() {
                             <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-orange-500 shadow-sm mb-6">
                                 <Share2 className="w-6 h-6" />
                             </div>
-                            <h3 className="font-black text-slate-900 mb-2">1. Share Link</h3>
-                            <p className="text-sm text-slate-500 font-medium">Send your unique referral link to businesses or friends.</p>
+                            <h3 className="font-black text-slate-900 mb-2">1. Share Code</h3>
+                            <p className="text-sm text-slate-500 font-medium">Give your unique referral code to businesses or friends.</p>
+
                         </div>
                         <div className="p-8 bg-slate-50 rounded-3xl border border-slate-100 text-left">
                             <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-blue-500 shadow-sm mb-6">
@@ -178,18 +179,19 @@ export default function AffiliateDashboard() {
                         <h1 className="text-4xl font-black text-slate-900">Your Dashboard</h1>
                     </div>
 
-                    <div className="p-1 bg-white rounded-2xl border border-slate-200 flex gap-2 w-full md:w-[450px]">
-                        <div className="flex-1 px-4 py-3 text-sm font-bold text-slate-500 truncate">
-                            {isMounted && stats?.referralCode ? `${window.location.origin}/?ref=${stats.referralCode}` : 'Loading link...'}
+                    <div className="p-1 bg-white rounded-2xl border border-slate-200 flex gap-2 w-full md:w-[400px]">
+                        <div className="flex-1 px-4 py-3 text-base font-black text-slate-900 tracking-[0.2em] uppercase text-center">
+                            {isMounted && stats?.referralCode ? stats.referralCode : 'Loading...'}
                         </div>
                         <button
-                            onClick={copyLink}
+                            onClick={copyCode}
                             className="px-6 py-3 bg-slate-900 text-white rounded-[14px] text-xs font-black uppercase tracking-widest hover:bg-orange-500 transition-all flex items-center gap-2"
                         >
                             {copySuccess ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                            {copySuccess ? 'Copied' : 'Copy Link'}
+                            {copySuccess ? 'Copied' : 'Copy Code'}
                         </button>
                     </div>
+
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-6 mb-12">
@@ -270,7 +272,7 @@ export default function AffiliateDashboard() {
                             <div className="space-y-6">
                                 <div className="flex gap-4">
                                     <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-orange-400 shrink-0">1</div>
-                                    <p className="text-sm text-slate-300 font-medium">Get <span className="text-white font-black text-base">30 Days Free Plan</span> extension for every business that subscribes using your link.</p>
+                                    <p className="text-sm text-slate-300 font-medium">Get <span className="text-white font-black text-base">30 Days Free Plan</span> extension for every business that subscribes using your code.</p>
                                 </div>
                                 <div className="flex gap-4">
                                     <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-blue-400 shrink-0">2</div>
