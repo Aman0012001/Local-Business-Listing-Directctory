@@ -34,7 +34,7 @@ export default function HomePage() {
     const [selectedCity, setSelectedCity] = useState('');
     const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
     const [mapReady, setMapReady] = useState(false);
-    const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+    const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
 
 
     const [loading, setLoading] = useState(true);
@@ -170,7 +170,7 @@ export default function HomePage() {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     const { latitude, longitude } = position.coords;
-                    setUserLocation({lat: latitude, lng: longitude});
+                    setUserLocation({ lat: latitude, lng: longitude });
                     if ((window as any).google && (window as any).google.maps && (window as any).google.maps.Geocoder) {
                         const geocoder = new (window as any).google.maps.Geocoder();
                         geocoder.geocode({ location: { lat: latitude, lng: longitude } }, (results: any, status: any) => {
@@ -217,7 +217,7 @@ export default function HomePage() {
 
 
             {/* Hero Section */}
-            <section className="relative pt-32 pb-44 px-4 overflow-hidden bg-[#FBFBFC]" style={{ minHeight: "100vh" }}>
+            <section className="relative pt-16 pb-44 px-4 overflow-hidden bg-[#FBFBFC]" style={{ minHeight: "100vh" }}>
                 {/* Decorative Elements */}
                 <div className="absolute top-20 left-10 opacity-20 hidden md:block">
                     <div className="grid grid-cols-4 gap-2">
@@ -225,7 +225,7 @@ export default function HomePage() {
                     </div>
                 </div>
                 <div className="absolute top-40 right-20 opacity-20 hidden md:block">
-                   <ShieldCheck className="w-12 h-12 text-slate-300" />
+                    <ShieldCheck className="w-12 h-12 text-slate-300" />
                 </div>
                 <div className="absolute bottom-40 right-10 opacity-20 hidden md:block">
                     <div className="grid grid-cols-4 gap-2">
@@ -250,7 +250,7 @@ export default function HomePage() {
                         </div>
 
                         <h1 className="text-4xl md:text-7xl font-black mb-6 tracking-tighter text-[#112D4E] leading-[1.05]">
-                            Discover Trusted Local Businesses <br/>
+                            Discover Trusted Local Businesses <br />
                             <span className="text-[#FF7A30]">Instantly</span>
                         </h1>
                         <p className="text-lg md:text-xl text-slate-500 mb-12 max-w-2xl mx-auto font-medium leading-relaxed">
@@ -288,7 +288,7 @@ export default function HomePage() {
                                     }}
                                     onFocus={() => setIsSuggestionsOpen(true)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                    className="w-full h-full pl-14 pr-8 py-5 bg-transparent text-slate-900 placeholder:text-slate-400 border-none outline-none font-bold text-lg rounded-[20px]" 
+                                    className="w-full h-full pl-14 pr-8 py-5 bg-transparent text-slate-900 placeholder:text-slate-400 border-none outline-none font-bold text-lg rounded-[20px]"
                                 />
                             </div>
 
@@ -327,7 +327,7 @@ export default function HomePage() {
 
                         <button
                             onClick={handleSearch}
-                            className="bg-[#FF7A30] hover:bg-[#E86920] text-white px-10 py-5 rounded-[20px] font-black text-lg transition-all shadow-lg shadow-orange-100 flex items-center justify-center gap-3 active:scale-95 shrink-0" 
+                            className="bg-[#FF7A30] hover:bg-[#E86920] text-white px-10 py-5 rounded-[20px] font-black text-lg transition-all shadow-lg shadow-orange-100 flex items-center justify-center gap-3 active:scale-95 shrink-0"
                         >
                             <Search className="w-5 h-5" />
                             Search
@@ -337,9 +337,9 @@ export default function HomePage() {
                     {/* Quick Category Pills */}
                     <div className="mt-12 flex flex-wrap justify-center gap-4">
                         {quickCategories.map((cat, i) => (
-                            <Link 
-                                key={i} 
-                                href={`/search?category=${cat.slug}`} 
+                            <Link
+                                key={i}
+                                href={`/search?category=${cat.slug}`}
                                 className={`flex items-center gap-3 px-6 py-3 rounded-full transition-all hover:shadow-xl hover:-translate-y-1 ${cat.color} border border-transparent hover:border-current/10 font-bold group shadow-sm`}
                             >
                                 <span className="group-hover:scale-110 transition-transform">{cat.icon}</span>
@@ -542,7 +542,7 @@ export default function HomePage() {
                             </div>
                         )}
                     </div>
-                    
+
                     <div className="mt-16 text-center">
                         <Link href="/offers-events" className="text-orange-500 font-bold hover:gap-4 transition-all inline-flex items-center gap-2 text-lg">
                             View All Offers & Events <ArrowRight className="w-5 h-5" />
