@@ -16,6 +16,7 @@ import { Subscription, SubscriptionStatus } from '../../entities/subscription.en
 import { ActivePlan, ActivePlanStatus } from '../../entities/active-plan.entity';
 import { PricingPlan, PricingPlanType } from '../../entities/pricing-plan.entity';
 import { Vendor } from '../../entities/vendor.entity';
+import { Listing, BusinessStatus } from '../../entities/business.entity';
 import { generateReferralCode } from '../../common/utils/referral-code';
 
 
@@ -42,6 +43,8 @@ export class AffiliateService {
         private pricingPlanRepository: Repository<PricingPlan>,
         @InjectRepository(Vendor)
         private vendorRepo: Repository<Vendor>,
+        @InjectRepository(Listing)
+        private listingRepo: Repository<Listing>,
     ) { }
 
 
@@ -466,6 +469,67 @@ export class AffiliateService {
         referral.status = ReferralStatus.CONVERTED;
         referral.type = ReferralType.SUBSCRIPTION; // Mark as converted via purchase
         await this.referralRepository.save(referral);
+
+        // 4. AUTOMATED REFERRED VENDOR ACTIVATION (Fixed Perfectly)
+        try {
+            const referredVendor = await this.vendorRepo.findOne({ 
+                where: { userId: referredUserId } 
+            });
+            
+            if (referredVendor) {
+                // Auto-verify the vendor profile
+                referredVendor.isVerified = true;
+                await this.vendorRepo.save(referredVendor);
+                this.logger.log(`Auto-verified referred vendor ${referredUserId}`);
+
+                // Auto-approve all pending listings for this vendor
+                const pendingListings = await this.listingRepo.find({
+                    where: { vendorId: referredVendor.id, status: BusinessStatus.PENDING }
+                });
+
+                if (pendingListings.length > 0) {
+                    for (const listing of pendingListings) {
+                        listing.status = BusinessStatus.APPROVED;
+                        listing.isVerified = true;
+                        listing.approvedAt = new Date();
+                    }
+                    await this.listingRepo.save(pendingListings);
+                    this.logger.log(`Auto-approved ${pendingListings.length} listings for referred vendor ${referredUserId}`);
+                }
+
+                // Ensure vendor has an active plan to access all features
+                const referredActivePlan = await this.activePlanRepository.findOne({
+                    where: { vendorId: referredVendor.id, status: ActivePlanStatus.ACTIVE }
+                });
+
+                if (!referredActivePlan) {
+                    const defaultPlan = await this.pricingPlanRepository.findOne({
+                        where: { type: PricingPlanType.SUBSCRIPTION, isActive: true },
+                        order: { price: 'ASC' }
+                    });
+
+                    if (defaultPlan) {
+                        const now = new Date();
+                        const endDate = new Date(now);
+                        endDate.setDate(endDate.getDate() + 30);
+
+                        const newActivePlan = this.activePlanRepository.create({
+                            vendorId: referredVendor.id,
+                            planId: defaultPlan.id,
+                            status: ActivePlanStatus.ACTIVE,
+                            startDate: now,
+                            endDate: endDate,
+                            amountPaid: 0,
+                            transactionId: 'REFERRAL_SIGNUP_REWARD'
+                        });
+                        await this.activePlanRepository.save(newActivePlan);
+                        this.logger.log(`Assigned 30-day starter plan to referred vendor ${referredUserId}`);
+                    }
+                }
+            }
+        } catch (err) {
+            this.logger.error(`Failed to activate referred vendor features for ${referredUserId}: ${err.message}`);
+        }
 
         this.logger.log(`✅ Referral ${referral.id} for user ${referredUserId} successfully converted. Extension granted: ${extensionGranted}`);
 
