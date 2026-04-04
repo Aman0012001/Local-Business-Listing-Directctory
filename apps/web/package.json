@@ -27,6 +27,7 @@
         "tailwind-merge": "^2.3.0"
     },
     "devDependencies": {
+        "@netlify/plugin-nextjs": "^5.15.9",
         "@types/google.maps": "^3.58.1",
         "@types/node": "^20",
         "@types/react": "^18",

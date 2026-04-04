@@ -1,6 +1,12 @@
 [build]
-  base = "apps/web"
+  base    = "apps/web"
   command = "npm run build"
+  publish = ".next"
 
 [build.environment]
   NETLIFY_USE_V5_RUNTIME = "true"
+  NODE_VERSION           = "20"
+  NPM_FLAGS              = "--legacy-peer-deps"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
