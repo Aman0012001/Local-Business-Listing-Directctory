@@ -1,0 +1,184 @@
+﻿Connected
+
+USER: {
+  "id": "98a1be33-bc83-4cc7-b0f6-3ddc0dcf94eb",
+  "email": "sss@gmail.com",
+  "full_name": "sss",
+  "role": "vendor"
+}
+
+VENDOR: {
+  "id": "91b27d9c-6f43-433e-b611-9e993190ccbc",
+  "user_id": "98a1be33-bc83-4cc7-b0f6-3ddc0dcf94eb",
+  "business_name": null,
+  "business_email": null,
+  "business_phone": null,
+  "business_address": null,
+  "gst_number": null,
+  "ntn_number": null,
+  "is_verified": false,
+  "verification_documents": null,
+  "created_at": "2026-04-03T20:08:52.295Z",
+  "updated_at": "2026-04-03T20:08:52.295Z",
+  "business_hours": null,
+  "social_links": [],
+  "bio": null,
+  "stripe_customer_id": null
+}
+
+AFFILIATE: {
+  "id": "11a0881a-f8ee-4e3b-9f04-11d9de65587e",
+  "user_id": "98a1be33-bc83-4cc7-b0f6-3ddc0dcf94eb",
+  "referral_code": "1LN81BEWWZ",
+  "status": "active",
+  "total_earnings": "0.00",
+  "balance": "0.00",
+  "created_at": "2026-04-03T20:08:53.852Z",
+  "updated_at": "2026-04-03T20:08:53.852Z",
+  "total_withdrawals": "0.00"
+}
+
+REFERRALS MADE:
+{
+  "id": "5ca2f5be-6849-4114-a821-851f503b19a4",
+  "affiliate_id": "11a0881a-f8ee-4e3b-9f04-11d9de65587e",
+  "referred_user_id": "dfc6a18f-94b8-4df3-a492-65f5416ad434",
+  "subscription_id": null,
+  "commission_amount": "0.00",
+  "status": "converted",
+  "created_at": "2026-04-05T02:50:56.701Z",
+  "updated_at": "2026-04-05T02:50:56.701Z",
+  "type": "subscription",
+  "referred_email": "dddd@gmail.com",
+  "referred_name": "dddd"
+}
+{
+  "id": "a2e26b54-7fcd-4284-a4c6-876b11c94e7d",
+  "affiliate_id": "11a0881a-f8ee-4e3b-9f04-11d9de65587e",
+  "referred_user_id": "698483b0-e83e-4fde-8b8b-b6121a44ff64",
+  "subscription_id": null,
+  "commission_amount": "0.00",
+  "status": "converted",
+  "created_at": "2026-04-03T20:13:33.257Z",
+  "updated_at": "2026-04-03T20:13:33.257Z",
+  "type": "subscription",
+  "referred_email": "amanjeetthakur644@gmail.com",
+  "referred_name": "Aman Jeet Singh"
+}
+
+ACTIVE PLANS:
+{
+  "id": "f8ea6fb4-f369-457d-a5d3-871de2cb0174",
+  "vendor_id": "91b27d9c-6f43-433e-b611-9e993190ccbc",
+  "plan_id": "bbf896c5-b240-4cc7-9e2d-89731835f6c0",
+  "target_id": null,
+  "status": "active",
+  "start_date": "2026-04-05T06:41:10.420Z",
+  "end_date": "2026-06-04T06:41:10.420Z",
+  "amount_paid": "0.00",
+  "transaction_id": null,
+  "is_active": true,
+  "created_at": "2026-04-03T20:09:01.532Z",
+  "updated_at": "2026-04-05T02:50:56.728Z",
+  "offer_plan_id": null,
+  "plan_name": "Premium",
+  "price": "4500.00",
+  "duration": 1,
+  "unit": "months",
+  "type": "subscription"
+}
+
+SUBSCRIPTIONS:
+
+ALL PRICING PLANS:
+{
+  "id": "11a964a6-86ff-4397-88b5-60f1fb29da60",
+  "name": "Free",
+  "price": "0.00",
+  "type": "subscription",
+  "duration": 365,
+  "unit": "days",
+  "is_active": true
+}
+{
+  "id": "16762701-ae0e-4882-a8ed-2fe49fadc4ea",
+  "name": "Listing Boost (1 Hour)",
+  "price": "50.00",
+  "type": "listing_boost",
+  "duration": 1,
+  "unit": "hours",
+  "is_active": true
+}
+{
+  "id": "ca242d37-4cd8-4256-9142-c23e5b2556d3",
+  "name": "test",
+  "price": "112.00",
+  "type": "homepage_featured",
+  "duration": 1,
+  "unit": "hours",
+  "is_active": true
+}
+{
+  "id": "d6104d1a-117f-40e5-b0df-957e2f5eb61f",
+  "name": "test1",
+  "price": "120.00",
+  "type": "homepage_featured",
+  "duration": 1,
+  "unit": "hours",
+  "is_active": true
+}
+{
+  "id": "831982be-265d-40ad-a7de-48a5195f102c",
+  "name": "Category Top Spot (24 Hours)",
+  "price": "200.00",
+  "type": "category_featured",
+  "duration": 24,
+  "unit": "hours",
+  "is_active": true
+}
+{
+  "id": "027d9df1-b960-4037-82eb-8a27bb9f6343",
+  "name": "Homepage Featured (24 Hours)",
+  "price": "300.00",
+  "type": "homepage_featured",
+  "duration": 24,
+  "unit": "hours",
+  "is_active": true
+}
+{
+  "id": "92629519-ae71-4ce8-a5a5-1a867327c330",
+  "name": "Homepage Featured (7 Days)",
+  "price": "1500.00",
+  "type": "homepage_featured",
+  "duration": 7,
+  "unit": "days",
+  "is_active": true
+}
+{
+  "id": "82ffabe2-2881-4e16-b7f3-5b750eac1b74",
+  "name": "Basic",
+  "price": "1500.00",
+  "type": "subscription",
+  "duration": 30,
+  "unit": "days",
+  "is_active": true
+}
+{
+  "id": "bbf896c5-b240-4cc7-9e2d-89731835f6c0",
+  "name": "Premium",
+  "price": "4500.00",
+  "type": "subscription",
+  "duration": 1,
+  "unit": "months",
+  "is_active": true
+}
+
+CHECKING REFERRED USERS PLANS:
+
+  Referred: dddd (dddd@gmail.com) | status: converted
+  Plan: {"status":"cancelled","amount_paid":"0.00","transaction_id":"REFERRAL_SIGNUP_REWARD","start_date":"2026-04-05T02:50:56.786Z","end_date":"2026-05-05T02:50:56.786Z","plan_name":"Premium","price":"4500.00"}
+
+  Referred: Aman Jeet Singh (amanjeetthakur644@gmail.com) | status: converted
+  Plan: {"status":"active","amount_paid":"0.00","transaction_id":"MANUAL_REWARD_REPAIR","start_date":"2026-04-05T06:41:10.420Z","end_date":"2026-05-05T06:41:10.420Z","plan_name":"Premium","price":"4500.00"}
+
+Done.
