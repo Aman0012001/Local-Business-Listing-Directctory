@@ -3,8 +3,8 @@
 const nextConfig = {
     reactStrictMode: true,
 
-    // Dynamic build for Netlify (SSR supported via @netlify/plugin-nextjs)
-    // output: "export" is intentionally disabled — static export breaks API routes
+    // Static export mode (produces the "out" folder used for local static hosting)
+    output: "export",
 
     images: {
         unoptimized: true,
@@ -27,17 +27,6 @@ const nextConfig = {
         ignoreBuildErrors: false,
     },
 
-    // Allow Railway backend domain for server-side fetch
-    async headers() {
-        return [
-            {
-                source: "/api/:path*",
-                headers: [
-                    { key: "Access-Control-Allow-Origin", value: "*" },
-                ],
-            },
-        ];
-    },
 };
 
 export default nextConfig;

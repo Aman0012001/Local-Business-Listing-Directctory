@@ -21,7 +21,7 @@ export async function generateStaticParams() {
 }
 
 // Standard dynamic build support
-export const dynamicParams = true;
+export const dynamicParams = false;
 
 export default async function CityVendorsPage({ params }: { params: Promise<{ city: string }> }) {
     const { city } = await params;
