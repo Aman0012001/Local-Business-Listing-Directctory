@@ -20,8 +20,8 @@ const nextConfig = {
         ],
     },
 
-    // trailingSlash intentionally removed — it causes redirect loops with Next.js v5 runtime
-    // trailingSlash: true,
+    // Enable trailingSlash for Netlify static exports to avoid 404s on RSC payload fetches
+    trailingSlash: true,
 
     typescript: {
         ignoreBuildErrors: false,
