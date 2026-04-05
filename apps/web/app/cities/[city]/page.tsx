@@ -13,10 +13,11 @@ export async function generateStaticParams() {
             .map((city: any) => ({
                 city: (city.slug || city.name || city.city || city).toString().toLowerCase(),
             }));
-        return params.length > 0 ? params : [{ city: 'default-city' }];
+        // Include 'template' for SPA fallback and ensure at least one param exists
+        return [...params, { city: 'template' }];
     } catch (error) {
         console.error('Failed to fetch cities for static params:', error);
-        return [{ city: 'default-city' }];
+        return [{ city: 'template' }];
     }
 }
 

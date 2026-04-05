@@ -14,7 +14,19 @@ interface CityVendorsClientProps {
 
 export default function CityVendorsClient({ city }: CityVendorsClientProps) {
     // decode URL segment: "lahore" → "lahore", "New%20Delhi" → "New Delhi"
-    const citySlug = decodeURIComponent(city || '');
+    let effectiveCity = city || '';
+    
+    // Handle SPA fallback where the route might be served by a 'template' HTML file
+    if ((city === 'template' || city === 'default-city') && typeof window !== 'undefined') {
+        const pathParts = window.location.pathname.split('/').filter(Boolean);
+        // URL structure: /cities/name/ or /cities/name
+        if (pathParts[0] === 'cities' && pathParts[1] && pathParts[1] !== 'template') {
+            effectiveCity = pathParts[1];
+            console.log('[CityVendors] Fallback detected, using actual city from URL:', effectiveCity);
+        }
+    }
+
+    const citySlug = decodeURIComponent(effectiveCity);
     // Capitalize each word for display
     const cityName = citySlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 

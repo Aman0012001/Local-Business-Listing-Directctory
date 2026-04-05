@@ -233,12 +233,24 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
 
     useEffect(() => {
         const loadBusiness = async () => {
-            console.log('[BusinessDetail] Starting loadBusiness for slug:', slug);
+            let actualSlug = slug;
+            
+            // Handle SPA fallback where the page is served by a 'template' HTML file
+            if ((slug === 'template' || slug === 'sample-business') && typeof window !== 'undefined') {
+                const pathParts = window.location.pathname.split('/').filter(Boolean);
+                // URL structure: /business/slug/ or /business/slug
+                if (pathParts[0] === 'business' && pathParts[1] && pathParts[1] !== 'template') {
+                    actualSlug = pathParts[1];
+                    console.log('[BusinessDetail] Fallback detected, using actual slug from URL:', actualSlug);
+                }
+            }
+
+            console.log('[BusinessDetail] Starting loadBusiness for slug:', actualSlug);
             setLoading(true);
             setError(null);
 
             try {
-                const data = await api.listings.getBySlug(slug as string);
+                const data = await api.listings.getBySlug(actualSlug as string);
                 console.log('[BusinessDetail] Business data received:', data?.id, 'isOnline:', data?.vendor?.user?.isOnline);
                 if (data?.vendor?.user) {
                     console.log('[BusinessDetail] Vendor User:', {

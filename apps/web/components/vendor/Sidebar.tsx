@@ -90,7 +90,7 @@ export default function Sidebar() {
         { name: 'Following', icon: UserPlus, href: '/vendor/following', badge: null },
         { name: 'Queries', icon: Send, href: '/vendor/messages', badge: newEnquiryCount > 0 ? String(newEnquiryCount) : null },
         { name: 'Live Chat', icon: MessageSquare, iconColor: 'text-emerald-500', href: '/vendor/chat', badge: unreadChatCount > 0 ? String(unreadChatCount) : null },
-        { name: 'Demand Insights', icon: TrendingUp, href: '/vendor/demand', badge: null },
+        { name: 'Hot Demand Insights', icon: TrendingUp, href: '/vendor/demand', badge: null },
         { name: 'Subscription & Billing', icon: CreditCard, href: '/vendor/subscription', badge: null },
         { name: 'Offer Plans', icon: Gift, href: '/vendor/offer-plans', badge: '🔥' },
         { name: 'Broadcast Feed', icon: Megaphone, href: '/vendor/broadcasts', badge: newBroadcastCount > 0 ? String(newBroadcastCount) : null },
@@ -109,19 +109,32 @@ export default function Sidebar() {
         if (user?.role === 'superadmin' || user?.role === 'admin') return true;
 
         if (user?.role === 'vendor') {
-            // If still loading subscription, show basic set to avoid layout shift
-            if (loadingSub) return ['Dashboard', 'My Listings', 'Add Listing', 'Subscription & Billing', 'Settings'].includes(item.name);
+            // Show requested items even if subscription is still loading
+            const essentialItems = [
+                'Dashboard', 'My Listings', 'Add Listing', 'Subscription & Billing', 'Settings',
+                'Live Chat', 'Leads', 'Hot Demand Insights', 'Queries', 'Reviews', 'Analytics', 'Broadcast Feed'
+            ];
+
+            if (loadingSub) {
+                return essentialItems.includes(item.name);
+            }
 
             // Gate features based on plan
             // Use the most up-to-date subscription data available
             const effectiveSub = activeSub || user?.vendor?.activeSubscription;
+            
+            // If there's no subscription info at all, show the essential list
+            if (!effectiveSub) {
+                return essentialItems.includes(item.name);
+            }
+
             const features = effectiveSub?.plan?.dashboardFeatures || {};
             
             const featureMap: Record<string, string> = {
                 'Analytics': 'showAnalytics',
                 'Leads': 'showLeads',
                 'Offers & Events': 'showOffers',
-                'Demand Insights': 'showDemand',
+                'Hot Demand Insights': 'showDemand',
                 'Queries': 'showQueries',
                 'Reviews': 'showReviews',
                 'Live Chat': 'showChat',
@@ -136,6 +149,8 @@ export default function Sidebar() {
             
             // If item has a feature key map, check if it's enabled in the plan
             if (featureKey && features[featureKey] === false) {
+                // If the user explicitly asked for these, show them anyway
+                if (essentialItems.includes(item.name)) return true;
                 return false;
             }
 

@@ -49,8 +49,20 @@ export default function CategoryDetailClient({ slug }: CategoryDetailClientProps
 
     useEffect(() => {
         const loadCategoryData = async () => {
-            if (!slug) return;
-            const normalizedSlug = (slug as string).toLowerCase();
+            let actualSlug = slug;
+            
+            // Handle SPA fallback where the page is served by a 'template' HTML file
+            if ((slug === 'template' || slug === 'general') && typeof window !== 'undefined') {
+                const pathParts = window.location.pathname.split('/').filter(Boolean);
+                // URL structure: /categories/slug/ or /categories/slug
+                if (pathParts[0] === 'categories' && pathParts[1] && pathParts[1] !== 'template') {
+                    actualSlug = pathParts[1];
+                    console.log('[CategoryDetail] Fallback detected, using actual slug from URL:', actualSlug);
+                }
+            }
+
+            if (!actualSlug) return;
+            const normalizedSlug = (actualSlug as string).toLowerCase();
             setLoading(true);
 
             try {
