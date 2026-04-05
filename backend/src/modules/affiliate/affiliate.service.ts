@@ -340,7 +340,7 @@ export class AffiliateService {
 
     /**
      * Common logic to process a successful referral (signup -> purchase)
-     * Automatically called after successful payment or by admin override.
+     * Automatically called after successful registration (auto-conversion for vendors).
      */
     async processSuccessfulReferral(referredUserId: string) {
         const referral = await this.referralRepository.findOne({
@@ -356,158 +356,120 @@ export class AffiliateService {
             return { success: false, reason: 'No pending referral' };
         }
 
-        const referrerId = referral.affiliate.user.id;
+        const referrerUserId = referral.affiliate.user.id;
         let extensionGranted = false;
 
-        // --- 1. NEW PRICING SYSTEM (ActivePlan) ---
-        // Find most recent subscription-type plan (any status)
+        // Helper to find the "Premium/Basic" reward plan
+        const getRewardPlan = async () => {
+             // 1. Try to find a plan named 'Basic' (case-insensitive)
+             let plan = await this.pricingPlanRepository.findOne({
+                where: { 
+                    type: PricingPlanType.SUBSCRIPTION, 
+                    isActive: true,
+                    name: ILike('%basic%')
+                }
+            });
+
+            // 2. If no 'Basic' plan, try to find any paid plan (price > 0)
+            if (!plan) {
+                plan = await this.pricingPlanRepository.findOne({
+                    where: { 
+                        type: PricingPlanType.SUBSCRIPTION, 
+                        isActive: true,
+                        price: MoreThan(0)
+                    },
+                    order: { price: 'ASC' }
+                });
+            }
+
+            // 3. Fallback to any active subscription plan
+            if (!plan) {
+                plan = await this.pricingPlanRepository.findOne({
+                    where: { type: PricingPlanType.SUBSCRIPTION, isActive: true },
+                    order: { price: 'ASC' }
+                });
+            }
+
+            return plan;
+        };
+
+        const rewardPlan = await getRewardPlan();
+
+        if (!rewardPlan) {
+            this.logger.error(`No reward plan found for referral processing.`);
+            return { success: false, reason: 'No reward plan configured' };
+        }
+
+        const now = new Date();
+        const durationDays = rewardPlan.duration || 30; // Default to 30 days if not set
+
+        // --- 1. REWARD THE REFERRER ---
         const referrerPlans = await this.activePlanRepository.find({
             where: { 
-                vendor: { userId: referrerId },
+                vendor: { userId: referrerUserId },
                 plan: { type: PricingPlanType.SUBSCRIPTION } as any
             },
             relations: ['plan'],
             order: { endDate: 'DESC' }
         });
 
-        const latestPlan = referrerPlans[0];
+        const referrerLatestPlan = referrerPlans[0];
 
-        if (latestPlan) {
-            const now = new Date();
-            const currentEndDate = new Date(latestPlan.endDate);
+        if (referrerLatestPlan) {
+            const currentEndDate = new Date(referrerLatestPlan.endDate);
             
-            // FIX: If they are on a Free plan (price 0), we should upgrade them to a PAID plan as a reward,
-            // otherwise they won't get any extra features.
-            if (Number(latestPlan.plan.price) === 0) {
-                const rewardPlan = await this.pricingPlanRepository.findOne({
-                    where: { 
-                        type: PricingPlanType.SUBSCRIPTION, 
-                        isActive: true,
-                        price: MoreThan(0) 
-                    },
-                    order: { price: 'ASC' }
-                });
-
-                if (rewardPlan) {
-                    this.logger.log(`Upgrading referrer ${referrerId} from Free to ${rewardPlan.name} for 30 days`);
-                    latestPlan.plan = rewardPlan;
-                    latestPlan.planId = rewardPlan.id;
-                    latestPlan.status = ActivePlanStatus.ACTIVE;
-                    latestPlan.startDate = now;
-                    const newEndDate = new Date(now);
-                    newEndDate.setDate(newEndDate.getDate() + 30);
-                    latestPlan.endDate = newEndDate;
-                    await this.activePlanRepository.save(latestPlan);
-                    extensionGranted = true;
-                } else {
-                    // Fallback to just extending Free if no other plan exists
-                    this.logger.warn(`No reward plan found for referrer ${referrerId}, just extending Free plan.`);
-                    latestPlan.status = ActivePlanStatus.ACTIVE;
-                    if (currentEndDate > now) {
-                        currentEndDate.setDate(currentEndDate.getDate() + 30);
-                        latestPlan.endDate = currentEndDate;
-                    } else {
-                        latestPlan.startDate = now;
-                        const newEndDate = new Date(now);
-                        newEndDate.setDate(newEndDate.getDate() + 30);
-                        latestPlan.endDate = newEndDate;
-                    }
-                    await this.activePlanRepository.save(latestPlan);
-                    extensionGranted = true;
-                }
+            // If they are on a Free plan, upgrade them to the reward plan
+            if (Number(referrerLatestPlan.plan.price) === 0) {
+                this.logger.log(`Upgrading referrer ${referrerUserId} to ${rewardPlan.name} for ${durationDays} days`);
+                referrerLatestPlan.planId = rewardPlan.id;
+                referrerLatestPlan.plan = rewardPlan;
+                referrerLatestPlan.status = ActivePlanStatus.ACTIVE;
+                referrerLatestPlan.startDate = now;
+                const newEndDate = new Date(now);
+                newEndDate.setDate(newEndDate.getDate() + durationDays);
+                referrerLatestPlan.endDate = newEndDate;
+                referrerLatestPlan.transactionId = `REFERRAL_REWARD_${referredUserId}`;
+                await this.activePlanRepository.save(referrerLatestPlan);
+                extensionGranted = true;
             } else {
-                // Already on a paid plan: Add 30 days to the end
-                latestPlan.status = ActivePlanStatus.ACTIVE;
+                // Already on a paid plan: Extend their current (paid) plan by the reward duration
+                this.logger.log(`Extending referrer ${referrerUserId} paid plan (${referrerLatestPlan.plan.name}) by ${durationDays} days`);
+                referrerLatestPlan.status = ActivePlanStatus.ACTIVE;
                 if (currentEndDate > now) {
-                    currentEndDate.setDate(currentEndDate.getDate() + 30);
-                    latestPlan.endDate = currentEndDate;
+                    currentEndDate.setDate(currentEndDate.getDate() + durationDays);
+                    referrerLatestPlan.endDate = currentEndDate;
                 } else {
-                    latestPlan.startDate = now;
+                    referrerLatestPlan.startDate = now;
                     const newEndDate = new Date(now);
-                    newEndDate.setDate(newEndDate.getDate() + 30);
-                    latestPlan.endDate = newEndDate;
+                    newEndDate.setDate(newEndDate.getDate() + durationDays);
+                    referrerLatestPlan.endDate = newEndDate;
                 }
-                await this.activePlanRepository.save(latestPlan);
-                this.logger.log(`Extended referrer ${referrerId} paid plan by 30 days`);
+                await this.activePlanRepository.save(referrerLatestPlan);
                 extensionGranted = true;
             }
         } else {
-            // FALLBACK: Assign a new plan if they have NONE
-            try {
-                // Find a plan with price > 0 (Standard/Reward type)
-                const defaultPlan = await this.pricingPlanRepository.findOne({
-                    where: { 
-                        type: PricingPlanType.SUBSCRIPTION, 
-                        isActive: true,
-                        price: MoreThan(0) // Prefer a paid plan for reward features
-                    },
-                    order: { price: 'ASC' }
-                }) || await this.pricingPlanRepository.findOne({
-                    where: { type: PricingPlanType.SUBSCRIPTION, isActive: true },
-                    order: { price: 'ASC' }
+            // Assign a new reward plan if they have NONE
+            const referrerVendor = await this.vendorRepo.findOne({ where: { userId: referrerUserId } });
+            if (referrerVendor) {
+                const endDate = new Date(now);
+                endDate.setDate(endDate.getDate() + durationDays);
+
+                const newActivePlan = this.activePlanRepository.create({
+                    vendorId: referrerVendor.id,
+                    planId: rewardPlan.id,
+                    status: ActivePlanStatus.ACTIVE,
+                    startDate: now,
+                    endDate: endDate,
+                    amountPaid: 0,
+                    transactionId: `REFERRAL_REWARD_${referredUserId}`
                 });
-
-                if (defaultPlan) {
-                    const vendor = await this.vendorRepo.findOne({ where: { userId: referrerId } });
-                    if (vendor) {
-                        const now = new Date();
-                        const endDate = new Date(now);
-                        endDate.setDate(endDate.getDate() + 30);
-
-                        const newActivePlan = this.activePlanRepository.create({
-                            vendorId: vendor.id,
-                            planId: defaultPlan.id,
-                            status: ActivePlanStatus.ACTIVE,
-                            startDate: now,
-                            endDate: endDate,
-                            amountPaid: 0,
-                            transactionId: 'REFERRAL_REWARD'
-                        });
-                        await this.activePlanRepository.save(newActivePlan);
-                        this.logger.log(`Assigned NEW 30-day reward plan to referrer ${referrerId}`);
-                        extensionGranted = true;
-                    }
-                }
-            } catch (err) {
-                this.logger.error(`Failed to assign fallback plan to referrer ${referrerId}: ${err.message}`);
+                await this.activePlanRepository.save(newActivePlan);
+                this.logger.log(`Assigned NEW ${rewardPlan.name} plan to referrer ${referrerUserId}`);
+                extensionGranted = true;
             }
         }
 
-        // --- 2. OLD LEGACY SYSTEM (Subscription) ---
-        const referrerActiveSub = await this.subscriptionRepository.findOne({
-            where: { 
-                vendor: { userId: referrerId },
-                // We keep it simple for legacy: only extend if active or recently expired
-            },
-            order: { endDate: 'DESC' }
-        });
-
-        if (referrerActiveSub) {
-            referrerActiveSub.status = SubscriptionStatus.ACTIVE;
-            const now = new Date();
-            const currentEndDate = new Date(referrerActiveSub.endDate);
-
-            if (currentEndDate > now) {
-                currentEndDate.setDate(currentEndDate.getDate() + 30);
-                referrerActiveSub.endDate = currentEndDate;
-            } else {
-                referrerActiveSub.startDate = now;
-                const newEndDate = new Date(now);
-                newEndDate.setDate(newEndDate.getDate() + 30);
-                referrerActiveSub.endDate = newEndDate;
-            }
-
-            await this.subscriptionRepository.save(referrerActiveSub);
-            this.logger.log(`Extended/Re-activated referrer ${referrerId} legacy subscription by 30 days`);
-            extensionGranted = true;
-        }
-
-        // 3. Update Referral Status
-        referral.status = ReferralStatus.CONVERTED;
-        referral.type = ReferralType.SUBSCRIPTION; // Mark as converted via purchase
-        await this.referralRepository.save(referral);
-
-        // 4. AUTOMATED REFERRED VENDOR ACTIVATION (Fixed Perfectly)
+        // --- 2. REWARD THE REFERRED VENDOR (ACTIVATE ALL FEATURES) ---
         try {
             const referredVendor = await this.vendorRepo.findOne({ 
                 where: { userId: referredUserId } 
@@ -519,7 +481,7 @@ export class AffiliateService {
                 await this.vendorRepo.save(referredVendor);
                 this.logger.log(`Auto-verified referred vendor ${referredUserId}`);
 
-                // Auto-approve all pending listings and activate premium features for ALL listings
+                // Auto-approve all pending listings and activate PREMIUM features (Featured, Sponsored, Verified)
                 const allListings = await this.listingRepo.find({
                     where: { vendorId: referredVendor.id }
                 });
@@ -538,68 +500,63 @@ export class AffiliateService {
                     this.logger.log(`Fully activated premium features for ${allListings.length} listings of referred vendor ${referredUserId}`);
                 }
 
-                // Ensure vendor has a high-tier plan (Standard/Premium) to access features
+                // Ensure referred vendor has the reward (Basic/Standard) plan
                 const referredActivePlan = await this.activePlanRepository.findOne({
                     where: { vendorId: referredVendor.id, status: ActivePlanStatus.ACTIVE },
                     relations: ['plan']
                 });
 
-                // Get the best reward plan (price > 0)
-                const rewardPlan = await this.pricingPlanRepository.findOne({
-                    where: { type: PricingPlanType.SUBSCRIPTION, isActive: true, price: MoreThan(0) },
-                    order: { price: 'ASC' }
-                });
+                const endDate = new Date(now);
+                endDate.setDate(endDate.getDate() + durationDays);
 
-                if (rewardPlan) {
-                    const now = new Date();
-                    const endDate = new Date(now);
-                    endDate.setDate(endDate.getDate() + 30);
-
-                    if (referredActivePlan) {
-                        // Upgrade existing plan if it's Free
-                        if (Number(referredActivePlan.plan.price) === 0) {
-                            this.logger.log(`Upgrading referred vendor ${referredUserId} to ${rewardPlan.name} reward plan`);
-                            referredActivePlan.plan = rewardPlan;
-                            referredActivePlan.planId = rewardPlan.id;
-                            referredActivePlan.startDate = now;
-                            referredActivePlan.endDate = endDate;
-                            referredActivePlan.transactionId = 'REFERRAL_SIGNUP_UPGRADE_REWARD';
-                            await this.activePlanRepository.save(referredActivePlan);
-                        } else {
-                            // Already on a paid plan: Extend it by 30 days
-                            this.logger.log(`Extending referred vendor ${referredUserId} paid plan by 30 days`);
-                            const currentEnd = new Date(referredActivePlan.endDate);
-                            currentEnd.setDate(currentEnd.getDate() + 30);
-                            referredActivePlan.endDate = currentEnd;
-                            await this.activePlanRepository.save(referredActivePlan);
-                        }
+                if (referredActivePlan) {
+                    // Upgrade existing plan if it's Free
+                    if (Number(referredActivePlan.plan.price) === 0) {
+                        this.logger.log(`Upgrading referred vendor ${referredUserId} to ${rewardPlan.name} reward plan`);
+                        referredActivePlan.planId = rewardPlan.id;
+                        referredActivePlan.plan = rewardPlan;
+                        referredActivePlan.startDate = now;
+                        referredActivePlan.endDate = endDate;
+                        referredActivePlan.transactionId = 'REFERRAL_SIGNUP_UPGRADE_REWARD';
+                        await this.activePlanRepository.save(referredActivePlan);
                     } else {
-                        // Assign a new reward plan
-                        const newActivePlan = this.activePlanRepository.create({
-                            vendorId: referredVendor.id,
-                            planId: rewardPlan.id,
-                            status: ActivePlanStatus.ACTIVE,
-                            startDate: now,
-                            endDate: endDate,
-                            amountPaid: 0,
-                            transactionId: 'REFERRAL_SIGNUP_REWARD'
-                        });
-                        await this.activePlanRepository.save(newActivePlan);
-                        this.logger.log(`Assigned 30-day ${rewardPlan.name} plan to referred vendor ${referredUserId}`);
+                        // Already on a paid plan: Extend it
+                        this.logger.log(`Extending referred vendor ${referredUserId} paid plan by ${durationDays} days`);
+                        const currentEnd = new Date(referredActivePlan.endDate);
+                        currentEnd.setDate(currentEnd.getDate() + durationDays);
+                        referredActivePlan.endDate = currentEnd;
+                        await this.activePlanRepository.save(referredActivePlan);
                     }
+                } else {
+                    // Assign a new reward plan
+                    const newActivePlan = this.activePlanRepository.create({
+                        vendorId: referredVendor.id,
+                        planId: rewardPlan.id,
+                        status: ActivePlanStatus.ACTIVE,
+                        startDate: now,
+                        endDate: endDate,
+                        amountPaid: 0,
+                        transactionId: 'REFERRAL_SIGNUP_REWARD'
+                    });
+                    await this.activePlanRepository.save(newActivePlan);
+                    this.logger.log(`Assigned ${rewardPlan.name} plan to referred vendor ${referredUserId}`);
                 }
             }
         } catch (err) {
             this.logger.error(`Failed to activate referred vendor features for ${referredUserId}: ${err.message}`);
         }
 
+        // --- 3. Finalize Referral Status ---
+        referral.status = ReferralStatus.CONVERTED;
+        await this.referralRepository.save(referral);
+
         this.logger.log(`✅ Referral ${referral.id} for user ${referredUserId} successfully converted. Extension granted: ${extensionGranted}`);
 
         return {
             success: true,
             message: extensionGranted 
-                ? 'Referral activated and Referrer plan extended/re-activated by 30 days' 
-                : 'Referral activated (Referrer has no valid account to reward)',
+                ? 'Referral activated and both accounts upgraded/extended' 
+                : 'Referral activated for referred user only',
             extensionGranted
         };
     }
