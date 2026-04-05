@@ -532,7 +532,7 @@ export default function VendorSubscriptionPage() {
                                 <h2 className={`text-xl font-black ${isExpiringSoon ? 'text-red-700' : 'text-white'}`}>
                                     {activeSub.plan?.name}
                                 </h2>
-                                {activeSub.status === 'active' && activeSub.plan?.planType !== 'free' && activeSub.plan?.name?.toLowerCase() !== 'free' && Number(activeSub.amount) !== 0 && (
+                                {activeSub.status === 'active' && activeSub.plan?.planType !== 'free' && activeSub.plan?.name?.toLowerCase() !== 'free' && (
                                     <p className={`text-sm font-bold mt-0.5 ${isExpiringSoon ? 'text-red-500' : 'text-slate-400'}`}>
                                         {daysLeft !== null && daysLeft > 0
                                             ? `Expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''} · ${new Date(activeSub.endDate).toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' })}`

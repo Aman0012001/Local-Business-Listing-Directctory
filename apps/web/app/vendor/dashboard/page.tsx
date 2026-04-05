@@ -6,7 +6,7 @@ import StatsGrid from '../../../components/vendor/StatsGrid';
 import PerformanceChart from '../../../components/vendor/PerformanceChart';
 import RecentReviews from '../../../components/vendor/RecentReviews';
 import MessageCenter from '../../../components/vendor/MessageCenter';
-import { Star, ChevronRight, ListTree, Heart, MessageSquare, Plus, TrendingUp, Loader2, Bell, CheckCircle2, Sparkles, Share2, Copy, Gift, Mail, Clock } from 'lucide-react';
+import { Star, ChevronRight, ListTree, Heart, MessageSquare, Plus, TrendingUp, Loader2, Bell, CheckCircle2, Sparkles, Share2, Copy, Gift, Mail, Clock, BadgeCheck } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import Link from 'next/link';
 import { api, getImageUrl } from '../../../lib/api';
@@ -344,8 +344,53 @@ export default function GenericDashboard() {
                 </div>
             </motion.div>
 
+            {/* Active Subscription Status Banner */}
+            {isVendor && activeSub && activeSub.plan?.planType !== 'free' && activeSub.plan?.name?.toLowerCase() !== 'free' && (
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="mb-8 overflow-hidden rounded-[20px] bg-slate-900 border border-slate-800 shadow-2xl relative"
+                >
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+                    <div className="p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
+                        <div className="flex items-center gap-5">
+                            <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 flex-shrink-0">
+                                <BadgeCheck className="w-8 h-8 text-white" />
+                            </div>
+                            <div>
+                                <p className=\"text-[10px] sm:text-xs font-black text-emerald-400/80 uppercase tracking-[0.2em] mb-1\">
+                                    Active Plan
+                                </p>
+                                <h2 className=\"text-xl sm:text-3xl font-black text-white tracking-tight mb-2\">
+                                    {activeSub.plan?.name}
+                                </h2>
+                                <p className=\"text-slate-400 font-bold text-xs sm:text-sm flex items-center gap-2\">
+                                    <Clock className=\"w-3.5 h-3.5 text-slate-500\" />
+                                    {(() => {
+                                        const end = new Date(activeSub.endDate);
+                                        const days = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                                        return (
+                                            <span className={days <= 4 ? \"text-rose-400\" : \"text-emerald-400\"}>
+                                                {days > 0 ? `Expires in ${days} day${days !== 1 ? 's' : ''}` : 'Expired'} · {end.toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                            </span>
+                                        );
+                                    })()}
+                                </p>
+                            </div>
+                        </div>
+                        <Link 
+                            href="/vendor/subscription" 
+                            className="flex items-center gap-2 px-8 py-3.5 bg-white/5 hover:bg-white/10 text-white rounded-xl font-black text-sm transition-all border border-white/10 shadow-xl"
+                        >
+                            Manage Plan
+                            <ChevronRight className="w-4 h-4" />
+                        </Link>
+                    </div>
+                </motion.div>
+            )}
+
             {/* Impactful Plan Upgrade CTA (Only for Free/No Plan Vendors) */}
-            {isVendor && (!activeSub || Number(activeSub.amount) === 0) && (
+            {isVendor && (!activeSub || (activeSub.plan?.planType === 'free' || activeSub.plan?.name?.toLowerCase() === 'free' || Number(activeSub.amount) === 0)) && (
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
