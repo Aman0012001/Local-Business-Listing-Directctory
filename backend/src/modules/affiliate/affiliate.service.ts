@@ -400,15 +400,23 @@ export class AffiliateService {
         };
 
         const rewardPlan = await getRewardPlan();
-
         if (!rewardPlan) {
             this.logger.error(`No reward plan found for referral processing.`);
             return { success: false, reason: 'No reward plan configured' };
         }
 
         const now = new Date();
-        const durationDays = rewardPlan.duration || 30; // Default to 30 days if not set
-
+        
+        // Calculate duration in days based on unit
+        let durationDays = rewardPlan.duration || 30;
+        if (rewardPlan.unit === PricingPlanUnit.MONTHS) {
+            durationDays = (rewardPlan.duration || 1) * 30;
+        } else if (rewardPlan.unit === PricingPlanUnit.YEARS) {
+            durationDays = (rewardPlan.duration || 1) * 365;
+        } else if (rewardPlan.unit === PricingPlanUnit.HOURS) {
+            durationDays = Math.ceil((rewardPlan.duration || 1) / 24);
+        }
+        
         // --- 1. REWARD THE REFERRER ---
         const referrerPlans = await this.activePlanRepository.find({
             where: { 

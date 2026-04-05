@@ -4,7 +4,7 @@ const nextConfig = {
     reactStrictMode: true,
 
     // Static export mode (produces the "out" folder used for local static hosting)
-    output: "export",
+    // output: "export",
 
     images: {
         unoptimized: true,

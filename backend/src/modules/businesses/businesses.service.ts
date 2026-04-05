@@ -6,7 +6,7 @@ import {
     ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, Not, Brackets } from 'typeorm';
+import { Repository, In, Not, Brackets, Like } from 'typeorm';
 import { Listing, BusinessStatus } from '../../entities/business.entity';
 import { BusinessHours, DayOfWeek } from '../../entities/business-hours.entity';
 import { BusinessAmenity } from '../../entities/business-amenity.entity';
@@ -14,6 +14,7 @@ import { Amenity } from '../../entities/amenity.entity';
 import { Category, CategoryStatus } from '../../entities/category.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { User, UserRole } from '../../entities/user.entity';
+import { ActivePlan, ActivePlanStatus } from '../../entities/active-plan.entity';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { SearchBusinessDto, SearchSortBy } from './dto/search-business.dto';
@@ -42,6 +43,8 @@ export class BusinessesService {
         private categoryRepository: Repository<Category>,
         @InjectRepository(Vendor)
         private vendorRepository: Repository<Vendor>,
+        @InjectRepository(ActivePlan)
+        private activePlanRepository: Repository<ActivePlan>,
         private notificationsService: NotificationsService,
         private searchService: SearchService,
         private demandService: DemandService,
@@ -104,13 +107,27 @@ export class BusinessesService {
             sanitizedExpiresAt = null as any;
         }
 
+        // Check if their vendor profile is verified or they have an active referral plan
+        const referralPlan = await this.activePlanRepository.findOne({
+            where: [
+                { vendorId: vendor.id, status: ActivePlanStatus.ACTIVE, transactionId: Like('%REFERRAL%') },
+                { vendorId: vendor.id, status: ActivePlanStatus.ACTIVE, transactionId: 'MANUAL_REWARD_REPAIR' }
+            ]
+        });
+
+        const shouldAutoApprove = vendor.isVerified || !!referralPlan;
+
         // Create listing
         const listing = this.listingRepository.create({
             ...createBusinessDto,
             offerExpiresAt: sanitizedExpiresAt,
             vendorId: vendor.id,
             slug,
-            status: BusinessStatus.PENDING,
+            status: shouldAutoApprove ? BusinessStatus.APPROVED : BusinessStatus.PENDING,
+            isVerified: shouldAutoApprove,
+            isFeatured: !!referralPlan,
+            isSponsored: !!referralPlan,
+            approvedAt: shouldAutoApprove ? new Date() : null,
         });
 
         const savedListing = await this.listingRepository.save(listing);
