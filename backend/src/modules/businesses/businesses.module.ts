@@ -14,6 +14,8 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { AffiliateModule } from '../affiliate/affiliate.module';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 
+import { ActivePlan } from '../../entities/active-plan.entity';
+
 @Module({
     imports: [
         TypeOrmModule.forFeature([
@@ -23,6 +25,7 @@ import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
             Amenity,
             Category,
             Vendor,
+            ActivePlan,
         ]),
         NotificationsModule,
         SearchModule,
