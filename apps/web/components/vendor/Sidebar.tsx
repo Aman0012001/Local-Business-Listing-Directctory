@@ -80,6 +80,7 @@ export default function Sidebar() {
     const menuItems = [
         { name: 'Dashboard', icon: LayoutDashboard, href: '/vendor/dashboard', badge: null },
         { name: 'My Listings', icon: ListTree, href: '/vendor/listings', badge: null },
+        { name: 'Pending Approval', icon: Clock, href: '/vendor/pending-listings', badge: null },
         { name: 'Add Listing', icon: Plus, href: '/vendor/add-listing', badge: null },
         { name: 'Leads', icon: Phone, href: '/vendor/leads', badge: null },
         { name: 'Offers & Events', icon: Megaphone, href: '/vendor/offers', badge: null },
@@ -95,7 +96,6 @@ export default function Sidebar() {
         { name: 'Broadcast Feed', icon: Megaphone, href: '/vendor/broadcasts', badge: newBroadcastCount > 0 ? String(newBroadcastCount) : null },
         { name: 'Notifications', icon: Bell, href: '/vendor/notifications', badge: null },
         { name: 'Affiliate', icon: Gift, href: '/vendor/affiliate', badge: 'Rewards' },
-        { name: 'Pending Approval', icon: Clock, href: '/vendor/pending-listings', badge: null },
         { name: 'Settings', icon: Settings, href: '/vendor/settings', badge: null },
     ];
 
