@@ -16,7 +16,7 @@ const roboto = Roboto({
 });
 
 const baseUrl = process.env.NODE_ENV === 'production' 
-    ? "https://nampata.netlify.app"
+    ? "https://endearing-taffy-91a2c6.netlify.app"
     : "http://localhost:3000";
 
 export const metadata = {
