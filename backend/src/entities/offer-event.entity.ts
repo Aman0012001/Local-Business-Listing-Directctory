@@ -114,9 +114,13 @@ export class OfferEvent {
     @BeforeUpdate()
     computeStatus() {
         const now = new Date();
-        if (this.startDate && now < new Date(this.startDate)) {
+        const start = this.startDate ? new Date(this.startDate) : null;
+        const expiry = this.expiryDate ? new Date(this.expiryDate) : null;
+        const end = this.endDate ? new Date(this.endDate) : null;
+
+        if (start && now < start) {
             this.status = OfferStatus.SCHEDULED;
-        } else if (this.expiryDate && now > new Date(this.expiryDate)) {
+        } else if ((expiry && now > expiry) || (end && now > end)) {
             this.status = OfferStatus.EXPIRED;
         } else {
             this.status = OfferStatus.ACTIVE;

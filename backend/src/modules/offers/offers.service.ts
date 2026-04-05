@@ -33,15 +33,20 @@ export class OffersService {
     ) { }
 
 
-    /** Helper: recompute status from dates (same logic as entity hook, but for query results) */    private computeStatus(offer: OfferEvent): OfferEvent {
+    /** Helper: recompute status from dates (same logic as entity hook, but for query results) */
+    private computeStatus(offer: OfferEvent): OfferEvent {
         const now = new Date();
         if (offer.featuredUntil && now > new Date(offer.featuredUntil)) {
             offer.isFeatured = false;
         }
 
-        if (offer.startDate && now < new Date(offer.startDate)) {
+        const start = offer.startDate ? new Date(offer.startDate) : null;
+        const expiry = offer.expiryDate ? new Date(offer.expiryDate) : null;
+        const end = offer.endDate ? new Date(offer.endDate) : null;
+
+        if (start && now < start) {
             offer.status = OfferStatus.SCHEDULED;
-        } else if (offer.expiryDate && now > new Date(offer.expiryDate)) {
+        } else if ((expiry && now > expiry) || (end && now > end)) {
             offer.status = OfferStatus.EXPIRED;
         } else {
             offer.status = OfferStatus.ACTIVE;
@@ -188,7 +193,9 @@ export class OffersService {
                     now
                 })
                 .where('o.isActive = :isActive', { isActive: true })
-                .andWhere('o.status != :expired', { expired: OfferStatus.EXPIRED });
+                .andWhere('o.status != :expired', { expired: OfferStatus.EXPIRED })
+                .andWhere('(o.expiryDate IS NULL OR o.expiryDate > :now)', { now })
+                .andWhere('(o.endDate IS NULL OR o.endDate > :now)', { now });
 
             if (query) {
                 qb.andWhere(new Brackets(inner => {
@@ -311,17 +318,19 @@ export class OffersService {
 
     /** Public: get active/scheduled offers for a business (max 6) */
     async findPublicByBusiness(businessId: string): Promise<OfferEvent[]> {
-        const offers = await this.offerRepository.find({
-            where: { businessId, isActive: true },
-            order: { isFeatured: 'DESC', createdAt: 'DESC' },
-            take: 10, // fetch a few extra then filter
-        });
+        const now = new Date();
+        const offers = await this.offerRepository.createQueryBuilder('o')
+            .where('o.businessId = :businessId', { businessId })
+            .andWhere('o.isActive = :isActive', { isActive: true })
+            .andWhere('o.status != :expired', { expired: OfferStatus.EXPIRED })
+            .andWhere('(o.expiryDate IS NULL OR o.expiryDate > :now)', { now })
+            .andWhere('(o.endDate IS NULL OR o.endDate > :now)', { now })
+            .orderBy('o.isFeatured', 'DESC')
+            .addOrderBy('o.createdAt', 'DESC')
+            .take(6)
+            .getMany();
 
-        // Filter to only active/scheduled, recompute status
-        return offers
-            .map(o => this.computeStatus(o))
-            .filter(o => o.status !== OfferStatus.EXPIRED)
-            .slice(0, 6);
+        return offers.map(o => this.computeStatus(o));
     }
 
     /** Public: get a single offer/event by ID */
@@ -335,7 +344,12 @@ export class OffersService {
             throw new NotFoundException('Offer or Event not found');
         }
 
-        return this.computeStatus(offer);
+        const withStatus = this.computeStatus(offer);
+        if (withStatus.status === OfferStatus.EXPIRED) {
+            throw new NotFoundException('Offer or Event has expired');
+        }
+
+        return withStatus;
     }
 
     /** Cron / scheduled task: mark expired offers AND clear expired featured status */
@@ -348,7 +362,7 @@ export class OffersService {
             .createQueryBuilder()
             .delete()
             .from(OfferEvent)
-            .where('expiry_date < :now', { now })
+            .where('(expiry_date IS NOT NULL AND expiry_date < :now) OR (end_date IS NOT NULL AND end_date < :now)', { now })
             .execute();
         
         affected += result.affected || 0;
