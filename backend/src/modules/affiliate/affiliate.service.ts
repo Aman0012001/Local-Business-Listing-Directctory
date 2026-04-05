@@ -14,7 +14,7 @@ import { User } from '../../entities/user.entity';
 import { SystemSetting } from '../../entities/system-setting.entity';
 import { Subscription, SubscriptionStatus } from '../../entities/subscription.entity';
 import { ActivePlan, ActivePlanStatus } from '../../entities/active-plan.entity';
-import { PricingPlan, PricingPlanType } from '../../entities/pricing-plan.entity';
+import { PricingPlan, PricingPlanType, PricingPlanUnit } from '../../entities/pricing-plan.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { Listing, BusinessStatus } from '../../entities/business.entity';
 import { generateReferralCode } from '../../common/utils/referral-code';
