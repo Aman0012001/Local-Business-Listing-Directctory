@@ -2,18 +2,18 @@ import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 const sharedPoolOptions = {
-    // Moderate pool size to avoid hitting remote DB connection limits
+    // Increased stability for remote DB (Railway)
     max: 10,
     min: 2,
-    // Idle timeout: keep it low (30s) to free up remote resources
-    idleTimeoutMillis: 30000,
-    // Connection timeout: increased to 30s to allow for network latency
+    idleTimeoutMillis: 30000, 
     connectionTimeoutMillis: 30000,
-    // Fail fast on initial connection attempts (routing/ENETUNREACH)
-    connectTimeout: 10000,
-    // TCP keepalive: prevents connections from being silently dropped
-    keepAlives: true,
-    application_name: 'listings_local_dev',
+    // Prevents hanging queries from blocking the pool
+    statement_timeout: 45000, // 45s max per query
+    query_timeout: 45000,
+    // TCP Keepalive to prevent firewalls/Railway from dropping idle sockets
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000, 
+    application_name: 'naampata_api',
 };
 
 export const typeOrmConfig = (

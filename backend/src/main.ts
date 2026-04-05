@@ -202,6 +202,7 @@ async function bootstrap() {
 
     console.log(`🚀 Server running on port ${port}`);
     console.log(`📄 Swagger Docs → http://localhost:${port}/${apiPrefix}/docs`);
+    console.log(`🚀 API is ready to accept connections on port ${port}`);
 }
 
 bootstrap();

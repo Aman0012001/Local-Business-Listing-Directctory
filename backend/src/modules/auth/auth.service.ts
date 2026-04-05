@@ -22,6 +22,7 @@ import { LoginDto } from './dto/login.dto';
 import { GoogleAuthDto } from './dto/google-auth.dto';
 import { JwtPayload, JwtTokens } from '../../common/interfaces/jwt-payload.interface';
 import { NotificationsService } from '../notifications/notifications.service';
+import { AffiliateService } from '../affiliate/affiliate.service';
 import { generateReferralCode } from '../../common/utils/referral-code';
 
 @Injectable()
@@ -44,6 +45,7 @@ export class AuthService {
         private subscriptionRepository: Repository<Subscription>,
         @InjectRepository(SubscriptionPlan)
         private planRepository: Repository<SubscriptionPlan>,
+        private affiliateService: AffiliateService,
     ) { }
 
     /**
@@ -187,15 +189,18 @@ export class AuthService {
             throw new UnauthorizedException('Invalid credentials');
         }
 
-        // Update last login, isOnline and phone if provided
-        user.lastLoginAt = new Date();
-        user.isOnline = true;
-        if (loginDto.phone && user.phone !== loginDto.phone) {
-            user.phone = loginDto.phone;
+        // Update last login, isOnline and phone if provided (Non-critical updates)
+        try {
+            user.lastLoginAt = new Date();
+            user.isOnline = true;
+            if (loginDto.phone && user.phone !== loginDto.phone) {
+                user.phone = loginDto.phone;
+            }
+            await this.userRepository.save(user);
+            this.logger.log(`User ${user.email} logged in. isOnline set to true.`);
+        } catch (updateError) {
+            this.logger.warn(`Failed to update user login metadata for ${user.email} (continuing): ${updateError.message}`);
         }
-        await this.userRepository.save(user);
-
-        this.logger.log(`User ${user.email} logged in. isOnline set to true.`);
 
         // Generate tokens
         const tokens = await this.generateTokens(user);
@@ -543,12 +548,20 @@ export class AuthService {
                     });
                     await this.referralRepository.save(referral);
                     this.logger.log(`[Referral] Created PENDING referral for user ${referredUserId} from affiliate ${affiliate.id}`);
+
+                    // AUTOMATION: Immediately process the referral to activate features for the vendor
+                    try {
+                        await this.affiliateService.processSuccessfulReferral(referredUserId);
+                        this.logger.log(`[Referral] Automated feature activation triggered for referred user ${referredUserId}`);
+                    } catch (procErr) {
+                        this.logger.error(`[Referral] Failed to AUTOMATE feature activation for ${referredUserId}: ${procErr.message}`);
+                    }
                 }
             } else {
                 this.logger.warn(`[Referral] Invalid referral code provided: ${referralCode}`);
             }
         } catch (error) {
-            this.logger.error(`[Referral] Failed to process referral: ${error.message}`);
+            this.logger.error(`[Referral] Failed to process referral handling: ${error.message}`);
         }
     }
 }

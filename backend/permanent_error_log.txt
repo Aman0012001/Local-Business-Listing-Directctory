@@ -1015,3 +1015,35 @@ Details: {"query":"SELECT \"listing\".\"id\" AS \"listing_id\", \"listing\".\"ve
 
 [2026-04-04T19:38:09.038Z] NotificationsService Constructor Called
 [2026-04-04T20:00:20.465Z] NotificationsService Constructor Called
+[2026-04-05T05:14:35.067Z] NotificationsService Constructor Called
+[2026-04-05T05:14:48.682Z] NotificationsService Constructor Called
+[2026-04-05T05:48:38.690Z] NotificationsService Constructor Called
+[2026-04-05T05:51:43.864Z] findAllForUser FALLBACK for user 98a1be33-bc83-4cc7-b0f6-3ddc0dcf94eb: Connection terminated unexpectedly
+[2026-04-05T05:57:13.866Z] NotificationsService Constructor Called
+[2026-04-05T05:57:24.733Z] NotificationsService Constructor Called
+[2026-04-05T06:17:02.698Z] NotificationsService Constructor Called
+[2026-04-05T06:17:53.784Z] NotificationsService Constructor Called
+[2026-04-05T06:21:28.560Z] NotificationsService Constructor Called
+[2026-04-05T06:23:21.481Z] NotificationsService Constructor Called
+[2026-04-05T06:27:26.543Z] findAllForUser FALLBACK for user 98a1be33-bc83-4cc7-b0f6-3ddc0dcf94eb: Connection terminated unexpectedly
+[2026-04-05T06:32:32.210Z] findAllForUser FALLBACK for user 98a1be33-bc83-4cc7-b0f6-3ddc0dcf94eb: Connection terminated unexpectedly
+[2026-04-05T06:40:09.784Z] NotificationsService Constructor Called
+[2026-04-05T06:48:26.210Z] NotificationsService Constructor Called
+[2026-04-05T06:50:45.434Z] NotificationsService Constructor Called
+[2026-04-05T06:57:57.239Z] NotificationsService Constructor Called
+[2026-04-05T07:00:13.412Z] NotificationsService Constructor Called
+[2026-04-05T07:01:22.282Z] NotificationsService Constructor Called
+[2026-04-05T07:05:05.130Z] NotificationsService Constructor Called
+[2026-04-05T07:09:33.166Z] NotificationsService Constructor Called
+[2026-04-05T07:09:34.566Z] NotificationsService Constructor Called
+[2026-04-05T07:09:49.169Z] NotificationsService Constructor Called
+[2026-04-05T07:09:49.522Z] NotificationsService Constructor Called
+[2026-04-05T07:10:34.973Z] NotificationsService Constructor Called
+[2026-04-05T07:10:35.799Z] NotificationsService Constructor Called
+[2026-04-05T07:11:37.687Z] NotificationsService Constructor Called
+[2026-04-05T07:11:59.434Z] NotificationsService Constructor Called
+[2026-04-05T07:11:59.448Z] NotificationsService Constructor Called
+[2026-04-05T07:17:47.862Z] NotificationsService Constructor Called
+[2026-04-05T07:18:24.497Z] NotificationsService Constructor Called
+[2026-04-05T07:18:25.893Z] NotificationsService Constructor Called
+[2026-04-05T07:43:57.579Z] NotificationsService Constructor Called

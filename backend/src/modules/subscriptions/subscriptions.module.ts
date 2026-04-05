@@ -1,4 +1,5 @@
 import { Module, forwardRef, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SubscriptionsController } from './subscriptions.controller';
 import { SubscriptionsService } from './subscriptions.service';
@@ -54,15 +55,20 @@ export class SubscriptionsModule implements OnModuleInit {
     constructor(
         private readonly pricingPlanSeeder: PricingPlanSeederService,
         private readonly subscriptionSeeder: SubscriptionsSeederService,
+        private readonly configService: ConfigService,
     ) { }
 
     onModuleInit() {
-        // Run seeders on application startup
-        this.pricingPlanSeeder.seed().catch(err => {
-            console.error('Failed to seed pricing plans:', err);
-        });
-        this.subscriptionSeeder.seedPlans().catch(err => {
-            console.error('Failed to seed subscription plans:', err);
-        });
+        const seedEnabled = this.configService.get('SEED_DATABASE') === 'true';
+        if (seedEnabled) {
+            console.log('🌱 Seeding database structures...');
+            // Run seeders on application startup
+            this.pricingPlanSeeder.seed().catch(err => {
+                console.error('Failed to seed pricing plans:', err);
+            });
+            this.subscriptionSeeder.seedPlans().catch(err => {
+                console.error('Failed to seed subscription plans:', err);
+            });
+        }
     }
 }

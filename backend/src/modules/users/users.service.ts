@@ -65,9 +65,15 @@ export class UsersService {
             (user.vendor as any).activeSubscription = activeSubscription;
         }
 
-        user.isOnline = true;
-        user.lastActiveAt = new Date();
-        await this.userRepository.save(user);
+        // Attempt to update online status but don't fail profile retrieval if it fails
+        try {
+            user.isOnline = true;
+            user.lastActiveAt = new Date();
+            await this.userRepository.save(user);
+        } catch (error) {
+            console.error(`[UsersService] Failed to update user online status for ${id}:`, error.message);
+            // We ignore this error and continue with the profile result
+        }
 
         return user;
     }
