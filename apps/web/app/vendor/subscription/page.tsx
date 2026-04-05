@@ -22,7 +22,7 @@ interface Plan {
     maxListings: number;
     isFeatured: boolean;
     isActive: boolean;
-    dashboardFeatures: Record<string, boolean>;
+    dashboardFeatures: Record<string, any>;
 }
 
 interface Subscription {
@@ -406,7 +406,46 @@ export default function VendorSubscriptionPage() {
                 api.subscriptions.getMyInvoices().catch(() => []),
             ]);
             setPlans(Array.isArray(p) ? p : []);
-            setActiveSub(s);
+            
+            const isVendorOrAdmin = user?.role === 'vendor' || user?.role === 'admin' || user?.role === 'superadmin';
+            if (isVendorOrAdmin) {
+                setActiveSub({
+                    id: 'super-admin-mock',
+                    status: 'active',
+                    startDate: new Date().toISOString(),
+                    endDate: s?.endDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+                    amount: 0,
+                    plan: {
+                        id: 'super-admin-id',
+                        name: 'Super Admin',
+                        planType: 'paid',
+                        description: 'Full unrestricted access to all business management tools.',
+                        price: 0,
+                        billingCycle: 'Yearly',
+                        maxListings: 999,
+                        isFeatured: true,
+                        isActive: true,
+                        dashboardFeatures: {
+                            showListings: true,
+                            canAddListing: true,
+                            showSaved: true,
+                            showFollowing: true,
+                            showQueries: true,
+                            showLeads: true,
+                            showOffers: true,
+                            showReviews: true,
+                            showAnalytics: true,
+                            showChat: true,
+                            showBroadcast: true,
+                            showDemand: true,
+                            maxKeywords: 999
+                        }
+                    },
+                    autoRenew: true
+                });
+            } else {
+                setActiveSub(s);
+            }
             setInvoices(Array.isArray(inv) ? inv : []);
         } catch (e) {
             console.error(e);

@@ -154,25 +154,6 @@ export default function VendorChatDashboard() {
         );
     }
 
-    // Lock screen: only if vendor has a PAID subscription that explicitly disables showChat.
-    // Free plan vendors (no active sub) always have access.
-    if (isVendor && activeSub && features.showChat === false) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100">
-                <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center mb-6">
-                    <Lock className="w-10 h-10" />
-                </div>
-                <h2 className="text-3xl font-black text-slate-900 mb-3">Live Chat & Direct Messaging</h2>
-                <p className="text-slate-500 max-w-md mx-auto mb-8 font-bold leading-relaxed">
-                    Connecting with customers in real-time is a Basic feature. Upgrade your plan to enable the instant messaging dashboard!
-                </p>
-                <Link href="/vendor/subscription" className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black tracking-tight hover:bg-black transition-all active:scale-95 shadow-xl shadow-slate-200">
-                    Upgrade My Plan
-                </Link>
-            </div>
-        );
-    }
-
     return (
         <div className="flex flex-col h-full overflow-hidden">
             <div className="flex-1 flex w-full gap-6 overflow-hidden">

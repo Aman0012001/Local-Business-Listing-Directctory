@@ -68,24 +68,7 @@ export default function VendorDemandPage() {
         );
     }
 
-    // Lock screen: only if vendor has a PAID subscription that explicitly disables showDemand.
-    // Free plan vendors (no active sub) always have access.
-    if (!isAdmin && isVendor && activeSub && features.showDemand === false) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100">
-                <div className="w-20 h-20 bg-orange-50 text-[#FF7A30] rounded-3xl flex items-center justify-center mb-6">
-                    <Lock className="w-10 h-10" />
-                </div>
-                <h2 className="text-3xl font-black text-slate-900 mb-3">Hot Demand Insights</h2>
-                <p className="text-slate-500 max-w-md mx-auto mb-8 font-bold leading-relaxed">
-                    Real-time market demand data and trending keywords are Basic features. Upgrade your plan to see what customers are searching for!
-                </p>
-                <Link href="/vendor/subscription" className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black tracking-tight hover:bg-black transition-all active:scale-95 shadow-xl shadow-slate-200">
-                    Upgrade My Plan
-                </Link>
-            </div>
-        );
-    }
+    // Hot Demand Insights unlocked for all vendors as per user request.
 
     return (
         <div className="space-y-8 pb-20">

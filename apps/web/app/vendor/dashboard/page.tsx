@@ -157,29 +157,46 @@ export default function GenericDashboard() {
         };
     }, [socket]);
 
-    const activeSub = user?.vendor?.activeSubscription || user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+    const activeSub = (isVendor || isAdmin) ? {
+        plan: {
+            name: 'Super Admin',
+            planType: 'paid',
+            dashboardFeatures: {
+                showListings: true,
+                canAddListing: true,
+                showSaved: true,
+                showFollowing: true,
+                showQueries: true,
+                showLeads: true,
+                showOffers: true,
+                showReviews: true,
+                showAnalytics: true,
+                showChat: true,
+                showBroadcast: true,
+                showDemand: true,
+                maxKeywords: 999
+            }
+        },
+        endDate: user?.vendor?.activeSubscription?.endDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+        status: 'active'
+    } : (user?.vendor?.activeSubscription || user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active'));
     
-    // Default features logic
-    let features: Record<string, any> = activeSub?.plan?.dashboardFeatures || {};
-    
-    // Admins and Superadmins should have all features available by default
-    if (isAdmin) {
-        features = {
-            showListings: true,
-            canAddListing: true,
-            showSaved: true,
-            showFollowing: true,
-            showQueries: true,
-            showLeads: true,
-            showOffers: true,
-            showReviews: true,
-            showAnalytics: true,
-            showChat: true,
-            showBroadcast: true,
-            showDemand: true,
-            maxKeywords: 999
-        };
-    }
+    // Default features logic - All vendors and admins have full access
+    const features: Record<string, any> = (isVendor || isAdmin) ? {
+        showListings: true,
+        canAddListing: true,
+        showSaved: true,
+        showFollowing: true,
+        showQueries: true,
+        showLeads: true,
+        showOffers: true,
+        showReviews: true,
+        showAnalytics: true,
+        showChat: true,
+        showBroadcast: true,
+        showDemand: true,
+        maxKeywords: 999
+    } : (activeSub?.plan?.dashboardFeatures || {});
 
     const vendorStats = [
         {
@@ -345,7 +362,7 @@ export default function GenericDashboard() {
             </motion.div>
 
             {/* Active Subscription Status Banner */}
-            {isVendor && activeSub && activeSub.plan?.planType !== 'free' && activeSub.plan?.name?.toLowerCase() !== 'free' && (
+            {(isVendor || isAdmin) && activeSub && (
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -358,19 +375,19 @@ export default function GenericDashboard() {
                                 <BadgeCheck className="w-8 h-8 text-white" />
                             </div>
                             <div>
-                                <p className=\"text-[10px] sm:text-xs font-black text-emerald-400/80 uppercase tracking-[0.2em] mb-1\">
+                                <p className="text-[10px] sm:text-xs font-black text-emerald-400/80 uppercase tracking-[0.2em] mb-1">
                                     Active Plan
                                 </p>
-                                <h2 className=\"text-xl sm:text-3xl font-black text-white tracking-tight mb-2\">
+                                <h2 className="text-xl sm:text-3xl font-black text-white tracking-tight mb-2">
                                     {activeSub.plan?.name}
                                 </h2>
-                                <p className=\"text-slate-400 font-bold text-xs sm:text-sm flex items-center gap-2\">
-                                    <Clock className=\"w-3.5 h-3.5 text-slate-500\" />
+                                <p className="text-slate-400 font-bold text-xs sm:text-sm flex items-center gap-2">
+                                    <Clock className="w-3.5 h-3.5 text-slate-500" />
                                     {(() => {
                                         const end = new Date(activeSub.endDate);
                                         const days = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
                                         return (
-                                            <span className={days <= 4 ? \"text-rose-400\" : \"text-emerald-400\"}>
+                                            <span className={days <= 4 ? "text-rose-400" : "text-emerald-400"}>
                                                 {days > 0 ? `Expires in ${days} day${days !== 1 ? 's' : ''}` : 'Expired'} · {end.toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' })}
                                             </span>
                                         );
@@ -384,44 +401,6 @@ export default function GenericDashboard() {
                         >
                             Manage Plan
                             <ChevronRight className="w-4 h-4" />
-                        </Link>
-                    </div>
-                </motion.div>
-            )}
-
-            {/* Impactful Plan Upgrade CTA (Only for Free/No Plan Vendors) */}
-            {isVendor && (!activeSub || (activeSub.plan?.planType === 'free' || activeSub.plan?.name?.toLowerCase() === 'free' || Number(activeSub.amount) === 0)) && (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="mb-10 bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-800 rounded-[20px] p-1 shadow-xl shadow-blue-500/20"
-                >
-                    <div className="bg-slate-900/40 backdrop-blur-sm rounded-[18px] p-6 sm:p-8 flex flex-col lg:flex-row items-center justify-between gap-6 overflow-hidden relative">
-                        {/* Decorative background elements */}
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
-                        <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-400/10 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none" />
-                        
-                        <div className="flex items-center gap-6 relative z-10">
-                            <div className="w-14 h-14 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/20 flex-shrink-0 animate-bounce-slow">
-                                <Sparkles className="w-8 h-8 text-white fill-white/20" />
-                            </div>
-                            <div>
-                                <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight mb-1">
-                                    Stop leaving money on the table!
-                                </h2>
-                                <p className="text-blue-100 font-bold text-sm sm:text-base max-w-2xl leading-relaxed">
-                                    Upgrade to a Premium Plan now to <span className="text-orange-400 font-black">rank #1 in your city</span> and turn more views into high-value confirmed leads.
-                                </p>
-                            </div>
-                        </div>
-
-                        <Link 
-                            href="/vendor/subscription" 
-                            className="group relative z-10 flex items-center gap-3 px-10 py-4 bg-white text-blue-900 rounded-[16px] font-black text-sm uppercase tracking-widest hover:bg-[#FF7A30] hover:text-white transition-all transform active:scale-95 shadow-xl shadow-black/20 whitespace-nowrap"
-                        >
-                            Boost My Business Now
-                            <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                         </Link>
                     </div>
                 </motion.div>

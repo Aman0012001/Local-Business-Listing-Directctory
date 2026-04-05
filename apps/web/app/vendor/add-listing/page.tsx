@@ -69,11 +69,8 @@ export default function AddListingPage() {
     const features = activeSub?.plan?.dashboardFeatures || {};
     const isVendor = user?.role === 'vendor';
     // On free plan (no paid sub): 1 listing allowed. On paid plan: allowed unless explicitly disabled.
-    const canAdd = isVendor
-        ? activeSub
-            ? features.canAddListing !== false   // paid plan: show unless explicitly false
-            : myListingsCount !== null && myListingsCount < 1  // free plan: 1 listing max
-        : true;
+    // All vendors and admins have unrestricted listing creation as per Super Admin requirement.
+    const canAdd = true;
 
     useEffect(() => {
         if (typeof window !== 'undefined' && (window as any).google?.maps?.importLibrary) {
@@ -714,48 +711,6 @@ export default function AddListingPage() {
         }
     };
 
-    // Show upgrade screen if:
-    // (a) Free plan and already has 1 listing (limit reached), OR
-    // (b) Paid plan where canAddListing is explicitly false
-    if (isVendor && myListingsCount !== null && !canAdd) {
-        const isFreePlanLimit = !activeSub;
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100 mt-10">
-                <div className="w-20 h-20 bg-gradient-to-br from-orange-400 to-rose-500 rounded-3xl flex items-center justify-center mb-6 shadow-lg shadow-orange-200">
-                    <Lock className="w-10 h-10 text-white" />
-                </div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-orange-50 border border-orange-100 rounded-full mb-4">
-                    <span className="w-1.5 h-1.5 bg-orange-500 rounded-full" />
-                    <span className="text-xs font-black uppercase tracking-widest text-orange-600">
-                        {isFreePlanLimit ? 'Free Plan' : 'Plan Limit Reached'}
-                    </span>
-                </div>
-                <h2 className="text-3xl font-black text-slate-900 mb-3">Listing Limit Reached</h2>
-                <p className="text-slate-500 max-w-md mx-auto mb-2 font-bold leading-relaxed">
-                    {isFreePlanLimit
-                        ? 'Your free plan includes 1 business listing. You already have an active listing!'
-                        : 'Your current plan does not allow adding more listings.'}
-                </p>
-                <p className="text-slate-400 max-w-sm mx-auto mb-8 text-sm font-bold">
-                    Upgrade to a paid plan to add unlimited listings, unlock premium features, and grow your business faster.
-                </p>
-                <div className="flex items-center gap-3">
-                    <Link
-                        href="/vendor/listings"
-                        className="px-7 py-3.5 bg-slate-100 text-slate-700 rounded-2xl font-black text-sm tracking-tight hover:bg-slate-200 transition-all active:scale-95"
-                    >
-                        View My Listing
-                    </Link>
-                    <Link
-                        href="/vendor/subscription"
-                        className="px-7 py-3.5 bg-gradient-to-r from-orange-500 to-rose-500 text-white rounded-2xl font-black text-sm tracking-tight hover:opacity-90 transition-all active:scale-95 shadow-lg shadow-orange-500/25"
-                    >
-                        🚀 Upgrade My Plan
-                    </Link>
-                </div>
-            </div>
-        );
-    }
 
     if (success) {
         return (

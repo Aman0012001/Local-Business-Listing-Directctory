@@ -69,24 +69,9 @@ export default function VendorCommentsPage() {
         );
     }
 
-    // Free plan vendors always see their reviews. Only lock if paid plan explicitly disables showReviews.
-    if (isVendor && activeSub && features.showReviews === false) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border-2 border-dashed border-slate-100 mt-20">
-                <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mb-6">
-                    <Lock className="w-10 h-10" />
-                </div>
-                <h2 className="text-3xl font-black text-slate-900 mb-3">Customer Reviews</h2>
-                <p className="text-slate-500 max-w-md mx-auto mb-8 font-bold leading-relaxed">
-                    Managing and replying to customer reviews is a Basic feature. Upgrade your plan to build trust with your customers!
-                </p>
-                <Link href="/vendor/subscription" className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black tracking-tight hover:bg-black transition-all active:scale-95 shadow-xl shadow-slate-200">
-                    Upgrade My Plan
-                </Link>
-            </div>
-        );
-    }
-
+    // Vendors always have access to managing their customer reviews.
+    // The previous lock screen has been removed to provide full feature access.
+    
     const openReply = (comment: CommentItem) => {
         setActiveComment(comment);
         setReplyText(comment.reply?.replyText || '');

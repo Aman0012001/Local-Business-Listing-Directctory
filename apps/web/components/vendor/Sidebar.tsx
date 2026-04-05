@@ -101,62 +101,12 @@ export default function Sidebar() {
 
     const filteredItems = menuItems.filter(item => {
         const isVendorOrAdmin = user?.role === 'vendor' || user?.role === 'admin' || user?.role === 'superadmin';
-        if (!isVendorOrAdmin) {
-            return ['Dashboard', 'Live Chat', 'Saved', 'Following', 'Notifications', 'Settings'].includes(item.name);
-        }
         
-        // Admins see everything
-        if (user?.role === 'superadmin' || user?.role === 'admin') return true;
+        // Show all items to vendors and admins
+        if (isVendorOrAdmin) return true;
 
-        if (user?.role === 'vendor') {
-            // Show requested items even if subscription is still loading
-            const essentialItems = [
-                'Dashboard', 'My Listings', 'Add Listing', 'Subscription & Billing', 'Settings',
-                'Live Chat', 'Leads', 'Hot Demand Insights', 'Queries', 'Reviews', 'Analytics', 'Broadcast Feed'
-            ];
-
-            if (loadingSub) {
-                return essentialItems.includes(item.name);
-            }
-
-            // Gate features based on plan
-            // Use the most up-to-date subscription data available
-            const effectiveSub = activeSub || user?.vendor?.activeSubscription;
-            
-            // If there's no subscription info at all, show the essential list
-            if (!effectiveSub) {
-                return essentialItems.includes(item.name);
-            }
-
-            const features = effectiveSub?.plan?.dashboardFeatures || {};
-            
-            const featureMap: Record<string, string> = {
-                'Analytics': 'showAnalytics',
-                'Leads': 'showLeads',
-                'Offers & Events': 'showOffers',
-                'Hot Demand Insights': 'showDemand',
-                'Queries': 'showQueries',
-                'Reviews': 'showReviews',
-                'Live Chat': 'showChat',
-                'Broadcast Feed': 'showBroadcast',
-                'Saved': 'showSaved',
-                'Following': 'showFollowing',
-                'My Listings': 'showListings',
-                'Add Listing': 'canAddListing'
-            };
-
-            const featureKey = featureMap[item.name];
-            
-            // If item has a feature key map, check if it's enabled in the plan
-            if (featureKey && features[featureKey] === false) {
-                // If the user explicitly asked for these, show them anyway
-                if (essentialItems.includes(item.name)) return true;
-                return false;
-            }
-
-            return true;
-        }
-        return true;
+        // For regular users/customers, show a limited subset
+        return ['Dashboard', 'Live Chat', 'Saved', 'Following', 'Notifications', 'Settings'].includes(item.name);
     });
 
     const SidebarInner = () => (

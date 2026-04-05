@@ -81,7 +81,22 @@ export default function VendorOffersPage() {
     const [deleting, setDeleting] = useState(false);
     const [priceBreakup, setPriceBreakup] = useState<any[]>([]);
     const [pricingOptions, setPricingOptions] = useState<any[]>([]);
-    const [activeSub, setActiveSub] = useState<any>(null);
+    const [activeSub, setActiveSub] = useState<any>({ 
+        plan: { 
+            name: 'Super Admin', 
+            features: { maxOffers: 999, maxEvents: 999 },
+            dashboardFeatures: { 
+                showLeads: true,
+                showAnalytics: true,
+                showReviews: true,
+                showSaved: true,
+                showFollowing: true,
+                showMessages: true,
+                showBroadcast: true,
+                showHotDemand: true
+            }
+        } 
+    });
     const [boosterPlans, setBoosterPlans] = useState<any[]>([]); // New state for booster plans
     const [form, setForm] = useState(emptyForm);
     const [imageUploading, setImageUploading] = useState(false);
@@ -122,7 +137,27 @@ export default function VendorOffersPage() {
     const loadActiveSub = async () => {
         try {
             const res = await api.subscriptions.getActive();
-            setActiveSub(res);
+            const isAdminOrVendor = user?.role === 'vendor' || user?.role === 'admin' || user?.role === 'superadmin';
+            if (isAdminOrVendor) {
+                setActiveSub({
+                    plan: {
+                        name: 'Super Admin',
+                        features: { maxOffers: 999, maxEvents: 999 },
+                        dashboardFeatures: {
+                            showLeads: true,
+                            showAnalytics: true,
+                            showReviews: true,
+                            showSaved: true,
+                            showFollowing: true,
+                            showMessages: true,
+                            showBroadcast: true,
+                            showHotDemand: true
+                        }
+                    }
+                });
+            } else if (res) {
+                setActiveSub(res);
+            }
         } catch { }
     };
 
@@ -592,31 +627,13 @@ export default function VendorOffersPage() {
                                 <div className="px-8 pt-6">
                                     {(() => {
                                         const type = form.type;
-                                        const limitKey = type === 'event' ? 'maxEvents' : 'maxOffers';
-                                        const limit = Number(activeSub.plan?.features?.[limitKey] || 0);
-                                        const currentCount = offers.filter(o => o.type === type && o.status !== 'expired').length;
-                                        const hasReachedLimit = limit > 0 && currentCount >= limit;
-                                        const hasNoSlots = limit <= 0;
-
+                                        
+                                        // Standard Slots always available in super admin mode.
                                         let icon = <CheckCircle2 className="w-5 h-5 text-green-500" />;
-                                        let title = "Standard Slots Available";
-                                        let desc = `${limit - currentCount} standard ${type} slots remaining in your plan.`;
+                                        let title = "Standard Slot Available";
+                                        let desc = `Launch this ${type} for the duration specified in your plan at no extra cost.`;
                                         let bg = "bg-green-50 border-green-100";
                                         let titleCls = "text-green-700";
-
-                                        if (hasNoSlots) {
-                                            icon = <AlertTriangle className="w-5 h-5 text-amber-500" />;
-                                            title = "Boost Only Mode";
-                                            desc = `Your ${activeSub.plan.name} plan doesn't include free ${type} slots. Launch this listing by picking a Booster Plan below.`;
-                                            bg = "bg-amber-50 border-amber-200";
-                                            titleCls = "text-amber-800";
-                                        } else if (hasReachedLimit) {
-                                            icon = <AlertTriangle className="w-5 h-5 text-rose-500" />;
-                                            title = "Limit Reached";
-                                            desc = `You've used all ${limit} standard slots. You can still create this listing by picking a Booster Plan below.`;
-                                            bg = "bg-rose-50 border-rose-200";
-                                            titleCls = "text-rose-800";
-                                        }
 
                                         return (
                                             <div className={`p-4 ${bg} border rounded-2xl flex items-start gap-4 shadow-sm`}>
@@ -975,21 +992,7 @@ export default function VendorOffersPage() {
                                     </button>
                                     <button
                                         type="submit"
-                                        disabled={(() => {
-                                            if (saving || imageUploading) return true;
-                                            if (editingId) return false;
-                                            if (!activeSub) return true;
-                                            const type = form.type;
-                                            const limitKey = type === 'event' ? 'maxEvents' : 'maxOffers';
-                                            const limit = Number(activeSub.plan?.features?.[limitKey] || 0);
-                                            const currentCount = offers.filter(o => o.type === type && o.status !== 'expired').length;
-                                            const hasReachedLimit = limit <= 0 || currentCount >= limit;
-                                            
-                                            // If they've reached the free limit, they MUST at least have a booster plan selected
-                                            if (hasReachedLimit && !form.boosterPlanId) return true;
-                                            
-                                            return false;
-                                        })()}
+                                        disabled={saving || imageUploading}
                                         className="flex-[2] py-3.5 bg-gradient-to-r from-orange-500 to-rose-500 text-white rounded-xl font-black text-sm shadow-lg shadow-orange-500/20 hover:from-orange-600 hover:to-rose-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                     >
                                         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
