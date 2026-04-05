@@ -7,7 +7,7 @@ import {
     LayoutDashboard, ListTree, Plus, Heart, Star, Send, Bell,
     Settings, LogOut, ChevronDown, Shield, Phone, Megaphone,
     MessageSquare, TrendingUp, BarChart, CreditCard, Gift,
-    UserPlus, Menu, X,
+    UserPlus, Menu, X, Clock,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getImageUrl, api } from '../../lib/api';
@@ -95,6 +95,7 @@ export default function Sidebar() {
         { name: 'Broadcast Feed', icon: Megaphone, href: '/vendor/broadcasts', badge: newBroadcastCount > 0 ? String(newBroadcastCount) : null },
         { name: 'Notifications', icon: Bell, href: '/vendor/notifications', badge: null },
         { name: 'Affiliate', icon: Gift, href: '/vendor/affiliate', badge: 'Rewards' },
+        { name: 'Pending Approval', icon: Clock, href: '/vendor/pending-listings', badge: null },
         { name: 'Settings', icon: Settings, href: '/vendor/settings', badge: null },
     ];
 

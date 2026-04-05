@@ -1,0 +1,11 @@
+# SPA Fallback for Next.js Static Export
+# Ensure all vendor routes work even on refresh
+/vendor/*    /vendor/:splat.html    200
+/admin/*     /admin/:splat.html     200
+
+# Standard Next.js static file handling - ensure .html is appended if reached
+/vendor/*    /vendor/:splat    200
+/admin/*     /admin/:splat     200
+
+# Generic fallback to index.html for unknown routes
+/*  /index.html  200

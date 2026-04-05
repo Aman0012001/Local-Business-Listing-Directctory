@@ -186,7 +186,7 @@ export default function AdminDashboard() {
                                 <p className="text-xs text-slate-400">Manage community reports</p>
                             </div>
                         </Link>
-                        <Link href="/admin/businesses?status=pending" className="w-full p-6 bg-white/5 rounded-3xl flex items-center gap-4 hover:bg-white/10 transition-all text-left block">
+                        <Link href="/admin/listings?status=pending" className="w-full p-6 bg-white/5 rounded-3xl flex items-center gap-4 hover:bg-white/10 transition-all text-left block">
                             <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center">
                                 <Users className="w-6 h-6 text-blue-500" />
                             </div>

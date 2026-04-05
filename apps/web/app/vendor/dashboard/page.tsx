@@ -6,7 +6,7 @@ import StatsGrid from '../../../components/vendor/StatsGrid';
 import PerformanceChart from '../../../components/vendor/PerformanceChart';
 import RecentReviews from '../../../components/vendor/RecentReviews';
 import MessageCenter from '../../../components/vendor/MessageCenter';
-import { Star, ChevronRight, ListTree, Heart, MessageSquare, Plus, TrendingUp, Loader2, Bell, CheckCircle2, Sparkles, Share2, Copy, Gift, Mail } from 'lucide-react';
+import { Star, ChevronRight, ListTree, Heart, MessageSquare, Plus, TrendingUp, Loader2, Bell, CheckCircle2, Sparkles, Share2, Copy, Gift, Mail, Clock } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import Link from 'next/link';
 import { api, getImageUrl } from '../../../lib/api';
@@ -189,6 +189,15 @@ export default function GenericDashboard() {
             color: 'bg-gradient-to-br from-[#3366CC] to-[#1144AA]',
             shadow: 'shadow-blue-500/20',
             onClick: () => router.push('/vendor/add-listing'),
+            show: !!features.showListings
+        },
+        {
+            label: 'Pending Approval',
+            value: stats?.pendingCount || '0',
+            icon: Clock,
+            color: 'bg-gradient-to-br from-amber-400 to-amber-600',
+            shadow: 'shadow-amber-500/20',
+            onClick: () => router.push('/vendor/pending-listings'),
             show: !!features.showListings
         },
         {
