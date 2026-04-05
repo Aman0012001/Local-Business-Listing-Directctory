@@ -574,7 +574,7 @@ export class SubscriptionsService implements OnModuleInit {
 
         // 5. Affiliate Integration - AUTOMATED
         try {
-            await this.affiliateService.processSuccessfulReferral(vendor.userId);
+            await this.affiliateService.processSuccessfulReferral(vendor.userId, amount ?? plan.price);
         } catch (err) {
             this.logger.error(`Failed to process referral for user ${vendor.userId}: ${err.message}`);
         }
@@ -983,8 +983,9 @@ export class SubscriptionsService implements OnModuleInit {
         if (plan.type === PricingPlanType.SUBSCRIPTION) {
             try {
                 const vendorUser = await this.userRepository.findOne({ where: { id: vendorId } });
+                const paidAmount = plan.price;
                 if (vendorUser) {
-                    await this.affiliateService.processSuccessfulReferral(vendorUser.id);
+                    await this.affiliateService.processSuccessfulReferral(vendorUser.id, paidAmount);
                 } else {
                     // Try to get from vendor relation
                     const vendorWithUser = await this.vendorRepository.findOne({ 
@@ -992,7 +993,7 @@ export class SubscriptionsService implements OnModuleInit {
                         relations: ['user']
                     });
                     if (vendorWithUser?.user) {
-                        await this.affiliateService.processSuccessfulReferral(vendorWithUser.user.id);
+                        await this.affiliateService.processSuccessfulReferral(vendorWithUser.user.id, paidAmount);
                     }
                 }
             } catch (err) {

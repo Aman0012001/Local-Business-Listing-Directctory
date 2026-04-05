@@ -340,9 +340,15 @@ export class AffiliateService {
 
     /**
      * Common logic to process a successful referral (signup -> purchase)
-     * Automatically called after successful registration (auto-conversion for vendors).
+     * Rewards are only granted when the referred vendor makes a PAID purchase.
      */
-    async processSuccessfulReferral(referredUserId: string) {
+    async processSuccessfulReferral(referredUserId: string, paidAmount: number = 0) {
+        // Gate: Reward only for paid subscriptions
+        if (Number(paidAmount) <= 0) {
+            this.logger.debug(`[Referral] Skipping reward for user ${referredUserId} - Transaction amount is 0 (Free Plan). Referral remains PENDING.`);
+            return { success: false, reason: 'Paid subscription required' };
+        }
+
         const referral = await this.referralRepository.findOne({
             where: [
                 { referredUserId, status: ReferralStatus.PENDING, type: ReferralType.SIGNUP },
@@ -479,26 +485,23 @@ export class AffiliateService {
                 // Auto-verify the vendor profile
                 referredVendor.isVerified = true;
                 await this.vendorRepo.save(referredVendor);
-                this.logger.log(`Auto-verified referred vendor ${referredUserId}`);
+                this.logger.log(`[Referral] Auto-verified referred vendor ${referredUserId}`);
 
                 // Auto-approve all pending listings and activate PREMIUM features (Featured, Sponsored, Verified)
-                const allListings = await this.listingRepo.find({
-                    where: { vendorId: referredVendor.id }
-                });
-
-                if (allListings.length > 0) {
-                    for (const listing of allListings) {
-                        if (listing.status === BusinessStatus.PENDING) {
-                            listing.status = BusinessStatus.APPROVED;
-                            listing.approvedAt = new Date();
-                        }
-                        listing.isVerified = true;
-                        listing.isFeatured = true;
-                        listing.isSponsored = true;
-                    }
-                    await this.listingRepo.save(allListings);
-                    this.logger.log(`Fully activated premium features for ${allListings.length} listings of referred vendor ${referredUserId}`);
-                }
+                // We use QueryBuilder for a "perfect" bulk update to ensure all listings are updated correctly
+                await this.listingRepo.createQueryBuilder()
+                    .update(Listing)
+                    .set({
+                        isVerified: true,
+                        isFeatured: true,
+                        isSponsored: true,
+                        status: BusinessStatus.APPROVED,
+                        approvedAt: new Date(),
+                    })
+                    .where("vendor_id = :vendorId", { vendorId: referredVendor.id })
+                    .execute();
+                
+                this.logger.log(`[Referral] Fully activated premium features and approved all listings for referred vendor ${referredUserId}`);
 
                 // Ensure referred vendor has the reward (Basic/Standard) plan
                 const referredActivePlan = await this.activePlanRepository.findOne({
