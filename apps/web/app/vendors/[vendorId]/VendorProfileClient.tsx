@@ -65,6 +65,24 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
         });
     }, [vendor, searchTerm, activeCategory]);
 
+    const activeOffers = React.useMemo(() => {
+        if (!vendor?.offers) return [];
+        const now = new Date();
+        return vendor.offers.filter(offer => {
+            const expiry = offer.expiryDate ? new Date(offer.expiryDate) : null;
+            return !expiry || expiry > now;
+        });
+    }, [vendor?.offers]);
+
+    const activeEvents = React.useMemo(() => {
+        if (!vendor?.events) return [];
+        const now = new Date();
+        return vendor.events.filter(event => {
+            const end = event.endDate ? new Date(event.endDate) : null;
+            return !end || end > now;
+        });
+    }, [vendor?.events]);
+
     if (loading) {
         return (
             <div className="min-h-screen bg-slate-50">
@@ -183,16 +201,13 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
                         </div>
                     </div>
                 </main>
-            </div>
-
             {/* ── Main Content Area ── */}
             <main className="max-w-5xl mx-auto px-6 py-20 pb-32">
-
                 {/* ── Offers & Events Grid (Only if they exist) ── */}
-                {(vendor.offers?.length || 0) > 0 || (vendor.events?.length || 0) > 0 ? (
+                {activeOffers.length > 0 || activeEvents.length > 0 ? (
                     <div className="grid md:grid-cols-2 gap-12 mb-20">
                         {/* Offers Section */}
-                        {vendor.offers && vendor.offers.length > 0 && (
+                        {activeOffers.length > 0 && (
                             <div>
                                 <div className="flex items-center gap-3 mb-6">
                                     <div className="p-2 bg-orange-50 rounded-xl">
@@ -201,7 +216,7 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
                                     <h2 className="text-xl font-black text-slate-900 tracking-tight text-center md:text-left">Exclusive Offers</h2>
                                 </div>
                                 <div className="space-y-4">
-                                    {vendor.offers.map(offer => (
+                                    {activeOffers.map(offer => (
                                         <div key={offer.id} className="group relative bg-white border border-slate-100 rounded-[20px] p-5 hover:border-orange-200 transition-all shadow-sm hover:shadow-md">
                                             <div className="flex gap-5">
                                                 {offer.imageUrl && (
@@ -238,7 +253,7 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
                         )}
 
                         {/* Events Section */}
-                        {vendor.events && vendor.events.length > 0 && (
+                        {activeEvents.length > 0 && (
                             <div>
                                 <div className="flex items-center gap-3 mb-6">
                                     <div className="p-2 bg-indigo-50 rounded-xl">
@@ -247,7 +262,7 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
                                     <h2 className="text-xl font-black text-slate-900 tracking-tight">Upcoming Events</h2>
                                 </div>
                                 <div className="space-y-4">
-                                    {vendor.events.map(event => (
+                                    {activeEvents.map(event => (
                                         <div key={event.id} className="group flex bg-white border border-slate-100 rounded-[20px] overflow-hidden hover:border-indigo-200 transition-all shadow-sm hover:shadow-md">
                                             <div className="w-24 bg-indigo-600 p-4 flex flex-col items-center justify-center text-white text-center">
                                                 <span className="text-xs font-black uppercase tracking-widest opacity-80">

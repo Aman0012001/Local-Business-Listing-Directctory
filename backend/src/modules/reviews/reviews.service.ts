@@ -106,24 +106,20 @@ export class ReviewsService {
             throw new ConflictException('You have already reviewed this business');
         }
 
-        // Create review
+        // Create review - always approved by default.
+        // Suspicious reviews are only FLAGGED for admin review, not auto-rejected.
         const review = this.reviewRepository.create({
             ...createReviewDto,
             userId: user.id,
             ipAddress,
-            isApproved: true, // Initially approved, but detection might flag it
+            isApproved: true, // Always visible to customers
         });
 
-        // Run suspicion detection
+        // Run suspicion detection (flags for admin attention, does not auto-reject)
         const analysis = await this.reviewDetectionService.analyzeReview(review);
         review.isSuspicious = analysis.isSuspicious;
         review.suspicionScore = analysis.score;
         review.suspicionReason = analysis.reason;
-
-        // If highly suspicious (score > 0.8), set as unapproved
-        if (review.suspicionScore > 0.8) {
-            review.isApproved = false;
-        }
 
         const savedReview = await this.reviewRepository.save(review);
 

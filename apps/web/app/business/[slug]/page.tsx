@@ -12,24 +12,19 @@ export async function generateStaticParams() {
         const params = businesses
             .filter((b: any) => b && b.slug)
             .map((business: any) => ({
-                businessSlug: String(business.slug),
+                slug: String(business.slug),
             }));
             
         // Include 'template' for SPA fallback and ensure at least one param exists
-        return [...params, { businessSlug: 'template' }];
+        return [...params, { slug: 'template' }];
     } catch (error) {
         console.error('Failed to generate static params for businesses:', error);
         // Fallback for build phase if API is unreachable
-        return [{ businessSlug: 'template' }];
+        return [{ slug: 'template' }];
     }
 }
 
-// Ensure pages that weren't pre-generated are still accessible on-demand
-// Standard dynamic build support
-// Disable dynamicParams for static export
-export const dynamicParams = false;
-
-export default async function BusinessPage({ params }: { params: Promise<{ businessSlug: string }> }) {
-    const { businessSlug } = await params;
-    return <BusinessDetailClient slug={businessSlug} />;
+export default async function BusinessPage({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params;
+    return <BusinessDetailClient slug={slug} />;
 }

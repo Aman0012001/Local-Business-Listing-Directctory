@@ -272,7 +272,17 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                 // Load public offers for this business
                 try {
                     const offersData = await api.offers.getByBusiness(data.id);
-                    setOffers(Array.isArray(offersData) ? offersData : []);
+                    if (Array.isArray(offersData)) {
+                        const now = new Date();
+                        const activeOnly = offersData.filter((o: any) => {
+                            const expiry = o.expiryDate ? new Date(o.expiryDate) : null;
+                            const end = o.endDate ? new Date(o.endDate) : null;
+                            return (!expiry || expiry > now) && (!end || end > now);
+                        });
+                        setOffers(activeOnly);
+                    } else {
+                        setOffers([]);
+                    }
                 } catch (oe) {
                     console.error('[BusinessDetail] Failed to load offers:', oe);
                 }
@@ -566,10 +576,17 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
         );
     }
 
-    // Check if current logged-in user is the owner of this business
-    const isOwner = !!user && !!business.vendor && (
-        business.vendor.userId === user.id ||
-        business.vendor.user?.id === user.id
+    // Check if current logged-in user is the owner of this business.
+    // STRICT: Both sides must be non-null, non-empty strings before comparing.
+    // Prevents false positives from `undefined === undefined` when API fields are missing.
+    const currentUserId = user?.id;
+    const vendorUserId = business.vendor?.userId || business.vendor?.user?.id;
+    const isOwner = !!(
+        currentUserId &&
+        vendorUserId &&
+        typeof currentUserId === 'string' &&
+        typeof vendorUserId === 'string' &&
+        currentUserId === vendorUserId
     );
 
     const imagePaths = new Set([
@@ -1252,24 +1269,29 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                 </h4>
 
                                 <div className="flex flex-col items-center text-center">
-                                    <div className="w-24 h-24 bg-blue-50 rounded-3xl flex items-center justify-center text-blue-600 font-bold overflow-hidden shadow-inner mb-4 relative cursor-pointer group">
-                                        {business.vendor?.user?.avatarUrl ? (
-                                            <img
-                                                src={getImageUrl(business.vendor.user.avatarUrl) as string}
-                                                alt={business.vendor.user.fullName || 'Vendor'}
-                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                            />
-                                        ) : (
-                                            <span className="text-2xl">{(business.vendor?.user?.fullName?.[0] || 'V').toUpperCase()}</span>
-                                        )}
-                                        {business.vendor?.user?.isOnline && (
-                                            <div className="absolute bottom-1 right-1 w-4.5 h-4.5 bg-emerald-500 border-[3px] border-white rounded-full shadow-sm" />
-                                        )}
-                                    </div>
+                                    <Link 
+                                        href={`/vendors/${business.vendor?.id || business.vendorId}`}
+                                        className="flex flex-col items-center text-center group/vendor cursor-pointer"
+                                    >
+                                        <div className="w-24 h-24 bg-blue-50 rounded-3xl flex items-center justify-center text-blue-600 font-bold overflow-hidden shadow-inner mb-4 relative group">
+                                            {business.vendor?.user?.avatarUrl ? (
+                                                <img
+                                                    src={getImageUrl(business.vendor.user.avatarUrl) as string}
+                                                    alt={business.vendor.user.fullName || 'Vendor'}
+                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                                />
+                                            ) : (
+                                                <span className="text-2xl">{(business.vendor?.user?.fullName?.[0] || 'V').toUpperCase()}</span>
+                                            )}
+                                            {business.vendor?.user?.isOnline && (
+                                                <div className="absolute bottom-1 right-1 w-4.5 h-4.5 bg-emerald-500 border-[3px] border-white rounded-full shadow-sm" />
+                                            )}
+                                        </div>
 
-                                    <h5 className="text-lg font-black text-slate-900 leading-tight mb-1">
-                                        {business.vendor?.user?.fullName || 'Verified Business Owner'}
-                                    </h5>
+                                        <h5 className="text-lg font-black text-slate-900 leading-tight mb-1 group-hover/vendor:text-blue-600 transition-colors">
+                                            {business.vendor?.user?.fullName || 'Verified Business Owner'}
+                                        </h5>
+                                    </Link>
 
                                     <div className="flex items-center gap-2 mb-4">
                                         <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-emerald-100">
@@ -1338,8 +1360,11 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
 
                                         <Link
                                             id="view-vendor-profile-btn"
-                                            href={`/vendors/${business.vendorId}`}
+                                            href={`/vendors/${business.vendor?.id || business.vendorId}`}
                                             className="block w-full py-4 bg-slate-50 text-slate-900 rounded-2xl font-black text-sm text-center hover:bg-slate-900 hover:text-white transition-all border border-slate-100 shadow-sm"
+                                            onClick={() => {
+                                                console.log('[BusinessDetailClient] Navigating to vendor profile:', business.vendor?.id || business.vendorId);
+                                            }}
                                         >
                                             View Profile
                                         </Link>

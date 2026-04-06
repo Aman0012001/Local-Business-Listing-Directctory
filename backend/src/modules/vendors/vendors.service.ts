@@ -191,10 +191,15 @@ export class VendorsService {
         const categories = [...new Set(listings.map(l => l.category?.name).filter(Boolean))];
 
         // Fetch Offers and Events
-        const allOffersEvents = await this.offerEventRepository.find({
-            where: { vendorId: vendor.id, status: OfferStatus.ACTIVE, isActive: true },
-            order: { createdAt: 'DESC' },
-        });
+        const now = new Date();
+        const allOffersEvents = await this.offerEventRepository.createQueryBuilder('oe')
+            .where('oe.vendorId = :vendorId', { vendorId: vendor.id })
+            .andWhere('oe.isActive = :isActive', { isActive: true })
+            .andWhere('oe.status != :expired', { expired: OfferStatus.EXPIRED })
+            .andWhere('(oe.expiryDate IS NULL OR oe.expiryDate > :now)', { now })
+            .andWhere('(oe.endDate IS NULL OR oe.endDate > :now)', { now })
+            .orderBy('oe.createdAt', 'DESC')
+            .getMany();
 
         const offers = allOffersEvents.filter(oe => oe.type === OfferType.OFFER);
         const events = allOffersEvents.filter(oe => oe.type === OfferType.EVENT);

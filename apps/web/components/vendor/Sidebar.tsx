@@ -84,7 +84,7 @@ export default function Sidebar() {
         { name: 'Add Listing', icon: Plus, href: '/vendor/add-listing', badge: null },
         { name: 'Leads', icon: Phone, href: '/vendor/leads', badge: null },
         { name: 'Offers & Events', icon: Megaphone, href: '/vendor/offers', badge: null },
-        { name: 'Reviews', icon: Star, href: '/vendor/comments', badge: null },
+        { name: 'Reviews', icon: Star, href: '/vendor/reviews', badge: null },
         { name: 'Analytics', icon: BarChart, href: '/vendor/analytics', badge: null },
         { name: 'Saved', icon: Heart, href: '/vendor/saved', badge: null },
         { name: 'Following', icon: UserPlus, href: '/vendor/following', badge: null },
