@@ -18,9 +18,11 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { api } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 function SuccessContent() {
     const router = useRouter();
+    const { syncProfile } = useAuth();
     const searchParams = useSearchParams();
     const sessionId = searchParams.get('session_id');
     const [status, setStatus] = useState<'loading' | 'celebrating' | 'success' | 'error'>('loading');
@@ -68,6 +70,9 @@ function SuccessContent() {
 
                 // Start celebration animation
                 setStatus('celebrating');
+
+                // NEW: Sync profile to ensure vendor benefits are applied immediately in UI
+                syncProfile().catch(err => console.error('Feature Sync Error:', err));
             } else {
                 setStatus('error');
             }

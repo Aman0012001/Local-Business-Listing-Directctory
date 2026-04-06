@@ -45,20 +45,40 @@ export class UsersService {
             throw new NotFoundException('User not found');
         }
 
-        // Normalize subscription data for the frontend if vendor exists
+        // Normalize and merge subscription data for the frontend if vendor exists
         if (user.vendor) {
-            let activeSubscription = null;
+            let activeSubscription: any = null;
             
-            // Check old system
+            // 1. Check legacy system for an active subscription
             const oldSub = user.vendor.subscriptions?.find(s => s.status === 'active');
             if (oldSub) {
                 activeSubscription = this.subscriptionsService.normalizeSubOrActivePlan(oldSub, false);
             }
             
-            // Check new system if no old sub or to override
-            const newPlan = user.vendor.activePlans?.find(p => p.status === 'active');
-            if (newPlan) {
-                activeSubscription = this.subscriptionsService.normalizeSubOrActivePlan(newPlan, true);
+            // 2. Merge with any active plans from the new system
+            if (user.vendor.activePlans) {
+                user.vendor.activePlans.forEach((plan: any) => {
+                    if (plan.status === 'active') {
+                        const normalizedPlan = this.subscriptionsService.normalizeSubOrActivePlan(plan, true);
+                        if (!activeSubscription) {
+                            activeSubscription = normalizedPlan;
+                        } else {
+                            // Merge dashboard features (OR logic for booleans, Max logic for numbers)
+                            const merged = JSON.parse(JSON.stringify(activeSubscription.plan.dashboardFeatures));
+                            const additions = normalizedPlan.plan.dashboardFeatures;
+                            
+                            Object.keys(additions).forEach(key => {
+                                if (typeof additions[key] === 'boolean') {
+                                    merged[key] = merged[key] || additions[key];
+                                } else if (typeof additions[key] === 'number') {
+                                    merged[key] = Math.max(merged[key] || 0, additions[key]);
+                                }
+                            });
+                            
+                            activeSubscription.plan.dashboardFeatures = merged;
+                        }
+                    }
+                });
             }
 
             // Attaching normalized sub to vendor for frontend consumption
