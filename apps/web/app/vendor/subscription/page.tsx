@@ -407,8 +407,8 @@ export default function VendorSubscriptionPage() {
             ]);
             setPlans(Array.isArray(p) ? p : []);
             
-            const isVendorOrAdmin = user?.role === 'vendor' || user?.role === 'admin' || user?.role === 'superadmin';
-            if (isVendorOrAdmin) {
+            const isAdminUser = user?.role === 'admin' || user?.role === 'superadmin';
+            if (isAdminUser) {
                 setActiveSub({
                     id: 'super-admin-mock',
                     status: 'active',
@@ -446,6 +446,7 @@ export default function VendorSubscriptionPage() {
             } else {
                 setActiveSub(s);
             }
+
             setInvoices(Array.isArray(inv) ? inv : []);
         } catch (e) {
             console.error(e);
@@ -573,12 +574,16 @@ export default function VendorSubscriptionPage() {
                                 </h2>
                                 {activeSub.status === 'active' && activeSub.plan?.planType !== 'free' && activeSub.plan?.name?.toLowerCase() !== 'free' && (
                                     <p className={`text-sm font-bold mt-0.5 ${isExpiringSoon ? 'text-red-500' : 'text-slate-400'}`}>
-                                        {daysLeft !== null && daysLeft > 0
-                                            ? `Expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''} · ${new Date(activeSub.endDate).toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' })}`
-                                            : `Expires: ${new Date(activeSub.endDate).toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' })}`
-                                        }
+                                        {daysLeft !== null && daysLeft > 3000 ? (
+                                            <span className="text-emerald-400">Lifetime Plan</span>
+                                        ) : (
+                                            daysLeft !== null && daysLeft > 0
+                                                ? `Expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''} · ${new Date(activeSub.endDate).toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                                                : `Expires: ${new Date(activeSub.endDate).toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                                        )}
                                     </p>
                                 )}
+
                                 {activeSub.status === 'pending' && (
                                     <p className="text-sm font-bold text-amber-400/80 mt-0.5">
                                         Your payment is under review. Please wait for admin activation.

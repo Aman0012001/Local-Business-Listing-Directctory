@@ -201,6 +201,8 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
                         </div>
                     </div>
                 </main>
+            </div>
+
             {/* ── Main Content Area ── */}
             <main className="max-w-5xl mx-auto px-6 py-20 pb-32">
                 {/* ── Offers & Events Grid (Only if they exist) ── */}

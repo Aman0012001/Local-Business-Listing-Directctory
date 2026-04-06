@@ -157,7 +157,7 @@ export default function GenericDashboard() {
         };
     }, [socket]);
 
-    const activeSub = (isVendor || isAdmin) ? {
+    const activeSub = isAdmin ? {
         plan: {
             name: 'Super Admin',
             planType: 'paid',
@@ -180,9 +180,10 @@ export default function GenericDashboard() {
         endDate: user?.vendor?.activeSubscription?.endDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
         status: 'active'
     } : (user?.vendor?.activeSubscription || user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active'));
+
     
     // Default features logic - All vendors and admins have full access
-    const features: Record<string, any> = (isVendor || isAdmin) ? {
+    const features: Record<string, any> = isAdmin ? {
         showListings: true,
         canAddListing: true,
         showSaved: true,
@@ -197,6 +198,7 @@ export default function GenericDashboard() {
         showDemand: true,
         maxKeywords: 999
     } : (activeSub?.plan?.dashboardFeatures || {});
+
 
     const vendorStats = [
         {
@@ -386,12 +388,18 @@ export default function GenericDashboard() {
                                     {(() => {
                                         const end = new Date(activeSub.endDate);
                                         const days = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                                        
+                                        if (days > 3000) {
+                                            return <span className="text-emerald-400">Lifetime Plan</span>;
+                                        }
+
                                         return (
                                             <span className={days <= 4 ? "text-rose-400" : "text-emerald-400"}>
                                                 {days > 0 ? `Expires in ${days} day${days !== 1 ? 's' : ''}` : 'Expired'} · {end.toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' })}
                                             </span>
                                         );
                                     })()}
+
                                 </p>
                             </div>
                         </div>
