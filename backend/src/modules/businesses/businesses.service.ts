@@ -6,7 +6,7 @@ import {
     ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, Not, Brackets, Like } from 'typeorm';
+import { Repository, In, Not, Brackets, Like, MoreThan } from 'typeorm';
 import { Listing, BusinessStatus } from '../../entities/business.entity';
 import { BusinessHours, DayOfWeek } from '../../entities/business-hours.entity';
 import { BusinessAmenity } from '../../entities/business-amenity.entity';
@@ -15,6 +15,8 @@ import { Category, CategoryStatus } from '../../entities/category.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { User, UserRole } from '../../entities/user.entity';
 import { ActivePlan, ActivePlanStatus } from '../../entities/active-plan.entity';
+import { Subscription, SubscriptionStatus } from '../../entities/subscription.entity';
+import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { SearchBusinessDto, SearchSortBy } from './dto/search-business.dto';
@@ -45,6 +47,10 @@ export class BusinessesService {
         private vendorRepository: Repository<Vendor>,
         @InjectRepository(ActivePlan)
         private activePlanRepository: Repository<ActivePlan>,
+        @InjectRepository(Subscription)
+        private subscriptionRepository: Repository<Subscription>,
+        @InjectRepository(SubscriptionPlan)
+        private subscriptionPlanRepository: Repository<SubscriptionPlan>,
         private notificationsService: NotificationsService,
         private searchService: SearchService,
         private demandService: DemandService,
@@ -107,15 +113,29 @@ export class BusinessesService {
             sanitizedExpiresAt = null as any;
         }
 
-        // Check if their vendor profile is verified or they have an active referral plan
-        const referralPlan = await this.activePlanRepository.findOne({
-            where: [
-                { vendorId: vendor.id, status: ActivePlanStatus.ACTIVE, transactionId: Like('%REFERRAL%') },
-                { vendorId: vendor.id, status: ActivePlanStatus.ACTIVE, transactionId: 'MANUAL_REWARD_REPAIR' }
-            ]
-        });
+        // NEW: Check for ANY active featured/boosted plan (Unified Subscription Engine)
+        const [activeSub, activeNewPlan, referralPlan] = await Promise.all([
+            this.subscriptionRepository.findOne({
+                where: { vendorId: vendor.id, status: SubscriptionStatus.ACTIVE, endDate: MoreThan(new Date()) },
+                relations: ['plan']
+            }),
+            this.activePlanRepository.findOne({
+                where: { vendorId: vendor.id, status: ActivePlanStatus.ACTIVE, endDate: MoreThan(new Date()) },
+                relations: ['plan']
+            }),
+            // Check if their vendor profile is verified or they have an active referral plan
+            this.activePlanRepository.findOne({
+                where: [
+                    { vendorId: vendor.id, status: ActivePlanStatus.ACTIVE, transactionId: Like('%REFERRAL%') },
+                    { vendorId: vendor.id, status: ActivePlanStatus.ACTIVE, transactionId: 'MANUAL_REWARD_REPAIR' }
+                ]
+            })
+        ]);
 
-        const shouldAutoApprove = vendor.isVerified || !!referralPlan;
+        const hasFeaturedSub = (activeSub?.plan?.isFeatured) || ((activeNewPlan?.plan?.features as any)?.isFeatured);
+        const hasBoostedSub = !!referralPlan || ((activeNewPlan?.plan?.features as any)?.top_ranking);
+
+        const shouldAutoApprove = vendor.isVerified || !!referralPlan || hasFeaturedSub;
 
         // Create listing
         const listing = this.listingRepository.create({
@@ -124,9 +144,9 @@ export class BusinessesService {
             vendorId: vendor.id,
             slug,
             status: shouldAutoApprove ? BusinessStatus.APPROVED : BusinessStatus.PENDING,
-            isVerified: shouldAutoApprove,
-            isFeatured: !!referralPlan,
-            isSponsored: !!referralPlan,
+            isVerified: vendor.isVerified || !!referralPlan,
+            isFeatured: hasFeaturedSub || !!referralPlan,
+            isSponsored: hasBoostedSub,
             approvedAt: shouldAutoApprove ? new Date() : null,
         });
 

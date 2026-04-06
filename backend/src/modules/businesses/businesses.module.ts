@@ -13,6 +13,8 @@ import { DemandModule } from '../demand/demand.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { AffiliateModule } from '../affiliate/affiliate.module';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
+import { Subscription } from '../../entities/subscription.entity';
+import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
 
 import { ActivePlan } from '../../entities/active-plan.entity';
 
@@ -26,6 +28,8 @@ import { ActivePlan } from '../../entities/active-plan.entity';
             Category,
             Vendor,
             ActivePlan,
+            Subscription,
+            SubscriptionPlan,
         ]),
         NotificationsModule,
         SearchModule,
