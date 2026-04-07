@@ -127,7 +127,7 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
 
         try {
             initInProgress.current = true;
-            
+
             // Coordinate parsing for Pakistan context (fallback if invalid)
             const lat = parseFloat(String(business.latitude)) || 30.3753;
             const lng = parseFloat(String(business.longitude)) || 69.3451;
@@ -143,7 +143,7 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
             }
 
             const { Map } = await (window as any).google.maps.importLibrary("maps");
-            
+
             if (!mapRef.current) {
                 // Initialize the Map
                 mapRef.current = new Map(mapContainerRef.current, {
@@ -181,7 +181,7 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                 if ((window as any).google?.maps?.event) {
                     (window as any).google.maps.event.trigger(mapRef.current, 'resize');
                 }
-                
+
                 if (markerRef.current) {
                     if (markerRef.current.setPosition) {
                         markerRef.current.setPosition(center);
@@ -234,7 +234,7 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
     useEffect(() => {
         const loadBusiness = async () => {
             let actualSlug = slug;
-            
+
             // Handle SPA fallback where the page is served by a 'template' HTML file
             if ((slug === 'template' || slug === 'sample-business') && typeof window !== 'undefined') {
                 const pathParts = window.location.pathname.split('/').filter(Boolean);
@@ -767,341 +767,341 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                 <>
                                     <div className="border-b border-slate-100 flex items-center gap-12 mb-10 overflow-x-auto scrollbar-hide">
                                         {['Overview', 'Reviews', 'Amenities', ...(business.hasOffer ? ['Offer / Deal'] : []), ...(validFaqs.length > 0 ? ['FAQs'] : [])].map(tab => (
-                                <button
-                                    key={tab}
-                                    onClick={() => setActiveTab(tab)}
-                                    className={`pb-4 text-sm font-bold tracking-wide border-b-2 transition-all whitespace-nowrap ${activeTab === tab ? 'text-blue-600 border-blue-600' : 'text-slate-400 border-transparent hover:text-slate-600'}`}
-                                >
-                                    {tab}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="min-h-[400px]">
-                            <div className={activeTab === 'Overview' ? 'block' : 'hidden'}>
-                                <div className="prose prose-slate max-w-none animate-in fade-in duration-500">
-                                    <h3 className="text-2xl font-bold text-slate-900 mb-6 italic">About {business.title}</h3>
-                                    <p className="text-lg text-slate-600 leading-relaxed mb-8">
-                                        {business.description}
-                                    </p>
-
-                                    <div className="grid sm:grid-cols-2 gap-4 mt-12 mb-12">
-                                        {['Fast Delivery', 'Premium Support', 'Genuine Products', '100% Satisfaction'].map(check => (
-                                            <div key={check} className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                                                <span className="font-medium text-slate-800">{check}</span>
-                                            </div>
+                                            <button
+                                                key={tab}
+                                                onClick={() => setActiveTab(tab)}
+                                                className={`pb-4 text-sm font-bold tracking-wide border-b-2 transition-all whitespace-nowrap ${activeTab === tab ? 'text-blue-600 border-blue-600' : 'text-slate-400 border-transparent hover:text-slate-600'}`}
+                                            >
+                                                {tab}
+                                            </button>
                                         ))}
                                     </div>
 
-                                    {/* Detailed Map Section */}
-                                    <div className="mt-12 space-y-6">
-                                        <h3 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
-                                            <Navigation className="w-6 h-6 text-blue-600" /> Business Location
-                                        </h3>
-                                        <div className="relative h-[400px] rounded-[20px] overflow-hidden border border-slate-100 shadow-xl shadow-slate-200/50 bg-slate-50">
-                                            {mapError ? (
-                                                <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
-                                                    <div className="w-16 h-16 bg-rose-50 rounded-3xl flex items-center justify-center text-rose-500 mb-4">
-                                                        <MapPin className="w-8 h-8" />
-                                                    </div>
-                                                    <p className="font-bold text-slate-900">Map unavailable</p>
-                                                    <p className="text-sm text-slate-500 mt-1 max-w-xs">{business.address}, {business.city}</p>
-                                                </div>
-                                            ) : !mapLoaded ? (
-                                                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                                    <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-4" />
-                                                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Loading Location ...</p>
-                                                </div>
-                                            ) : null}
-                                            <div ref={mapContainerRef} className="w-full h-full" />
+                                    <div className="min-h-[400px]">
+                                        <div className={activeTab === 'Overview' ? 'block' : 'hidden'}>
+                                            <div className="prose prose-slate max-w-none animate-in fade-in duration-500">
+                                                <h3 className="text-2xl font-bold text-slate-900 mb-6 italic">About {business.title}</h3>
+                                                <p className="text-lg text-slate-600 leading-relaxed mb-8">
+                                                    {business.description}
+                                                </p>
 
-                                            {/* Floating Info Overlay */}
-                                            <div className="absolute bottom-6 left-6 right-6 md:w-80 p-6 bg-white/90 backdrop-blur-xl border border-white/20 rounded-[16px] shadow-2xl">
-                                                <div className="flex items-start gap-4">
-                                                    <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30 shrink-0">
-                                                        <MapPin className="w-6 h-6" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-sm font-black text-slate-900 leading-tight mb-1">{business.address}</p>
-                                                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{business.city}, {business.state} {business.pincode}</p>
-                                                        <button
-                                                            onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${business.latitude},${business.longitude}`, '_blank')}
-                                                            className="mt-3 flex items-center gap-2 text-blue-600 text-xs font-black uppercase tracking-widest hover:text-blue-700 transition-colors"
-                                                        >
-                                                            Get Directions <ChevronRight className="w-3 h-3" />
-                                                        </button>
+                                                <div className="grid sm:grid-cols-2 gap-4 mt-12 mb-12">
+                                                    {['Fast Delivery', 'Premium Support', 'Genuine Products', '100% Satisfaction'].map(check => (
+                                                        <div key={check} className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                                            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                                                            <span className="font-medium text-slate-800">{check}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                                {/* Detailed Map Section */}
+                                                <div className="mt-12 space-y-6">
+                                                    <h3 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+                                                        <Navigation className="w-6 h-6 text-blue-600" /> Business Location
+                                                    </h3>
+                                                    <div className="relative h-[400px] rounded-[20px] overflow-hidden border border-slate-100 shadow-xl shadow-slate-200/50 bg-slate-50">
+                                                        {mapError ? (
+                                                            <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
+                                                                <div className="w-16 h-16 bg-rose-50 rounded-3xl flex items-center justify-center text-rose-500 mb-4">
+                                                                    <MapPin className="w-8 h-8" />
+                                                                </div>
+                                                                <p className="font-bold text-slate-900">Map unavailable</p>
+                                                                <p className="text-sm text-slate-500 mt-1 max-w-xs">{business.address}, {business.city}</p>
+                                                            </div>
+                                                        ) : !mapLoaded ? (
+                                                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                                <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-4" />
+                                                                <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Loading Location ...</p>
+                                                            </div>
+                                                        ) : null}
+                                                        <div ref={mapContainerRef} className="w-full h-full" />
+
+                                                        {/* Floating Info Overlay */}
+                                                        <div className="absolute bottom-6 left-6 right-6 md:w-80 p-6 bg-white/90 backdrop-blur-xl border border-white/20 rounded-[16px] shadow-2xl">
+                                                            <div className="flex items-start gap-4">
+                                                                <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30 shrink-0">
+                                                                    <MapPin className="w-6 h-6" />
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-sm font-black text-slate-900 leading-tight mb-1">{business.address}</p>
+                                                                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{business.city}, {business.state} {business.pincode}</p>
+                                                                    <button
+                                                                        onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${business.latitude},${business.longitude}`, '_blank')}
+                                                                        className="mt-3 flex items-center gap-2 text-blue-600 text-xs font-black uppercase tracking-widest hover:text-blue-700 transition-colors"
+                                                                    >
+                                                                        Get Directions <ChevronRight className="w-3 h-3" />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <div className={activeTab === 'Reviews' ? 'block' : 'hidden'}>
-                                <div className="space-y-8 animate-in fade-in duration-500">
-                                    <div className="flex items-center justify-between">
-                                        <h3 className="text-2xl font-bold text-slate-900">Customer Reviews</h3>
-                                        {isOwner ? (
-                                            <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-100 rounded-xl">
-                                                <ShieldCheck className="w-4 h-4 text-blue-500" />
-                                                <span className="text-xs font-bold text-blue-600">Your Business</span>
-                                            </div>
-                                        ) : (
-                                            <button
-                                                onClick={() => setShowReviewModal(true)}
-                                                className="px-6 py-2 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-all"
-                                            >
-                                                Write a Review
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    {comments.length > 0 ? (
-                                        <div className="space-y-6">
-                                            {comments.map((comment: any, idx: number) => (
-                                                <div key={comment.id || `comment-${idx}`} className="p-4 bg-white rounded-[16px] border border-slate-100 shadow-sm transition-all hover:shadow-md">
-                                                    <div className="flex items-center justify-between mb-4">
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 font-bold overflow-hidden shadow-inner">
-                                                                {comment.user?.avatarUrl ? (
-                                                                    <img src={getImageUrl(comment.user.avatarUrl) as string} alt={comment.user.fullName || 'User'} className="w-full h-full object-cover" />
-                                                                ) : (
-                                                                    (comment.user?.fullName?.[0] || 'U').toUpperCase()
-                                                                )}
-                                                            </div>
-                                                            <div>
-                                                                <h4 className="font-bold text-slate-900">{comment.user?.fullName || 'Anonymous'}</h4>
-                                                                <div className="flex items-center gap-1 mt-0.5">
-                                                                    {[...Array(5)].map((_, i) => (
-                                                                        <Star
-                                                                            key={i}
-                                                                            className={`w-3.5 h-3.5 ${i < (comment.rating || 0) ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`}
-                                                                        />
-                                                                    ))}
-                                                                    <span className="text-[10px] text-slate-400 ml-2">{new Date(comment.createdAt).toLocaleDateString()}</span>
-                                                                </div>
-                                                            </div>
+                                        <div className={activeTab === 'Reviews' ? 'block' : 'hidden'}>
+                                            <div className="space-y-8 animate-in fade-in duration-500">
+                                                <div className="flex items-center justify-between">
+                                                    <h3 className="text-2xl font-bold text-slate-900">Customer Reviews</h3>
+                                                    {isOwner ? (
+                                                        <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-100 rounded-xl">
+                                                            <ShieldCheck className="w-4 h-4 text-blue-500" />
+                                                            <span className="text-xs font-bold text-blue-600">Your Business</span>
                                                         </div>
-                                                    </div>
-                                                    <p className="text-slate-600 leading-relaxed italic">"{comment.comment}"</p>
-                                                    
-                                                    {/* Vendor Response (if any) */}
-                                                    {comment.vendorResponse && (
-                                                        <div className="mt-6 p-5 bg-blue-50 rounded-3xl border border-blue-100 relative">
-                                                            <div className="absolute -top-3 left-6 px-3 py-1 bg-white border border-blue-100 rounded-lg shadow-sm">
-                                                                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Vendor Response</span>
-                                                            </div>
-                                                            <p className="text-sm text-slate-700 font-medium leading-relaxed italic">"{comment.vendorResponse}"</p>
-                                                            {comment.vendorResponseAt && (
-                                                                <div className="mt-3 flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                                                                    <Clock className="w-3 h-3" />
-                                                                    {new Date(comment.vendorResponseAt).toLocaleDateString()}
-                                                                </div>
-                                                            )}
-                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => setShowReviewModal(true)}
+                                                            className="px-6 py-2 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-all"
+                                                        >
+                                                            Write a Review
+                                                        </button>
                                                     )}
+                                                </div>
 
-                                                    {/* User Replies */}
-                                                    {comment.replies && comment.replies.length > 0 && (
-                                                        <div className="mt-6 ml-4 sm:ml-8 space-y-4 border-l-2 border-slate-100 pl-4 sm:pl-6">
-                                                            {comment.replies.map((reply: any) => (
-                                                                <div key={reply.id} className="relative group">
-                                                                    <div className="flex items-center gap-3 mb-2">
-                                                                        <div className="w-7 h-7 bg-violet-50 rounded-lg flex items-center justify-center text-violet-600 font-bold text-[10px] shadow-sm">
-                                                                            {reply.user?.avatarUrl ? (
-                                                                                <img src={getImageUrl(reply.user.avatarUrl) as string} alt={reply.user.fullName || 'User'} className="w-full h-full object-cover rounded-lg" />
+                                                {comments.length > 0 ? (
+                                                    <div className="space-y-6">
+                                                        {comments.map((comment: any, idx: number) => (
+                                                            <div key={comment.id || `comment-${idx}`} className="p-4 bg-white rounded-[16px] border border-slate-100 shadow-sm transition-all hover:shadow-md">
+                                                                <div className="flex items-center justify-between mb-4">
+                                                                    <div className="flex items-center gap-4">
+                                                                        <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 font-bold overflow-hidden shadow-inner">
+                                                                            {comment.user?.avatarUrl ? (
+                                                                                <img src={getImageUrl(comment.user.avatarUrl) as string} alt={comment.user.fullName || 'User'} className="w-full h-full object-cover" />
                                                                             ) : (
-                                                                                (reply.user?.fullName?.[0] || 'U').toUpperCase()
+                                                                                (comment.user?.fullName?.[0] || 'U').toUpperCase()
                                                                             )}
                                                                         </div>
                                                                         <div>
-                                                                            <h5 className="text-[11px] font-black text-slate-900 uppercase tracking-wider">{reply.user?.fullName || 'Anonymous'}</h5>
-                                                                            <p className="text-[9px] text-slate-400 font-bold">{new Date(reply.createdAt).toLocaleDateString()}</p>
+                                                                            <h4 className="font-bold text-slate-900">{comment.user?.fullName || 'Anonymous'}</h4>
+                                                                            <div className="flex items-center gap-1 mt-0.5">
+                                                                                {[...Array(5)].map((_, i) => (
+                                                                                    <Star
+                                                                                        key={i}
+                                                                                        className={`w-3.5 h-3.5 ${i < (comment.rating || 0) ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`}
+                                                                                    />
+                                                                                ))}
+                                                                                <span className="text-[10px] text-slate-400 ml-2">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
-                                                                    <p className="text-sm text-slate-600 leading-relaxed font-medium">
-                                                                        {reply.content}
-                                                                    </p>
                                                                 </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
+                                                                <p className="text-slate-600 leading-relaxed italic">"{comment.comment}"</p>
 
-                                                    {/* Reply Action & Form */}
-                                                    <div className="mt-6 pt-4 border-t border-slate-50">
-                                                        {replyingTo === comment.id ? (
-                                                            <div className="animate-in slide-in-from-top-2 duration-300">
-                                                                <div className="flex items-center justify-between mb-3">
-                                                                    <span className="text-[10px] font-black text-violet-600 uppercase tracking-widest flex items-center gap-2">
-                                                                        <MessageSquare className="w-3 h-3" /> Replying to Review
-                                                                    </span>
-                                                                    <button 
-                                                                        onClick={() => setReplyingTo(null)}
-                                                                        className="text-[10px] font-black text-slate-400 hover:text-slate-600 uppercase tracking-widest"
-                                                                    >
-                                                                        Cancel
-                                                                    </button>
-                                                                </div>
-                                                                <textarea
-                                                                    autoFocus
-                                                                    value={replyContent}
-                                                                    onChange={(e) => setReplyContent(e.target.value)}
-                                                                    placeholder="Write your reply..."
-                                                                    className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-[20px] text-sm font-medium focus:ring-4 focus:ring-violet-500/10 focus:border-violet-400 outline-none transition-all placeholder:text-slate-300 resize-none"
-                                                                    rows={3}
-                                                                />
-                                                                <div className="flex justify-end mt-3">
-                                                                    <button
-                                                                        onClick={() => handleReplySubmit(comment.id)}
-                                                                        disabled={submittingReply || !replyContent.trim()}
-                                                                        className="px-6 py-2.5 bg-violet-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-violet-700 transition-all shadow-lg shadow-violet-500/20 active:scale-95 disabled:opacity-50"
-                                                                    >
-                                                                        {submittingReply ? 'Posting...' : 'Post Reply'}
-                                                                    </button>
+                                                                {/* Vendor Response (if any) */}
+                                                                {comment.vendorResponse && (
+                                                                    <div className="mt-6 p-5 bg-blue-50 rounded-3xl border border-blue-100 relative">
+                                                                        <div className="absolute -top-3 left-6 px-3 py-1 bg-white border border-blue-100 rounded-lg shadow-sm">
+                                                                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Vendor Response</span>
+                                                                        </div>
+                                                                        <p className="text-sm text-slate-700 font-medium leading-relaxed italic">"{comment.vendorResponse}"</p>
+                                                                        {comment.vendorResponseAt && (
+                                                                            <div className="mt-3 flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                                                                                <Clock className="w-3 h-3" />
+                                                                                {new Date(comment.vendorResponseAt).toLocaleDateString()}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+
+                                                                {/* User Replies */}
+                                                                {comment.replies && comment.replies.length > 0 && (
+                                                                    <div className="mt-6 ml-4 sm:ml-8 space-y-4 border-l-2 border-slate-100 pl-4 sm:pl-6">
+                                                                        {comment.replies.map((reply: any) => (
+                                                                            <div key={reply.id} className="relative group">
+                                                                                <div className="flex items-center gap-3 mb-2">
+                                                                                    <div className="w-7 h-7 bg-violet-50 rounded-lg flex items-center justify-center text-violet-600 font-bold text-[10px] shadow-sm">
+                                                                                        {reply.user?.avatarUrl ? (
+                                                                                            <img src={getImageUrl(reply.user.avatarUrl) as string} alt={reply.user.fullName || 'User'} className="w-full h-full object-cover rounded-lg" />
+                                                                                        ) : (
+                                                                                            (reply.user?.fullName?.[0] || 'U').toUpperCase()
+                                                                                        )}
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <h5 className="text-[11px] font-black text-slate-900 uppercase tracking-wider">{reply.user?.fullName || 'Anonymous'}</h5>
+                                                                                        <p className="text-[9px] text-slate-400 font-bold">{new Date(reply.createdAt).toLocaleDateString()}</p>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <p className="text-sm text-slate-600 leading-relaxed font-medium">
+                                                                                    {reply.content}
+                                                                                </p>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+
+                                                                {/* Reply Action & Form */}
+                                                                <div className="mt-6 pt-4 border-t border-slate-50">
+                                                                    {replyingTo === comment.id ? (
+                                                                        <div className="animate-in slide-in-from-top-2 duration-300">
+                                                                            <div className="flex items-center justify-between mb-3">
+                                                                                <span className="text-[10px] font-black text-violet-600 uppercase tracking-widest flex items-center gap-2">
+                                                                                    <MessageSquare className="w-3 h-3" /> Replying to Review
+                                                                                </span>
+                                                                                <button
+                                                                                    onClick={() => setReplyingTo(null)}
+                                                                                    className="text-[10px] font-black text-slate-400 hover:text-slate-600 uppercase tracking-widest"
+                                                                                >
+                                                                                    Cancel
+                                                                                </button>
+                                                                            </div>
+                                                                            <textarea
+                                                                                autoFocus
+                                                                                value={replyContent}
+                                                                                onChange={(e) => setReplyContent(e.target.value)}
+                                                                                placeholder="Write your reply..."
+                                                                                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-[20px] text-sm font-medium focus:ring-4 focus:ring-violet-500/10 focus:border-violet-400 outline-none transition-all placeholder:text-slate-300 resize-none"
+                                                                                rows={3}
+                                                                            />
+                                                                            <div className="flex justify-end mt-3">
+                                                                                <button
+                                                                                    onClick={() => handleReplySubmit(comment.id)}
+                                                                                    disabled={submittingReply || !replyContent.trim()}
+                                                                                    className="px-6 py-2.5 bg-violet-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-violet-700 transition-all shadow-lg shadow-violet-500/20 active:scale-95 disabled:opacity-50"
+                                                                                >
+                                                                                    {submittingReply ? 'Posting...' : 'Post Reply'}
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <button
+                                                                            onClick={() => setReplyingTo(comment.id)}
+                                                                            className="flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-violet-600 uppercase tracking-widest transition-colors group"
+                                                                        >
+                                                                            <MessageSquare className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                                                                            Reply to {comment.user?.fullName?.split(' ')[0] || 'User'}
+                                                                        </button>
+                                                                    )}
                                                                 </div>
                                                             </div>
-                                                        ) : (
-                                                            <button 
-                                                                onClick={() => setReplyingTo(comment.id)}
-                                                                className="flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-violet-600 uppercase tracking-widest transition-colors group"
-                                                            >
-                                                                <MessageSquare className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" /> 
-                                                                Reply to {comment.user?.fullName?.split(' ')[0] || 'User'}
-                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <div className="p-12 bg-slate-50 rounded-[20px] text-center border border-dashed border-slate-200">
+                                                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                                                            <MessageSquare className="w-8 h-8 text-slate-300" />
+                                                        </div>
+                                                        <h4 className="font-bold text-slate-900 mb-2">No reviews yet</h4>
+                                                        <p className="text-sm text-slate-500">Be the first to share your experience with {business.title}.</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className={activeTab === 'Amenities' ? 'block' : 'hidden'}>
+                                            <div className="animate-in fade-in duration-500">
+                                                <h3 className="text-2xl font-bold text-slate-900 mb-8">Business Amenities</h3>
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+                                                    {business.businessAmenities && business.businessAmenities.length > 0 ? (
+                                                        business.businessAmenities.map((item, idx) => (
+                                                            <div key={item.id || `amenity-${idx}`} className="flex items-center gap-3">
+                                                                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+                                                                    <CheckCircle2 className="w-5 h-5" />
+                                                                </div>
+                                                                <span className="font-bold text-slate-700">{item.amenity.name}</span>
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        ['Free WiFi', 'Parking Space', 'Accepts Cards', 'Air Conditioned', 'Wheelchair Access', 'Outdoor Seating'].map(item => (
+                                                            <div key={item} className="flex items-center gap-3">
+                                                                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+                                                                    <CheckCircle2 className="w-5 h-5" />
+                                                                </div>
+                                                                <span className="font-bold text-slate-700">{item}</span>
+                                                            </div>
+                                                        ))
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className={activeTab === 'Offer / Deal' ? 'block' : 'hidden'}>
+                                            <div className="animate-in fade-in duration-500">
+                                                <h3 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
+                                                    <Tag className="w-6 h-6 text-orange-500" /> Offer / Banner Ad
+                                                </h3>
+
+                                                {/* Banner image */}
+                                                {business.offerBannerUrl && (
+                                                    <div className="rounded-[20px] overflow-hidden mb-6 h-52 sm:h-72">
+                                                        <img src={business.offerBannerUrl} alt={business.offerTitle || 'Offer Banner'}
+                                                            className="w-full h-full object-cover" />
+                                                    </div>
+                                                )}
+
+                                                {/* Offer card */}
+                                                <div className="relative p-8 bg-gradient-to-br from-orange-50 to-amber-50 rounded-[20px] border border-orange-100 overflow-hidden">
+                                                    {/* Decorative blob */}
+                                                    <div className="absolute -top-8 -right-8 w-40 h-40 bg-orange-100 rounded-full opacity-60" />
+                                                    <div className="relative z-10">
+                                                        {business.offerBadge && (
+                                                            <span className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-orange-500 text-white rounded-full text-[11px] font-black uppercase tracking-widest mb-5 shadow-md shadow-orange-500/30">
+                                                                <Zap className="w-3 h-3" /> {business.offerBadge}
+                                                            </span>
+                                                        )}
+                                                        <h4 className="text-3xl font-black text-slate-900 mb-3 leading-tight">
+                                                            {business.offerTitle || 'Special Offer'}
+                                                        </h4>
+                                                        {business.offerDescription && (
+                                                            <p className="text-slate-600 text-base leading-relaxed mb-6 max-w-2xl">
+                                                                {business.offerDescription}
+                                                            </p>
+                                                        )}
+                                                        <div className="flex flex-wrap items-center gap-4">
+                                                            {!isOwner && (
+                                                                <button
+                                                                    onClick={openEnquiryModal}
+                                                                    className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-2xl font-black text-sm hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg shadow-orange-500/25 active:scale-95"
+                                                                >
+                                                                    <Zap className="w-4 h-4" /> Enquire About This Offer
+                                                                </button>
+                                                            )}
+                                                            {business.phone && (
+                                                                <button
+                                                                    onClick={() => handleContactIntent('call')}
+                                                                    className="inline-flex items-center gap-2 px-6 py-3.5 bg-white border border-slate-200 text-slate-700 rounded-2xl font-bold text-sm hover:border-orange-400 hover:text-orange-600 transition-all"
+                                                                >
+                                                                    <Phone className="w-4 h-4" /> Call to Claim
+                                                                </button>
+                                                            )}
+                                                            {(business.whatsapp || business.phone) && (
+                                                                <button
+                                                                    onClick={() => handleContactIntent('whatsapp')}
+                                                                    className="inline-flex items-center gap-2 px-6 py-3.5 bg-[#25D366] text-white rounded-2xl font-bold text-sm hover:bg-[#128C7E] transition-all shadow-lg shadow-green-500/20"
+                                                                >
+                                                                    <WhatsAppIcon className="w-5 h-5" /> WhatsApp Us
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                        {business.offerExpiresAt && (
+                                                            <div className="flex items-center gap-2 mt-6 text-sm text-slate-500 font-medium">
+                                                                <Calendar className="w-4 h-4 text-orange-400" />
+                                                                <span>Offer valid until <strong className="text-orange-600">{new Date(business.offerExpiresAt).toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</strong></span>
+                                                            </div>
                                                         )}
                                                     </div>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="p-12 bg-slate-50 rounded-[20px] text-center border border-dashed border-slate-200">
-                                            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
-                                                <MessageSquare className="w-8 h-8 text-slate-300" />
                                             </div>
-                                            <h4 className="font-bold text-slate-900 mb-2">No reviews yet</h4>
-                                            <p className="text-sm text-slate-500">Be the first to share your experience with {business.title}.</p>
                                         </div>
-                                    )}
-                                </div>
-                            </div>
 
-                            <div className={activeTab === 'Amenities' ? 'block' : 'hidden'}>
-                                <div className="animate-in fade-in duration-500">
-                                    <h3 className="text-2xl font-bold text-slate-900 mb-8">Business Amenities</h3>
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
-                                        {business.businessAmenities && business.businessAmenities.length > 0 ? (
-                                            business.businessAmenities.map((item, idx) => (
-                                                <div key={item.id || `amenity-${idx}`} className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
-                                                        <CheckCircle2 className="w-5 h-5" />
+                                        <div className={activeTab === 'FAQs' ? 'block' : 'hidden'}>
+                                            <div className="animate-in fade-in duration-500">
+                                                <h3 className="text-2xl font-bold text-slate-900 mb-8">Frequently Asked Questions</h3>
+                                                {validFaqs.length > 0 ? (
+                                                    <div className="space-y-4">
+                                                        {validFaqs.map((faq, idx) => (
+                                                            <div key={idx} className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                                                                <h4 className="font-bold text-slate-900 text-lg mb-2">{faq.question}</h4>
+                                                                <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">{faq.answer}</p>
+                                                            </div>
+                                                        ))}
                                                     </div>
-                                                    <span className="font-bold text-slate-700">{item.amenity.name}</span>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            ['Free WiFi', 'Parking Space', 'Accepts Cards', 'Air Conditioned', 'Wheelchair Access', 'Outdoor Seating'].map(item => (
-                                                <div key={item} className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
-                                                        <CheckCircle2 className="w-5 h-5" />
-                                                    </div>
-                                                    <span className="font-bold text-slate-700">{item}</span>
-                                                </div>
-                                            ))
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className={activeTab === 'Offer / Deal' ? 'block' : 'hidden'}>
-                                <div className="animate-in fade-in duration-500">
-                                    <h3 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
-                                        <Tag className="w-6 h-6 text-orange-500" /> Offer / Banner Ad
-                                    </h3>
-
-                                    {/* Banner image */}
-                                    {business.offerBannerUrl && (
-                                        <div className="rounded-[20px] overflow-hidden mb-6 h-52 sm:h-72">
-                                            <img src={business.offerBannerUrl} alt={business.offerTitle || 'Offer Banner'}
-                                                className="w-full h-full object-cover" />
-                                        </div>
-                                    )}
-
-                                    {/* Offer card */}
-                                    <div className="relative p-8 bg-gradient-to-br from-orange-50 to-amber-50 rounded-[20px] border border-orange-100 overflow-hidden">
-                                        {/* Decorative blob */}
-                                        <div className="absolute -top-8 -right-8 w-40 h-40 bg-orange-100 rounded-full opacity-60" />
-                                        <div className="relative z-10">
-                                            {business.offerBadge && (
-                                                <span className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-orange-500 text-white rounded-full text-[11px] font-black uppercase tracking-widest mb-5 shadow-md shadow-orange-500/30">
-                                                    <Zap className="w-3 h-3" /> {business.offerBadge}
-                                                </span>
-                                            )}
-                                            <h4 className="text-3xl font-black text-slate-900 mb-3 leading-tight">
-                                                {business.offerTitle || 'Special Offer'}
-                                            </h4>
-                                            {business.offerDescription && (
-                                                <p className="text-slate-600 text-base leading-relaxed mb-6 max-w-2xl">
-                                                    {business.offerDescription}
-                                                </p>
-                                            )}
-                                            <div className="flex flex-wrap items-center gap-4">
-                                                {!isOwner && (
-                                                    <button
-                                                        onClick={openEnquiryModal}
-                                                        className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-2xl font-black text-sm hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg shadow-orange-500/25 active:scale-95"
-                                                    >
-                                                        <Zap className="w-4 h-4" /> Enquire About This Offer
-                                                    </button>
-                                                )}
-                                                {business.phone && (
-                                                    <button
-                                                        onClick={() => handleContactIntent('call')}
-                                                        className="inline-flex items-center gap-2 px-6 py-3.5 bg-white border border-slate-200 text-slate-700 rounded-2xl font-bold text-sm hover:border-orange-400 hover:text-orange-600 transition-all"
-                                                    >
-                                                        <Phone className="w-4 h-4" /> Call to Claim
-                                                    </button>
-                                                )}
-                                                {(business.whatsapp || business.phone) && (
-                                                    <button
-                                                        onClick={() => handleContactIntent('whatsapp')}
-                                                        className="inline-flex items-center gap-2 px-6 py-3.5 bg-[#25D366] text-white rounded-2xl font-bold text-sm hover:bg-[#128C7E] transition-all shadow-lg shadow-green-500/20"
-                                                    >
-                                                        <WhatsAppIcon className="w-5 h-5" /> WhatsApp Us
-                                                    </button>
+                                                ) : (
+                                                    <p className="text-slate-500">No FAQs available for this business.</p>
                                                 )}
                                             </div>
-                                            {business.offerExpiresAt && (
-                                                <div className="flex items-center gap-2 mt-6 text-sm text-slate-500 font-medium">
-                                                    <Calendar className="w-4 h-4 text-orange-400" />
-                                                    <span>Offer valid until <strong className="text-orange-600">{new Date(business.offerExpiresAt).toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</strong></span>
-                                                </div>
-                                            )}
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <div className={activeTab === 'FAQs' ? 'block' : 'hidden'}>
-                                <div className="animate-in fade-in duration-500">
-                                    <h3 className="text-2xl font-bold text-slate-900 mb-8">Frequently Asked Questions</h3>
-                                    {validFaqs.length > 0 ? (
-                                        <div className="space-y-4">
-                                            {validFaqs.map((faq, idx) => (
-                                                <div key={idx} className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
-                                                    <h4 className="font-bold text-slate-900 text-lg mb-2">{faq.question}</h4>
-                                                    <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">{faq.answer}</p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                                <p className="text-slate-500">No FAQs available for this business.</p>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                </div>{/* end min-h-[400px] */}
+                                    </div>{/* end min-h-[400px] */}
                                 </>
                             );
                         })()}
@@ -1134,7 +1134,7 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                     )}
                                 </div>
 
-                                 {/* Live Chat Button */}
+                                {/* Live Chat Button */}
                                 {!isOwner && (
                                     <ChatTrigger
                                         ref={chatRef}
@@ -1269,7 +1269,7 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                 </h4>
 
                                 <div className="flex flex-col items-center text-center">
-                                    <Link 
+                                    <Link
                                         href={`/vendors/${business.vendor?.id || business.vendorId}`}
                                         className="flex flex-col items-center text-center group/vendor cursor-pointer"
                                     >
@@ -1300,7 +1300,7 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                     </div>
 
                                     {/* Status & Followers Section */}
-                                    <div className="w-full grid grid-cols-2 gap-3 mb-6">
+                                    {/* <div className="w-full grid grid-cols-2 gap-3 mb-6">
                                         <div className="">
                                             <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Availability</div>
                                             <VendorOnlineBadge isOnline={business.vendor?.user?.isOnline} />
@@ -1309,7 +1309,7 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                             <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Status</div>
                                             <BusinessOpenBadge business={business} />
                                         </div>
-                                    </div>
+                                    </div> */}
 
                                     <div className="w-full mb-6">
                                         <FollowButton
@@ -1353,10 +1353,7 @@ export default function BusinessDetailClient({ slug }: BusinessDetailClientProps
                                             </span>
                                         </div>
 
-                                        <div className="flex items-center justify-between text-xs">
-                                            <span className="font-bold text-slate-400 uppercase tracking-widest text-[9px]">Response Rate</span>
-                                            <span className="font-black text-emerald-600">98% High</span>
-                                        </div>
+
 
                                         <Link
                                             id="view-vendor-profile-btn"

@@ -119,11 +119,10 @@ function KebabMenu({ review, onModerate, onDelete }: {
             <button
                 ref={btnRef}
                 onClick={() => setOpen(v => !v)}
-                className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all duration-150 ${
-                    open
+                className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all duration-150 ${open
                         ? 'bg-slate-900 border-slate-900 text-white shadow-lg'
                         : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800'
-                }`}
+                    }`}
                 title="Actions"
             >
                 <MoreVertical className="w-4 h-4" />
@@ -308,10 +307,10 @@ export default function ReviewModerationPage() {
             {/* ── Header ── */}
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div>
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-50 border border-red-100 rounded-full mb-3">
+                    {/* <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-50 border border-red-100 rounded-full mb-3">
                         <ShieldAlert className="w-3 h-3 text-red-500" />
                         <span className="text-[10px] font-black text-red-600 uppercase tracking-widest">Super Admin</span>
-                    </div>
+                    </div> */}
                     <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-1">
                         Review <span className="bg-gradient-to-r from-red-600 to-orange-500 bg-clip-text text-transparent">Moderation</span>
                     </h1>
@@ -440,9 +439,8 @@ export default function ReviewModerationPage() {
                         return (
                             <div
                                 key={review.id}
-                                className={`bg-white rounded-2xl border transition-all duration-200 hover:shadow-md ${
-                                    review.isSuspicious ? 'border-orange-200' : review.isApproved ? 'border-slate-100' : 'border-red-100'
-                                }`}
+                                className={`bg-white rounded-2xl border transition-all duration-200 hover:shadow-md ${review.isSuspicious ? 'border-orange-200' : review.isApproved ? 'border-slate-100' : 'border-red-100'
+                                    }`}
                             >
                                 {/* Suspicious bar at top */}
                                 {review.isSuspicious && review.suspicionScore > 0 && (
@@ -582,9 +580,8 @@ export default function ReviewModerationPage() {
                                 <button
                                     key={n}
                                     onClick={() => setPage(n)}
-                                    className={`w-9 h-9 rounded-xl text-sm font-black transition-all ${
-                                        page === n ? 'bg-red-600 text-white shadow-md shadow-red-200' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                                    }`}
+                                    className={`w-9 h-9 rounded-xl text-sm font-black transition-all ${page === n ? 'bg-red-600 text-white shadow-md shadow-red-200' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                                        }`}
                                 >
                                     {n}
                                 </button>
