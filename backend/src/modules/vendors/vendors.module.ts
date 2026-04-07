@@ -7,9 +7,11 @@ import { Vendor } from '../../entities/vendor.entity';
 import { User } from '../../entities/user.entity';
 import { Listing } from '../../entities/business.entity';
 
+import { OfferEvent } from '../../entities/offer-event.entity';
+
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Vendor, User, Listing]),
+        TypeOrmModule.forFeature([Vendor, User, Listing, OfferEvent]),
         BusinessesModule,
     ],
     controllers: [VendorsController],

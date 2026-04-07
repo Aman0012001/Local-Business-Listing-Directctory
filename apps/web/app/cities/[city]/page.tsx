@@ -1,12 +1,11 @@
 import CityVendorsClient from './CityVendorsClient';
 
-export const dynamic = 'force-static';
-export const dynamicParams = false;
+
 
 // For static export
 export async function generateStaticParams() {
     try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://local-business-listing-directctory-production.up.railway.app/api/v1';
         const res = await fetch(`${apiUrl}/cities`);
         const cities = await res.json();
         const params = (Array.isArray(cities) ? cities : [])
@@ -14,10 +13,11 @@ export async function generateStaticParams() {
             .map((city: any) => ({
                 city: (city.slug || city.name || city.city || city).toString().toLowerCase(),
             }));
-        return params.length > 0 ? params : [{ city: 'default-city' }];
+        // Include 'template' for SPA fallback and ensure at least one param exists
+        return [...params, { city: 'template' }];
     } catch (error) {
         console.error('Failed to fetch cities for static params:', error);
-        return [{ city: 'default-city' }];
+        return [{ city: 'template' }];
     }
 }
 

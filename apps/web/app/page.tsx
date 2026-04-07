@@ -2,17 +2,20 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Search, MapPin, ArrowRight, TrendingUp, Compass, Sliders, Users, Heart, Phone, ShieldCheck, Star, ChefHat, Stethoscope, Sparkles, Wrench, ChevronDown } from 'lucide-react';
+import { Search, MapPin, ArrowRight, TrendingUp, Compass, Sliders, Users, Heart, Phone, ShieldCheck, Star, ChefHat, Stethoscope, Sparkles, Wrench, ChevronDown, Plane, GraduationCap, Gamepad2, Ticket, Smartphone, Headset, CheckCircle2, Megaphone, Tag } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import BusinessCard from '../components/BusinessCard';
 import DynamicIcon from '../components/DynamicIcon';
+import OfferCard from '../components/OfferCard';
 import { api, getImageUrl } from '../lib/api';
 import Link from 'next/link';
 import { Category, Business, City } from '../types/api';
 import Slider from "react-slick";
 import CitySearchSelect from '../components/CitySearchSelect';
-import Script from 'next/script';
+// Script is removed to avoid multiple loads (already in layout.tsx)
+
+
 export default function HomePage() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [featuredBusinesses, setFeaturedBusinesses] = useState<Business[]>([]);
@@ -26,19 +29,28 @@ export default function HomePage() {
     const [popularCities, setPopularCities] = useState<City[]>([]);
     const [categoriesList, setCategoriesList] = useState<Category[]>([]);
     const [citiesList, setCitiesList] = useState<City[]>([]);
+    const [latestOffers, setLatestOffers] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCity, setSelectedCity] = useState('');
     const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
-    const [mapLoaded, setMapLoaded] = useState(false);
+    const [mapReady, setMapReady] = useState(false);
+    const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
+
 
     const [loading, setLoading] = useState(true);
     const [statsComments, setStatsComments] = useState<any[]>([]);
-    const heroImages = [
-        "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4",
-        "https://images.unsplash.com/photo-1504674900247-0877df9cc836",
-        "https://images.unsplash.com/photo-1528605248644-14dd04022da1",
-        "https://images.unsplash.com/photo-1552566626-52f8b828add9",
-        "https://images.unsplash.com/photo-1498654896293-37aacf113fd9"
+    // heroImages slider removed in favor of clean design
+    const badgeText = "Your Local. Your Choice.";
+    const highlights = [
+        { icon: <ShieldCheck className="w-5 h-5 text-orange-500" />, title: "Verified Businesses", desc: "Trusted and reliable listings" },
+        { icon: <Search className="w-5 h-5 text-green-500" />, title: "Fast & Easy Search", desc: "Find what you need instantly" },
+        { icon: <Headset className="w-5 h-5 text-blue-500" />, title: "Local Support", desc: "We're here to help" },
+    ];
+    const quickCategories = [
+        { name: "Education", icon: <GraduationCap className="w-5 h-5" />, color: "bg-orange-50 text-orange-600", slug: "education" },
+        { name: "Airport", icon: <Plane className="w-5 h-5" />, color: "bg-blue-50 text-blue-600", slug: "airport" },
+        { name: "Amusement park", icon: <Gamepad2 className="w-5 h-5" />, color: "bg-purple-50 text-purple-600", slug: "amusement-park" },
+        { name: "Car repair", icon: <Wrench className="w-5 h-5" />, color: "bg-green-50 text-green-600", slug: "car-repair" },
     ];
     const sliderSettings = {
         dots: false,
@@ -61,7 +73,8 @@ export default function HomePage() {
                     api.cities.getPopular(),
                     api.categories.getAll(),
                     api.cities.getAll(),
-                    api.comments.getPublic(1, 15)
+                    api.reviews.getPopular(15),
+                    api.offers.search({ limit: 4 })
                 ]);
 
                 const getValue = (result: PromiseSettledResult<any>, fallback: any) =>
@@ -72,7 +85,8 @@ export default function HomePage() {
                 const cities = getValue(results[2], []);
                 const allCats = getValue(results[3], []);
                 const allCities = getValue(results[4], []);
-                const commentsData = getValue(results[5], { data: [] });
+                const reviewsData = getValue(results[5], { data: [] });
+                const offersData = getValue(results[6], { data: [] });
 
                 setCategories(cats || []);
                 setFeaturedBusinesses(featured?.data || []);
@@ -82,7 +96,8 @@ export default function HomePage() {
                 setPopularCities(cities || []);
                 setCategoriesList(allCats || []);
                 setCitiesList(allCities || []);
-                setStatsComments(commentsData?.data || []);
+                setStatsComments(reviewsData?.data || []);
+                setLatestOffers(offersData?.data || []);
 
             } catch (err) {
                 console.error('CRITICAL: Unexpected error in loadInitialData:', err);
@@ -109,16 +124,54 @@ export default function HomePage() {
         const params = new URLSearchParams();
         if (searchQuery.trim()) params.append('q', searchQuery);
         if (selectedCity) params.append('city', selectedCity);
+        if (userLocation) {
+            params.append('latitude', String(userLocation.lat));
+            params.append('longitude', String(userLocation.lng));
+        }
         window.location.href = `/search?${params.toString()}`;
     };
 
+    // Debounced search logging for "Live Search" heatmap
+    useEffect(() => {
+        if (!searchQuery.trim() || searchQuery.length < 3) return;
+
+        const timer = setTimeout(() => {
+            api.demand.logSearch({
+                keyword: searchQuery,
+                city: selectedCity || undefined,
+                latitude: userLocation?.lat,
+                longitude: userLocation?.lng,
+            }).catch(err => console.error('Live demand logging failed:', err));
+        }, 2000); // 2 second debounce
+
+        return () => clearTimeout(timer);
+    }, [searchQuery, selectedCity, userLocation]);
+
+    // Detect when Google Maps API is ready
+    useEffect(() => {
+        if ((window as any).google) {
+            setMapReady(true);
+            return;
+        }
+
+        const interval = setInterval(() => {
+            if ((window as any).google) {
+                setMapReady(true);
+                clearInterval(interval);
+            }
+        }, 500);
+
+        return () => clearInterval(interval);
+    }, []);
+
     // Auto-detect location on load
     useEffect(() => {
-        if (mapLoaded && !selectedCity && navigator.geolocation) {
+        if (mapReady && !selectedCity && navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     const { latitude, longitude } = position.coords;
-                    if ((window as any).google && (window as any).google.maps) {
+                    setUserLocation({ lat: latitude, lng: longitude });
+                    if ((window as any).google && (window as any).google.maps && (window as any).google.maps.Geocoder) {
                         const geocoder = new (window as any).google.maps.Geocoder();
                         geocoder.geocode({ location: { lat: latitude, lng: longitude } }, (results: any, status: any) => {
                             if (status === "OK" && results[0]) {
@@ -136,7 +189,7 @@ export default function HomePage() {
                 { timeout: 5000 }
             );
         }
-    }, [mapLoaded]);
+    }, [mapReady]);
 
     if (loading) {
         return (
@@ -160,67 +213,71 @@ export default function HomePage() {
     return (
         <div className=" bg-white font-sans text-slate-900 overflow-x-hidden">
             <Navbar />
-            <Script
-                src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`}
-                onLoad={() => setMapLoaded(true)}
-            />
+            {/* Google Maps Script is handled in layout.tsx */}
+
 
             {/* Hero Section */}
-            <section className="relative pt-32 pb-44 px-4 overflow-visible" style={{ height: "100vh" }}>
-                <div className="absolute inset-0 z-0">
-
-                    <Slider {...sliderSettings}>
-                        {heroImages.map((img, index) => (
-                            <div key={index}>
-                                <div
-                                    className="h-[750px] w-full"
-                                    style={{
-                                        backgroundImage: `url(${img})`,
-                                        backgroundSize: "cover",
-                                        backgroundPosition: "center"
-                                    }}
-                                >
-                                    <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
-                                </div>
-                            </div>
-                        ))}
-                    </Slider>
-
+            <section className="relative pt-10 pb-44 px-4 overflow-hidden bg-[#FBFBFC]" style={{ minHeight: "100vh" }}>
+                {/* Decorative Elements */}
+                <div className="absolute top-20 left-10 opacity-20 hidden md:block">
+                    <div className="grid grid-cols-4 gap-2">
+                        {[...Array(16)].map((_, i) => <div key={i} className="w-1 h-1 bg-orange-400 rounded-full" />)}
+                    </div>
+                </div>
+                <div className="absolute top-40 right-20 opacity-20 hidden md:block">
+                    <ShieldCheck className="w-12 h-12 text-slate-300" />
+                </div>
+                <div className="absolute bottom-40 right-10 opacity-20 hidden md:block">
+                    <div className="grid grid-cols-4 gap-2">
+                        {[...Array(16)].map((_, i) => <div key={i} className="w-1 h-1 bg-orange-400 rounded-full" />)}
+                    </div>
+                </div>
+                <div className="absolute inset-x-0 bottom-0 pointer-events-none opacity-5">
+                    <svg viewBox="0 0 1440 320" className="w-full h-auto">
+                        <path fill="#FF7A30" fillOpacity="1" d="M0,160L48,176C96,192,192,224,288,224C384,224,480,192,576,165.3C672,139,768,117,864,128C960,139,1056,181,1152,186.7C1248,192,1344,160,1392,144L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+                    </svg>
                 </div>
 
-                <div className="max-w-7xl mx-auto relative z-10 text-center text-white">
+                <div className="max-w-7xl mx-auto relative z-10 text-center">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8 }}
                     >
-                        <h1 className="text-4xl md:text-7xl font-extrabold mb-6 tracking-tight drop-">
-                            Discover Trusted Local Businesses Instantly
+                        {/* Badge */}
+                        <div className="inline-flex items-center gap-2 px-6 py-2 bg-orange-50 rounded-full mb-8 border border-orange-100/50 shadow-sm">
+                            <span className="text-[#FF7A30] font-black text-xs uppercase tracking-widest leading-none">* {badgeText}</span>
+                        </div>
+
+                        <h1 className="text-4xl md:text-7xl font-black mb-6 tracking-tighter text-[#112D4E] leading-[1.05]">
+                            Discover Trusted Local Businesses <br />
+                            <span className="text-[#FF7A30]">Instantly</span>
                         </h1>
-                        <p className="text-lg md:text-2xl text-white/95 mb-12 max-w-3xl mx-auto font-medium drop-shadow-lg">
-                            Search, compare & contact the best services near you — fast and reliable.
+                        <p className="text-lg md:text-xl text-slate-500 mb-12 max-w-2xl mx-auto font-medium leading-relaxed">
+                            Search, compare & contact the best services near you — <br className="hidden md:block" /> fast and reliable.
                         </p>
                     </motion.div>
 
                     {/* Search Bar Container */}
                     <motion.div
                         ref={searchRef}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2, duration: 0.5 }}
-                        className="relative z-[70] max-w-4xl mx-auto bg-white/10 backdrop-blur-md   p-2 border border-white/20 flex flex-col md:flex-row items-stretch gap-2" style={{ borderRadius: "10px" }}
+                        className="max-w-5xl mx-auto bg-white rounded-[24px]  p-2 flex flex-col md:flex-row items-stretch gap-2 border border-slate-100"
                     >
-                        <div className="flex-1 relative z-50">
+                        <div className="md:w-1/3 relative group ">
                             <CitySearchSelect
                                 cities={citiesList}
                                 value={selectedCity}
                                 onChange={setSelectedCity}
                             />
+                            <div className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 w-[1px] h-10 bg-slate-100 group-hover:bg-orange-500 transition-colors" />
                         </div>
 
-                        <div className="flex-[1.5] relative z-50">
+                        <div className="flex-1 relative">
                             <div className="relative h-full">
-                                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-400 z-10" />
+                                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 z-10" />
                                 <input
                                     type="text"
                                     placeholder="Search categories or businesses..."
@@ -231,19 +288,19 @@ export default function HomePage() {
                                     }}
                                     onFocus={() => setIsSuggestionsOpen(true)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                    className="w-full pl-16 pr-8 py-6 bg-white text-slate-900 placeholder-slate-400  border-0 focus:ring-2 focus:ring-[#FF7A30] text-xl font-semibold outline-none transition-all shadow-inner" style={{ borderRadius: "10px" }}
+                                    className="w-full h-full pl-14 pr-8 py-5 bg-transparent text-slate-900 placeholder:text-slate-400 border-none outline-none font-bold text-lg rounded-[20px]"
                                 />
                             </div>
 
                             {isSuggestionsOpen && (filteredCategories.length > 0 || filteredCities.length > 0) && (
                                 <motion.div
                                     initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="absolute top-full left-0 right-0 mt-3 bg-white  border border-slate-100 py-4 z-[100] max-h-[500px] overflow-y-auto" style={{ borderRadius: "10px" }}
+                                    animate={{ opacity: 1, y: 4 }}
+                                    className="absolute top-full left-0 right-0 mt-4 bg-white border border-slate-100 p-2 z-[100] max-h-[400px] overflow-y-auto  rounded-[20px]"
                                 >
                                     {filteredCategories.length > 0 && (
-                                        <div className="px-6 py-2">
-                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Categories</p>
+                                        <div className="p-2">
+                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3 px-4 py-2 bg-slate-50 rounded-xl">Categories</p>
                                             {filteredCategories.map(cat => (
                                                 <button
                                                     key={cat.id}
@@ -252,40 +309,14 @@ export default function HomePage() {
                                                         setIsSuggestionsOpen(false);
                                                         window.location.href = `/search?category=${cat.slug}`;
                                                     }}
-                                                    className="w-full px-4 py-3 text-left hover:bg-blue-50/50 rounded-xl text-slate-700 font-bold transition-all flex items-center justify-between group"
+                                                    className="w-full flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl text-slate-700 font-bold transition-all group"
                                                 >
                                                     <div className="flex items-center gap-4">
                                                         <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-[#FF7A30] group-hover:scale-110 transition-transform">
-                                                            <Search className="w-5 h-5" />
+                                                            <Search className="w-4 h-4" />
                                                         </div>
-                                                        <span className="group-hover:text-[#FF7A30] transition-colors">{cat.name}</span>
+                                                        <span>{cat.name}</span>
                                                     </div>
-                                                    <ChevronDown className="w-4 h-4 opacity-0 group-hover:opacity-100 -rotate-90 transition-all" />
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    {filteredCities.length > 0 && (
-                                        <div className="px-6 py-2 border-t border-slate-50 mt-2">
-                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 mt-2">Locations</p>
-                                            {filteredCities.map(city => (
-                                                <button
-                                                    key={city.id}
-                                                    onClick={() => {
-                                                        setSearchQuery(city.name);
-                                                        setIsSuggestionsOpen(false);
-                                                        window.location.href = `/search?city=${encodeURIComponent(city.name)}`;
-                                                    }}
-                                                    className="w-full px-4 py-3 text-left hover:bg-blue-50/50 rounded-xl text-slate-700 font-bold transition-all flex items-center justify-between group"
-                                                >
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
-                                                            <MapPin className="w-5 h-5" />
-                                                        </div>
-                                                        <span className="group-hover:text-blue-600 transition-colors">{city.name}</span>
-                                                    </div>
-                                                    <ChevronDown className="w-4 h-4 opacity-0 group-hover:opacity-100 -rotate-90 transition-all" />
                                                 </button>
                                             ))}
                                         </div>
@@ -296,22 +327,62 @@ export default function HomePage() {
 
                         <button
                             onClick={handleSearch}
-                            className="bg-[#FF7A30] hover:bg-[#E86920] text-white px-12 py-5  font-black text-xl transition-all  active:scale-95 flex items-center justify-center  group shrink-0" style={{ borderRadius: "10px" }}
+                            className="bg-[#FF7A30] hover:bg-[#E86920] text-white px-10 py-3 rounded-[20px] font-black text-lg transition-all  shadow-orange-100 flex items-center justify-center gap-3 active:scale-95 shrink-0"
                         >
-                            <Search className="w-6 h-6 me-3 group-hover:scale-110 transition-transform" />
+                            <Search className="w-5 h-5" />
                             Search
                         </button>
                     </motion.div>
 
-                    <div className="mt-12 flex flex-wrap justify-center gap-4 md:gap-8 text-white/95">
-                        {categories.slice(0, 4).map(cat => (
-                            <Link key={cat.id} href={`/search?category=${cat.slug}`} className="flex items-center gap-3 px-4 py-2 bg-white/10 rounded-xl hover:bg-white/20 transition-all backdrop-blur-sm border border-white/10 group">
-                                <DynamicIcon name={cat.icon} className="w-6 h-6" />
-                                <span className="text-base font-bold tracking-wide">{cat.name}</span>
-                            </Link>
-                        ))}
+                    {/* Quick Category Pills */}
+                    <div className="mt-8 grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+
+                        {/* Offers */}
+                        <Link href="/offers-events">
+                            <div className="group p-6 rounded-2xl bg-gradient-to-br from-orange-50 to-orange-100 hover:shadow-xl transition-all cursor-pointer">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-orange-500">
+                                        <Tag className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-lg text-slate-900">Explore Offers</h3>
+                                        <p className="text-sm text-slate-500">Best deals & local events near you</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </Link>
+
+                        {/* Broadcast */}
+                        <Link href="/broadcasts">
+                            <div className="group p-6 rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100 hover:shadow-xl transition-all cursor-pointer">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-indigo-500">
+                                        <Megaphone className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-lg text-slate-900">Post Your Requirement</h3>
+                                        <p className="text-sm text-slate-500">Get quotes from nearby businesses</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </Link>
+
                     </div>
 
+                    {/* Feature Highlights Bar */}
+                    <div className="mt-20 max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 bg-white/50 backdrop-blur-md rounded-[24px] border border-slate-100 shadow-sm p-4 overflow-hidden">
+                        {highlights.map((h, i) => (
+                            <div key={i} className={`flex items-center gap-5 p-6 ${i !== highlights.length - 1 ? 'md:border-r border-slate-100' : ''}`}>
+                                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm border border-slate-50 shrink-0">
+                                    {h.icon}
+                                </div>
+                                <div className="text-left">
+                                    <h4 className="font-black text-[#112D4E] text-sm uppercase tracking-tight">{h.title}</h4>
+                                    <p className="text-slate-500 text-xs font-medium">{h.desc}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </section>
 
@@ -373,12 +444,13 @@ export default function HomePage() {
                                 <BusinessCard
                                     business={biz}
                                     variant={idx % 4 === 0 ? 'green' : idx % 4 === 1 ? 'blue' : idx % 4 === 2 ? 'white' : 'dark'}
+                                    showChat={false}
                                 />
                             </motion.div>
                         )) : (
-                            Array(12).fill(0).map((_, i) => (
-                                <div key={i} className="bg-white h-[400px] rounded-3xl shadow-sm animate-pulse border border-slate-100" />
-                            ))
+                            <div className="col-span-full py-12 text-center bg-white rounded-3xl border border-slate-100">
+                                <p className="text-slate-500 font-bold">No featured businesses available at the moment.</p>
+                            </div>
                         )}
                     </div>
 
@@ -420,6 +492,8 @@ export default function HomePage() {
                 </div>
             </section>
 
+
+
             {/* How It Works Section */}
             <section className="py-24 bg-white">
                 <div className="max-w-7xl mx-auto px-4">
@@ -458,6 +532,46 @@ export default function HomePage() {
                 </div>
             </section>
 
+            {/* Special Offers & Events */}
+            <section className="py-24 bg-slate-50/50">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="flex items-center justify-center gap-6 mb-16 text-center">
+                        <div className="h-[1px] bg-slate-200 w-24 md:w-48" />
+                        <h2 className="text-4xl font-extrabold text-[#112D4E] tracking-tight whitespace-nowrap">Offers & Events</h2>
+                        <div className="h-[1px] bg-slate-200 w-24 md:w-48" />
+                    </div>
+
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                        {latestOffers.length > 0 ? latestOffers.map((offer, idx) => (
+                            <motion.div
+                                key={offer.id}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                whileInView={{ opacity: 1, scale: 1 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: (idx % 4) * 0.1 }}
+                            >
+                                <OfferCard
+                                    offer={offer}
+                                    onEnquire={() => {
+                                        window.location.href = `/offers-events/${offer.id}`;
+                                    }}
+                                />
+                            </motion.div>
+                        )) : (
+                            <div className="col-span-full py-12 text-center bg-white rounded-3xl border border-slate-100">
+                                <p className="text-slate-500 font-bold">More offers and events coming soon from our trusted vendors.</p>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="mt-16 text-center">
+                        <Link href="/offers-events" className="text-orange-500 font-bold hover:gap-4 transition-all inline-flex items-center gap-2 text-lg">
+                            View All Offers & Events <ArrowRight className="w-5 h-5" />
+                        </Link>
+                    </div>
+                </div>
+            </section>
+
             {/* Top Cities We Serve */}
             <section className="py-24 bg-slate-50">
                 <div className="max-w-7xl mx-auto px-4">
@@ -468,7 +582,7 @@ export default function HomePage() {
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
-                        {popularCities.slice(0, 5).map((city, idx) => (
+                        {popularCities.slice(0, 10).map((city, idx) => (
                             <motion.div
                                 key={city.id}
                                 initial={{ opacity: 0, scale: 0.9 }}
@@ -478,7 +592,7 @@ export default function HomePage() {
                             >
                                 <Link href={`/search?city=${city.name}`} className="relative h-48 rounded-2xl overflow-hidden block group shadow-lg">
                                     <img
-                                        src={getImageUrl(city.imageUrl) || 'https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&q=80&w=400'}
+                                        src={getImageUrl(city.heroImageUrl || city.imageUrl) || 'https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&q=80&w=400'}
                                         alt={city.name}
                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 brightness-75 group-hover:brightness-90"
                                     />

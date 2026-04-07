@@ -13,6 +13,7 @@ import { Exclude } from 'class-transformer';
 import { Listing } from './business.entity';
 import { User } from './user.entity';
 import { ReviewHelpfulVote } from './review-helpful-vote.entity';
+import { ReviewReply } from './review-reply.entity';
 
 @Entity('reviews')
 export class Review {
@@ -83,11 +84,13 @@ export class Review {
     @JoinColumn({ name: 'business_id' })
     business: Listing;
 
-    @Exclude()
     @ManyToOne(() => User, (user) => user.reviews)
     @JoinColumn({ name: 'user_id' })
     user: User;
 
     @OneToMany(() => ReviewHelpfulVote, (vote) => vote.review)
     helpfulVotes: ReviewHelpfulVote[];
+
+    @OneToMany(() => ReviewReply, (reply) => reply.review)
+    replies: ReviewReply[];
 }

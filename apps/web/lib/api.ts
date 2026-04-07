@@ -1,7 +1,9 @@
-import { Business, Category, City, SearchResponse, Review } from '../types/api';
+import { Business, Category, City, SearchResponse, Review, ReviewReply } from '../types/api';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001/api/v1';
 const API_ROOT = API_BASE_URL.split('/api')[0];
+
+console.log('[api.ts] Active API_BASE_URL:', API_BASE_URL);
 
 export const getImageUrl = (path: string | null | undefined) => {
     if (!path) return null;
@@ -37,8 +39,11 @@ async function fetcher<T>(endpoint: string, options?: FetcherOptions): Promise<T
     const timeout = options?.timeout || 60000;
     const timeoutId = setTimeout(() => controller.abort(), timeout); // Use custom or 60s default
 
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
+    const url = `${API_BASE_URL.endsWith('/') ? API_BASE_URL : API_BASE_URL + '/'}${cleanEndpoint}`;
+
     try {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        const response = await fetch(url, {
             ...options,
             headers,
             signal: controller.signal,
@@ -47,15 +52,33 @@ async function fetcher<T>(endpoint: string, options?: FetcherOptions): Promise<T
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-            if (response.status !== 401) {
-                console.error(`[api.ts] API Error on ${endpoint}:`, response.status, response.statusText);
+            const error = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
+
+            // Only redirect on 401 for protected (non-auth) endpoints.
+            // Auth endpoints (/auth/login, /auth/google, /auth/register) must
+            // throw so the login UI can display the real error message.
+            const isAuthEndpoint = endpoint.startsWith('/auth/');
+
+            if (response.status === 401 && !isAuthEndpoint) {
+                // Handle invalid/expired token globally
+                if (typeof window !== 'undefined') {
+                    console.error('[api.ts] Unauthorized! Clearing token...');
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    window.location.href = '/login?error=expired';
+                }
+            } else {
+                // Only log stack traces for 500 errors to avoid console noise for expected validation constraints (400, 404)
+                if (response.status >= 500) {
+                    console.error(`[api.ts] API Error on ${endpoint}:`, response.status, response.statusText, JSON.stringify(error, null, 2));
+                }
             }
+
             if (options?.silent && response.status === 404) {
                 console.warn(`[api.ts] Silent 404 on ${endpoint}`);
                 return [] as any;
             }
-            const error = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
-            throw new Error(`[${endpoint}] ${error.message || 'API request failed'}`);
+            throw new Error(error.message || 'API request failed');
         }
 
         // Check if the response has content before parsing as JSON
@@ -97,6 +120,19 @@ async function fetcher<T>(endpoint: string, options?: FetcherOptions): Promise<T
 }
 
 export const api = {
+    get: <T>(endpoint: string, options?: FetcherOptions) => fetcher<T>(endpoint, { ...options, method: 'GET' }),
+    post: <T>(endpoint: string, body?: any, options?: FetcherOptions) => fetcher<T>(endpoint, { 
+        ...options, 
+        method: 'POST', 
+        body: body ? JSON.stringify(body) : undefined 
+    }),
+    patch: <T>(endpoint: string, body?: any, options?: FetcherOptions) => fetcher<T>(endpoint, { 
+        ...options, 
+        method: 'PATCH', 
+        body: body ? JSON.stringify(body) : undefined 
+    }),
+    delete: <T>(endpoint: string, options?: FetcherOptions) => fetcher<T>(endpoint, { ...options, method: 'DELETE' }),
+    
     categories: {
         getAll: () => fetcher<Category[]>('/categories'),
         getPopular: (limit = 8) => fetcher<Category[]>(`/categories/popular?limit=${limit}`),
@@ -179,18 +215,49 @@ export const api = {
     cities: {
         getPopular: () => fetcher<City[]>('/cities/popular'),
         getAll: () => fetcher<City[]>('/cities'),
+        getSupportedCountries: () => fetcher<{ country: string; cityCount: number }[]>('/cities/supported-countries'),
+        // Admin endpoints
+        adminCreate: (data: any) => fetcher<City>('/cities/admin', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+        adminUpdate: (id: string, data: any) => fetcher<City>(`/cities/admin/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        }),
+        adminList: (page = 1, limit = 10, search = '') => {
+            const query = new URLSearchParams({
+                page: String(page),
+                limit: String(limit),
+                search
+            }).toString();
+            return fetcher<{ data: City[], total: number }>(`/cities/admin?${query}`);
+        },
+        adminDelete: (id: string) => fetcher<void>(`/cities/admin/${id}`, {
+            method: 'DELETE',
+        }),
+        bulkImport: (country = 'Pakistan') => fetcher<{ count: number, total: number }>('/cities/admin/bulk-import', {
+            method: 'POST',
+            body: JSON.stringify({ country }),
+            timeout: 60000,
+        }),
     },
     reviews: {
         findAll: (params: any = {}) => {
             const query = new URLSearchParams(params).toString();
             return fetcher<{ data: Review[], meta: any }>(`/reviews?${query}`);
         },
-        getByBusiness: (idOrSlug: string) => fetcher<{ data: Review[] }>(`/reviews/business/${idOrSlug}`),
-        getByVendor: (vendorId: string) => fetcher<{ data: Review[] }>(`/reviews?vendorId=${vendorId}`),
-        getPopular: (limit = 3) => fetcher<{ data: Review[] }>(`/reviews?rating=5&limit=${limit}`),
+        getByBusiness: (idOrSlug: string) => fetcher<{ data: Review[], meta: any }>(`/reviews/business/${idOrSlug}`),
+        getByVendor: (vendorId: string) => fetcher<{ data: Review[], meta: any }>(`/reviews?vendorId=${vendorId}`),
+        getVendorAll: (page = 1, limit = 20) => fetcher<{ data: Review[], meta: any }>(`/reviews/vendor/all?page=${page}&limit=${limit}`),
+        getPopular: (limit = 3) => fetcher<{ data: Review[], meta: any }>(`/reviews?rating=5&limit=${limit}`),
         create: (reviewData: any) => fetcher<Review>('/reviews', {
             method: 'POST',
             body: JSON.stringify(reviewData),
+        }),
+        createReply: (reviewId: string, content: string) => fetcher<ReviewReply>(`/reviews/${reviewId}/replies`, {
+            method: 'POST',
+            body: JSON.stringify({ content }),
         }),
         respond: (reviewId: string, response: string) => fetcher<Review>(`/reviews/${reviewId}/response`, {
             method: 'POST',
@@ -286,7 +353,12 @@ export const api = {
             method: 'PATCH',
             body: JSON.stringify(profileData),
         }),
+        becomeVendor: (data: { businessName: string, businessPhone: string }) => fetcher<any>('/vendors/become-vendor', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
         getByCity: (city: string) => fetcher<any>(`/vendors/by-city?city=${encodeURIComponent(city)}`),
+        getPublicProfile: (id: string) => fetcher<any>(`/vendors/${id}/public`),
     },
     leads: {
         getForVendor: (params: any = {}) => {
@@ -298,16 +370,17 @@ export const api = {
             method: 'PATCH',
             body: JSON.stringify({ status }),
         }),
-        createEnquiry: (data: {
+        createLead: (data: {
             businessId: string;
             name: string;
             email: string;
             phone?: string;
             message: string;
+            type?: 'call' | 'whatsapp' | 'chat';
             source?: string;
         }) => fetcher<any>('/leads', {
             method: 'POST',
-            body: JSON.stringify({ ...data, type: 'chat' }),
+            body: JSON.stringify({ ...data, type: data.type || 'chat' }),
         }),
         getMyEnquiries: (params: any = {}) => {
             const query = new URLSearchParams(params).toString();
@@ -323,7 +396,7 @@ export const api = {
             method: 'POST',
             body: JSON.stringify(userData),
         }),
-        googleLogin: (data: { credential: string, role?: string }) => fetcher<any>('/auth/google', {
+        googleLogin: (data: { credential: string; role?: string; referralCode?: string }) => fetcher<any>('/auth/google', {
             method: 'POST',
             body: JSON.stringify(data),
         }),
@@ -368,6 +441,10 @@ export const api = {
             method: 'PATCH',
             body: JSON.stringify({ isVerified }),
         }),
+        updateSearchKeywords: (id: string, keywords: string[]) => fetcher<any>(`/admin/business/${id}/search-keywords`, {
+            method: 'PATCH',
+            body: JSON.stringify({ keywords }),
+        }),
         getVendors: (page = 1, limit = 20, isVerified?: boolean, search?: string) => {
             const params = new URLSearchParams({
                 page: page.toString(),
@@ -385,6 +462,12 @@ export const api = {
             method: 'PATCH',
             body: JSON.stringify(settings),
         }),
+        getHeatmapData: (startDate?: string, endDate?: string) => {
+            const params = new URLSearchParams();
+            if (startDate) params.append('startDate', startDate);
+            if (endDate) params.append('endDate', endDate);
+            return fetcher<any[]>(`/admin/heatmap-data?${params.toString()}`);
+        },
         plans: {
             getAll: () => fetcher<any[]>('/subscriptions/plans/admin'),
             getById: (id: string) => fetcher<any>(`/subscriptions/plans/${id}`),
@@ -400,20 +483,76 @@ export const api = {
                 method: 'DELETE',
             }),
         },
+        pricingPlans: {
+            getAll: () => fetcher<any[]>('/subscriptions/pricing/plans/admin'),
+            create: (data: any) => fetcher<any>('/subscriptions/pricing/plans', {
+                method: 'POST',
+                body: JSON.stringify(data),
+            }),
+            update: (id: string, data: any) => fetcher<any>(`/subscriptions/pricing/plans/${id}`, {
+                method: 'PATCH',
+                body: JSON.stringify(data),
+            }),
+            delete: (id: string) => fetcher<any>(`/subscriptions/pricing/plans/${id}`, {
+                method: 'DELETE',
+            }),
+        },
+        globalSearch: (q: string) => fetcher<{ 
+            businesses: any[], 
+            users: any[], 
+            categories: any[], 
+            cities: any[] 
+        }>(`/admin/search/global?q=${encodeURIComponent(q)}`),
+        affiliate: {
+            getReferrals: () => fetcher<any[]>('/affiliate/admin/referrals'),
+            activateReferral: (id: string) => fetcher<any>(`/affiliate/admin/activate-referral/${id}`, { method: 'POST' }),
+            getStats: () => fetcher<any>('/affiliate/admin/stats'),
+            getPayouts: () => fetcher<any[]>('/affiliate/admin/payouts'),
+            updatePayout: (id: string, status: string, notes?: string) => fetcher<any>(`/affiliate/admin/payouts/${id}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ status, notes }),
+            }),
+            updateSettings: (settings: any) => fetcher<any>('/affiliate/admin/settings', {
+                method: 'PATCH',
+                body: JSON.stringify(settings),
+            }),
+        },
     },
+
     notifications: {
-        getAll: () => fetcher<any>('/notifications'),
-        markRead: (id: string) => fetcher<any>(`/notifications/${id}/read`, { method: 'PATCH' }),
-        markAllRead: () => fetcher<any>('/notifications/read-all', { method: 'PATCH' }),
-        delete: (id: string) => fetcher<any>(`/notifications/${id}`, { method: 'DELETE' }),
+        getAll: () => fetcher('/notifications'),
+        markRead: (id: string) => fetcher(`/notifications/${id}/read`, { method: 'PATCH' }),
+        markAllRead: () => fetcher('/notifications/read-all', { method: 'PATCH' }),
+        delete: (id: string) => fetcher(`/notifications/${id}`, { method: 'DELETE' }),
+    },
+    affiliate: {
+        join: (dto: any) => fetcher('/affiliate/join', { method: 'POST', body: JSON.stringify(dto) }),
+        getStats: () => fetcher<any>('/affiliate/stats'),
+        getReferrals: () => fetcher<any[]>('/affiliate/referrals'),
+        trackClick: (code: string) => fetcher(`/affiliate/track-click?code=${code}`, { method: 'POST', silent: true }),
+        applyReferral: (code: string) => fetcher<{ success: boolean; message: string }>('/affiliate/apply-referral', {
+            method: 'POST',
+            body: JSON.stringify({ code }),
+        }),
+
+        requestPayout: (data: { amount: number; method: string; details: string }) => fetcher('/affiliate/payouts', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+        getPayouts: () => fetcher<any[]>('/affiliate/payouts'),
+        getSettings: () => fetcher<any>('/affiliate/settings'),
     },
     subscriptions: {
         getPlans: () => fetcher<any[]>('/subscriptions/plans'),
+        getPricingPlans: (type?: string) => fetcher<any[]>(`/subscriptions/pricing/plans${type ? `?type=${type}` : ''}`),
         getActive: () => fetcher<any>('/subscriptions/active'),
+        getActivePromotions: () => fetcher<any>('/subscriptions/active-promotions'),
         getMyInvoices: () => fetcher<any[]>('/subscriptions/my-invoices'),
         getInvoice: (id: string) => fetcher<any>(`/subscriptions/invoice/${id}`),
         mockCheckout: (planId: string) => fetcher<any>(`/subscriptions/mock-success/${planId}`, { method: 'POST' }),
-        changePlan: (planId: string) => fetcher<any>('/subscriptions/change', { method: 'POST', body: JSON.stringify({ planId }) }),
+        createCheckout: (planId: string) => api.post<{ sessionId: string; checkoutUrl: string }>('/subscriptions/checkout', { planId }),
+        verify: (sessionId: string) => api.post<{ success: boolean; alreadyProcessed: boolean }>('/subscriptions/verify', { sessionId }),
+        changePlan: (planId: string) => api.post<any>('/subscriptions/change', { planId }),
 
         // Admin
         adminGetAll: (page = 1, limit = 20) => fetcher<any>(`/subscriptions/admin/all?page=${page}&limit=${limit}`),
@@ -430,21 +569,38 @@ export const api = {
         }),
     },
     offers: {
-        create: (data: any) => fetcher<any>('/vendor/offers', {
+        getById: (id: string) => fetcher<any>(`/offers/public/${id}`),
+        create: (data: any) => fetcher<any>('/offers', {
             method: 'POST',
             body: JSON.stringify(data),
         }),
         getMy: (page = 1, limit = 10) =>
-            fetcher<{ data: any[]; meta: any }>(`/vendor/offers?page=${page}&limit=${limit}`),
-        update: (id: string, data: any) => fetcher<any>(`/vendor/offers/${id}`, {
+            fetcher<{ data: any[]; meta: any }>(`/offers/vendor?page=${page}&limit=${limit}`),
+        update: (id: string, data: any) => fetcher<any>(`/offers/${id}`, {
             method: 'PATCH',
             body: JSON.stringify(data),
         }),
-        remove: (id: string) => fetcher<void>(`/vendor/offers/${id}`, {
+        remove: (id: string) => fetcher<any>(`/offers/${id}`, {
             method: 'DELETE',
         }),
+        // Admin
+        adminGetAll: (page = 1, limit = 20) => fetcher<{ data: any[]; meta: any }>(`/offers/admin/all?page=${page}&limit=${limit}`),
+        adminToggleFeatured: (id: string, isFeatured: boolean) => fetcher(`/offers/admin/${id}/feature`, {
+            method: 'PATCH',
+            body: JSON.stringify({ isFeatured }),
+        }),
         getByBusiness: (businessId: string) =>
-            fetcher<any[]>(`/business/${businessId}/offers`),
+            fetcher<any[]>(`/offers/business/${businessId}/offers`),
+        search: (params: Record<string, string | number | boolean | undefined | null>) => {
+            const sanitizedParams: Record<string, string> = {};
+            Object.entries(params).forEach(([key, value]) => {
+                if (value !== undefined && value !== null && value !== '' && value !== false) {
+                    sanitizedParams[key] = String(value);
+                }
+            });
+            const query = new URLSearchParams(sanitizedParams).toString();
+            return fetcher<{ data: any[]; meta: any }>(`/offers/public/search?${query}`);
+        },
     },
     comments: {
         create: (data: any) => fetcher<any>('/comments', {
@@ -474,6 +630,7 @@ export const api = {
     },
     demand: {
         getInsights: (city?: string) => fetcher<any[]>(`/demand/insights${city ? `?city=${city}` : ''}`, { silent: true }),
+        getAISummary: (city?: string) => fetcher<{ summary: string }>(`/demand/summary-ai${city ? `?city=${city}` : ''}`, { silent: true }),
         getNearby: (lat?: number, lng?: number) => fetcher<any[]>(`/demand/nearby${lat !== undefined && lng !== undefined ? `?lat=${lat}&lng=${lng}` : ''}`, { silent: true }),
         getHeatmap: (keyword?: string) => fetcher<any[]>(`/demand/heatmap${keyword ? `?keyword=${keyword}` : ''}`, { silent: true }),
         logSearch: (data: any) => fetcher('/demand/log', { method: 'POST', body: JSON.stringify(data), silent: true }),
@@ -489,6 +646,22 @@ export const api = {
             fetcher<{ followersCount: number }>(`/follows/${businessId}/count`, { silent: true }),
         myFollows: (page = 1, limit = 20) =>
             fetcher<{ data: Business[]; meta: any }>(`/follows/my?page=${page}&limit=${limit}`),
+    },
+    broadcasts: {
+        create: (data: any) => fetcher<any>('/broadcasts', { method: 'POST', body: JSON.stringify(data) }),
+        getMyLeads: () => fetcher<any[]>('/broadcasts/my-leads'),
+        getVendorInbox: () => fetcher<any[]>('/broadcasts/vendor/inbox'),
+        getStats: () => fetcher<{ newCount: number }>('/broadcasts/vendor/stats'),
+        respond: (id: string, data: any) => fetcher<any>(`/broadcasts/${id}/respond`, { method: 'POST', body: JSON.stringify(data) }),
+        getResponses: (id: string) => fetcher<any[]>(`/broadcasts/${id}/responses`),
+    },
+    promotions: {
+        getPricingRules: () => fetcher<any[]>('/promotions/pricing-rules'),
+        calculatePrice: (data: { placements: string[], startTime: string, endTime: string, pricingId?: string }, type: string = 'offer') => 
+            api.post<{ totalPrice: number; durationHours: number; breakup: any[]; isMinimumApplied?: boolean }>(`/promotions/calculate?type=${type}`, data),
+        book: (data: { offerEventId: string; placements: string[]; startTime: string; endTime: string }) => 
+            api.post<{ sessionId: string; checkoutUrl: string }>('/promotions/book', data),
+        verifySession: (sessionId: string) => fetcher<any>(`/promotions/verify-session?session_id=${sessionId}`),
     },
 };
 

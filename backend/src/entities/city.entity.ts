@@ -38,6 +38,12 @@ export class City {
     @Column({ name: 'meta_description', type: 'text', nullable: true })
     metaDescription: string;
 
+    @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
+    latitude: number;
+
+    @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
+    longitude: number;
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 

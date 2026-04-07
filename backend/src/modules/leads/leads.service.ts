@@ -2,6 +2,7 @@ import {
     Injectable,
     NotFoundException,
     ForbiddenException,
+    OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -32,6 +33,30 @@ export class LeadsService {
         private notificationsGateway: NotificationsGateway,
         private notificationsService: NotificationsService,
     ) { }
+    
+    async onModuleInit() {
+        // Ensure 'chat' exists in the LeadType enum in PostgreSQL (important for Railway/Prod)
+        try {
+            await this.leadRepository.query(`
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM pg_type t 
+                                  JOIN pg_enum e ON t.oid = e.enumtypid 
+                                  WHERE t.typname = 'leads_type_enum' AND e.enumlabel = 'chat') THEN
+                        ALTER TYPE leads_type_enum ADD VALUE 'chat';
+                    END IF;
+                EXCEPTION
+                    WHEN others THEN
+                        -- Type might not exist yet if tables haven't been created, which is fine
+                        NULL;
+                END
+                $$;
+            `);
+            console.log('✅ LeadType enum (chat) checked in Railway database');
+        } catch (err: any) {
+            console.warn('[LeadsService] Database enum check skipped or failed: ' + err.message);
+        }
+    }
 
     /**
      * Create a new lead (Customer interaction)
@@ -70,14 +95,22 @@ export class LeadsService {
             where: { id: listing.vendorId },
         });
 
+        // Notify vendor via persistent notification and Web Push
         if (vendor) {
-            this.notificationsGateway.sendToUser(vendor.userId, 'new_lead', {
-                leadId: savedLead.id,
-                businessName: listing.title,
-                customerName: savedLead.name,
-                type: savedLead.type,
-                createdAt: savedLead.createdAt,
-            });
+            await this.notificationsService.create({
+                userId: vendor.userId,
+                title: '🆕 New Lead Received!',
+                message: `You have a new ${savedLead.type} lead for "${listing.title}" from ${savedLead.name}.`,
+                type: 'new_lead',
+                data: {
+                    leadId: savedLead.id,
+                    businessName: listing.title,
+                    customerName: savedLead.name,
+                    type: savedLead.type,
+                    createdAt: savedLead.createdAt,
+                },
+                link: '/vendor/leads',
+            }).catch(err => console.error('[LeadsService] Push notification failed:', err.message));
         }
 
         return savedLead;
@@ -90,12 +123,24 @@ export class LeadsService {
         const { page = 1, limit = 20, businessId, type, status } = getLeadsDto;
         const skip = calculateSkip(page, limit);
 
-        const vendor = await this.vendorRepository.findOne({
+        let vendor = await this.vendorRepository.findOne({
             where: { userId },
         });
 
         if (!vendor) {
-            throw new ForbiddenException('Only vendors can view their leads');
+            const userUser = await this.vendorRepository.manager.findOne(User, { where: { id: userId }, select: ['id', 'role'] });
+            if (userUser && userUser.role === UserRole.VENDOR) {
+                const newVendor = this.vendorRepository.create({ userId, isVerified: false });
+                try {
+                    await this.vendorRepository.save(newVendor);
+                } catch (err: any) {
+                    if (err.code !== '23505' && !err.message?.includes('duplicate key')) throw err;
+                }
+                vendor = await this.vendorRepository.findOne({ where: { userId } });
+            }
+            if (!vendor) {
+                throw new ForbiddenException('Only vendors can view their leads');
+            }
         }
 
         const queryBuilder = this.leadRepository
@@ -232,12 +277,24 @@ export class LeadsService {
      * Get basic stats for a vendor
      */
     async getVendorLeadStats(userId: string) {
-        const vendor = await this.vendorRepository.findOne({
+        let vendor = await this.vendorRepository.findOne({
             where: { userId },
         });
 
         if (!vendor) {
-            throw new ForbiddenException('Only vendors can view stats');
+            const userUser = await this.vendorRepository.manager.findOne(User, { where: { id: userId }, select: ['id', 'role'] });
+            if (userUser && userUser.role === UserRole.VENDOR) {
+                const newVendor = this.vendorRepository.create({ userId, isVerified: false });
+                try {
+                    await this.vendorRepository.save(newVendor);
+                } catch (err: any) {
+                    if (err.code !== '23505' && !err.message?.includes('duplicate key')) throw err;
+                }
+                vendor = await this.vendorRepository.findOne({ where: { userId } });
+            }
+            if (!vendor) {
+                throw new ForbiddenException('Only vendors can view stats');
+            }
         }
 
         const stats = await this.leadRepository

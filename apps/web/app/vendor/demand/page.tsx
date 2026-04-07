@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
-import { TrendingUp, Activity, MapPin, Loader2, BarChart2 } from 'lucide-react';
+import { TrendingUp, Activity, MapPin, Loader2, BarChart2, Lock } from 'lucide-react';
+import Link from 'next/link';
 
 export default function VendorDemandPage() {
     const { user } = useAuth();
@@ -11,6 +12,11 @@ export default function VendorDemandPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+    const features = activeSub?.plan?.dashboardFeatures || {};
+    const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+    const isVendor = user?.role === 'vendor';
 
     useEffect(() => {
         // Try to get actual location, fallback to a default if blocked or failing
@@ -53,6 +59,17 @@ export default function VendorDemandPage() {
         }
     };
 
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh]">
+                <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
+                <p className="text-slate-500 font-medium animate-pulse">Analyzing local market data...</p>
+            </div>
+        );
+    }
+
+    // Hot Demand Insights unlocked for all vendors as per user request.
+
     return (
         <div className="space-y-8 pb-20">
             {/* Header */}
@@ -71,12 +88,7 @@ export default function VendorDemandPage() {
                 </p>
             </div>
 
-            {loading ? (
-                <div className="flex flex-col items-center justify-center py-32 space-y-4 bg-white rounded-3xl border border-slate-100 shadow-sm">
-                    <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
-                    <p className="text-slate-500 font-medium animate-pulse">Analyzing local market data...</p>
-                </div>
-            ) : error ? (
+            {error ? (
                 <div className="p-8 bg-red-50 border border-red-100 rounded-3xl text-center">
                     <p className="text-red-600 font-medium">{error}</p>
                     <button
@@ -97,7 +109,7 @@ export default function VendorDemandPage() {
                     </p>
                 </div>
             ) : (
-                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+                <div className="bg-white rounded-[28px] border border-slate-100 shadow-sm overflow-hidden">
                     <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                         <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                             <BarChart2 className="w-6 h-6 text-blue-600" />

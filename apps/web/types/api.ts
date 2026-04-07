@@ -19,9 +19,19 @@ export interface City {
     name: string;
     slug: string;
     state?: string;
-    country?: string;
-    imageUrl?: string;
+    country: string;
+    description?: string;
+    heroImageUrl?: string;
+    imageUrl?: string;        // alias kept for backward compat
+    isPopular: boolean;
+    displayOrder: number;
+    metaTitle?: string;
+    metaDescription?: string;
+    latitude?: number;
+    longitude?: number;
     businessCount?: number;
+    createdAt: string;
+    updatedAt?: string;
 }
 
 export interface BusinessHours {
@@ -82,12 +92,15 @@ export interface Business {
             lastLoginAt?: string;
             lastActiveAt?: string;
             lastLogoutAt?: string;
+            avatarUrl?: string;
+            createdAt?: string;
         };
         businessHours?: Record<string, { isOpen: boolean; openTime: string; closeTime: string }>;
         socialLinks?: { platform: string; url: string; }[];
     };
     // SEO / Search
     metaKeywords?: string;
+    searchKeywords?: string[];
     // Offer / Promo
     hasOffer?: boolean;
     offerTitle?: string;
@@ -98,6 +111,18 @@ export interface Business {
     // Stats
     followersCount?: number;
     status: 'pending' | 'approved' | 'rejected' | 'disabled';
+    faqs?: { question: string; answer: string }[];
+}
+
+export interface ReviewReply {
+    id: string;
+    content: string;
+    userId: string;
+    user: {
+        fullName: string;
+        avatarUrl?: string;
+    };
+    createdAt: string;
 }
 
 export interface Review {
@@ -117,6 +142,7 @@ export interface Review {
     };
     vendorResponse?: string;
     vendorResponseAt?: string;
+    replies?: ReviewReply[];
     createdAt: string;
 }
 
@@ -129,4 +155,79 @@ export interface SearchResponse {
         totalPages: number;
         hasMore: boolean;
     };
+}
+
+export enum OfferType {
+    OFFER = 'offer',
+    EVENT = 'event',
+}
+export enum JobLeadStatus {
+    OPEN = 'open',
+    BROADCASTED = 'broadcasted',
+    RESPONDED = 'responded',
+    CLOSED = 'closed',
+}
+
+export interface OfferEvent {
+    id: string;
+    title: string;
+    description: string;
+    type: OfferType;
+    offerBadge?: string;
+    imageUrl?: string;
+    startDate?: string;
+    endDate?: string;
+    expiryDate?: string;
+    highlights?: string[];
+    terms?: string[];
+    businessId: string;
+    business?: Business;
+    createdAt: string;
+}
+
+export interface JobLead {
+    id: string;
+    userId: string;
+    categoryId: string;
+    category?: Category;
+    title: string;
+    description: string;
+    city?: string;
+    location?: string;
+    budget?: number;
+    status: JobLeadStatus;
+    latitude?: number;
+    longitude?: number;
+    createdAt: string;
+    responses?: JobLeadResponse[];
+    hasResponded?: boolean;
+    user?: {
+        id: string;
+        fullName: string;
+        email: string;
+        phone?: string;
+    };
+    myResponse?: JobLeadResponse;
+}
+
+export interface JobLeadResponse {
+    id: string;
+    jobLeadId: string;
+    vendorId: string;
+    vendor?: {
+        id: string;
+        businessName: string;
+        businessPhone?: string;
+        businessEmail?: string;
+        user?: {
+            id: string;
+            fullName: string;
+            avatarUrl?: string;
+            phone?: string;
+        }
+    };
+    message: string;
+    price?: number;
+    status: 'pending' | 'accepted' | 'rejected';
+    createdAt: string;
 }

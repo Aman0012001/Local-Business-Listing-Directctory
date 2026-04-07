@@ -6,6 +6,7 @@ import { Star, MapPin, ShieldCheck, Clock, CheckCircle2, Users } from 'lucide-re
 import { Business } from '../types/api';
 import { getImageUrl } from '../lib/api';
 import { getBusinessOpenStatus } from '../lib/business-status';
+import ChatTrigger from './chat/ChatTrigger';
 // Simple Online/Offline badge — green when vendor is logged in, red when not
 const VendorOnlineBadge = ({ isOnline }: { isOnline?: boolean }) => {
     if (isOnline) {
@@ -38,15 +39,13 @@ const BusinessOpenBadge = ({ business }: { business: Business }) => {
     return (
         <span
             title={todayHours ? `Today: ${todayHours}` : undefined}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
-                isOpen
-                    ? 'bg-green-50 text-green-700 border-green-200'
-                    : 'bg-slate-100 text-slate-500 border-slate-200'
-            }`}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${isOpen
+                ? 'bg-green-50 text-green-700 border-green-200'
+                : 'bg-slate-100 text-slate-500 border-slate-200'
+                }`}
         >
             <Clock className="w-3 h-3" />
-            {label}
-            {todayHours && <span className="hidden sm:inline font-normal normal-case">&middot; {todayHours}</span>}
+            {todayHours ? `${todayHours} (${label})` : label}
         </span>
     );
 };
@@ -70,9 +69,10 @@ interface BusinessCardProps {
     business: Business;
     variant?: 'green' | 'blue' | 'white' | 'dark' | 'minimal';
     layout?: 'grid' | 'list';
+    showChat?: boolean;
 }
 
-export default function BusinessCard({ business, variant = 'blue', layout = 'grid' }: BusinessCardProps) {
+export default function BusinessCard({ business, variant = 'blue', layout = 'grid', showChat = true }: BusinessCardProps) {
     const getButtonStyles = () => {
         switch (variant) {
             case 'green':
@@ -242,10 +242,7 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                         <h3 className="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
                             {business.title}
                         </h3>
-                        <div className="flex items-center gap-1 text-amber-500 font-bold">
-                            <Star className="w-4 h-4 fill-amber-400" />
-                            <span>{business.averageRating || '4.5'}</span>
-                        </div>
+
                         {business.followersCount !== undefined && business.followersCount > 0 && (
                             <div className="flex items-center gap-1 text-[10px] font-bold text-violet-500 bg-violet-50 px-2 py-0.5 rounded-full border border-violet-100">
                                 <Users className="w-3 h-3" />
@@ -258,7 +255,13 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                         <VendorOnlineBadge isOnline={business.vendor?.user?.isOnline} />
                         <BusinessOpenBadge business={business} />
                     </div>
+
                     <div className="flex items-center gap-2 mb-6 text-slate-500">
+
+                        <div className="flex items-center gap-1 text-amber-500 font-bold">
+                            <Star className="w-4 h-4 fill-amber-400" />
+                            <span>{business.averageRating || '4.5'}</span>
+                        </div>
                         <div className="flex text-amber-500">
                             {[...Array(5)].map((_, i) => (
                                 <Star key={i} className={`w-3.5 h-3.5 ${i < Math.floor(Number(business.averageRating || 4.5)) ? 'fill-amber-500' : 'text-slate-200'}`} />
@@ -266,10 +269,17 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                         </div>
                     </div>
 
-                    <div className="mt-auto">
-                        <div className={`block w-full text-center py-2  font-bold transition-all s active:scale-95`} style={{ backgroundColor: "#eff6ff", borderRadius: "10px" }}>
-                            {/* {getButtonText()} */} View Details
+                    <div className="mt-auto flex gap-2">
+                        <div className="flex-1 text-center py-2 font-bold transition-all active:scale-95 bg-blue-50 text-blue-600 rounded-[10px]">
+                            View Details
                         </div>
+                        {showChat && (
+                            <ChatTrigger 
+                                businessId={business.id} 
+                                businessName={business.title}
+                                className="flex-1"
+                            />
+                        )}
                     </div>
                 </div>
             </div>

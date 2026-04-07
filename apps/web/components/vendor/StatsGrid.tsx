@@ -7,6 +7,7 @@ interface StatItem {
     icon: any;
     color: string;
     shadow: string;
+    onClick?: () => void;
 }
 
 interface StatsGridProps {
@@ -57,7 +58,8 @@ export default function StatsGrid({ stats = defaultStats }: StatsGridProps) {
             {stats.map((stat) => (
                 <div
                     key={stat.label}
-                    className={`${stat.color} rounded-[16px] p-6 text-white  ${stat.shadow} flex items-center gap-5 group hover:scale-[1.02] transition-all duration-300 cursor-pointer`}
+                    onClick={stat.onClick}
+                    className={`${stat.color} rounded-[16px] p-6 text-white ${stat.shadow} flex items-center gap-5 group hover:scale-[1.02] transition-all duration-300 ${stat.onClick ? 'cursor-pointer active:scale-95' : 'cursor-default'}`}
                 >
                     <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center transition-transform group-hover:rotate-6">
                         <stat.icon className="w-6 h-6 text-white" />

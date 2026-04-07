@@ -23,7 +23,7 @@ export class Transaction {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ name: 'subscription_id', type: 'uuid' })
+    @Column({ name: 'subscription_id', type: 'uuid', nullable: true })
     @Index()
     subscriptionId: string;
 
@@ -35,7 +35,7 @@ export class Transaction {
     @Column({ type: 'decimal', precision: 10, scale: 2 })
     amount: number;
 
-    @Column({ length: 3, default: 'INR' })
+    @Column({ length: 3, default: 'PKR' })
     currency: string;
 
     @Column({ name: 'payment_method', nullable: true, length: 50 })
@@ -46,6 +46,9 @@ export class Transaction {
 
     @Column({ name: 'gateway_transaction_id', nullable: true })
     gatewayTransactionId: string;
+
+    @Column({ name: 'stripe_session_id', nullable: true })
+    stripeSessionId: string;
 
     // Status
     @Column({

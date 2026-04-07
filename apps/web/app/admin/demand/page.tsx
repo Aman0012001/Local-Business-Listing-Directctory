@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Flame, MapPin, Search, ArrowUpRight, ArrowDownRight, Users, Activity, Loader2 } from 'lucide-react';
+import { TrendingUp, Flame, MapPin, Search, ArrowUpRight, ArrowDownRight, Users, Activity, Loader2, Sparkles, BrainCircuit, Zap, Clock } from 'lucide-react';
 import { api } from '../../../lib/api';
 import { motion } from 'framer-motion';
 
 export default function AdminDemandDashboard() {
     const [insights, setInsights] = useState<any[]>([]);
+    const [aiSummary, setAiSummary] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [selectedCity, setSelectedCity] = useState('');
 
@@ -14,8 +15,12 @@ export default function AdminDemandDashboard() {
         const fetchInsights = async () => {
             try {
                 setLoading(true);
-                const data = await api.demand.getInsights(selectedCity);
+                const [data, summaryData] = await Promise.all([
+                    api.demand.getInsights(selectedCity),
+                    api.demand.getAISummary(selectedCity)
+                ]);
                 setInsights(data || []);
+                setAiSummary(summaryData?.summary || null);
             } catch (error) {
                 console.error('Error fetching demand insights:', error);
             } finally {
@@ -61,6 +66,33 @@ export default function AdminDemandDashboard() {
                     </div>
                 </div>
             </header>
+
+            {/* AI Summary Section */}
+            {/* {!loading && aiSummary && (
+                <div className="mb-8 p-6 bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 rounded-2xl shadow-sm relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <Sparkles className="w-24 h-24 text-indigo-600" />
+                    </div>
+                    <div className="flex items-start gap-4 relative z-10">
+                        <div className="bg-indigo-600 p-2 rounded-lg text-white shadow-lg border border-indigo-500">
+                            <BrainCircuit className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                                <h3 className="text-indigo-900 font-bold">AI Deep Analysis</h3>
+                                <div className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] font-bold rounded-full uppercase tracking-wider animate-pulse">Live</div>
+                            </div>
+                            <div className="text-slate-700 text-sm leading-relaxed max-w-4xl whitespace-pre-wrap">
+                                {aiSummary}
+                            </div>
+                            <div className="mt-4 flex items-center gap-4 text-[11px] text-slate-400 font-medium">
+                                <span className="flex items-center gap-1"><Zap className="w-3 h-3" /> Powered by Gemini 1.5 Flash</span>
+                                <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Updated just now</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )} */}
 
             {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -159,7 +191,7 @@ export default function AdminDemandDashboard() {
                 </div>
 
                 {/* Hot List Sidebar */}
-                <div className="lg:col-span-4 space-y-8">
+                {/* <div className="lg:col-span-4 space-y-8">
                     <section className="bg-slate-900 rounded-[16px] p-8 text-white  shadow-slate-300">
                         <div className="flex items-center gap-4 mb-8">
                             <div className="w-12 h-12 bg-white/10 rounded-[16px] flex items-center justify-center text-orange-400">
@@ -180,7 +212,7 @@ export default function AdminDemandDashboard() {
                             {hotKeywords.length === 0 && <p className="text-white/40 italic text-sm">No hot keywords yet.</p>}
                         </div>
                     </section>
-                </div>
+                </div> */}
             </div>
         </div>
     );

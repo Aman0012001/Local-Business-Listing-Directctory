@@ -11,12 +11,12 @@ import { api, getImageUrl } from '../../../lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../../context/AuthContext';
 
-type Role = 'user' | 'vendor' | 'admin' | 'superadmin';
+type Role = 'user' | 'vendor' | 'superadmin';
 
 const ROLE_CONFIG: Record<Role, { label: string; cls: string; Icon: any }> = {
     user: { label: 'User', cls: 'bg-slate-100 text-slate-600 border-slate-200', Icon: UserIcon },
     vendor: { label: 'Vendor', cls: 'bg-blue-50 text-blue-700 border-blue-200', Icon: Briefcase },
-    admin: { label: 'Admin', cls: 'bg-amber-50 text-amber-700 border-amber-200', Icon: Shield },
+    // admin: { label: 'Admin', cls: 'bg-amber-50 text-amber-700 border-amber-200', Icon: Shield },
     superadmin: { label: 'Superadmin', cls: 'bg-red-50 text-red-700 border-red-200', Icon: Crown },
 };
 
@@ -174,7 +174,7 @@ export default function AdminUsersPage() {
 
             {/* Overview mini-stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {(['all', 'user', 'vendor', 'admin'] as const).map((r) => {
+                {(['all', 'user', 'vendor'] as const).map((r) => {
                     const cfg = r === 'all'
                         ? { label: 'All Users', cls: 'from-slate-700 to-slate-900', Icon: Users }
                         : { label: ROLE_CONFIG[r].label + 's', cls: ROLE_COLORS[r], Icon: ROLE_CONFIG[r].Icon };
@@ -320,11 +320,12 @@ export default function AdminUsersPage() {
                                                     className="absolute right-0 top-11 z-50 bg-white rounded-2xl shadow-2xl shadow-slate-900/10 border border-slate-100 py-2 w-52 overflow-hidden"
                                                 >
                                                     <button
-                                                        onClick={() => handleDelete(user.id)}
-                                                        className="flex items-center gap-3 w-full px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors"
+                                                        onClick={() => toggleStatus(user.id, user.isActive)}
+                                                        className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-bold transition-colors ${user.isActive ? 'text-red-600 hover:bg-red-50' : 'text-emerald-600 hover:bg-emerald-50'
+                                                            }`}
                                                     >
-                                                        <Trash2 className="w-4 h-4" />
-                                                        Delete User
+                                                        {user.isActive ? <ShieldOff className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
+                                                        {user.isActive ? 'Block User' : 'Unblock User'}
                                                     </button>
                                                 </motion.div>
                                             )}

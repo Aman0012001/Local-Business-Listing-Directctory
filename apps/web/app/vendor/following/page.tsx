@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Bell, Search, Users } from 'lucide-react';
+import { Bell, Search, Users, Lock } from 'lucide-react';
 import { api } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
 import BusinessCard from '../../../components/BusinessCard';
@@ -12,6 +12,10 @@ export default function VendorFollowing() {
     const { user } = useAuth();
     const [followedBusinesses, setFollowedBusinesses] = useState<Business[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+    const features = activeSub?.plan?.dashboardFeatures || {};
+    const isVendor = user?.role === 'vendor';
 
     useEffect(() => {
         const fetchFollowed = async () => {
@@ -41,6 +45,9 @@ export default function VendorFollowing() {
         );
     }
 
+    // Vendors always have access to their followed businesses in the unified portal.
+    // The previous lock screen has been removed to provide full feature access.
+    
     if (!user) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">

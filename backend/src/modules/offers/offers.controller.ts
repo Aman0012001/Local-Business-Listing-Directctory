@@ -10,11 +10,15 @@ import {
     UseGuards,
     HttpCode,
     HttpStatus,
+    Headers,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { CacheInterceptor } from '@nestjs/cache-manager';
+import { UseInterceptors } from '@nestjs/common';
 import { OffersService } from './offers.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { UpdateOfferDto } from './dto/update-offer.dto';
+import { SearchOfferDto } from './dto/search-offer.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -23,14 +27,22 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { User, UserRole } from '../../entities/user.entity';
 
 @ApiTags('offers')
-@Controller()
+@Controller('offers')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class OffersController {
     constructor(private readonly offersService: OffersService) { }
 
-    // ─── Vendor Endpoints ────────────────────────────────────────────────────
+    /** Public search for offers and events */
+    @Public()
+    @UseInterceptors(CacheInterceptor)
+    @Get('public/search')
+    async findAllPublic(@Query() dto: SearchOfferDto) {
+        return this.offersService.findAllPublic(dto);
+    }
 
-    @Post('vendor/offers')
+
+    @Post()
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.VENDOR, UserRole.ADMIN)
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Create a new offer or event (Vendor)' })
@@ -42,7 +54,8 @@ export class OffersController {
         return this.offersService.create(user.id, dto);
     }
 
-    @Get('vendor/offers')
+    @Get('vendor')
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.VENDOR, UserRole.ADMIN)
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Get all offers for the authenticated vendor (paginated)' })
@@ -55,7 +68,8 @@ export class OffersController {
         return this.offersService.findByVendor(user.id, page, limit);
     }
 
-    @Patch('vendor/offers/:id')
+    @Patch(':id')
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.VENDOR, UserRole.ADMIN)
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Update an offer (Vendor owner only)' })
@@ -69,7 +83,8 @@ export class OffersController {
         return this.offersService.update(id, user.id, dto);
     }
 
-    @Delete('vendor/offers/:id')
+    @Delete(':id')
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.VENDOR, UserRole.ADMIN)
     @ApiBearerAuth()
     @HttpCode(HttpStatus.NO_CONTENT)
@@ -83,13 +98,48 @@ export class OffersController {
         return this.offersService.remove(id, user.id);
     }
 
+
+
     // ─── Public Endpoint ─────────────────────────────────────────────────────
 
     @Public()
+    @UseInterceptors(CacheInterceptor)
     @Get('business/:businessId/offers')
     @ApiOperation({ summary: 'Get active/scheduled offers for a business (Public)' })
     @ApiResponse({ status: 200, description: 'Business offers' })
     findByBusiness(@Param('businessId') businessId: string) {
         return this.offersService.findPublicByBusiness(businessId);
+    }
+
+    @Public()
+    @UseInterceptors(CacheInterceptor)
+    @Get('public/:id')
+    @ApiOperation({ summary: 'Get a single offer or event by ID (Public)' })
+    @ApiResponse({ status: 200, description: 'Offer details' })
+    @ApiResponse({ status: 404, description: 'Offer not found' })
+    findOnePublic(@Param('id') id: string) {
+        return this.offersService.findOnePublic(id);
+    }
+
+    // ─── Admin Endpoints ─────────────────────────────────────────────────────
+
+    @Get('admin/all')
+    @Roles(UserRole.ADMIN)
+    @ApiOperation({ summary: 'Get all offers for admin management' })
+    findAllAdmin(
+        @Query('page') page?: number,
+        @Query('limit') limit?: number,
+    ) {
+        return this.offersService.findAllForAdmin(page, limit);
+    }
+
+    @Patch('admin/:id/feature')
+    @Roles(UserRole.ADMIN)
+    @ApiOperation({ summary: 'Toggle featured status of an offer' })
+    toggleFeatured(
+        @Param('id') id: string,
+        @Body('isFeatured') isFeatured: boolean,
+    ) {
+        return this.offersService.toggleFeatured(id, isFeatured);
     }
 }

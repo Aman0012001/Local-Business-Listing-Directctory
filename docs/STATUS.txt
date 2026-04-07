@@ -64,8 +64,8 @@ Simple API:
 Full Backend API:
   Port:     3001
   Status:   ⏳ READY (needs npm install)
-  URL:      http://localhost:3001
-  Docs:     http://localhost:3001/api/docs
+  URL:      http://process.env.NEXT_PUBLIC_API_URL
+  Docs:     http://process.env.NEXT_PUBLIC_API_URL/api/docs
   Start:    cd backend && npm install && npm run start:dev
 
 PostgreSQL:
@@ -161,10 +161,10 @@ Configuration:
    npm run start:dev
 
 2. Test APIs:
-   curl http://localhost:3001/api/v1/subscriptions/plans
+   curl http://process.env.NEXT_PUBLIC_API_URL/api/v1/subscriptions/plans
 
 3. View API Docs:
-   http://localhost:3001/api/docs
+   http://process.env.NEXT_PUBLIC_API_URL/api/docs
 
 4. Add Test Data:
    Use Swagger UI or SQL inserts

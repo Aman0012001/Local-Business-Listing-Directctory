@@ -63,7 +63,7 @@ export class BroadcastService {
 
         const vendorsToNotify = new Map<string, Vendor>();
         approvedBusinesses.forEach(b => {
-            if (b.vendor && b.vendor.userId) {
+            if (b.vendor && b.vendor.userId && b.vendor.userId !== userId) {
                 vendorsToNotify.set(b.vendor.id, b.vendor);
             }
         });

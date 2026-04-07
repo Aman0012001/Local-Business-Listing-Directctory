@@ -71,8 +71,17 @@ export class AuthController {
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Mark user as online (heartbeat)' })
     async ping(@CurrentUser() user: User) {
-        await this.authService.markOnline(user.id);
-        return { online: true };
+        try {
+            if (!user || !user.id) {
+                console.error('[AuthController] Ping received but no user found');
+                return { online: false, error: 'User context missing' };
+            }
+            await this.authService.markOnline(user.id);
+            return { online: true };
+        } catch (error) {
+            console.error(`[AuthController] Ping error for user ${user?.id}:`, error.message);
+            throw error;
+        }
     }
 
     @Public()

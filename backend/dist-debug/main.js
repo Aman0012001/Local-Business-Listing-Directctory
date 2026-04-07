@@ -31,7 +31,8 @@ async function bootstrap() {
         origin: [
             configService.get('CORS_ORIGIN'),
             'http://localhost:3000',
-            'http://localhost:3001',
+            ' https://local-business-listing-directctory-production.up.railway.app',
+            'http://process.env.NEXT_PUBLIC_API_URL',
             'http://127.0.0.1:3000',
         ],
         credentials: true,

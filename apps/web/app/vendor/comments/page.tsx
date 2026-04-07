@@ -6,9 +6,11 @@ import {
     MessageSquare, Pencil, Trash2, X, CheckCircle2,
     Loader2, Star, Calendar, Clock, Store,
     AlertTriangle, ChevronLeft, ChevronRight, Send,
-    User as UserIcon, MessageCircle
+    User as UserIcon, MessageCircle, Lock
 } from 'lucide-react';
 import { api } from '../../../lib/api';
+import { useAuth } from '../../../context/AuthContext';
+import Link from 'next/link';
 
 interface CommentItem {
     id: string;
@@ -25,6 +27,7 @@ const inputClass = "w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded
 const labelClass = "block text-xs font-black uppercase tracking-widest text-slate-400 mb-2";
 
 export default function VendorCommentsPage() {
+    const { user } = useAuth();
     const [comments, setComments] = useState<CommentItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [replying, setReplying] = useState(false);
@@ -36,6 +39,10 @@ export default function VendorCommentsPage() {
     const [page, setPage] = useState(1);
     const [meta, setMeta] = useState<any>(null);
     const [deleteReplyId, setDeleteReplyId] = useState<string | null>(null);
+
+    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+    const features = activeSub?.plan?.dashboardFeatures || {};
+    const isVendor = user?.role === 'vendor';
 
     const loadComments = async (p = 1) => {
         setLoading(true);
@@ -52,8 +59,19 @@ export default function VendorCommentsPage() {
 
     useEffect(() => {
         loadComments(1);
-    }, []);
+    }, [user]);
 
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-32">
+                <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
+            </div>
+        );
+    }
+
+    // Vendors always have access to managing their customer reviews.
+    // The previous lock screen has been removed to provide full feature access.
+    
     const openReply = (comment: CommentItem) => {
         setActiveComment(comment);
         setReplyText(comment.reply?.replyText || '');
@@ -150,7 +168,7 @@ export default function VendorCommentsPage() {
                     </div>
                 ) : comments.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-32 gap-6 text-slate-400">
-                        <div className="w-24 h-24 rounded-[40px] bg-slate-50 flex items-center justify-center border border-slate-100">
+                        <div className="w-24 h-24 rounded-[28px] bg-slate-50 flex items-center justify-center border border-slate-100">
                             <MessageSquare className="w-12 h-12 text-slate-200" />
                         </div>
                         <div className="text-center">
@@ -286,7 +304,7 @@ export default function VendorCommentsPage() {
                         onClick={() => setShowReplyModal(false)}>
                         <motion.div initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 30 }}
                             onClick={e => e.stopPropagation()}
-                            className="bg-white rounded-[40px] shadow-2xl w-full max-w-xl overflow-hidden">
+                            className="bg-white rounded-[28px] shadow-2xl w-full max-w-xl overflow-hidden">
 
                             <div className="p-8 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-4">
@@ -355,7 +373,7 @@ export default function VendorCommentsPage() {
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4">
                         <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
-                            className="bg-white rounded-[40px] shadow-2xl w-full max-w-sm p-10 text-center">
+                            className="bg-white rounded-[28px] shadow-2xl w-full max-w-sm p-10 text-center">
                             <div className="w-20 h-20 bg-rose-50 rounded-[20px] flex items-center justify-center mx-auto mb-6">
                                 <Trash2 className="w-10 h-10 text-rose-500" />
                             </div>

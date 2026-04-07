@@ -14,7 +14,7 @@ export class DemandTasks {
         try {
             await this.demandService.processDemandAlerts();
         } catch (error) {
-            this.logger.error(`Error in demand analysis task: ${error.message}`);
+            this.logger.error(`[Cron] Error in demand analysis task: ${error.message}`);
         }
     }
 }

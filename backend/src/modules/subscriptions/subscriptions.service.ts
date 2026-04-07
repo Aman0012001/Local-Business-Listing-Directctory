@@ -3,33 +3,78 @@ import {
     NotFoundException,
     BadRequestException,
     ForbiddenException,
+    Logger,
+    OnModuleInit,
+    Inject,
+    forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThan, IsNull } from 'typeorm';
 import { Subscription, SubscriptionStatus } from '../../entities/subscription.entity';
 import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
+import { PricingPlan, PricingPlanType, PricingPlanUnit } from '../../entities/pricing-plan.entity';
+import { ActivePlan, ActivePlanStatus } from '../../entities/active-plan.entity';
 import { Transaction, PaymentStatus } from '../../entities/transaction.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { User } from '../../entities/user.entity';
-import { CreatePlanDto, UpdatePlanDto, CheckoutDto, AssignPlanDto } from './dto/subscription.dto';
+import { Listing } from '../../entities/business.entity';
+import { AffiliateReferral, ReferralStatus, ReferralType } from '../../entities/referral.entity';
+import { Affiliate } from '../../entities/affiliate.entity';
+import { CreatePlanDto, UpdatePlanDto, CheckoutDto, AssignPlanDto, CreatePricingPlanDto, UpdatePricingPlanDto } from './dto/subscription.dto';
+import { OfferEvent } from '../../entities/offer-event.entity';
+
 
 import { ConfigService } from '@nestjs/config';
+import { AffiliateService } from '../affiliate/affiliate.service';
+import { PromotionsService } from '../promotions/promotions.service';
+import Stripe from 'stripe';
 
 @Injectable()
-export class SubscriptionsService {
+export class SubscriptionsService implements OnModuleInit {
+    private readonly logger = new Logger(SubscriptionsService.name);
+    private stripe: Stripe;
     constructor(
         @InjectRepository(Subscription)
         private subscriptionRepository: Repository<Subscription>,
         @InjectRepository(SubscriptionPlan)
         private planRepository: Repository<SubscriptionPlan>,
+        @InjectRepository(PricingPlan)
+        private pricingPlanRepository: Repository<PricingPlan>,
+        @InjectRepository(ActivePlan)
+        private activePlanRepository: Repository<ActivePlan>,
+        @InjectRepository(Listing)
+        private listingRepo: Repository<Listing>,
         @InjectRepository(Transaction)
         private transactionRepository: Repository<Transaction>,
         @InjectRepository(Vendor)
         private vendorRepository: Repository<Vendor>,
         @InjectRepository(User)
         private userRepository: Repository<User>,
+        @InjectRepository(AffiliateReferral)
+        private referralRepository: Repository<AffiliateReferral>,
+        @InjectRepository(Affiliate)
+        private affiliateRepository: Repository<Affiliate>,
+        @InjectRepository(OfferEvent)
+        private offerEventRepository: Repository<OfferEvent>,
         private configService: ConfigService,
-    ) { }
+        private affiliateService: AffiliateService,
+        @Inject(forwardRef(() => PromotionsService))
+        private promotionsService: PromotionsService,
+    ) {}
+
+
+    onModuleInit() {
+        const apiKey = this.configService.get<string>('STRIPE_SECRET_KEY');
+        if (!apiKey || apiKey === 'sk_test_your_secret_key_here') {
+            this.logger.error('❌ STRIPE_SECRET_KEY is missing or invalid! Stripe features will be disabled. Please set this in your .env or Railway dashboard.');
+        }
+
+        // We use a dummy key if the real one is missing to prevent the Stripe constructor from throwing an error.
+        // This allows the NestJS application to start successfully even without Stripe configured.
+        this.stripe = new Stripe(apiKey || 'sk_test_not_configured', {
+            apiVersion: '2026-02-25.clover' as any,
+        });
+    }
 
     /**
      * Get all available subscription plans (Client)
@@ -76,15 +121,41 @@ export class SubscriptionsService {
      */
     async deletePlan(id: string): Promise<void> {
         const plan = await this.getPlanById(id);
-        const activeSubCount = await this.subscriptionRepository.count({
-            where: { planId: id, status: SubscriptionStatus.ACTIVE }
-        });
-
-        if (activeSubCount > 0) {
-            throw new BadRequestException('Cannot delete plan with active subscribers. Deactivate it instead.');
-        }
-
         await this.planRepository.remove(plan);
+    }
+
+    /**
+     * ADMIN: Get all PricingPlans (Boost/Monetization)
+     */
+    async getPricingPlansForAdmin(): Promise<PricingPlan[]> {
+        return this.pricingPlanRepository.find({ order: { type: 'ASC', price: 'ASC' } });
+    }
+
+    /**
+     * ADMIN: Create a new PricingPlan
+     */
+    async createPricingPlan(dto: CreatePricingPlanDto): Promise<PricingPlan> {
+        const plan = this.pricingPlanRepository.create(dto as any);
+        return this.pricingPlanRepository.save(plan) as unknown as Promise<PricingPlan>;
+    }
+
+    /**
+     * ADMIN: Update a PricingPlan
+     */
+    async updatePricingPlan(id: string, dto: UpdatePricingPlanDto): Promise<PricingPlan> {
+        const plan = await this.pricingPlanRepository.findOne({ where: { id } });
+        if (!plan) throw new NotFoundException('Pricing plan not found');
+        Object.assign(plan, dto);
+        return this.pricingPlanRepository.save(plan);
+    }
+
+    /**
+     * ADMIN: Delete a PricingPlan
+     */
+    async deletePricingPlan(id: string): Promise<void> {
+        const plan = await this.pricingPlanRepository.findOne({ where: { id } });
+        if (!plan) throw new NotFoundException('Pricing plan not found');
+        await this.pricingPlanRepository.remove(plan);
     }
 
     /**
@@ -126,12 +197,28 @@ export class SubscriptionsService {
         // Cancel existing active subscription
         await this.subscriptionRepository.update(
             { vendorId: dto.vendorId, status: SubscriptionStatus.ACTIVE },
-            { status: SubscriptionStatus.CANCELLED, cancelledAt: new Date() }
+            { 
+                status: SubscriptionStatus.CANCELLED, 
+                cancelledAt: new Date(),
+                cancellationReason: 'Cancelled to assign new plan'
+            }
         );
 
         const now = new Date();
-        const durationDays = dto.durationDays || 30;
-        const endDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
+        const endDate = new Date(now);
+
+        // If specific duration is provided, use it (backward compatibility for admin tool)
+        if (dto.durationDays) {
+            endDate.setTime(now.getTime() + dto.durationDays * 24 * 60 * 60 * 1000);
+        } else {
+            // Otherwise use the plan's defined billing cycle for a "perfect" calendar date
+            if (plan.billingCycle?.toLowerCase() === 'yearly') {
+                endDate.setFullYear(endDate.getFullYear() + 1);
+            } else {
+                // Default to monthly (1 month from now)
+                endDate.setMonth(endDate.getMonth() + 1);
+            }
+        }
 
         const subscription = this.subscriptionRepository.create({
             vendorId: dto.vendorId,
@@ -161,6 +248,12 @@ export class SubscriptionsService {
         });
 
         await this.transactionRepository.save(transaction);
+        
+        // Featured Listing Integration
+        if (plan.isFeatured) {
+            this.logger.log(`🌟 Admin Assigned Featured Plan. Marking all listings of vendor ${dto.vendorId} as featured.`);
+            await this.listingRepo.update({ vendorId: dto.vendorId }, { isFeatured: true });
+        }
 
         return savedSub;
     }
@@ -172,16 +265,27 @@ export class SubscriptionsService {
         const sub = await this.subscriptionRepository.findOne({ where: { id: subscriptionId } });
         if (!sub) throw new NotFoundException('Subscription not found');
 
-        sub.status = SubscriptionStatus.CANCELLED;
-        sub.cancelledAt = new Date();
-        sub.cancellationReason = 'Cancelled by admin';
-        return this.subscriptionRepository.save(sub);
+        await this.subscriptionRepository.update(subscriptionId, {
+            status: SubscriptionStatus.CANCELLED,
+            cancelledAt: new Date(),
+            cancellationReason: 'Cancelled by admin',
+            autoRenew: false,
+        });
+
+        // Fetch back updated subscription with relations if needed
+        const updatedSub = await this.subscriptionRepository.findOne({ 
+            where: { id: subscriptionId },
+            relations: ['plan', 'vendor']
+        });
+        
+        return updatedSub;
     }
 
     /**
-     * Create a Mock checkout session since Stripe is removed
+     * Create a Stripe Checkout session for a vendor subscription.
+     * Handles stale customer IDs gracefully by auto-recreating the Stripe customer.
      */
-    async createCheckoutSession(userId: string, checkoutDto: CheckoutDto) {
+    async createCheckoutSession(userId: string, checkoutDto: CheckoutDto, origin?: string) {
         const vendor = await this.vendorRepository.findOne({
             where: { userId },
             relations: ['user']
@@ -191,78 +295,749 @@ export class SubscriptionsService {
         const plan = await this.planRepository.findOne({ where: { id: checkoutDto.planId } });
         if (!plan) throw new NotFoundException('Plan not found');
 
-        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+        // Free plan — no Stripe involved
+        if (plan.price === 0) {
+            const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+            const mockId = `MOCK-FREE-${Date.now()}`;
+            // Auto-activate free plan inline
+            await this.handleMockSubscriptionSuccess(vendor.id, plan.id, mockId);
+            return {
+                sessionId: mockId,
+                checkoutUrl: null,   // null = frontend stays on page and shows success message
+            };
+        }
+
+        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || '';
+        // Support comma-separated list of URLs (local and production)
+        const allowedUrls = frontendUrl ? frontendUrl.split(',').map(url => url.trim()) : [];
+        
+        // Priority: 1. FRONTEND_URL config, 2. Dynamic origin from request, 3. Localhost fallback
+        const baseUrl = allowedUrls[0] || origin || 'http://localhost:3000';
+
+        // ── Ensure plan has a valid Stripe Price ID (matching the current price) ────────────────
+        let needsNewPrice = !plan.stripePriceId;
+        
+        if (plan.stripePriceId) {
+            try {
+                // Check if the price exists on Stripe and matches our current plan price
+                const stripePrice = await this.stripe.prices.retrieve(plan.stripePriceId);
+                const currentAmount = Math.round(Number(plan.price) * 100);
+                
+                if (stripePrice.unit_amount !== currentAmount || !stripePrice.active) {
+                    this.logger.warn(`Stripe price ${plan.stripePriceId} mismatch (Active: ${stripePrice.active}, Amount: ${stripePrice.unit_amount} vs Expected: ${currentAmount}). Regenerating...`);
+                    needsNewPrice = true;
+                }
+            } catch (err: any) {
+                this.logger.error(`Failed to verify Stripe price ${plan.stripePriceId}: ${err.message}. Regenerating...`);
+                needsNewPrice = true;
+            }
+        }
+
+        if (needsNewPrice) {
+            this.logger.log(`Syncing plan "${plan.name}" price with Stripe...`);
+            const product = await this.stripe.products.create({ name: plan.name });
+            const price = await this.stripe.prices.create({
+                product: product.id,
+                unit_amount: Math.round(Number(plan.price) * 100),
+                currency: 'pkr',
+                recurring: { interval: plan.billingCycle.toLowerCase() === 'yearly' ? 'year' : 'month' },
+            });
+            plan.stripePriceId = price.id;
+            await this.planRepository.save(plan);
+            this.logger.log(`Created fresh Stripe price ${price.id} for plan "${plan.name}" at PKR ${plan.price}`);
+        }
+
+        // ── Resolve Stripe Customer ID ─────────────────────────────────────
+        // The stored ID may be stale (e.g., from a different Stripe account/environment).
+        // Try to retrieve it first; if Stripe says it doesn't exist, create a fresh one.
+        let customerId = vendor.stripeCustomerId;
+
+        if (customerId) {
+            try {
+                // Synchronize customer details with Stripe
+                await this.stripe.customers.update(customerId, {
+                    email: vendor.businessEmail || vendor.user?.email,
+                    name: vendor.businessName || vendor.user?.fullName,
+                    phone: vendor.businessPhone || vendor.user?.phone || undefined,
+                    address: { country: 'PK' },
+                });
+                this.logger.log(`Synchronized Stripe customer ${customerId} for vendor ${vendor.id}`);
+            } catch (err: any) {
+                if (err?.code === 'resource_missing' || err?.message?.includes('No such customer')) {
+                    this.logger.warn(
+                        `Stale Stripe customer ID "${customerId}" for vendor ${vendor.id} — clearing and recreating.`
+                    );
+                    customerId = null;
+                    vendor.stripeCustomerId = null;
+                    await this.vendorRepository.save(vendor);
+                } else {
+                    // Log but don't crash if update fails (e.g. rate limit)
+                    this.logger.error(`Failed to update Stripe customer ${customerId}: ${err.message}`);
+                }
+            }
+        }
+
+        if (!customerId) {
+            const customer = await this.stripe.customers.create({
+                email: vendor.businessEmail || vendor.user?.email,
+                name: vendor.businessName || vendor.user?.fullName,
+                phone: vendor.businessPhone || vendor.user?.phone,
+                address: {
+                    country: 'PK', // Default to Pakistan
+                },
+                metadata: { vendorId: vendor.id },
+            });
+            customerId = customer.id;
+            vendor.stripeCustomerId = customerId;
+            await this.vendorRepository.save(vendor);
+            this.logger.log(`Created new Stripe customer ${customerId} for vendor ${vendor.id}`);
+        }
+
+        // ── Create Checkout Session ────────────────────────────────────────
+        const session = await this.stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            customer: customerId,
+            customer_update: {
+                address: 'auto',
+                name: 'auto',
+            },
+            client_reference_id: vendor.id,
+            billing_address_collection: 'required',
+            phone_number_collection: { enabled: true },
+            locale: 'en',
+            line_items: [{ price: plan.stripePriceId, quantity: 1 }],
+            mode: 'subscription',
+            success_url: `${baseUrl}/vendor/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url:  `${baseUrl}/vendor/subscription?canceled=true`,
+        });
+
+        this.logger.log(`Stripe checkout session created: ${session.id} for vendor ${vendor.id}`);
 
         return {
-            sessionId: 'MOCK-SESSION-' + Date.now(),
-            checkoutUrl: `${frontendUrl}/vendor/subscription/success?session_id=MOCK-SESSION-${Date.now()}&mock_plan_id=${plan.id}`,
+            sessionId: session.id,
+            checkoutUrl: session.url,
         };
     }
 
     /**
-     * Handle Mock Subscription Success
-     * Accepts either a vendorId or a userId (will attempt to find vendor by userId as fallback)
+     * Manually verify a checkout session to handle cases where the webhook is missed
      */
-    async handleMockSubscriptionSuccess(vendorIdOrUserId: string, planId: string, mockSessionId: string) {
+    async verifyCheckoutSession(sessionId: string, userId: string) {
+        try {
+            const session = await this.stripe.checkout.sessions.retrieve(sessionId);
+            
+            if (session.payment_status === 'paid') {
+                // Check if we already processed it
+                const existingTransaction = await this.transactionRepository.findOne({
+                    where: { gatewayTransactionId: session.id }
+                });
+
+                if (existingTransaction) {
+                    return { alreadyProcessed: true };
+                }
+
+                if (session.mode === 'subscription') {
+                    const vendorId = session.client_reference_id;
+                    if (session.subscription && vendorId) {
+                        const subscription = await this.stripe.subscriptions.retrieve(session.subscription as string);
+                        const priceId = subscription.items.data[0].price.id;
+                        
+                        const plan = await this.planRepository.findOne({ where: { stripePriceId: priceId } });
+                        if (plan) {
+                            const sub = await this.processSubscriptionSuccess(vendorId, plan.id, session.id, 'Stripe');
+                            return { 
+                                success: true, 
+                                planName: plan.name,
+                                planType: plan.planType,
+                                amount: plan.price,
+                                endDate: sub.endDate
+                            };
+                        }
+                    }
+                }
+
+                if (session.metadata?.planId) {
+                    const vendorId = session.client_reference_id;
+                    const { planId, targetId } = session.metadata;
+                    if (vendorId && planId) {
+                        const activePlan = await this.processActivePlanSuccess(vendorId, planId, session.id, 'Stripe', targetId);
+                        return { 
+                            success: true, 
+                            type: activePlan.plan?.type || 'plan',
+                            planName: activePlan.plan?.name || 'Active Plan',
+                            endDate: activePlan.endDate,
+                            amount: activePlan.amountPaid
+                        };
+                    }
+                }
+            }
+            return { success: false, status: session.payment_status };
+        } catch (error) {
+            this.logger.error(`Failed to verify checkout session ${sessionId}: ${error.message}`);
+            throw new BadRequestException(`Verification failed: ${error.message}`);
+        }
+    }
+
+    /**
+     * Core logic to activate a subscription and record a transaction (invoice).
+     * Used by mock success, admin assignment, and Stripe webhooks.
+     */
+    async processSubscriptionSuccess(
+        vendorId: string,
+        planId: string,
+        gatewayTransactionId: string,
+        gateway: 'Stripe' | 'Mock' | 'Admin',
+        amount?: number
+    ) {
         const plan = await this.planRepository.findOne({ where: { id: planId } });
         if (!plan) throw new NotFoundException('Plan not found');
 
-        // Try to find vendor directly, then by userId as fallback
+        const vendor = await this.vendorRepository.findOne({ where: { id: vendorId } });
+        if (!vendor) throw new NotFoundException('Vendor not found');
+
+        // Check for an existing ACTIVE subscription of the SAME plan to extend it (RECHARGE)
+        const activeSub = await this.subscriptionRepository.findOne({
+            where: { vendorId: vendor.id, status: SubscriptionStatus.ACTIVE, planId: planId },
+            relations: ['plan']
+        });
+
+        const now = new Date();
+        let savedSub: Subscription;
+
+        if (activeSub) {
+            this.logger.log(`🔄 Extending existing active "${activeSub.plan.name}" plan for vendor ${vendor.id}`);
+            
+            // "Perfectly" extend the existing plan (recharge)
+            const currentEndDate = new Date(activeSub.endDate);
+            // If the plan is still active and valid, start adding from the current end date.
+            // If current end date is in the past, start from "now".
+            const baseDate = currentEndDate > now ? currentEndDate : now;
+            const newEndDate = new Date(baseDate);
+
+            if (plan.billingCycle?.toLowerCase() === 'yearly') {
+                newEndDate.setFullYear(newEndDate.getFullYear() + 1);
+            } else {
+                // Default to monthly - adds exactly one calendar month from expiration
+                newEndDate.setMonth(newEndDate.getMonth() + 1);
+            }
+
+            activeSub.endDate = newEndDate;
+            activeSub.amount = amount ?? plan.price;
+            activeSub.autoRenew = gateway === 'Stripe';
+            savedSub = await this.subscriptionRepository.save(activeSub);
+        } else {
+            // New subscription or switching plans - cancel ALL previous active ones (both systems)
+            await Promise.all([
+                this.subscriptionRepository.update(
+                    { vendorId: vendor.id, status: SubscriptionStatus.ACTIVE },
+                    { status: SubscriptionStatus.CANCELLED, cancelledAt: now }
+                ),
+                this.activePlanRepository.update(
+                    { vendorId: vendor.id, status: ActivePlanStatus.ACTIVE },
+                    { status: ActivePlanStatus.CANCELLED }
+                )
+            ]);
+
+            // Calculate "perfect" end date for new plan
+            const endDate = new Date(now);
+            if (plan.billingCycle?.toLowerCase() === 'yearly') {
+                endDate.setFullYear(endDate.getFullYear() + 1);
+            } else {
+                endDate.setMonth(endDate.getMonth() + 1);
+            }
+
+            // Create new Subscription record
+            const subscription = this.subscriptionRepository.create({
+                vendorId: vendor.id,
+                planId,
+                status: SubscriptionStatus.ACTIVE,
+                startDate: now,
+                endDate,
+                amount: amount ?? plan.price,
+                autoRenew: gateway === 'Stripe', // Auto-renew only for Stripe
+            });
+
+            savedSub = await this.subscriptionRepository.save(subscription);
+        }
+
+        // 3. Generate Invoice Number
+        const prefix = gateway === 'Stripe' ? 'INV-STRIPE' : gateway === 'Admin' ? 'INV-ADMIN' : 'INV-MOCK';
+        const invoiceNumber = `${prefix}-${Date.now().toString().slice(-8)}`;
+
+        // 4. Record Transaction (Invoice)
+        const transaction = this.transactionRepository.create({
+            subscriptionId: savedSub.id,
+            vendorId: vendor.id,
+            amount: amount ?? plan.price,
+            status: PaymentStatus.COMPLETED,
+            paidAt: now,
+            gatewayTransactionId,
+            paymentGateway: gateway,
+            invoiceNumber,
+        });
+
+        await this.transactionRepository.save(transaction);
+
+        // 5. Affiliate Integration - AUTOMATED
+        try {
+            await this.affiliateService.processSuccessfulReferral(vendor.userId, amount ?? plan.price);
+        } catch (err) {
+            this.logger.error(`Failed to process referral for user ${vendor.userId}: ${err.message}`);
+        }
+
+
+        // 6. Featured Listing Integration - AUTOMATED
+        if (plan.isFeatured) {
+            this.logger.log(`🌟 Plan is Featured. Marking all listings of vendor ${vendor.id} as featured.`);
+            await this.listingRepo.update({ vendorId: vendor.id }, { isFeatured: true });
+        }
+
+        this.logger.log(`✅ Subscription [${savedSub.id}] activated/extended for vendor [${vendor.id}] via ${gateway} until ${savedSub.endDate.toDateString()}`);
+        return savedSub;
+    }
+
+    /**
+     * Handle Mock Subscription Success (Legacy/Testing)
+     */
+    async handleMockSubscriptionSuccess(vendorIdOrUserId: string, planId: string, mockSessionId: string) {
         let vendor = await this.vendorRepository.findOne({ where: { id: vendorIdOrUserId } });
         if (!vendor) {
             vendor = await this.vendorRepository.findOne({ where: { userId: vendorIdOrUserId } });
         }
         if (!vendor) throw new NotFoundException('Vendor not found');
 
-        // Cancel old subscription if exists
-        await this.subscriptionRepository.update(
-            { vendorId: vendor.id, status: SubscriptionStatus.ACTIVE },
-            { status: SubscriptionStatus.CANCELLED, cancelledAt: new Date() }
-        );
-
-        const now = new Date();
-        const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
-
-        const subscription = this.subscriptionRepository.create({
-            vendorId: vendor.id,
-            planId,
-            status: SubscriptionStatus.ACTIVE,
-            startDate: now,
-            endDate: endDate,
-            amount: plan.price,
-            autoRenew: true,
-        });
-
-        const savedSub = await this.subscriptionRepository.save(subscription);
-
-        // Record transaction
-        const transaction = this.transactionRepository.create({
-            subscriptionId: savedSub.id,
-            vendorId: vendor.id,
-            amount: plan.price,
-            status: PaymentStatus.COMPLETED,
-            paidAt: now,
-            gatewayTransactionId: mockSessionId,
-            paymentGateway: 'Mock',
-            invoiceNumber: `INV-${Date.now()}`,
-        });
-
-        await this.transactionRepository.save(transaction);
-
-        return savedSub;
+        return this.processSubscriptionSuccess(vendor.id, planId, mockSessionId, 'Mock');
     }
 
     /**
-     * Get active subscription for vendor
+     * Get active subscription for vendor (supports both old and new system)
+     * Checks both the old and new system and normalizes the response.
      */
-    async getActiveSubscription(userId: string): Promise<Subscription | null> {
+    async getActiveSubscription(userId: string): Promise<any> {
         const vendor = await this.vendorRepository.findOne({ where: { userId } });
-        if (!vendor) throw new ForbiddenException('Vendor not found');
+        if (!vendor) return null;
 
-        return this.subscriptionRepository.findOne({
-            where: { vendorId: vendor.id, status: SubscriptionStatus.ACTIVE },
-            relations: ['plan'],
+        let result: any = null;
+        let isNewSystem = false;
+
+        // 1. Fetch from BOTH PricingPlan system (ActivePlan) and old Subscription system
+        const [activeNewPlan, activeOldSub] = await Promise.all([
+            this.activePlanRepository.findOne({
+                where: { 
+                    vendorId: vendor.id, 
+                    status: ActivePlanStatus.ACTIVE,
+                    endDate: MoreThan(new Date())
+                },
+                relations: ['plan'],
+                order: { startDate: 'DESC' }
+            }),
+            this.subscriptionRepository.findOne({
+                where: { 
+                    vendorId: vendor.id, 
+                    status: SubscriptionStatus.ACTIVE,
+                    endDate: MoreThan(new Date())
+                },
+                relations: ['plan'],
+                order: { startDate: 'DESC' }
+            })
+        ]);
+
+        // 2. Prioritize by most recent startDate if both exist
+        if (activeNewPlan && activeOldSub) {
+            const newStart = new Date(activeNewPlan.startDate).getTime();
+            const oldStart = new Date(activeOldSub.startDate).getTime();
+            
+            if (newStart >= oldStart) {
+                result = activeNewPlan;
+                isNewSystem = true;
+            } else {
+                result = activeOldSub;
+                isNewSystem = false;
+            }
+        } else if (activeNewPlan && activeNewPlan.plan?.type === PricingPlanType.SUBSCRIPTION) {
+            result = activeNewPlan;
+            isNewSystem = true;
+        } else if (activeOldSub) {
+            result = activeOldSub;
+            isNewSystem = false;
+        } else {
+            // Check for Offer plans if no main subscription found
+            if (activeNewPlan) {
+                result = activeNewPlan;
+                isNewSystem = true;
+            }
+            
+            // --- FALLBACK: If no active subscription anywhere, try to assign Free Plan ---
+            if (!result) {
+                // ... fallback logic continues ...
+                // Check for new Free Plan first
+                const newFreePlan = await this.pricingPlanRepository.findOne({
+                    where: { name: 'Free', type: PricingPlanType.SUBSCRIPTION }
+                });
+
+                if (newFreePlan) {
+                    const now = new Date();
+                    const endDate = new Date(now.getTime() + 3650 * 24 * 60 * 60 * 1000);
+                    const activePlan = this.activePlanRepository.create({
+                        vendorId: vendor.id,
+                        planId: newFreePlan.id,
+                        status: ActivePlanStatus.ACTIVE,
+                        startDate: now,
+                        endDate: endDate,
+                        amountPaid: 0,
+                    });
+                    const saved = await this.activePlanRepository.save(activePlan);
+                    saved.plan = newFreePlan;
+                    result = saved;
+                    isNewSystem = true;
+                } else {
+                    // Fallback to old Free Plan if exists
+                    const freePlan = await this.planRepository.findOne({ 
+                        where: { id: '00000000-0000-0000-0000-000000000001' } 
+                    });
+                    if (freePlan) {
+                        const now = new Date();
+                        const endDate = new Date(now.getTime() + 3650 * 24 * 60 * 60 * 1000);
+                        const newSub = this.subscriptionRepository.create({
+                            vendorId: vendor.id,
+                            planId: freePlan.id,
+                            status: SubscriptionStatus.ACTIVE,
+                            startDate: now,
+                            endDate: endDate,
+                            amount: 0,
+                            autoRenew: false,
+                        });
+                        const savedSub = await this.subscriptionRepository.save(newSub);
+                        savedSub.plan = freePlan;
+                        result = savedSub;
+                        isNewSystem = false;
+                    }
+                }
+            } else {
+                // Determine which one to show. 
+                // If there's an active Subscription-type new plan, it won't reach here.
+                // If there's an active Offer plan and an active old Subscription, prioritize the Subscription.
+                result = activeOldSub || activeNewPlan;
+                isNewSystem = result === activeNewPlan;
+            }
+        }
+
+        if (!result) return null;
+        return this.normalizeSubOrActivePlan(result, isNewSystem);
+    }
+
+    /**
+     * Internal helper to normalize either Subscription (old) or ActivePlan (new) 
+     * into a consistent shape for the Sidebar and other frontend components.
+     */
+    public normalizeSubOrActivePlan(result: any, isNewSystem: boolean) {
+        if (!result) return null;
+
+        const plan = result.plan ? {
+            ...result.plan,
+            planType: isNewSystem 
+                ? (result.plan.name?.toLowerCase() === 'free' ? 'free' : (result.plan.type === PricingPlanType.SUBSCRIPTION ? 'premium' : result.plan.type)) 
+                : result.plan.planType,
+            // Harmonize features into dashboardFeatures
+            dashboardFeatures: isNewSystem 
+                ? {
+                    showAnalytics: !!result.plan.features?.showAnalytics,
+                    showLeads: !!result.plan.features?.showLeads,
+                    showOffers: !!result.plan.features?.maxOffers || !!result.plan.features?.maxEvents || !!result.plan.features?.showOffers,
+                    showDemand: !!result.plan.features?.showDemand,
+                    showQueries: !!result.plan.features?.showQueries,
+                    showReviews: !!result.plan.features?.showReviews,
+                    showChat: !!result.plan.features?.showChat,
+                    showBroadcast: !!result.plan.features?.showBroadcast,
+                    showSaved: true,
+                    showFollowing: true,
+                    showListings: true,
+                    canAddListing: (result.plan.features?.maxListings || 0) > 0,
+                    ...result.plan.features 
+                }
+                : {
+                    showAnalytics: !!result.plan.dashboardFeatures?.showAnalytics,
+                    showLeads: !!result.plan.dashboardFeatures?.showLeads,
+                    showOffers: !!result.plan.dashboardFeatures?.showOffers || !!result.plan.dashboardFeatures?.maxOffers,
+                    showDemand: !!result.plan.dashboardFeatures?.showDemand,
+                    showQueries: !!result.plan.dashboardFeatures?.showQueries,
+                    showReviews: !!result.plan.dashboardFeatures?.showReviews,
+                    showChat: !!result.plan.dashboardFeatures?.showChat,
+                    showBroadcast: !!result.plan.dashboardFeatures?.showBroadcast,
+                    showSaved: true,
+                    showFollowing: true,
+                    showListings: true,
+                    canAddListing: true,
+                    ...(result.plan.dashboardFeatures || {})
+                }
+        } : null;
+
+        return {
+            ...result,
+            amount: isNewSystem ? result.amountPaid : result.amount,
+            endDate: result.endDate,
+            isNewSystem,
+            plan
+        };
+    }
+
+    /**
+     * Get all available pricing plans of a specific type (Client)
+     */
+    async getPricingPlans(type?: PricingPlanType): Promise<PricingPlan[]> {
+        const where: any = { isActive: true };
+        if (type) where.type = type;
+        return this.pricingPlanRepository.find({ where, order: { price: 'ASC' } });
+    }
+
+    /**
+     * Create a Stripe Checkout session for a new PricingPlan (Subscription or Boost)
+     */
+    async createPricingCheckoutSession(userId: string, planId: string, targetId?: string, origin?: string) {
+        const vendor = await this.vendorRepository.findOne({
+            where: { userId },
+            relations: ['user']
         });
+        if (!vendor) throw new ForbiddenException('Only vendors can purchase plans');
+
+        const plan = await this.pricingPlanRepository.findOne({ where: { id: planId } });
+        if (!plan) throw new NotFoundException('Plan not found');
+
+        // Free plan - instant activation
+        if (plan.price <= 0) {
+            await this.processActivePlanSuccess(vendor.id, plan.id, `FREE-${Date.now()}`, 'Mock', targetId);
+            return { sessionId: 'FREE', checkoutUrl: null };
+        }
+
+        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || '';
+        const allowedUrls = frontendUrl ? frontendUrl.split(',').map(url => url.trim()) : [];
+        
+        // Priority: 1. FRONTEND_URL config, 2. Dynamic origin from request, 3. Localhost fallback
+        const baseUrl = allowedUrls[0] || origin || 'http://localhost:3000';
+
+        // Ensure Stripe Price exists
+        if (!plan.stripePriceId) {
+            const product = await this.stripe.products.create({ 
+                name: plan.name,
+                metadata: { type: plan.type }
+            });
+            const price = await this.stripe.prices.create({
+                product: product.id,
+                unit_amount: Math.round(Number(plan.price) * 100),
+                currency: 'pkr',
+                recurring: plan.type === PricingPlanType.SUBSCRIPTION ? { 
+                    interval: plan.unit === PricingPlanUnit.YEARS ? 'year' : 'month' 
+                } : undefined,
+            });
+            plan.stripePriceId = price.id;
+            await this.pricingPlanRepository.save(plan);
+        }
+
+        // ── Resolve Stripe Customer ID ─────────────────────────────────────
+        let customerId = vendor.stripeCustomerId;
+
+        if (customerId) {
+            try {
+                // Synchronize customer details with Stripe
+                await this.stripe.customers.update(customerId, {
+                    email: vendor.businessEmail || vendor.user?.email,
+                    name: vendor.businessName || vendor.user?.fullName,
+                    phone: vendor.businessPhone || vendor.user?.phone || undefined,
+                    address: { country: 'PK' },
+                });
+                this.logger.log(`Synchronized Stripe customer ${customerId} for vendor ${vendor.id}`);
+            } catch (err: any) {
+                if (err?.code === 'resource_missing' || err?.message?.includes('No such customer')) {
+                    this.logger.warn(`Stale Stripe customer ID "${customerId}" — clearing and recreating.`);
+                    customerId = null;
+                    vendor.stripeCustomerId = null;
+                    await this.vendorRepository.save(vendor);
+                } else {
+                    this.logger.error(`Failed to update Stripe customer ${customerId}: ${err.message}`);
+                }
+            }
+        }
+
+        if (!customerId) {
+            const customer = await this.stripe.customers.create({
+                email: vendor.businessEmail || vendor.user?.email,
+                name: vendor.businessName || vendor.user?.fullName,
+                phone: vendor.businessPhone || vendor.user?.phone || undefined,
+                address: { country: 'PK' },
+                metadata: { vendorId: vendor.id },
+            });
+            customerId = customer.id;
+            vendor.stripeCustomerId = customerId;
+            await this.vendorRepository.save(vendor);
+            this.logger.log(`Created new Stripe customer ${customerId} for vendor ${vendor.id}`);
+        }
+
+        const sessionParams: Stripe.Checkout.SessionCreateParams = {
+            payment_method_types: ['card'],
+            customer: customerId,
+            client_reference_id: vendor.id,
+            metadata: { 
+                planId: plan.id,
+                targetId: targetId || '',
+                type: plan.type
+            },
+            line_items: [{ price: plan.stripePriceId, quantity: 1 }],
+            mode: plan.type === PricingPlanType.SUBSCRIPTION ? 'subscription' : 'payment',
+            success_url: `${baseUrl}/vendor/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url:  `${baseUrl}/vendor/subscription?canceled=true`,
+        };
+
+        const session = await this.stripe.checkout.sessions.create(sessionParams);
+
+        return {
+            sessionId: session.id,
+            checkoutUrl: session.url,
+        };
+    }
+
+    /**
+     * Process successful purchase of a new PricingPlan
+     */
+    async processActivePlanSuccess(
+        vendorId: string,
+        planId: string,
+        gatewayTransactionId: string,
+        gateway: string,
+        targetId?: string
+    ) {
+        const plan = await this.pricingPlanRepository.findOne({ where: { id: planId } });
+        if (!plan) throw new NotFoundException('Plan not found');
+
+        const now = new Date();
+        let startDate = now;
+
+        // Check for existing ACTIVE plan of the same type to support "Extension/Stacking"
+        // This handles the requirement: "if vendor purchase a plan plan will we active in next month"
+        const existingActivePlan = await this.activePlanRepository.findOne({
+            where: { 
+                vendorId, 
+                status: ActivePlanStatus.ACTIVE,
+                targetId: targetId || IsNull()
+            },
+            relations: ['plan'],
+            order: { endDate: 'DESC' }
+        });
+
+        // If an active plan exists of the SAME TYPE, extend it
+        if (existingActivePlan && existingActivePlan.plan?.type === plan.type) {
+            // Only extend if it's not already expired
+            if (new Date(existingActivePlan.endDate) > now) {
+                startDate = new Date(existingActivePlan.endDate);
+                this.logger.log(`🔄 Extending existing plan. New StartDate: ${startDate}`);
+            }
+        }
+
+        const endDate = new Date(startDate);
+
+        // Calculate end date from the startDate (which might be in the future)
+        switch (plan.unit) {
+            case PricingPlanUnit.MINUTES: endDate.setMinutes(endDate.getMinutes() + plan.duration); break;
+            case PricingPlanUnit.HOURS: endDate.setHours(endDate.getHours() + plan.duration); break;
+            case PricingPlanUnit.DAYS: endDate.setDate(endDate.getDate() + plan.duration); break;
+            case PricingPlanUnit.MONTHS: endDate.setMonth(endDate.getMonth() + plan.duration); break;
+            case PricingPlanUnit.YEARS: endDate.setFullYear(endDate.getFullYear() + plan.duration); break;
+        }
+
+        // Only deactivate if it's a DIFFERENT plan category or the user explicitly chose an upgrade
+        if (plan.type === PricingPlanType.SUBSCRIPTION && (!existingActivePlan || existingActivePlan.plan?.type !== plan.type)) {
+            await Promise.all([
+                this.activePlanRepository.update(
+                    { vendorId, status: ActivePlanStatus.ACTIVE, plan: { type: PricingPlanType.SUBSCRIPTION } as any },
+                    { status: ActivePlanStatus.CANCELLED }
+                ),
+                this.subscriptionRepository.update(
+                    { vendorId, status: SubscriptionStatus.ACTIVE },
+                    { status: SubscriptionStatus.CANCELLED, cancelledAt: now }
+                )
+            ]);
+        }
+
+        const activePlan = this.activePlanRepository.create({
+            vendorId,
+            planId,
+            targetId,
+            status: ActivePlanStatus.ACTIVE,
+            startDate,
+            endDate,
+            amountPaid: plan.price,
+            transactionId: gatewayTransactionId,
+        });
+
+        const saved = await this.activePlanRepository.save(activePlan);
+
+        // Sync flags if needed (featured/boosted)
+        if (targetId) {
+            if (plan.type === PricingPlanType.HOMEPAGE_FEATURED || plan.type === PricingPlanType.CATEGORY_FEATURED) {
+                await this.listingRepo.update(targetId, { isFeatured: true });
+            } else if (plan.type === PricingPlanType.LISTING_BOOST) {
+                await this.listingRepo.update(targetId, { isSponsored: true });
+            }
+        } else if (plan.type === PricingPlanType.SUBSCRIPTION && (plan.features as any)?.isFeatured) {
+            // Global featured status for all listings
+            this.logger.log(`🌟 PricingPlan [${plan.name}] is Featured globally. Marking all listings of vendor ${vendorId} as featured.`);
+            await this.listingRepo.update({ vendorId }, { isFeatured: true });
+        }
+
+        // Record transaction
+        const transaction = this.transactionRepository.create({
+            vendorId,
+            amount: plan.price,
+            status: PaymentStatus.COMPLETED,
+            paidAt: now,
+            gatewayTransactionId,
+            paymentGateway: gateway,
+            invoiceNumber: `INV-${plan.type.toUpperCase()}-${Date.now().toString().slice(-6)}`,
+        });
+        await this.transactionRepository.save(transaction);
+        
+        // 5. Affiliate Integration - AUTOMATED
+        if (plan.type === PricingPlanType.SUBSCRIPTION) {
+            try {
+                const vendorUser = await this.userRepository.findOne({ where: { id: vendorId } });
+                const paidAmount = plan.price;
+                if (vendorUser) {
+                    await this.affiliateService.processSuccessfulReferral(vendorUser.id, paidAmount);
+                } else {
+                    // Try to get from vendor relation
+                    const vendorWithUser = await this.vendorRepository.findOne({ 
+                        where: { id: vendorId },
+                        relations: ['user']
+                    });
+                    if (vendorWithUser?.user) {
+                        await this.affiliateService.processSuccessfulReferral(vendorWithUser.user.id, paidAmount);
+                    }
+                }
+            } catch (err) {
+                this.logger.error(`Failed to process referral for vendor ${vendorId} in active plan: ${err.message}`);
+            }
+        }
+
+        return saved;
+    }
+
+    /**
+     * Check if a vendor can perform an action based on their current plan limits
+     */
+    async canPerformAction(userId: string, feature: string): Promise<boolean> {
+        const activeSub = await this.getActiveSubscription(userId);
+        if (!activeSub) return false;
+
+        const features = (activeSub as any).plan?.features || (activeSub as any).plan?.dashboardFeatures || {};
+        const limit = features[feature];
+
+        if (limit === true) return true;
+        
+        // Add other numeric limit checks (maxOffers, etc.) as needed as they arise 
+        // For now, we are removing the maxListings capacity limit as per the requirement
+        
+        return false;
+
+        return false;
     }
 
     /**
@@ -277,6 +1052,73 @@ export class SubscriptionsService {
             relations: ['subscription', 'subscription.plan'],
             order: { createdAt: 'DESC' },
         });
+    }
+
+    /**
+     * Get all active promotions for a vendor (Business Plans, Offer/Event Boosts)
+     */
+    async getActivePromotions(userId: string) {
+        const vendor = await this.vendorRepository.findOne({ where: { userId } });
+        if (!vendor) throw new ForbiddenException('Vendor not found');
+        const now = new Date();
+
+        // 1. Get active feature plans (Featured Listing, Homepage, etc.)
+        const activePlans = await this.activePlanRepository.find({
+            where: {
+                vendorId: vendor.id,
+                status: ActivePlanStatus.ACTIVE,
+                endDate: MoreThan(now),
+            },
+            relations: ['plan'],
+            order: { endDate: 'ASC' },
+        });
+
+        // 2. Get active featured offers/events
+        const featuredOffers = await this.offerEventRepository.find({
+            where: {
+                vendorId: vendor.id,
+                isFeatured: true,
+                featuredUntil: MoreThan(now),
+            },
+            relations: ['business'],
+            order: { featuredUntil: 'ASC' },
+        });
+
+        // 3. Get dynamic promotion bookings
+        const dynamicBookings = await this.promotionsService.getActiveBookingsByVendor(vendor.id);
+
+        return {
+            plans: activePlans.map(p => ({
+                id: p.id,
+                name: p.plan?.name || 'Boost Plan',
+                type: p.plan?.type || 'UNKNOWN',
+                startDate: p.startDate,
+                endDate: p.endDate,
+                status: p.status,
+                target: p.targetId ? 'Boosted Item' : 'Listing Feature',
+            })),
+            boosts: featuredOffers.map(o => ({
+                id: o.id,
+                name: `Feature ${o.type?.toUpperCase() || 'OFFER'}`,
+                title: o.title || 'Untitled Offer',
+                business: o.business?.title || 'Unknown Business',
+                startDate: o.startDate, 
+                endDate: o.featuredUntil,
+                type: o.type,
+                target: o.title || 'Untitled Offer',
+            })),
+            dynamicBookings: dynamicBookings.map(b => ({
+                id: b.id,
+                name: `Promotion for ${b.offerEvent?.title || 'Item'}`,
+                title: b.offerEvent?.title || 'Untitled Item',
+                business: b.offerEvent?.business?.title || 'Unknown Business',
+                placements: b.placements || [],
+                startDate: b.startTime,
+                endDate: b.endTime,
+                status: b.status,
+                totalPrice: b.totalPrice || 0,
+            })),
+        };
     }
 
     /**
@@ -315,68 +1157,150 @@ export class SubscriptionsService {
     /**
      * Vendor: Change (Upgrade/Downgrade) Subscription Plan
      */
-    async changeSubscription(userId: string, planId: string) {
-        const vendor = await this.vendorRepository.findOne({
-            where: { userId },
-            relations: ['user']
-        });
-        if (!vendor) throw new ForbiddenException('Only vendors can change plans');
+    async changeSubscription(userId: string, planId: string, origin?: string) {
+        // For a production-ready flow, we simply initiate a new checkout session.
+        // The webhook will handle cancelling the previous one upon successful payment.
+        return this.createCheckoutSession(userId, { planId }, origin);
+    }
 
-        const newPlan = await this.planRepository.findOne({ where: { id: planId } });
-        if (!newPlan) throw new NotFoundException('New plan not found');
+    /**
+     * Handle Stripe Webhooks
+     */
+    async handleStripeWebhook(signature: string, payload: Buffer) {
+        let event: Stripe.Event;
+        const webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET');
 
-        // Check if there's an active subscription
-        const activeSub = await this.subscriptionRepository.findOne({
-            where: { vendorId: vendor.id, status: SubscriptionStatus.ACTIVE },
-            relations: ['plan']
-        });
-
-        if (activeSub && activeSub.planId === planId) {
-            throw new BadRequestException('You are already on this plan');
+        if (!webhookSecret || webhookSecret === 'whsec_your_webhook_secret_here') {
+            this.logger.error('❌ STRIPE_WEBHOOK_SECRET is not configured or is using placeholder. Webhook verification will fail.');
         }
 
-        // In a real system, you'd calculate prorated amounts here.
-        // For this mock implementation, we just cancel the old one and start new.
-        if (activeSub) {
-            activeSub.status = SubscriptionStatus.CANCELLED;
-            activeSub.cancelledAt = new Date();
-            activeSub.cancellationReason = `Switched to ${newPlan.name}`;
-            await this.subscriptionRepository.save(activeSub);
+        try {
+            event = this.stripe.webhooks.constructEvent(
+                payload,
+                signature,
+                webhookSecret || ''
+            );
+            this.logger.log(`✅ Webhook verified successfully. Event type: ${event.type}`);
+        } catch (err: any) {
+            this.logger.error(`❌ Webhook signature verification failed: ${err.message}`);
+            // In development, you might want to log the payload or signature for debugging
+            // but NEVER in production for security reasons.
+            throw new BadRequestException(`Webhook Error: ${err.message}`);
         }
 
-        const now = new Date();
-        const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
+        this.logger.log(`📦 Processing Stripe event: ${event.id} [${event.type}]`);
 
-        const subscription = this.subscriptionRepository.create({
-            vendorId: vendor.id,
-            planId: newPlan.id,
-            status: SubscriptionStatus.ACTIVE,
-            startDate: now,
-            endDate,
-            amount: newPlan.price,
-            autoRenew: true,
-        });
+        switch (event.type) {
+            case 'checkout.session.completed': {
+                const session = event.data.object as Stripe.Checkout.Session;
+                this.logger.log(`💳 Checkout session completed: ${session.id} for customer: ${session.customer}`);
 
-        const savedSub = await this.subscriptionRepository.save(subscription);
+                // --- NEW SYSTEM (ActivePlan / PricingPlan) ---
+                if (session.metadata?.planId) {
+                    const vendorId = session.client_reference_id;
+                    const { planId, targetId } = session.metadata;
+                    this.logger.log(`🚀 Activating new-style plan: ${planId} for vendor: ${vendorId}`);
+                    await this.processActivePlanSuccess(vendorId, planId, session.id, 'Stripe', targetId);
+                    return { received: true };
+                }
 
-        // Record transaction
-        const transaction = this.transactionRepository.create({
-            subscriptionId: savedSub.id,
-            vendorId: vendor.id,
-            amount: newPlan.price,
-            status: PaymentStatus.COMPLETED,
-            paidAt: now,
-            gatewayTransactionId: `PLAN-CHANGE-${Date.now()}`,
-            paymentGateway: 'Mock',
-            invoiceNumber: `INV-MOD-${Date.now()}`,
-        });
+                // --- NEW SYSTEM (Promotion Booking / Boost) ---
+                if (session.metadata?.type === 'promotion_booking' && session.metadata?.bookingId) {
+                    const bookingId = session.metadata.bookingId;
+                    this.logger.log(`🚀 Activating Promotion Booking: ${bookingId}`);
+                    await this.promotionsService.activateBooking(bookingId, session.id);
+                    return { received: true };
+                }
 
-        await this.transactionRepository.save(transaction);
+                // --- OLD SYSTEM (FALLBACK) ---
+                if (session.mode === 'subscription') {
+                    const vendorId = session.client_reference_id;
+                    if (session.subscription && vendorId) {
+                        const subscription = await this.stripe.subscriptions.retrieve(session.subscription as string);
+                        const priceId = subscription.items.data[0].price.id;
+                        
+                        const plan = await this.planRepository.findOne({ where: { stripePriceId: priceId } });
+                        if (plan) {
+                            await this.processSubscriptionSuccess(vendorId, plan.id, session.id, 'Stripe');
+                        }
+                    }
+                }
+                break;
+            }
 
-        return {
-            message: 'Plan changed successfully',
-            subscription: savedSub
-        };
+            case 'invoice.paid': {
+                const invoice = event.data.object as any; // Cast to any to avoid property access errors
+                this.logger.log(`💰 Invoice paid: ${invoice.id} for customer: ${invoice.customer}`);
+
+                // For recurring subscription payments
+                if (invoice.subscription) {
+                    const stripeSub = await this.stripe.subscriptions.retrieve(invoice.subscription as string);
+                    const vendor = await this.vendorRepository.findOne({ where: { stripeCustomerId: invoice.customer as string } });
+                    
+                    if (vendor) {
+                        const priceId = stripeSub.items.data[0].price.id;
+                        const plan = await this.planRepository.findOne({ where: { stripePriceId: priceId } });
+                        const activeSub = await this.subscriptionRepository.findOne({
+                            where: { vendorId: vendor.id, status: SubscriptionStatus.ACTIVE },
+                            order: { createdAt: 'DESC' }
+                        });
+
+                        if (activeSub && plan) {
+                            this.logger.log(`🔄 Extending subscription for vendor: ${vendor.id}`);
+                            
+                            // Extend end date based on plan's billing cycle (perfect calendar date)
+                            const currentEnd = new Date(activeSub.endDate);
+                            const referenceDate = new Date(Math.max(currentEnd.getTime(), Date.now()));
+                            const newEnd = new Date(referenceDate);
+
+                            if (plan.billingCycle?.toLowerCase() === 'yearly') {
+                                newEnd.setFullYear(newEnd.getFullYear() + 1);
+                            } else {
+                                newEnd.setMonth(newEnd.getMonth() + 1);
+                            }
+                            
+                            activeSub.endDate = newEnd;
+                            await this.subscriptionRepository.save(activeSub);
+
+                            // Create a new transaction for the renewal
+                            const invoiceNumber = `INV-STRIPE-RENEW-${Date.now().toString().slice(-6)}`;
+                            const transaction = this.transactionRepository.create({
+                                subscriptionId: activeSub.id,
+                                vendorId: vendor.id,
+                                amount: invoice.amount_paid / 100, // Stripe returns cents
+                                status: PaymentStatus.COMPLETED,
+                                paidAt: new Date(),
+                                gatewayTransactionId: invoice.id,
+                                paymentGateway: 'Stripe',
+                                invoiceNumber,
+                            });
+                            await this.transactionRepository.save(transaction);
+                            this.logger.log(`✅ Subscription extended and renewal invoice created for vendor: ${vendor.id}`);
+                        }
+                    }
+                }
+                break;
+            }
+            case 'customer.subscription.deleted': {
+                const subscription = event.data.object as Stripe.Subscription;
+                this.logger.log(`🚫 Subscription deleted: ${subscription.id} for customer: ${subscription.customer}`);
+                
+                const vendor = await this.vendorRepository.findOne({ where: { stripeCustomerId: subscription.customer as string } });
+                if (vendor) {
+                    this.logger.log(`📉 Cancelling active subscription for vendor: ${vendor.id}`);
+                    await this.subscriptionRepository.update(
+                        { vendorId: vendor.id, status: SubscriptionStatus.ACTIVE },
+                        { status: SubscriptionStatus.CANCELLED, cancelledAt: new Date() }
+                    );
+                    this.logger.log(`✅ Subscription cancelled for vendor: ${vendor.id}`);
+                } else {
+                    this.logger.warn(`⚠️ Vendor not found for Stripe Customer ID: ${subscription.customer}`);
+                }
+                break;
+            }
+            default:
+                this.logger.log(`ℹ️ Unhandled event type: ${event.type}`);
+        }
+        return { received: true };
     }
 }
-

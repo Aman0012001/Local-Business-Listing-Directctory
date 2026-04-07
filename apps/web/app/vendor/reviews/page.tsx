@@ -139,24 +139,11 @@ export default function VendorReviews() {
         if (!user) return;
         setLoading(true);
         try {
-            // Use comments API instead of legacy reviews
-            const res = await api.comments.getVendorComments(1, 100);
-
-            // Map Comment data to Review type
-            const mapped: Review[] = (res.data || []).map((c: any) => ({
-                id: c.id,
-                rating: c.rating || 0,
-                comment: c.content,
-                createdAt: c.createdAt,
-                user: c.user,
-                business: c.business,
-                vendorResponse: c.reply?.replyText,
-                vendorResponseAt: c.reply?.createdAt
-            }));
-
-            setReviews(mapped);
+            // Use standardized reviews API
+            const res = await api.reviews.getVendorAll(1, 100);
+            setReviews(res.data || []);
         } catch (e) {
-            console.error('Failed to fetch reviews (comments):', e);
+            console.error('Failed to fetch reviews:', e);
         } finally {
             setLoading(false);
         }
@@ -206,8 +193,8 @@ export default function VendorReviews() {
         if (!respondingTo || !responseText.trim()) return;
         setIsSubmitting(true);
         try {
-            // Use comments API for reply
-            await api.comments.reply(respondingTo.id, { replyText: responseText });
+            // Use standardized reviews API for vendor response
+            await api.reviews.respond(respondingTo.id, responseText.trim());
             setRespondingTo(null);
             setResponseText('');
             await fetchReviews();

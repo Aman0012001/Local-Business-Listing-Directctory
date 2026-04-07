@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { api, getImageUrl } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
-import { BarChart, TrendingUp, Eye, Phone, Heart, Star, ChevronRight, Loader2 } from 'lucide-react';
+import { BarChart, TrendingUp, Eye, Phone, Heart, Star, ChevronRight, Loader2, Lock } from 'lucide-react';
 import PerformanceChart from '../../../components/vendor/PerformanceChart';
 import Link from 'next/link';
 
@@ -12,6 +12,10 @@ export default function VendorAnalyticsPage() {
     const [stats, setStats] = useState<any>(null);
     const [listings, setListings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+    const features = activeSub?.plan?.dashboardFeatures || {};
+    const isVendor = user?.role === 'vendor';
 
     useEffect(() => {
         const fetchAnalytics = async () => {
@@ -42,6 +46,8 @@ export default function VendorAnalyticsPage() {
             </div>
         );
     }
+
+    // Analytics unlocked for all vendors as per user request.
 
     // Sort listings by views for top performers
     const topListings = [...listings].sort((a, b) => b.totalViews - a.totalViews).slice(0, 5);

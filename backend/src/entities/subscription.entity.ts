@@ -29,7 +29,7 @@ export class Subscription {
     @Index()
     vendorId: string;
 
-    @Column({ name: 'plan_id', type: 'uuid' })
+    @Column({ name: 'plan_id', type: 'uuid', nullable: true })
     @Index()
     planId: string;
 
@@ -77,7 +77,7 @@ export class Subscription {
     @JoinColumn({ name: 'vendor_id' })
     vendor: Vendor;
 
-    @ManyToOne(() => SubscriptionPlan, (plan) => plan.subscriptions)
+    @ManyToOne(() => SubscriptionPlan, (plan) => plan.subscriptions, { onDelete: 'SET NULL', nullable: true })
     @JoinColumn({ name: 'plan_id' })
     plan: SubscriptionPlan;
 

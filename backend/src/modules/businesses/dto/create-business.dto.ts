@@ -39,6 +39,16 @@ export class BusinessHoursDto {
     closeTime?: string;
 }
 
+export class FaqDto {
+    @ApiProperty({ example: 'What are your working hours?' })
+    @IsString()
+    question: string;
+
+    @ApiProperty({ example: 'We are open 24/7.' })
+    @IsString()
+    answer: string;
+}
+
 export class CreateBusinessDto {
     @ApiProperty({ example: 'Best Restaurant' })
     @IsString()
@@ -75,13 +85,13 @@ export class CreateBusinessDto {
 
     @ApiProperty({ example: '+1234567890' })
     @IsString()
-    @Matches(/^\+?[1-9]\d{1,14}$/, { message: 'Invalid phone number' })
+    @Matches(/^\+?[0-9\-\s()]{7,20}$/, { message: 'Invalid phone number' })
     phone: string;
 
     @ApiPropertyOptional({ example: '+1234567890' })
     @IsOptional()
     @IsString()
-    @Matches(/^\+?[1-9]\d{1,14}$/, { message: 'Invalid WhatsApp number' })
+    @Matches(/^\+?[0-9\-\s()]{7,20}$/, { message: 'Invalid WhatsApp number' })
     whatsapp?: string;
 
     @ApiPropertyOptional({ example: 'https://restaurant.com' })
@@ -225,7 +235,18 @@ export class CreateBusinessDto {
     offerExpiresAt?: string;
 
     @ApiPropertyOptional({ example: 'https://cdn.example.com/banner.jpg' })
-    @IsOptional()
     @IsString()
+    @IsOptional()
     offerBannerUrl?: string;
+
+    @ApiPropertyOptional({ type: 'boolean', default: false })
+    @IsOptional()
+    isActive?: boolean;
+
+    @ApiPropertyOptional({ type: [FaqDto] })
+    @IsArray()
+    @IsOptional()
+    @ValidateNested({ each: true })
+    @Type(() => FaqDto)
+    faqs?: FaqDto[];
 }

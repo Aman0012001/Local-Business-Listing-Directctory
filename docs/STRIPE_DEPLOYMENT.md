@@ -46,7 +46,7 @@ API_PREFIX=api/v1
 ## 3. Go-Live Checklist 🚀
 
 - [ ] **Stripe Production Keys**: Toggle "Test Mode" off in Stripe and copy LIVE keys.
-- [ ] **Webhook Endpoint**: Register your production webhook URL in Stripe: `https://api.yourdomain.com/api/v1/webhooks/stripe`.
+- [ ] **Webhook Endpoint**: Register your production webhook URL in Stripe: `https://api.yourdomain.com/api/v1/subscriptions/webhook`.
 - [ ] **Webhook Events**: Enable these specific events during setup:
     - `checkout.session.completed`
     - `customer.subscription.updated`

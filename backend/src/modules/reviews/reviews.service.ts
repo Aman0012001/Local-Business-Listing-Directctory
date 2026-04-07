@@ -10,11 +10,14 @@ import { Repository } from 'typeorm';
 import { Review } from '../../entities/review.entity';
 import { ReviewHelpfulVote } from '../../entities/review-helpful-vote.entity';
 import { Listing } from '../../entities/business.entity';
+import { Vendor } from '../../entities/vendor.entity';
 import { User, UserRole } from '../../entities/user.entity';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { VendorResponseDto } from './dto/vendor-response.dto';
 import { GetReviewsDto } from './dto/get-reviews.dto';
+import { CreateReviewReplyDto } from './dto/create-review-reply.dto';
+import { ReviewReply } from '../../entities/review-reply.entity';
 import {
     createPaginatedResponse,
     calculateSkip,
@@ -30,8 +33,45 @@ export class ReviewsService {
         private reviewHelpfulVoteRepository: Repository<ReviewHelpfulVote>,
         @InjectRepository(Listing)
         private listingRepository: Repository<Listing>,
+        @InjectRepository(ReviewReply)
+        private reviewReplyRepository: Repository<ReviewReply>,
+        @InjectRepository(Vendor)
+        private vendorRepository: Repository<Vendor>,
         private reviewDetectionService: ReviewDetectionService,
     ) { }
+
+    /**
+     * Create a reply to a review
+     */
+    async createReply(reviewId: string, createReviewReplyDto: CreateReviewReplyDto, user: User): Promise<ReviewReply> {
+        const review = await this.reviewRepository.findOne({
+            where: { id: reviewId },
+        });
+
+        if (!review) {
+            throw new NotFoundException('Review not found');
+        }
+
+        const reply = this.reviewReplyRepository.create({
+            ...createReviewReplyDto,
+            reviewId,
+            userId: user.id,
+            isApproved: true, // Default to approved unless there's moderation
+        });
+
+        return this.reviewReplyRepository.save(reply);
+    }
+
+    /**
+     * Find replies for a review
+     */
+    async findReplies(reviewId: string): Promise<ReviewReply[]> {
+        return this.reviewReplyRepository.find({
+            where: { reviewId, isApproved: true },
+            relations: ['user'],
+            order: { createdAt: 'ASC' },
+        });
+    }
 
     /**
      * Create a new review
@@ -66,24 +106,20 @@ export class ReviewsService {
             throw new ConflictException('You have already reviewed this business');
         }
 
-        // Create review
+        // Create review - always approved by default.
+        // Suspicious reviews are only FLAGGED for admin review, not auto-rejected.
         const review = this.reviewRepository.create({
             ...createReviewDto,
             userId: user.id,
             ipAddress,
-            isApproved: true, // Initially approved, but detection might flag it
+            isApproved: true, // Always visible to customers
         });
 
-        // Run suspicion detection
+        // Run suspicion detection (flags for admin attention, does not auto-reject)
         const analysis = await this.reviewDetectionService.analyzeReview(review);
         review.isSuspicious = analysis.isSuspicious;
         review.suspicionScore = analysis.score;
         review.suspicionReason = analysis.reason;
-
-        // If highly suspicious (score > 0.8), set as unapproved
-        if (review.suspicionScore > 0.8) {
-            review.isApproved = false;
-        }
 
         const savedReview = await this.reviewRepository.save(review);
 
@@ -104,6 +140,8 @@ export class ReviewsService {
             .createQueryBuilder('review')
             .leftJoinAndSelect('review.user', 'user')
             .leftJoinAndSelect('review.business', 'business')
+            .leftJoinAndSelect('review.replies', 'replies', 'replies.isApproved = :replyApproved', { replyApproved: true })
+            .leftJoinAndSelect('replies.user', 'replyUser')
             .where('review.isApproved = :isApproved', { isApproved: true });
 
         // Filter by business
@@ -146,7 +184,7 @@ export class ReviewsService {
     async findOne(id: string): Promise<Review> {
         const review = await this.reviewRepository.findOne({
             where: { id },
-            relations: ['user', 'business', 'helpfulVotes'],
+            relations: ['user', 'business', 'helpfulVotes', 'replies', 'replies.user'],
         });
 
         if (!review) {
@@ -458,5 +496,32 @@ export class ReviewsService {
         await this.updateBusinessRating(review.businessId);
         
         return review;
+    }
+
+    /**
+     * Find all reviews for businesses owned by a vendor
+     */
+    async findVendorReviews(userId: string, query: GetReviewsDto) {
+        const vendor = await this.vendorRepository.findOne({ where: { userId } });
+        if (!vendor) {
+            throw new ForbiddenException('Only vendors can access this');
+        }
+
+        const { page = 1, limit = 20 } = query;
+        const skip = calculateSkip(page, limit);
+
+        const queryBuilder = this.reviewRepository
+            .createQueryBuilder('review')
+            .leftJoinAndSelect('review.user', 'user')
+            .leftJoinAndSelect('review.business', 'business')
+            .leftJoinAndSelect('review.replies', 'replies')
+            .leftJoinAndSelect('replies.user', 'replyUser')
+            .where('business.vendorId = :vendorId', { vendorId: vendor.id })
+            .orderBy('review.createdAt', 'DESC');
+
+        const total = await queryBuilder.getCount();
+        const reviews = await queryBuilder.skip(skip).take(limit).getMany();
+
+        return createPaginatedResponse(reviews, page, limit, total);
     }
 }

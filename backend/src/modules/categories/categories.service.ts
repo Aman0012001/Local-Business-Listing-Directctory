@@ -534,7 +534,7 @@ export class CategoriesService {
         // 1. Try to find similar businesses in ES to see what categories they use
         if (this.searchService.isAvailable()) {
             try {
-                const results = await this.searchService.search(query);
+                const results = await this.searchService.search({ query });
                 // Extract categories from similar businesses
                 const catNames = results
                     .map((r: any) => r.category)

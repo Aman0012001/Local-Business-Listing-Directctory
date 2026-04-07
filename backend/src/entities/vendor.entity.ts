@@ -13,6 +13,7 @@ import { Expose, Exclude } from 'class-transformer';
 import { User } from './user.entity';
 import { Listing } from './business.entity';
 import { Subscription } from './subscription.entity';
+import { ActivePlan } from './active-plan.entity';
 import { Transaction } from './transaction.entity';
 import { CommentReply } from './comment-reply.entity';
 
@@ -26,6 +27,12 @@ export class Vendor {
 
     @Column({ name: 'business_name', nullable: true })
     businessName: string;
+
+    @Column({ name: 'stripe_customer_id', nullable: true })
+    stripeCustomerId: string;
+
+    @Column({ nullable: true, type: 'text' })
+    bio: string;
 
     @Column({ name: 'business_email', nullable: true })
     businessEmail: string;
@@ -70,6 +77,9 @@ export class Vendor {
 
     @OneToMany(() => Subscription, (subscription) => subscription.vendor)
     subscriptions: Subscription[];
+
+    @OneToMany(() => ActivePlan, (activePlan) => activePlan.vendor)
+    activePlans: ActivePlan[];
 
     @OneToMany(() => Transaction, (transaction) => transaction.vendor)
     transactions: Transaction[];

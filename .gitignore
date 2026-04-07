@@ -19,3 +19,6 @@ yarn-error.log*
 .fusebox
 .dynamodb
 .tern-port
+
+# Local Netlify folder
+.netlify

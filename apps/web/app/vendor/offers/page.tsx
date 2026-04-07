@@ -5,9 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Megaphone, Plus, Pencil, Trash2, X, CheckCircle2,
     Loader2, Tag, Calendar, Clock, ImagePlus, Store,
-    AlertTriangle, ChevronLeft, ChevronRight, Sparkles
+    AlertTriangle, ChevronLeft, ChevronRight, Sparkles, Star,
+    Home, Layout, Search, Zap
 } from 'lucide-react';
 import { api } from '../../../lib/api';
+import { useAuth } from '../../../context/AuthContext';
+import Link from 'next/link';
 
 type OfferType = 'offer' | 'event';
 type OfferStatus = 'active' | 'scheduled' | 'expired';
@@ -22,10 +25,15 @@ interface OfferItem {
     startDate?: string;
     endDate?: string;
     expiryDate?: string;
+    highlights?: string[];
+    terms?: string[];
     status: OfferStatus;
     businessId: string;
     business?: { id: string; title: string };
     createdAt: string;
+    isFeatured?: boolean;
+    featuredUntil?: string;
+    pricingId?: string;
 }
 
 const inputClass = "w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all placeholder:text-slate-400";
@@ -47,9 +55,17 @@ const emptyForm = {
     startDate: '',
     endDate: '',
     expiryDate: '',
+    highlights: [] as string[],
+    terms: [] as string[],
+    placements: [] as string[],
+    promoStartTime: '',
+    promoEndTime: '',
+    pricingId: '',
+    boosterPlanId: '',
 };
 
 export default function VendorOffersPage() {
+    const { user } = useAuth();
     const [offers, setOffers] = useState<OfferItem[]>([]);
     const [businesses, setBusinesses] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -59,12 +75,37 @@ export default function VendorOffersPage() {
     const [showModal, setShowModal] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [estimatedPrice, setEstimatedPrice] = useState(0);
+    const [isCalculating, setIsCalculating] = useState(false);
     const [deleting, setDeleting] = useState(false);
-    const [imageUploading, setImageUploading] = useState(false);
+    const [priceBreakup, setPriceBreakup] = useState<any[]>([]);
+    const [pricingOptions, setPricingOptions] = useState<any[]>([]);
+    const [activeSub, setActiveSub] = useState<any>({ 
+        plan: { 
+            name: 'Super Admin', 
+            features: { maxOffers: 999, maxEvents: 999 },
+            dashboardFeatures: { 
+                showLeads: true,
+                showAnalytics: true,
+                showReviews: true,
+                showSaved: true,
+                showFollowing: true,
+                showMessages: true,
+                showBroadcast: true,
+                showHotDemand: true
+            }
+        } 
+    });
+    const [boosterPlans, setBoosterPlans] = useState<any[]>([]); // New state for booster plans
     const [form, setForm] = useState(emptyForm);
+    const [imageUploading, setImageUploading] = useState(false);
     const [page, setPage] = useState(1);
     const [meta, setMeta] = useState<any>(null);
     const fileRef = useRef<HTMLInputElement>(null);
+
+    // Offers & Events is freely available to all vendors.
+    // Premium plan purchases (via /vendor/offer-plans) are for boosting/featuring only.
 
     const loadOffers = async (p = 1) => {
         setLoading(true);
@@ -86,10 +127,141 @@ export default function VendorOffersPage() {
         } catch { }
     };
 
+    const loadPricing = async () => {
+        try {
+            const res = await api.promotions.getPricingRules();
+            setPricingOptions(res || []);
+        } catch { }
+    };
+
+    const loadActiveSub = async () => {
+        try {
+            const res = await api.subscriptions.getActive();
+            const isAdminOrVendor = user?.role === 'vendor' || user?.role === 'admin' || user?.role === 'superadmin';
+            if (isAdminOrVendor) {
+                setActiveSub({
+                    plan: {
+                        name: 'Super Admin',
+                        features: { maxOffers: 999, maxEvents: 999 },
+                        dashboardFeatures: {
+                            showLeads: true,
+                            showAnalytics: true,
+                            showReviews: true,
+                            showSaved: true,
+                            showFollowing: true,
+                            showMessages: true,
+                            showBroadcast: true,
+                            showHotDemand: true
+                        }
+                    }
+                });
+            } else if (res) {
+                setActiveSub(res);
+            }
+        } catch { }
+    };
+
+    const loadBoosterPlans = async () => {
+        try {
+            // Fetch non-subscription pricing plans (boosters)
+            const res = await api.subscriptions.getPricingPlans();
+            const boosters = res.filter((p: any) => p.type !== 'subscription');
+            setBoosterPlans(boosters);
+        } catch { }
+    };
+
     useEffect(() => {
         loadOffers(1);
         loadBusinesses();
-    }, []);
+        loadPricing();
+        loadActiveSub();
+        loadBoosterPlans();
+    }, [user]);
+
+    // Real-time price calculation & smart end-time adjustment
+    useEffect(() => {
+        if (form.promoStartTime && (!form.promoEndTime || new Date(form.promoEndTime) <= new Date(form.promoStartTime)) && !form.boosterPlanId) {
+            const newEnd = new Date(new Date(form.promoStartTime).getTime() + 60 * 60 * 1000);
+            setForm(prev => ({ ...prev, promoEndTime: newEnd.toISOString().slice(0, 16) }));
+        }
+    }, [form.promoStartTime, form.boosterPlanId]);
+
+    // Always calculate dates starting from promoStartTime (or now) based on plan duration
+    useEffect(() => {
+        if (form.boosterPlanId) {
+            const plan = boosterPlans.find(p => p.id === form.boosterPlanId);
+            if (plan) {
+                const now = new Date();
+                const start = form.promoStartTime ? new Date(form.promoStartTime) : now;
+                
+                // If a past date is selected for start, default to now for recording
+                const effectiveStart = start < now ? now : start;
+                let end = new Date(effectiveStart.getTime());
+                
+                const d = Number(plan.duration);
+                if (plan.unit === 'days') end.setDate(end.getDate() + d);
+                else if (plan.unit === 'weeks') end.setDate(end.getDate() + (d * 7));
+                else if (plan.unit === 'hours') end.setHours(end.getHours() + d);
+                else if (plan.unit === 'months') end.setMonth(end.getMonth() + d);
+
+                const sStr = effectiveStart.toISOString().slice(0, 16);
+                const eStr = end.toISOString().slice(0, 16);
+
+                setForm(prev => ({
+                    ...prev,
+                    startDate: sStr,
+                    endDate: eStr,
+                    expiryDate: eStr,
+                    promoStartTime: sStr,
+                    promoEndTime: eStr,
+                    placements: prev.placements.length > 0 ? prev.placements : ['listing']
+                }));
+            }
+        }
+    }, [form.boosterPlanId, form.promoStartTime, boosterPlans]);
+
+    useEffect(() => {
+        const updatePrice = async () => {
+            if (!showModal || !form.boosterPlanId) {
+                setEstimatedPrice(0);
+                setPriceBreakup([]);
+                return;
+            }
+
+            const start = form.promoStartTime ? new Date(form.promoStartTime) : null;
+            const end = form.promoEndTime ? new Date(form.promoEndTime) : null;
+
+            // Always calculate if modal is open to get real-time price breakup
+            setIsCalculating(true);
+            try {
+                const res = await api.promotions.calculatePrice({
+                    placements: form.placements,
+                    startTime: form.promoStartTime || new Date().toISOString(),
+                    endTime: form.promoEndTime || new Date(Date.now() + 3600000).toISOString(),
+                    pricingId: form.boosterPlanId || undefined
+                }, form.type);
+                setEstimatedPrice(res.totalPrice);
+                setPriceBreakup(res.breakup || []);
+            } catch (err) {
+                console.error('Price calculation failed:', err);
+                setEstimatedPrice(0);
+                setPriceBreakup([]);
+            } finally {
+                setIsCalculating(false);
+            }
+        };
+
+        const timer = setTimeout(updatePrice, 500);
+        return () => clearTimeout(timer);
+    }, [form.placements, form.promoStartTime, form.promoEndTime, form.type, showModal, form.boosterPlanId]);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+            </div>
+        );
+    }
 
     const openCreate = () => {
         setForm(emptyForm);
@@ -100,6 +272,7 @@ export default function VendorOffersPage() {
 
     const openEdit = (offer: OfferItem) => {
         setForm({
+            ...emptyForm,
             title: offer.title || '',
             description: offer.description || '',
             type: offer.type || 'offer',
@@ -109,6 +282,14 @@ export default function VendorOffersPage() {
             startDate: offer.startDate ? offer.startDate.slice(0, 16) : '',
             endDate: offer.endDate ? offer.endDate.slice(0, 16) : '',
             expiryDate: offer.expiryDate ? offer.expiryDate.slice(0, 16) : '',
+            highlights: Array.isArray(offer.highlights) ? offer.highlights : [],
+            terms: Array.isArray(offer.terms) ? offer.terms : [],
+            placements: [],
+            // Set start now so they can edit from today
+            promoStartTime: new Date().toISOString().slice(0, 16),
+            promoEndTime: offer.endDate ? offer.endDate.slice(0, 16) : '',
+            pricingId: offer.pricingId || '',
+            boosterPlanId: offer.pricingId || '',
         });
         setEditingId(offer.id);
         setShowModal(true);
@@ -133,24 +314,63 @@ export default function VendorOffersPage() {
         e.preventDefault();
         if (!form.businessId) { setError('Please select a business'); return; }
         setSaving(true);
-        setError(null);
         try {
-            const payload: any = {
-                ...form,
+            if (!form.boosterPlanId) {
+                setError('Please select a plan to determine the listing duration.');
+                setSaving(false);
+                return;
+            }
+
+            // CLEAN PAYLOAD: Only core offer fields for Create/Update Offer
+            // (Excludes placements, boosterPlanId, etc. which are for Promotions)
+            const offerPayload = {
+                title: form.title,
+                description: form.description || undefined,
+                type: form.type,
+                offerBadge: form.offerBadge || undefined,
+                imageUrl: form.imageUrl || undefined,
+                businessId: form.businessId,
                 startDate: form.startDate || undefined,
                 endDate: form.endDate || undefined,
                 expiryDate: form.expiryDate || undefined,
-                imageUrl: form.imageUrl || undefined,
-                offerBadge: form.offerBadge || undefined,
-                description: form.description || undefined,
+                highlights: form.highlights.filter(h => h.trim() !== ''),
+                terms: form.terms.filter(t => t.trim() !== ''),
+                pricingId: form.boosterPlanId || undefined, // Must be UUID or undefined
             };
+
+            let offerId = editingId;
             if (editingId) {
-                await api.offers.update(editingId, payload);
+                await api.offers.update(editingId, offerPayload);
                 setSuccess('Offer updated successfully!');
             } else {
-                await api.offers.create(payload);
+                const res = await api.offers.create(offerPayload);
+                offerId = res.id;
                 setSuccess('Offer created successfully!');
             }
+
+            // Handle promotion / Unified Listing Booking
+            if (offerId && form.boosterPlanId) {
+                // Trigger booking (which handles both base fee and boosts)
+                try {
+                    const bookRes = await api.promotions.book({
+                        offerEventId: offerId,
+                        placements: form.placements,
+                        startTime: form.promoStartTime || new Date().toISOString(),
+                        endTime: form.promoEndTime || new Date(Date.now() + 36 * 3600000).toISOString(),
+                    });
+
+                    if (bookRes.checkoutUrl) {
+                        window.location.href = bookRes.checkoutUrl;
+                        return;
+                    }
+                } catch (paymentErr: any) {
+                    console.error('Promotion booking failed:', paymentErr);
+                    setError(paymentErr.message || 'Promotion booking failed. Your offer was created but promotion registration failed.');
+                    setSaving(false);
+                    return;
+                }
+            }
+
             setShowModal(false);
             await loadOffers(page);
             setTimeout(() => setSuccess(null), 3000);
@@ -191,7 +411,17 @@ export default function VendorOffersPage() {
                         </div>
                         <div>
                             <h1 className="text-3xl font-black text-white tracking-tight">Offers & Events</h1>
-                            <p className="text-white/60 text-sm font-medium mt-0.5">Create promotions and events for your listings</p>
+                            <div className="flex items-center gap-3 mt-1">
+                                <p className="text-white/60 text-sm font-medium">Create promotions and events</p>
+                                {activeSub?.plan && (
+                                    <div className="flex items-center gap-2 px-2 py-0.5 bg-white/10 rounded-lg border border-white/10 self-center">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                                        <span className="text-[10px] font-black text-white/80 uppercase tracking-widest">
+                                            {activeSub.plan.name} Plan
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                     <button
@@ -278,6 +508,12 @@ export default function VendorOffersPage() {
                                                         {offer.type === 'event' ? <Calendar className="w-3 h-3" /> : <Tag className="w-3 h-3" />}
                                                         {offer.type.charAt(0).toUpperCase() + offer.type.slice(1)}
                                                     </span>
+                                                    {offer.isFeatured && (
+                                                        <span className="ml-2 inline-flex items-center gap-1.5 px-2 py-1 bg-amber-100 text-amber-700 rounded-lg text-[10px] font-black uppercase">
+                                                            <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                                                            Featured
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td className="px-5 py-4">
                                                     {offer.offerBadge ? (
@@ -341,6 +577,25 @@ export default function VendorOffersPage() {
                 )}
             </div>
 
+            {/* Boost Plans Banner */}
+            {pricingOptions.length > 0 && (
+                <div className="rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 p-5 flex flex-col sm:flex-row items-center gap-4">
+                    <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+                        <span className="text-2xl">🔥</span>
+                    </div>
+                    <div className="flex-1 text-center sm:text-left">
+                        <p className="font-black text-slate-900">Boost Your Offers & Events</p>
+                        <p className="text-sm font-bold text-slate-500 mt-0.5">
+                            Feature your offer on the homepage and search results starting from PKR {Math.min(...pricingOptions.map((p: any) => Number(p.price))).toLocaleString('en-PK')}
+                        </p>
+                    </div>
+                    <Link href="/vendor/offer-plans"
+                        className="flex-shrink-0 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black text-sm transition-colors whitespace-nowrap">
+                        View Plans →
+                    </Link>
+                </div>
+            )}
+
             {/* ── Create / Edit Modal ───────────────────────────────────────── */}
             <AnimatePresence>
                 {showModal && (
@@ -367,6 +622,34 @@ export default function VendorOffersPage() {
                                 </button>
                             </div>
 
+                            {/* Plan Usage Warning & Info */}
+                            {showModal && activeSub && !editingId && (
+                                <div className="px-8 pt-6">
+                                    {(() => {
+                                        const type = form.type;
+                                        
+                                        // Standard Slots always available in super admin mode.
+                                        let icon = <CheckCircle2 className="w-5 h-5 text-green-500" />;
+                                        let title = "Standard Slot Available";
+                                        let desc = `Launch this ${type} for the duration specified in your plan at no extra cost.`;
+                                        let bg = "bg-green-50 border-green-100";
+                                        let titleCls = "text-green-700";
+
+                                        return (
+                                            <div className={`p-4 ${bg} border rounded-2xl flex items-start gap-4 shadow-sm`}>
+                                                <div className="w-10 h-10 rounded-xl bg-white/50 flex items-center justify-center flex-shrink-0">
+                                                    {icon}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className={`text-sm font-black ${titleCls}`}>{title}</p>
+                                                    <p className="text-[11px] font-bold text-slate-500 mt-0.5 leading-relaxed">{desc}</p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+                            )}
+
                             <form onSubmit={handleSubmit} className="p-8 space-y-6">
                                 {error && (
                                     <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-bold flex items-center gap-2">
@@ -391,6 +674,117 @@ export default function VendorOffersPage() {
                                                 {t.charAt(0).toUpperCase() + t.slice(1)}
                                             </button>
                                         ))}
+                                    </div>
+                                </div>
+
+                                {/* Listing Plan Section */}
+                                <div className="space-y-6 pt-4 border-t border-slate-100">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-orange-500 shadow-lg shadow-orange-500/20 flex items-center justify-center">
+                                            <Sparkles className="w-5 h-5 text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-black text-slate-900 leading-tight">Listing Visibility & Duration</p>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-tight mt-1">Select where you want to be seen</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl space-y-6">
+                                        {/* Placement Selection */}
+                                        <div>
+                                            <label className={labelClass}>Select Placements</label>
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                {[
+                                                    { id: 'homepage', label: 'Homepage', icon: Home, desc: 'Pinned on home screen' },
+                                                    { id: 'category', label: 'Category Page', icon: Layout, desc: 'Top of category results' },
+                                                    { id: 'listing', label: 'Listing Boost', icon: Search, desc: 'Highlighted in search' }
+                                                ].map(item => {
+                                                    const Icon = item.icon;
+                                                    const isSelected = form.placements.includes(item.id);
+                                                    return (
+                                                        <button
+                                                            key={item.id}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setForm(p => {
+                                                                    const isSelectedNow = p.placements.includes(item.id);
+                                                                    return {
+                                                                        ...p,
+                                                                        placements: isSelectedNow 
+                                                                            ? p.placements.filter(id => id !== item.id)
+                                                                            : [...p.placements, item.id]
+                                                                    };
+                                                                });
+                                                            }}
+                                                            className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${isSelected 
+                                                                ? 'border-orange-500 bg-white shadow-md' 
+                                                                : 'border-slate-200 bg-slate-50 opacity-60 hover:opacity-100 hover:border-slate-300'}`}
+                                                        >
+                                                            <Icon className={`w-6 h-6 ${isSelected ? 'text-orange-500' : 'text-slate-400'}`} />
+                                                            <p className={`text-xs font-black ${isSelected ? 'text-slate-900' : 'text-slate-500'}`}>{item.label}</p>
+                                                            <p className="text-[10px] text-slate-400 text-center leading-tight font-medium">{item.desc}</p>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        {/* Promotion Start */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className={labelClass}>Launch Date & Time</label>
+                                                <div className="relative">
+                                                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                                    <input 
+                                                        type="datetime-local" 
+                                                        value={form.promoStartTime}
+                                                        onChange={e => setForm(p => ({ ...p, promoStartTime: e.target.value }))}
+                                                        className={inputClass + " pl-10"} 
+                                                    />
+                                                </div>
+                                                <p className="text-[10px] text-slate-400 mt-1.5 font-bold uppercase tracking-wider">The listing will start at this time.</p>
+                                            </div>
+                                            <div className="bg-slate-100/50 rounded-xl p-4 flex flex-col justify-center">
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Auto-Calculated End</p>
+                                                <p className="text-sm font-black text-slate-700 mt-2">
+                                                    {form.promoEndTime ? new Date(form.promoEndTime).toLocaleString('en-PK', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Select a plan first'}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Price Summary */}
+                                        <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Listing Price Summary</h3>
+                                                {isCalculating && <Loader2 className="w-3 h-3 animate-spin text-orange-500" />}
+                                            </div>
+                                            
+                                            {priceBreakup.length > 0 ? (
+                                                <div className="space-y-3">
+                                                    {priceBreakup.map((b, i) => (
+                                                        <div key={i} className="flex items-center justify-between">
+                                                            <div>
+                                                                <p className="text-xs font-black text-slate-700 capitalize">
+                                                                    {b.isBaseFee ? (b.label || 'Base Registration Fee') : `${b.placement} Boost`}
+                                                                </p>
+                                                                <p className="text-[10px] font-bold text-slate-400 font-mono">
+                                                                    {b.isBaseFee ? b.durationText : `${b.hours}H ${b.days ? `/ ${b.days}D` : ''}`}
+                                                                </p>
+                                                            </div>
+                                                            <p className="text-sm font-black text-slate-900 font-mono">PKR {Number(b.subtotal).toLocaleString()}</p>
+                                                        </div>
+                                                    ))}
+                                                    <div className="pt-3 border-t border-dashed border-slate-200 flex items-center justify-between">
+                                                        <p className="text-sm font-black text-slate-900 uppercase">Total Fee</p>
+                                                        <p className="text-xl font-black text-orange-600 font-mono">PKR {estimatedPrice.toLocaleString()}</p>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="py-4 text-center">
+                                                    <p className="text-xs font-bold text-slate-400 italic font-medium">Select a plan to see pricing</p>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 
@@ -448,30 +842,121 @@ export default function VendorOffersPage() {
                                         className={`${inputClass} resize-none leading-relaxed`} />
                                 </div>
 
-                                {/* Dates */}
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                    <div>
-                                        <label className={labelClass}>Start Date</label>
-                                        <input type="datetime-local" value={form.startDate}
-                                            onChange={e => setForm(p => ({ ...p, startDate: e.target.value }))}
-                                            className={inputClass} />
+                                 {/* Plan Selection (MANDATORY) */}
+                                 <div className="pt-4 border-t border-slate-50">
+                                     <label className={labelClass}>Choose Your Plan (Visibility Period) *</label>
+                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                                         {boosterPlans.map(plan => {
+                                             const isSelected = form.boosterPlanId === plan.id;
+                                             return (
+                                                 <button
+                                                     key={plan.id}
+                                                     type="button"
+                                                     onClick={() => setForm(p => ({ ...p, boosterPlanId: plan.id, promoStartTime: p.promoStartTime || new Date().toISOString().slice(0, 16) }))}
+                                                     className={`text-left p-4 rounded-2xl border-2 transition-all ${isSelected 
+                                                         ? 'border-orange-500 bg-orange-50/50' 
+                                                         : 'border-slate-100 hover:border-slate-200 bg-white'}`}
+                                                 >
+                                                     <div className="flex justify-between items-start mb-1">
+                                                         <p className={`font-black text-sm ${isSelected ? 'text-orange-700' : 'text-slate-900'}`}>{plan.name}</p>
+                                                         {isSelected && <CheckCircle2 className="w-4 h-4 text-orange-500" />}
+                                                     </div>
+                                                     <p className="text-[10px] font-bold text-slate-500 uppercase">Duration: {plan.duration} {plan.unit}</p>
+                                                     <p className="text-xs font-black text-orange-600 mt-2">PKR {Number(plan.price).toLocaleString()}</p>
+                                                 </button>
+                                             );
+                                         })}
+                                     </div>
+
+                                     {form.boosterPlanId && (
+                                         <div className="mt-4 p-4 bg-orange-50/50 border border-orange-100 rounded-2xl flex items-center gap-3">
+                                             <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
+                                                 <Calendar className="w-5 h-5 text-orange-600" />
+                                             </div>
+                                             <div>
+                                                 <p className="text-xs font-black text-orange-950 uppercase tracking-wider">Scheduled for Plan</p>
+                                                 <p className="text-xs font-bold text-orange-600">
+                                                     Ends {form.endDate ? new Date(form.endDate).toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' }) : '...'} at {form.endDate ? new Date(form.endDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...'}
+                                                 </p>
+                                             </div>
+                                         </div>
+                                     )}
+                                 </div>
+
+                                {/* Highlights */}
+                                <div className="pt-4 border-t border-slate-50">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <label className={labelClass + " !mb-0"}>Offer Highlights</label>
+                                        <button type="button" 
+                                            onClick={() => setForm(p => ({ ...p, highlights: [...(p.highlights || []), ''] }))}
+                                            className="text-xs font-black text-orange-500 hover:text-orange-600 flex items-center gap-1"
+                                        >
+                                            <Plus className="w-3.5 h-3.5" /> Add Highlight
+                                        </button>
                                     </div>
-                                    <div>
-                                        <label className={labelClass}>End Date</label>
-                                        <input type="datetime-local" value={form.endDate}
-                                            onChange={e => setForm(p => ({ ...p, endDate: e.target.value }))}
-                                            className={inputClass} />
+                                    <div className="space-y-3">
+                                        {(form.highlights || []).map((h: string, i: number) => (
+                                            <div key={i} className="flex gap-2">
+                                                <input value={h}
+                                                    onChange={e => {
+                                                        const nh = [...(form.highlights || [])];
+                                                        nh[i] = e.target.value;
+                                                        setForm(p => ({ ...p, highlights: nh }));
+                                                    }}
+                                                    placeholder="e.g. Free Welcome Drink"
+                                                    className={inputClass} />
+                                                <button type="button" 
+                                                    onClick={() => setForm(p => ({ ...p, highlights: (form.highlights || []).filter((_, idx) => idx !== i) }))}
+                                                    className="w-11 h-11 shrink-0 rounded-xl bg-slate-50 border border-slate-200 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        {(form.highlights || []).length === 0 && (
+                                            <p className="text-xs text-slate-400 italic">No highlights added. These appear as a checklist on the details page.</p>
+                                        )}
                                     </div>
-                                    <div>
-                                        <label className={labelClass}>Expiry Date</label>
-                                        <input type="datetime-local" value={form.expiryDate}
-                                            onChange={e => setForm(p => ({ ...p, expiryDate: e.target.value }))}
-                                            className={inputClass} />
+                                </div>
+
+                                {/* Terms & Conditions */}
+                                <div className="pt-4 border-t border-slate-50">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <label className={labelClass + " !mb-0"}>Terms & Conditions</label>
+                                        <button type="button" 
+                                            onClick={() => setForm(p => ({ ...p, terms: [...(p.terms || []), ''] }))}
+                                            className="text-xs font-black text-orange-500 hover:text-orange-600 flex items-center gap-1"
+                                        >
+                                            <Plus className="w-3.5 h-3.5" /> Add Term
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {(form.terms || []).map((t: string, i: number) => (
+                                            <div key={i} className="flex gap-2">
+                                                <input value={t}
+                                                    onChange={e => {
+                                                        const nt = [...(form.terms || [])];
+                                                        nt[i] = e.target.value;
+                                                        setForm(p => ({ ...p, terms: nt }));
+                                                    }}
+                                                    placeholder="e.g. Valid on dine-in only"
+                                                    className={inputClass} />
+                                                <button type="button" 
+                                                    onClick={() => setForm(p => ({ ...p, terms: (form.terms || []).filter((_, idx) => idx !== i) }))}
+                                                    className="w-11 h-11 shrink-0 rounded-xl bg-slate-50 border border-slate-200 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        {(form.terms || []).length === 0 && (
+                                            <p className="text-xs text-slate-400 italic">No specific terms added.</p>
+                                        )}
                                     </div>
                                 </div>
 
                                 {/* Image Upload */}
-                                <div>
+                                <div className="pt-4 border-t border-slate-50">
                                     <label className={labelClass}>Offer Image (optional)</label>
                                     {form.imageUrl ? (
                                         <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 aspect-[3/1]">
@@ -505,10 +990,13 @@ export default function VendorOffersPage() {
                                         className="flex-1 py-3.5 bg-slate-100 text-slate-700 rounded-xl font-black text-sm hover:bg-slate-200 transition-colors">
                                         Cancel
                                     </button>
-                                    <button type="submit" disabled={saving || imageUploading}
-                                        className="flex-[2] py-3.5 bg-gradient-to-r from-orange-500 to-rose-500 text-white rounded-xl font-black text-sm shadow-lg shadow-orange-500/20 hover:from-orange-600 hover:to-rose-600 transition-all disabled:opacity-60 flex items-center justify-center gap-2">
+                                    <button
+                                        type="submit"
+                                        disabled={saving || imageUploading}
+                                        className="flex-[2] py-3.5 bg-gradient-to-r from-orange-500 to-rose-500 text-white rounded-xl font-black text-sm shadow-lg shadow-orange-500/20 hover:from-orange-600 hover:to-rose-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    >
                                         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                        {editingId ? 'Save Changes' : 'Create Offer'}
+                                        {editingId ? 'Save Changes' : (form.pricingId || form.boosterPlanId) ? 'Create & Promote' : 'Create Offer'}
                                     </button>
                                 </div>
                             </form>

@@ -100,8 +100,9 @@ npm install  # First time only
 npm run start:dev
 ```
 
-**Backend will run on:** http://localhost:3001  
-**API Docs (Swagger):** http://localhost:3001/api/docs
+**Local API:** http://process.env.NEXT_PUBLIC_API_URL/api/v1
+**Production API:** https://local-business-listing-directctory-production.up.railway.app/api/v1
+**API Docs (Swagger):** https://local-business-listing-directctory-production.up.railway.app/api/docs
 
 ### 3. Start Frontend
 ```bash
@@ -252,36 +253,36 @@ if (user.role === 'vendor') {
 
 ### Test User Side
 ```bash
-# Search businesses
-curl http://localhost:3001/api/v1/businesses/search?city=Mumbai
+# Search businesses (Production)
+curl https://local-business-listing-directctory-production.up.railway.app/api/v1/businesses/search?city=Mumbai
 
-# Get categories
-curl http://localhost:3001/api/v1/categories
+# Get categories (Production)
+curl https://local-business-listing-directctory-production.up.railway.app/api/v1/categories
 
-# Get subscription plans
-curl http://localhost:3001/api/v1/subscriptions/plans
+# Get subscription plans (Local)
+curl http://process.env.NEXT_PUBLIC_API_URL/api/v1/subscriptions/plans
 ```
 
 ### Test Vendor Side (requires auth token)
 ```bash
 # Get vendor dashboard stats
 curl -H "Authorization: Bearer YOUR_TOKEN" \
-  http://localhost:3001/api/v1/vendors/dashboard-stats
+  http://process.env.NEXT_PUBLIC_API_URL/api/v1/vendors/dashboard-stats
 
 # Get my businesses
 curl -H "Authorization: Bearer YOUR_TOKEN" \
-  http://localhost:3001/api/v1/businesses/my-businesses
+  http://process.env.NEXT_PUBLIC_API_URL/api/v1/businesses/my-businesses
 ```
 
 ### Test Admin Side (requires admin token)
 ```bash
 # Get global stats
 curl -H "Authorization: Bearer ADMIN_TOKEN" \
-  http://localhost:3001/api/v1/admin/stats
+  https://local-business-listing-directctory-production.up.railway.app/api/v1/admin/stats
 
 # Get all users
 curl -H "Authorization: Bearer ADMIN_TOKEN" \
-  http://localhost:3001/api/v1/admin/users
+  https://local-business-listing-directctory-production.up.railway.app/api/v1/admin/users
 ```
 
 ---
@@ -300,7 +301,7 @@ DB_DATABASE=webapp
 # API
 PORT=3001
 API_PREFIX=api/v1
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=https://local-business-listing-directctory-production.up.railway.app
 
 # JWT
 JWT_SECRET=super-secret-key-for-development
@@ -309,7 +310,7 @@ JWT_EXPIRATION=7d
 
 ### Frontend `.env` (already configured ✅)
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
+NEXT_PUBLIC_API_URL=https://local-business-listing-directctory-production.up.railway.app/api/v1
 NEXT_PUBLIC_STRIPE_PUBLIC_KEY=pk_test_...
 ```
 
@@ -428,7 +429,7 @@ Response → Frontend → UI Update
    ```
 
 3. **Test API Integration**
-   - Visit http://localhost:3001/api/docs (Swagger)
+   - Visit http://process.env.NEXT_PUBLIC_API_URL/api/docs (Swagger)
    - Test endpoints with Postman or curl
    - Verify frontend can call backend
 
@@ -446,7 +447,7 @@ Response → Frontend → UI Update
 
 ## 📚 Additional Resources
 
-- **API Documentation:** http://localhost:3001/api/docs
+- **API Documentation:** http://process.env.NEXT_PUBLIC_API_URL/api/docs
 - **Database Guide:** `/docs/DATABASE_CONNECTION_COMPLETE.md`
 - **Testing Guide:** `/docs/API_TESTING_GUIDE.md`
 - **Backend Modules:** `/backend/src/modules/`

@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Search, MapPin, Sliders, Star, X, Filter } from 'lucide-react';
+import { Search, MapPin, Sliders, Star, X, Filter, Navigation, CheckCircle2, Clock } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import BusinessCard from '../../components/BusinessCard';
 import { api } from '../../lib/api';
 import { Business, Category } from '../../types/api';
+import Link from 'next/link';
 
 function SearchResults() {
     const searchParams = useSearchParams();
@@ -17,11 +18,17 @@ function SearchResults() {
     const city = searchParams.get('city') || '';
     const categorySlug = searchParams.get('category') || '';
     const minRating = searchParams.get('minRating') || '';
+    const radius = searchParams.get('radius') || '';
+    const latitude = searchParams.get('latitude') || '';
+    const longitude = searchParams.get('longitude') || '';
+    const openNow = searchParams.get('openNow') === 'true';
+    const verifiedOnly = searchParams.get('verifiedOnly') === 'true';
 
     const [results, setResults] = useState<Business[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [showFilters, setShowFilters] = useState(false);
+    const [geoLoading, setGeoLoading] = useState(false);
 
     useEffect(() => {
         const loadData = async () => {
@@ -33,6 +40,11 @@ function SearchResults() {
                         city: city,
                         categorySlug: categorySlug,
                         minRating: minRating,
+                        radius: radius ? Number(radius) : undefined,
+                        latitude: latitude ? Number(latitude) : undefined,
+                        longitude: longitude ? Number(longitude) : undefined,
+                        openNow: openNow || undefined,
+                        verifiedOnly: verifiedOnly || undefined,
                         limit: 20
                     }),
                     api.categories.getAll()
@@ -45,6 +57,8 @@ function SearchResults() {
                     api.demand.logSearch({
                         keyword: query || categorySlug,
                         city: city || undefined,
+                        latitude: latitude ? Number(latitude) : undefined,
+                        longitude: longitude ? Number(longitude) : undefined,
                     }).catch(err => console.error('Demand logging failed:', err));
                 }
             } catch (err) {
@@ -54,32 +68,99 @@ function SearchResults() {
             }
         };
         loadData();
-    }, [query, city, categorySlug, minRating]);
+    }, [query, city, categorySlug, minRating, radius, latitude, longitude, openNow, verifiedOnly]);
+
+    const handleNearMe = () => {
+        if (!navigator.geolocation) {
+            alert('Geolocation is not supported by your browser');
+            return;
+        }
+
+        setGeoLoading(true);
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                const params = new URLSearchParams(searchParams.toString());
+                params.set('latitude', String(latitude));
+                params.set('longitude', String(longitude));
+                if (!params.has('radius')) params.set('radius', '10');
+                router.push(`/search?${params.toString()}`);
+                setGeoLoading(false);
+            },
+            (error) => {
+                console.error('Geolocation error:', error);
+                alert('Could not get your location. Please check your browser permissions.');
+                setGeoLoading(false);
+            }
+        );
+    };
+
+    const updateFilter = (key: string, value: string | boolean | null) => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (value === null || value === false || value === '') {
+            params.delete(key);
+        } else {
+            params.set(key, String(value));
+        }
+        router.push(`/search?${params.toString()}`);
+    };
 
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col">
+        <div className="min-h-screen bg-white flex flex-col">
             <Navbar />
 
-            <main className="flex-grow max-w-7xl mx-auto px-4 w-full py-12">
-                <div className="flex flex-col md:flex-row gap-8 items-start">
+            {/* Header Section */}
+            <div className="bg-white border-b border-slate-50 pt-16 pb-12">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                        <div className="max-w-2xl">
+                            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-300 mb-6">
+                                <Link href="/" className="hover:text-blue-600">Home</Link>
+                                <span>/</span>
+                                <span className="text-slate-900">Search Results</span>
+                            </div>
+                            <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-tight">
+                                {city ? (
+                                    <>Results for <span className="text-blue-600">"{query || 'Businesses'}"</span> in <span className="text-blue-600">{city}</span></>
+                                ) : query ? (
+                                    <>Find the best <span className="text-blue-600">"{query}"</span></>
+                                ) : (
+                                    <>Explore <span className="text-blue-600">Local Listings</span></>
+                                )}
+                            </h1>
+                        </div>
+                        <div className="flex items-center gap-4 bg-slate-50 px-6 py-4 rounded-2xl border border-slate-100">
+                             <div>
+                                <div className="text-2xl font-black text-slate-900 leading-none mb-1">{results.length}</div>
+                                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Matches</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                    {/* Filters Sidebar (Mobile Drawer / Desktop Static) */}
-                    <aside className={`fixed inset-0 z-50 md:relative md:z-0 md:inset-auto md:w-64 bg-white md:bg-transparent p-6 md:p-0 transition-transform ${showFilters ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
-                        <div className="flex items-center justify-between mb-8 md:hidden">
-                            <h3 className="text-xl font-bold">Filters</h3>
-                            <button onClick={() => setShowFilters(false)}><X className="w-6 h-6" /></button>
+            <main className="flex-grow max-w-7xl mx-auto px-4 w-full py-20">
+                <div className="flex flex-col lg:grid lg:grid-cols-12 gap-16 items-start">
+
+                    {/* Filters Sidebar */}
+                    <aside className={`lg:col-span-3 w-full space-y-12 sticky top-28`}>
+                        <div className="flex items-center justify-between lg:hidden mb-6">
+                            <h3 className="text-sm font-black uppercase tracking-widest">Search Parameters</h3>
+                            <button onClick={() => setShowFilters(!showFilters)} className="p-2 bg-slate-100 rounded-lg">
+                                <Filter className="w-4 h-4" />
+                            </button>
                         </div>
 
-                        <div className="space-y-10">
+                        <div className={`${showFilters ? 'block' : 'hidden lg:block'} space-y-12 animate-in fade-in duration-500`}>
                             {/* Category Filter */}
                             <div>
-                                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-widest mb-4">Categories</h4>
-                                <div className="space-y-2">
-                                    {categories.map(cat => (
-                                        <label key={cat.id} className="flex items-center group cursor-pointer py-1">
+                                <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mb-6">Department</h4>
+                                <div className="space-y-3">
+                                    {categories.slice(0, 8).map(cat => (
+                                        <label key={cat.id} className="flex items-center group cursor-pointer">
                                             <input
                                                 type="checkbox"
-                                                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 mr-3 transition-all cursor-pointer"
+                                                className="rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500/10 w-4 h-4 mr-3 transition-all cursor-pointer"
                                                 checked={categorySlug === cat.slug}
                                                 onChange={() => {
                                                     const params = new URLSearchParams(searchParams.toString());
@@ -91,7 +172,7 @@ function SearchResults() {
                                                     router.push(`/search?${params.toString()}`);
                                                 }}
                                             />
-                                            <span className={`text-sm font-bold transition-all ${categorySlug === cat.slug ? 'text-blue-600' : 'text-slate-500 group-hover:text-slate-900'}`}>{cat.name}</span>
+                                            <span className={`text-xs font-bold transition-all ${categorySlug === cat.slug ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-900'}`}>{cat.name}</span>
                                         </label>
                                     ))}
                                 </div>
@@ -99,92 +180,118 @@ function SearchResults() {
 
                             {/* Rating Filter */}
                             <div>
-                                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-widest mb-4">Min. Rating</h4>
-                                <div className="flex gap-2">
-                                    {[4, 3, 2, 1].map(star => (
+                                <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mb-6">Performance</h4>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {[4.5, 4, 3, 0].map(star => (
                                         <button
                                             key={star}
-                                            onClick={() => {
-                                                const params = new URLSearchParams(searchParams.toString());
-                                                if (minRating === String(star)) {
-                                                    params.delete('minRating');
-                                                } else {
-                                                    params.set('minRating', String(star));
-                                                }
-                                                router.push(`/search?${params.toString()}`);
-                                            }}
-                                            className={`flex-1 py-2 rounded-xl border transition-all font-bold text-xs flex items-center justify-center gap-1 ${minRating === String(star) ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20' : 'border-slate-200 text-slate-600 hover:border-blue-500 hover:text-blue-600'}`}
+                                            onClick={() => updateFilter('minRating', minRating === String(star) ? null : String(star))}
+                                            className={`py-3 rounded-xl border transition-all font-black text-[10px] flex items-center justify-center gap-1.5 uppercase tracking-widest ${minRating === String(star) ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200 hover:text-slate-900'}`}
                                         >
-                                            {star}<Star className={`w-3 h-3 ${minRating === String(star) ? 'fill-current' : ''}`} />
+                                            {star === 0 ? 'Any' : <>{star}<Star className={`w-3 h-3 ${minRating === String(star) ? 'fill-current' : ''}`} /></>}
                                         </button>
                                     ))}
                                 </div>
                             </div>
+
+                            {/* Distance Filter */}
+                            <div>
+                                <div className="flex items-center justify-between mb-6">
+                                    <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Proximity</h4>
+                                    <button 
+                                        onClick={handleNearMe}
+                                        disabled={geoLoading}
+                                        className={`p-2 rounded-xl border transition-all ${latitude ? 'bg-blue-50 border-blue-100 text-blue-600' : 'bg-slate-50 border-slate-100 text-slate-400 hover:text-blue-600'}`}
+                                    >
+                                        {geoLoading ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <Navigation className="w-4 h-4" />}
+                                    </button>
+                                </div>
+                                {latitude ? (
+                                    <div className="space-y-4">
+                                        <input 
+                                            type="range" 
+                                            min="1" 
+                                            max="50" 
+                                            value={radius || 10} 
+                                            onChange={(e) => updateFilter('radius', e.target.value)}
+                                            className="w-full accent-blue-600"
+                                        />
+                                        <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Range</span>
+                                            <span className="text-xs font-black text-blue-600">{radius || 10} KM</span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p className="text-[10px] text-slate-400 font-bold italic leading-relaxed">Enable geo-location to explore businesses near your current coordinates.</p>
+                                )}
+                            </div>
+
+                            {/* Status Filters */}
+                            <div className="space-y-6 pt-4">
+                                <label className="flex items-center justify-between cursor-pointer group">
+                                    <span className="text-xs font-bold text-slate-400 group-hover:text-slate-900 transition-colors">Open Now</span>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={openNow} 
+                                        onChange={(e) => updateFilter('openNow', e.target.checked)}
+                                        className="w-4 h-4 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500/10"
+                                    />
+                                </label>
+
+                                <label className="flex items-center justify-between cursor-pointer group">
+                                    <span className="text-xs font-bold text-slate-400 group-hover:text-slate-900 transition-colors">Verified Only</span>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={verifiedOnly} 
+                                        onChange={(e) => updateFilter('verifiedOnly', e.target.checked)}
+                                        className="w-4 h-4 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500/10"
+                                    />
+                                </label>
+                            </div>
+                            
+                            <button 
+                                onClick={() => router.push('/search')}
+                                className="w-full py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 hover:text-red-500 transition-colors"
+                            >
+                                Reset All Params
+                            </button>
                         </div>
                     </aside>
 
                     {/* Results Area */}
-                    <div className="flex-1">
-                        <div className="flex items-center justify-between mb-8">
-                            <div>
-                                {city && (
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <a href="/cities" className="text-xs font-bold text-slate-400 hover:text-orange-500 transition-colors">Cities</a>
-                                        <span className="text-slate-300 text-xs">›</span>
-                                        <span className="text-xs font-bold text-orange-500">{city}</span>
-                                    </div>
-                                )}
-                                <h1 className="text-3xl font-black text-slate-900 flex items-center gap-3 tracking-tight">
-                                    {city ? (
-                                        <>
-                                            <MapPin className="w-8 h-8 text-orange-500 flex-shrink-0" />
-                                            Businesses in <span className="text-orange-500">{city}</span>
-                                        </>
-                                    ) : query ? (
-                                        `Results for "${query}"`
-                                    ) : categorySlug ? (
-                                        <>
-                                            <Filter className="w-8 h-8 text-blue-600" />
-                                            {categories.find(c => c.slug === categorySlug)?.name || categorySlug}
-                                        </>
-                                    ) : (
-                                        'All Businesses'
-                                    )}
-                                </h1>
-                                <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mt-2">
-                                    {results.length} {results.length === 1 ? 'business' : 'businesses'} found
-                                    {city ? ` in ${city}` : ''}
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => setShowFilters(true)}
-                                className="md:hidden flex items-center gap-2 px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-black shadow-sm active:scale-95"
-                            >
-                                <Filter className="w-4 h-4 text-blue-600" /> Filters
-                            </button>
-                        </div>
-
+                    <div className="lg:col-span-9 w-full">
                         {loading ? (
-                            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="grid sm:grid-cols-2 gap-x-10 gap-y-16">
                                 {Array(6).fill(0).map((_, i) => (
-                                    <div key={i} className="bg-white h-72 rounded-3xl animate-pulse border border-slate-100" />
+                                    <div key={i} className="space-y-6">
+                                        <div className="aspect-[4/3] bg-slate-50 rounded-[20px] animate-pulse border border-slate-100" />
+                                        <div className="space-y-3">
+                                            <div className="h-4 bg-slate-50 w-1/3 rounded animate-pulse" />
+                                            <div className="h-8 bg-slate-50 w-2/3 rounded animate-pulse" />
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
                         ) : results.length > 0 ? (
-                            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="grid sm:grid-cols-2 gap-x-10 gap-y-16">
                                 {results.map(biz => (
-                                    <BusinessCard key={biz.id} business={biz} />
+                                    <BusinessCard 
+                                        key={biz.id} 
+                                        business={biz} 
+                                        variant="minimal"
+                                    />
                                 ))}
                             </div>
                         ) : (
-                            <div className="bg-white rounded-[20px] p-16 text-center border border-slate-100">
-                                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                                    <Search className="w-8 h-8 text-slate-300" />
-                                </div>
-                                <h3 className="text-xl font-bold text-slate-900 mb-2">No results found</h3>
-                                <p className="text-slate-500 mb-8 max-w-xs mx-auto text-sm">We couldn't find anything matching your search. Try adjusting your filters or search term.</p>
-                                <button onClick={() => router.push('/search')} className="text-blue-600 font-bold underline underline-offset-4">
-                                    Clear all filters
+                            <div className="py-40 text-center flex flex-col items-center">
+                                <Search className="w-16 h-16 text-slate-100 mb-8" />
+                                <h3 className="text-4xl font-black text-slate-900 mb-4 tracking-tighter">Zero Matches.</h3>
+                                <p className="text-slate-400 font-bold mb-10 max-w-sm">We couldn't find any listings matching your specific parameters. Adjust your filters or try a broader search.</p>
+                                <button 
+                                    onClick={() => router.push('/search')}
+                                    className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-all"
+                                >
+                                    Start Fresh
                                 </button>
                             </div>
                         )}
@@ -199,8 +306,13 @@ function SearchResults() {
 
 export default function SearchPage() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-white">
+                <div className="w-12 h-12 border-t-2 border-blue-600 rounded-full animate-spin" />
+            </div>
+        }>
             <SearchResults />
         </Suspense>
     );
 }
+

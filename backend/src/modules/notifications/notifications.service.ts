@@ -1,6 +1,6 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Inject, forwardRef, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Notification } from '../../entities/notification.entity';
 import { NotificationsGateway } from './notifications.gateway';
 import { User } from '../../entities/user.entity';
@@ -17,6 +17,8 @@ export interface CreateNotificationDto {
 
 @Injectable()
 export class NotificationsService {
+    private readonly logger = new Logger(NotificationsService.name);
+
     constructor(
         @InjectRepository(Notification)
         private notificationRepo: Repository<Notification>,
@@ -69,11 +71,11 @@ export class NotificationsService {
         return saved;
     }
 
-    /** Broadcast a notification to ALL regular users (role = user) */
+    /** Broadcast a notification to ALL regular users and vendors (role = user/vendor) */
     async broadcast(dto: Omit<CreateNotificationDto, 'userId'>): Promise<void> {
         const users = await this.userRepo.find({
             select: ['id'],
-            where: { role: 'user' as any },
+            where: { role: In(['user', 'vendor'] as any) },
         });
         for (const user of users) {
              this.create({ ...dto, userId: user.id }).catch(() => {});
@@ -101,16 +103,40 @@ export class NotificationsService {
             this.create({ ...dto, userId: sa.id }).catch(() => {});
         }
     }
+    
+    /** Send notification to all Vendors */
+    async notifyAllVendors(dto: Omit<CreateNotificationDto, 'userId'>): Promise<void> {
+        const vendors = await this.userRepo.find({
+            select: ['id'],
+            where: { role: 'vendor' as any },
+        });
+        for (const v of vendors) {
+            this.create({ ...dto, userId: v.id }).catch(() => {});
+        }
+    }
 
     /** Get all notifications for a user, newest first */
     async findAllForUser(userId: string) {
-        const [notifications, total] = await this.notificationRepo.findAndCount({
-            where: { userId },
-            order: { createdAt: 'DESC' },
-            take: 50,
-        });
-        const unreadCount = notifications.filter(n => !n.isRead).length;
-        return { notifications, total, unreadCount };
+        try {
+            const [notifications, total] = await this.notificationRepo.findAndCount({
+                where: { userId },
+                order: { createdAt: 'DESC' },
+                take: 50,
+            });
+            const unreadCount = notifications.filter(n => !n.isRead).length;
+            return { notifications, total, unreadCount };
+        } catch (error) {
+            // Log the error but return empty data to prevent 500 crashes during network instability
+            try {
+                const fs = require('fs');
+                const path = require('path');
+                const logPath = path.join(process.cwd(), 'permanent_error_log.txt');
+                fs.appendFileSync(logPath, `[${new Date().toISOString()}] findAllForUser FALLBACK for user ${userId}: ${error.message}\n`);
+            } catch (e) {}
+            
+            this.logger.error(`Database connection error in findAllForUser: ${error.message}`);
+            return { notifications: [], total: 0, unreadCount: 0 };
+        }
     }
 
     /** Mark a single notification as read */

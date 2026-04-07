@@ -16,6 +16,7 @@ import { Listing } from './business.entity';
 export enum OfferType {
     OFFER = 'offer',
     EVENT = 'event',
+    PAGE = 'page',
 }
 
 export enum OfferStatus {
@@ -76,6 +77,23 @@ export class OfferEvent {
     @Column({ name: 'is_active', default: true })
     isActive: boolean;
 
+    @Column({ name: 'is_featured', default: false })
+    @Index()
+    isFeatured: boolean;
+
+    @Column({ name: 'featured_until', type: 'timestamp', nullable: true })
+    featuredUntil: Date;
+
+    @Column({ type: 'jsonb', nullable: true, default: '[]' })
+    highlights: string[];
+
+    @Column({ type: 'jsonb', nullable: true, default: '[]' })
+    terms: string[];
+
+    @Column({ name: 'pricing_id', type: 'uuid', nullable: true })
+    @Index()
+    pricingId: string;
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
@@ -96,9 +114,13 @@ export class OfferEvent {
     @BeforeUpdate()
     computeStatus() {
         const now = new Date();
-        if (this.startDate && now < new Date(this.startDate)) {
+        const start = this.startDate ? new Date(this.startDate) : null;
+        const expiry = this.expiryDate ? new Date(this.expiryDate) : null;
+        const end = this.endDate ? new Date(this.endDate) : null;
+
+        if (start && now < start) {
             this.status = OfferStatus.SCHEDULED;
-        } else if (this.expiryDate && now > new Date(this.expiryDate)) {
+        } else if ((expiry && now > expiry) || (end && now > end)) {
             this.status = OfferStatus.EXPIRED;
         } else {
             this.status = OfferStatus.ACTIVE;

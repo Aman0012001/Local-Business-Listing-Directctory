@@ -22,16 +22,29 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     }
 
     async validate(payload: JwtPayload): Promise<User> {
-        const { sub: userId } = payload;
+        try {
+            const { sub: userId } = payload;
 
-        const user = await this.userRepository.findOne({
-            where: { id: userId, isActive: true },
-        });
+            const user = await this.userRepository.findOne({
+                where: { id: userId, isActive: true },
+            });
 
-        if (!user) {
-            throw new UnauthorizedException('User not found or inactive');
+            if (!user) {
+                throw new UnauthorizedException('User not found or inactive');
+            }
+
+            return user;
+        } catch (error) {
+            console.error(`[JwtStrategy] Validation failed for payload ${JSON.stringify(payload)}:`, error.message);
+            
+            // Handle database connection errors gracefully
+            if (error.code === 'ENETUNREACH' || error.code === 'ECONNREFUSED' || error.message.includes('Connection terminated')) {
+                const { ServiceUnavailableException } = require('@nestjs/common');
+                throw new ServiceUnavailableException('Database is currently unreachable. Please check your internet or database status.');
+            }
+            
+            // If it's not already a 401, it might be a DB query error
+            throw error;
         }
-
-        return user;
     }
 }

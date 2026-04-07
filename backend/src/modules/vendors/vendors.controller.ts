@@ -5,9 +5,11 @@ import {
     Patch,
     Body,
     Query,
+    Param,
     UseGuards,
     HttpCode,
     HttpStatus,
+    Version,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { VendorsService } from './vendors.service';
@@ -29,6 +31,16 @@ export class VendorsController {
         private readonly vendorsService: VendorsService,
         private readonly businessesService: BusinessesService,
     ) { }
+
+    @Public()
+    @Get(':id/public')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Get public vendor profile details by ID' })
+    @ApiResponse({ status: 200, description: 'Vendor profile retrieved' })
+    getPublicProfile(@Param('id') id: string) {
+        console.log(`[VendorsController] Fetching public profile for ID: ${id}`);
+        return this.vendorsService.getPublicProfile(id);
+    }
 
     @Public()
     @Get('by-city')

@@ -14,6 +14,6 @@ export class LoginDto {
     @ApiPropertyOptional({ example: '+1234567890' })
     @IsOptional()
     @IsString()
-    @Matches(/^\+?[1-9]\d{1,14}$/, { message: 'Invalid phone number format' })
+    @Matches(/^\+?[0-9\-\s()]{7,20}$/, { message: 'Invalid phone number format' })
     phone?: string;
 }

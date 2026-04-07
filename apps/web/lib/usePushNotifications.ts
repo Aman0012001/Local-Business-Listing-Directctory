@@ -14,7 +14,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
     return outputArray;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://process.env.NEXT_PUBLIC_API_URL/api/v1';
 
 async function fetchVapidPublicKey(): Promise<string> {
     const res = await fetch(`${API_BASE_URL}/notifications/vapid-public-key`);
@@ -51,7 +51,7 @@ interface UsePushNotificationsReturn {
     error: string | null;
 }
 
-export function usePushNotifications(userId?: string): UsePushNotificationsReturn {
+export function usePushNotifications(userId?: string, shouldAutoSubscribe: boolean = false): UsePushNotificationsReturn {
     const supported =
         typeof window !== 'undefined' &&
         'serviceWorker' in navigator &&
@@ -129,6 +129,13 @@ export function usePushNotifications(userId?: string): UsePushNotificationsRetur
             setLoading(false);
         }
     }, [supported]);
+
+    // Auto-subscribe if requested and permission is still default
+    useEffect(() => {
+        if (shouldAutoSubscribe && supported && userId && permission === 'default' && !loading && !isSubscribed) {
+            subscribe();
+        }
+    }, [shouldAutoSubscribe, supported, userId, permission, loading, isSubscribed, subscribe]);
 
     return { supported, permission, isSubscribed, subscribe, loading, error };
 }

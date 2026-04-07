@@ -129,7 +129,7 @@ export function getBusinessOpenStatus(
 
     // If the business marks this day as closed
     if (!todayEntry.isOpen) {
-        return { status: 'CLOSED', label: 'Closed Today', todayHours: 'Closed' };
+        return { status: 'CLOSED', label: 'Closed Today', todayHours: null };
     }
 
     const openMins = parseTimeToMinutes(todayEntry.openTime);
@@ -138,7 +138,7 @@ export function getBusinessOpenStatus(
     if (openMins === null || closeMins === null) {
         return {
             status: 'OPEN',
-            label: 'Open Now',
+            label: 'Working',
             todayHours: todayEntry.openTime && todayEntry.closeTime ? `${todayEntry.openTime} – ${todayEntry.closeTime}` : 'Open',
         };
     }
@@ -154,7 +154,7 @@ export function getBusinessOpenStatus(
 
     return {
         status: isOpen ? 'OPEN' : 'CLOSED',
-        label: isOpen ? 'Open Now' : 'Closed Now',
+        label: isOpen ? 'Working' : 'Closed Now',
         todayHours: hoursLabel,
     };
 }

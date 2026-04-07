@@ -3,6 +3,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
+import { CacheModule } from '@nestjs/cache-manager';
+import { redisStore } from 'cache-manager-redis-yet';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -24,6 +26,10 @@ import { OffersModule } from './modules/offers/offers.module';
 import { CommentsModule } from './modules/comments/comments.module';
 import { DemandModule } from './modules/demand/demand.module';
 import { FollowsModule } from './modules/follows/follows.module';
+import { AffiliateModule } from './modules/affiliate/affiliate.module';
+import { JobLeadsModule } from './modules/job-leads/job-leads.module';
+import { ChatModule } from './modules/chat/chat.module';
+import { PromotionsModule } from './modules/promotions/promotions.module';
 
 import { join } from 'path';
 
@@ -35,6 +41,33 @@ import { join } from 'path';
             envFilePath: ['.env.local', '.env'],
         }),
         ScheduleModule.forRoot(),
+        CacheModule.registerAsync({
+            isGlobal: true,
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: async (configService: ConfigService) => {
+                const redisEnabled = configService.get('REDIS_ENABLED') === 'true';
+                const ttl = configService.get('REDIS_TTL') ? parseInt(configService.get('REDIS_TTL')) * 1000 : 600 * 1000;
+
+                if (!redisEnabled) {
+                    return { ttl };
+                }
+
+                try {
+                    const store = await redisStore({
+                        socket: {
+                            host: configService.get('REDIS_HOST') || 'localhost',
+                            port: parseInt(configService.get('REDIS_PORT')) || 6379,
+                        },
+                        ttl,
+                    });
+                    return { store, ttl };
+                } catch (error) {
+                    console.error('Failed to initialize Redis store, falling back to memory:', error.message);
+                    return { ttl };
+                }
+            },
+        }),
 
         // Database
         TypeOrmModule.forRootAsync({
@@ -75,6 +108,10 @@ import { join } from 'path';
         CommentsModule,
         DemandModule,
         FollowsModule,
+        AffiliateModule,
+        JobLeadsModule,
+        ChatModule,
+        PromotionsModule,
     ],
     providers: [
         {

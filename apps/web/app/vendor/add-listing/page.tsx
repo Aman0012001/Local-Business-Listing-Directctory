@@ -6,17 +6,19 @@ import {
     Loader2, Store, MapPin, Phone, TextQuote, Layers,
     ArrowLeft, CheckCircle, ImagePlus, Building2, Tag,
     FileText, Navigation, Sparkles, X, Images, Check, Plus,
-    ChevronLeft, ChevronRight, Hash, Share2, Globe, Search, ChevronDown
+    ChevronLeft, ChevronRight, Hash, Share2, Globe, Search, ChevronDown, HelpCircle, Trash2, Lock
 } from 'lucide-react';
 import { api, getImageUrl } from '../../../lib/api';
 import { Category, City } from '../../../types/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import Script from 'next/script';
+import { useAuth } from '../../../context/AuthContext';
+import Link from 'next/link';
 
 const steps = [
     { id: 1, label: 'Business Info', icon: Building2 },
     { id: 2, label: 'Location', icon: Navigation },
     { id: 3, label: 'Details', icon: FileText },
+    { id: 4, label: 'FAQs', icon: HelpCircle },
 ];
 
 const inputClass =
@@ -36,6 +38,7 @@ const SOCIAL_PLATFORMS = [
 ];
 
 export default function AddListingPage() {
+    const { user } = useAuth();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [catsLoading, setCatsLoading] = useState(true);
@@ -59,15 +62,37 @@ export default function AddListingPage() {
     const [mapLoaded, setMapLoaded] = useState(false);
     const [suggestions, setSuggestions] = useState<Category[]>([]);
     const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+    const [myListingsCount, setMyListingsCount] = useState<number | null>(null);
 
-    // Handle Google Maps Authentication Failure (Invalid API Key)
+    // Free plan: always active, allows 1 listing. Paid plan: controlled by dashboardFeatures.
+    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+    const features = activeSub?.plan?.dashboardFeatures || {};
+    const isVendor = user?.role === 'vendor';
+    // On free plan (no paid sub): 1 listing allowed. On paid plan: allowed unless explicitly disabled.
+    // All vendors and admins have unrestricted listing creation as per Super Admin requirement.
+    const canAdd = true;
+
     useEffect(() => {
+        if (typeof window !== 'undefined' && (window as any).google?.maps?.importLibrary) {
+            setMapLoaded(true);
+            return;
+        }
+
+        const interval = setInterval(() => {
+            if (typeof window !== 'undefined' && (window as any).google?.maps?.importLibrary) {
+                setMapLoaded(true);
+                clearInterval(interval);
+            }
+        }, 1000);
+
+        // Handle Google Maps Authentication Failure (Invalid API Key)
         (window as any).gm_authFailure = () => {
-            console.error('Google Maps authentication failed - check API Key.');
+            console.error('[AddListing] Google Maps auth failure');
             setMapError(true);
         };
+
         return () => {
-            delete (window as any).gm_authFailure;
+            if (interval) clearInterval(interval);
         };
     }, []);
 
@@ -147,13 +172,33 @@ export default function AddListingPage() {
         whatsapp: '',
         website: '',
         suggestedCategoryName: '',
+        faqs: [] as { question: string; answer: string }[],
     });
+
+    const [newFaq, setNewFaq] = useState({ question: '', answer: '' });
+
+    const addFaq = () => {
+        if (!newFaq.question.trim() || !newFaq.answer.trim()) return;
+        setFormData(prev => ({
+            ...prev,
+            faqs: [...prev.faqs, { ...newFaq }]
+        }));
+        setNewFaq({ question: '', answer: '' });
+    };
+
+    const removeFaq = (index: number) => {
+        setFormData(prev => ({
+            ...prev,
+            faqs: prev.faqs.filter((_, i) => i !== index)
+        }));
+    };
 
     const autoCompleteRef = useRef<any>(null);
     const addressInputRef = useRef<HTMLInputElement>(null);
     const mapRef = useRef<any>(null);
     const markerRef = useRef<any>(null);
     const mapContainerRef = useRef<HTMLDivElement>(null);
+    const initInProgress = useRef(false);
     const formDataRef = useRef(formData);
 
     // Keep ref in sync
@@ -162,7 +207,9 @@ export default function AddListingPage() {
     }, [formData]);
 
     const updateLocationFromCoords = (lat: number, lng: number) => {
-        if (!(window as any).google) return;
+        setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
+
+        if (!(window as any).google || !(window as any).google.maps || !(window as any).google.maps.Geocoder) return;
         const geocoder = new (window as any).google.maps.Geocoder();
         geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
             if (status === "OK" && results[0]) {
@@ -203,8 +250,6 @@ export default function AddListingPage() {
                     city: city || prev.city,
                     state: state || prev.state,
                     pincode: pincode || prev.pincode,
-                    latitude: lat,
-                    longitude: lng,
                 }));
             }
         });
@@ -235,111 +280,155 @@ export default function AddListingPage() {
         }
     };
 
-    const initAutocomplete = () => {
-        if (!mapLoaded || !(window as any).google || !addressInputRef.current || !mapContainerRef.current) return;
+    const initAutocomplete = async () => {
+        if (!mapLoaded || !(window as any).google || !addressInputRef.current || !mapContainerRef.current || initInProgress.current) return;
 
-        const defaultCenter = { lat: formData.latitude, lng: formData.longitude };
+        try {
+            initInProgress.current = true;
+            const defaultCenter = { lat: formData.latitude, lng: formData.longitude };
 
-        if (!mapRef.current) {
-            mapRef.current = new (window as any).google.maps.Map(mapContainerRef.current, {
-                center: defaultCenter,
-                zoom: 15,
-                mapTypeControl: false,
-                streetViewControl: false,
-                fullscreenControl: false,
-            });
+            if (!(window as any).google?.maps?.importLibrary) {
+                console.warn('[AddListing] Google Maps importLibrary not available yet');
+                initInProgress.current = false;
+                return;
+            }
 
-            markerRef.current = new (window as any).google.maps.Marker({
-                position: defaultCenter,
-                map: mapRef.current,
-                draggable: true,
-                animation: (window as any).google.maps.Animation.DROP,
-                icon: {
-                    path: (window as any).google.maps.SymbolPath.CIRCLE,
-                    fillColor: '#f97316',
-                    fillOpacity: 1,
-                    strokeWeight: 4,
-                    strokeColor: '#ffffff',
-                    scale: 10
-                }
-            });
+            const { Map } = await (window as any).google.maps.importLibrary("maps");
+            const { Autocomplete } = await (window as any).google.maps.importLibrary("places");
 
-            markerRef.current.addListener("dragend", () => {
-                const pos = markerRef.current.getPosition();
-                updateLocationFromCoords(pos.lat(), pos.lng());
-            });
+            if (!mapRef.current) {
+                mapRef.current = new Map(mapContainerRef.current, {
+                    center: defaultCenter,
+                    zoom: 15,
+                    mapTypeId: 'roadmap',
+                    mapTypeControl: false,
+                    streetViewControl: false,
+                    fullscreenControl: false,
+                });
 
-            mapRef.current.addListener("click", (e: any) => {
-                if (e.latLng) {
-                    markerRef.current.setPosition(e.latLng);
-                    updateLocationFromCoords(e.latLng.lat(), e.latLng.lng());
-                }
-            });
-        }
+                console.log('[AddListing] Map instance created');
 
-        if (!autoCompleteRef.current) {
-            autoCompleteRef.current = new (window as any).google.maps.places.Autocomplete(
-                addressInputRef.current,
-                {
-                    componentRestrictions: { country: "pk" },
-                    fields: ["address_components", "geometry", "formatted_address", "types"],
-                }
-            );
-
-            autoCompleteRef.current.addListener("place_changed", () => {
                 try {
-                    const place = autoCompleteRef.current.getPlace();
-                    if (!place.geometry) return;
-
-                    const lat = place.geometry.location.lat();
-                    const lng = place.geometry.location.lng();
-
-                    mapRef.current.setCenter({ lat, lng });
-                    mapRef.current.setZoom(17);
-                    markerRef.current.setPosition({ lat, lng });
-
-                    let city = '';
-                    let state = '';
-                    let pincode = '';
-                    let address = place.formatted_address || '';
-
-                    place.address_components?.forEach((component: any) => {
-                        const types = component.types;
-                        if (types.includes("locality")) city = component.long_name;
-                        else if (types.includes("administrative_area_level_2") && !city) city = component.long_name;
-                        else if (types.includes("administrative_area_level_1")) state = component.long_name;
-                        else if (types.includes("postal_code")) pincode = component.long_name;
+                    const { Marker } = await (window as any).google.maps.importLibrary("marker");
+                    markerRef.current = new Marker({
+                        position: defaultCenter,
+                        map: mapRef.current,
+                        draggable: true,
+                        title: "Drag to set location",
+                        animation: (window as any).google?.maps?.Animation?.DROP
                     });
-
-                    // Auto-sync category from Google types
-                    if (place.types && place.types.length > 0) {
-                        handlePlaceTypes(place.types);
-                    }
-
-                    // Clean up address
-                    let cleanAddress = address;
-                    [city, state, "Pakistan", pincode].forEach(term => {
-                        if (term) {
-                            const regex = new RegExp(`,?\\s*${term}\\s*,?`, 'gi');
-                            cleanAddress = cleanAddress.replace(regex, '').trim();
-                        }
-                    });
-                    cleanAddress = cleanAddress.replace(/,$/, '').trim();
-
-                    setFormData(prev => ({
-                        ...prev,
-                        address: cleanAddress || address || prev.address,
-                        city: city || prev.city,
-                        state: state || prev.state,
-                        pincode: pincode || prev.pincode,
-                        latitude: lat,
-                        longitude: lng,
-                    }));
-                } catch (err) {
-                    console.error("Error in place_changed handler:", err);
-                    setMapError(true);
+                    console.log('[AddListing] Legacy Marker initialized');
+                } catch (markerErr) {
+                    console.warn('[AddListing] Marker failure:', markerErr);
                 }
-            });
+
+                if (markerRef.current) {
+                    markerRef.current.addListener("dragend", (e: any) => {
+                        let lat: number, lng: number;
+                        if (e && e.latLng) {
+                            lat = typeof e.latLng.lat === 'function' ? e.latLng.lat() : e.latLng.lat;
+                            lng = typeof e.latLng.lng === 'function' ? e.latLng.lng() : e.latLng.lng;
+                        } else {
+                            const pos = markerRef.current.position;
+                            if (!pos) return;
+                            lat = typeof pos.lat === 'function' ? pos.lat() : pos.lat;
+                            lng = typeof pos.lng === 'function' ? pos.lng() : pos.lng;
+                        }
+                        updateLocationFromCoords(lat, lng);
+                    });
+                }
+
+                mapRef.current.addListener("click", (e: any) => {
+                    if (e.latLng) {
+                        const pos = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+                        if (markerRef.current) {
+                            if (markerRef.current.setPosition) {
+                                markerRef.current.setPosition(pos);
+                            } else {
+                                markerRef.current.position = pos;
+                            }
+                        }
+                        updateLocationFromCoords(pos.lat, pos.lng);
+                    }
+                });
+            } else {
+                // Handle map resize if container was hidden
+                if ((window as any).google?.maps?.event) {
+                    (window as any).google.maps.event.trigger(mapRef.current, 'resize');
+                }
+            }
+
+            if (!autoCompleteRef.current) {
+                autoCompleteRef.current = new Autocomplete(
+                    addressInputRef.current,
+                    {
+                        componentRestrictions: { country: "pk" },
+                        fields: ["address_components", "geometry", "formatted_address", "types"],
+                    }
+                );
+
+                autoCompleteRef.current.addListener("place_changed", () => {
+                    try {
+                        const place = autoCompleteRef.current.getPlace();
+                        if (!place.geometry) return;
+
+                        const lat = place.geometry.location.lat();
+                        const lng = place.geometry.location.lng();
+                        const pos = { lat, lng };
+
+                        mapRef.current.setCenter(pos);
+                        mapRef.current.setZoom(17);
+                        if (markerRef.current.setPosition) {
+                            markerRef.current.setPosition(pos);
+                        } else {
+                            markerRef.current.position = pos;
+                        }
+
+                        let city = '';
+                        let state = '';
+                        let pincode = '';
+                        let address = place.formatted_address || '';
+
+                        place.address_components?.forEach((component: any) => {
+                            const types = component.types;
+                            if (types.includes("locality")) city = component.long_name;
+                            else if (types.includes("administrative_area_level_2") && !city) city = component.long_name;
+                            else if (types.includes("administrative_area_level_1")) state = component.long_name;
+                            else if (types.includes("postal_code")) pincode = component.long_name;
+                        });
+
+                        if (place.types && place.types.length > 0) {
+                            handlePlaceTypes(place.types);
+                        }
+
+                        let cleanAddress = address;
+                        [city, state, "Pakistan", pincode].forEach(term => {
+                            if (term) {
+                                const regex = new RegExp(`,?\\s*${term}\\s*,?`, 'gi');
+                                cleanAddress = cleanAddress.replace(regex, '').trim();
+                            }
+                        });
+                        cleanAddress = cleanAddress.replace(/,$/, '').trim();
+
+                        setFormData(prev => ({
+                            ...prev,
+                            address: cleanAddress || address || prev.address,
+                            city: city || prev.city,
+                            state: state || prev.state,
+                            pincode: pincode || prev.pincode,
+                            latitude: lat,
+                            longitude: lng,
+                        }));
+                    } catch (err) {
+                        console.error("Error in place_changed handler:", err);
+                    }
+                });
+            }
+        } catch (err) {
+            console.error('[AddListing] Map initialization error:', err);
+            setMapError(true);
+        } finally {
+            initInProgress.current = false;
         }
     };
 
@@ -356,7 +445,7 @@ export default function AddListingPage() {
                     const pos = { lat: latitude, lng: longitude };
                     mapRef.current.setCenter(pos);
                     mapRef.current.setZoom(17);
-                    markerRef.current.setPosition(pos);
+                    markerRef.current.position = pos;
                     updateLocationFromCoords(latitude, longitude);
                 }
             },
@@ -379,10 +468,11 @@ export default function AddListingPage() {
             setCatsLoading(true);
             setCatsError(null);
             try {
-                const [cats, cityList, amenityList] = await Promise.all([
+                const [cats, cityList, amenityList, myListings] = await Promise.all([
                     api.categories.getAll(),
                     api.cities.getAll(),
-                    api.listings.getAmenities()
+                    api.listings.getAmenities(),
+                    api.listings.getMyListings({ limit: 1 }).catch(() => ({ meta: { total: 0 } }))
                 ]);
                 // Normalise in case API wraps response
                 const catArray = Array.isArray(cats) ? cats : (cats as any)?.data ?? [];
@@ -390,6 +480,8 @@ export default function AddListingPage() {
                 setCategories(catArray);
                 setCities(cityArray);
                 setAmenities(amenityList || []);
+                // Track how many listings the vendor already has (for free plan limit)
+                setMyListingsCount((myListings as any)?.meta?.total ?? (myListings as any)?.length ?? 0);
                 setFormData(prev => ({
                     ...prev,
                     categoryId: catArray[0]?.id || '',
@@ -459,6 +551,9 @@ export default function AddListingPage() {
         } else {
             submissionData.suggestedCategoryName = undefined;
         }
+
+        // Filter out empty FAQs
+        submissionData.faqs = (submissionData.faqs || []).filter((f: any) => f.question.trim() && f.answer.trim());
 
         // Clean up empty strings for optional URL/Email fields that might fail validation
         // class-validator @IsUrl() fails on empty strings even if @IsOptional()
@@ -615,6 +710,7 @@ export default function AddListingPage() {
             setCreatingAmenity(false);
         }
     };
+
 
     if (success) {
         return (
@@ -896,7 +992,7 @@ export default function AddListingPage() {
                                                     setCountryCode(e.target.value);
                                                     setFormData(prev => ({ ...prev, phone: e.target.value + phoneNumber }));
                                                 }}
-                                                className="h-full px-3 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 appearance-none cursor-pointer pr-8 min-w-[100px]"
+                                                className="country-code-select h-full px-3 py-3.5 border border-slate-200 rounded-xl font-black text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 appearance-none cursor-pointer pr-8 min-w-[100px]"
                                             >
                                                 {[
                                                     { code: '+93', label: '🇦🇫 AF +93' },
@@ -1504,163 +1600,6 @@ export default function AddListingPage() {
                             </div>
                         </div>
 
-                        {/* Offer / Banner Ads */}
-                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
-                                        <Tag className="w-4 h-4 text-orange-500" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-black text-slate-900">Offer / Banner Ad</h3>
-                                        <p className="text-[11px] text-slate-400 font-medium">Promote a special deal on your listing</p>
-                                    </div>
-                                </div>
-                                {/* Toggle Switch */}
-                                <button
-                                    type="button"
-                                    onClick={() => setFormData(prev => ({ ...prev, hasOffer: !prev.hasOffer }))}
-                                    className={`relative w-12 h-6 rounded-full transition-colors ${formData.hasOffer ? 'bg-orange-500' : 'bg-slate-200'}`}
-                                >
-                                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${formData.hasOffer ? 'translate-x-6' : 'translate-x-0'}`} />
-                                </button>
-                            </div>
-
-                            {formData.hasOffer ? (
-                                <div className="p-6 space-y-5">
-                                    {/* Offer Badge */}
-                                    <div>
-                                        <label className={labelClass}>
-                                            <Tag className="w-3 h-3 inline mr-1.5 text-orange-500" />
-                                            Offer Badge <span className="text-orange-500">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="offerBadge"
-                                            value={formData.offerBadge}
-                                            onChange={handleChange}
-                                            placeholder="e.g. 30% OFF · Free Delivery · Grand Opening"
-                                            maxLength={60}
-                                            className={inputClass}
-                                        />
-                                        <p className="text-xs text-slate-400 mt-1">Short promo label shown on the listing card</p>
-                                    </div>
-
-                                    {/* Offer Title */}
-                                    <div>
-                                        <label className={labelClass}>Offer Title</label>
-                                        <input
-                                            type="text"
-                                            name="offerTitle"
-                                            value={formData.offerTitle}
-                                            onChange={handleChange}
-                                            placeholder="e.g. Grand Opening Sale — This Weekend Only!"
-                                            maxLength={150}
-                                            className={inputClass}
-                                        />
-                                    </div>
-
-                                    {/* Offer Description */}
-                                    <div>
-                                        <label className={labelClass}>Offer Description</label>
-                                        <textarea
-                                            name="offerDescription"
-                                            value={formData.offerDescription}
-                                            onChange={handleChange}
-                                            rows={3}
-                                            placeholder="Details about the deal — terms, conditions, what's included..."
-                                            className={`${inputClass} resize-none`}
-                                        />
-                                    </div>
-
-                                    {/* Expiry Date */}
-                                    <div>
-                                        <label className={labelClass}>Offer Expiry Date</label>
-                                        <input
-                                            type="date"
-                                            name="offerExpiresAt"
-                                            value={formData.offerExpiresAt}
-                                            onChange={handleChange}
-                                            min={new Date().toISOString().split('T')[0]}
-                                            className={inputClass}
-                                        />
-                                    </div>
-
-                                    {/* Banner Image Upload */}
-                                    <div>
-                                        <label className={labelClass}>
-                                            <ImagePlus className="w-3 h-3 inline mr-1.5 text-orange-500" />
-                                            Banner Image <span className="text-slate-400 font-medium text-xs">(optional)</span>
-                                        </label>
-                                        {formData.offerBannerUrl ? (
-                                            <div className="relative rounded-2xl overflow-hidden bg-slate-100 aspect-[3/1]">
-                                                <img src={formData.offerBannerUrl} alt="Offer banner" className="w-full h-full object-cover" />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setFormData(prev => ({ ...prev, offerBannerUrl: '' }))}
-                                                    className="absolute top-3 right-3 w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 shadow-lg"
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <label className="block cursor-pointer group">
-                                                <div className="rounded-2xl border-2 border-dashed border-slate-200 hover:border-orange-300 bg-slate-50 hover:bg-orange-50/20 transition-all p-8 flex flex-col items-center gap-3">
-                                                    <ImagePlus className="w-8 h-8 text-slate-300 group-hover:text-orange-400 transition-colors" />
-                                                    <div className="text-center">
-                                                        <p className="font-black text-sm text-slate-400 group-hover:text-orange-500">Upload Banner Image</p>
-                                                        <p className="text-xs text-slate-300 mt-0.5">Recommended 1200×400 · PNG, JPG</p>
-                                                    </div>
-                                                </div>
-                                                <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    className="hidden"
-                                                    onChange={async e => {
-                                                        const file = e.target.files?.[0];
-                                                        if (!file) return;
-                                                        setLoading(true);
-                                                        try {
-                                                            const res = await api.listings.uploadImage(file);
-                                                            setFormData(prev => ({ ...prev, offerBannerUrl: res.url }));
-                                                        } catch { setError('Banner upload failed'); } finally { setLoading(false); }
-                                                    }}
-                                                />
-                                            </label>
-                                        )}
-                                    </div>
-
-                                    {/* Live Preview Card */}
-                                    {(formData.offerBadge || formData.offerTitle) && (
-                                        <div>
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Preview</p>
-                                            <div className="bg-gradient-to-r from-orange-500 to-rose-500 rounded-2xl p-5 text-white shadow-lg shadow-orange-500/20">
-                                                {formData.offerBannerUrl && (
-                                                    <img src={formData.offerBannerUrl} className="w-full rounded-xl mb-4 object-cover max-h-28" alt="banner" />
-                                                )}
-                                                <div>
-                                                    {formData.offerBadge && (
-                                                        <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur rounded-full text-xs font-black uppercase tracking-wider mb-2">
-                                                            🏷️ {formData.offerBadge}
-                                                        </span>
-                                                    )}
-                                                    {formData.offerTitle && <h4 className="font-black text-lg leading-tight mb-1">{formData.offerTitle}</h4>}
-                                                    {formData.offerDescription && <p className="text-sm text-white/80">{formData.offerDescription}</p>}
-                                                    {formData.offerExpiresAt && (
-                                                        <p className="text-xs text-white/60 mt-2 font-bold">⏳ Expires: {new Date(formData.offerExpiresAt).toLocaleDateString()}</p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="px-6 py-8 text-center text-slate-400">
-                                    <Tag className="w-8 h-8 mx-auto mb-2 opacity-20" />
-                                    <p className="text-sm font-bold">Toggle on to add a special offer or promo banner</p>
-                                </div>
-                            )}
-                        </div>
 
                         {/* ── Social Media Links ───────────────────────────── */}
                         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
@@ -1822,15 +1761,134 @@ export default function AddListingPage() {
                                 <ArrowLeft className="w-4 h-4" /> Back
                             </button>
                             <button
-                                disabled={loading || galleryUploading}
+                                type="button"
+                                onClick={() => {
+                                    if (!formData.description.trim() || formData.description.length < 10) {
+                                        setError('Please provide a description with at least 10 characters');
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                        return;
+                                    }
+                                    setError(null);
+                                    setActiveStep(4);
+                                }}
+                                className="flex-[2] py-4 bg-gradient-to-r from-[#0B2244] to-[#0D2E61] text-white rounded-2xl font-black text-base transition-all flex items-center justify-center gap-2"
+                            >
+                                Continue to FAQs <HelpCircle className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* ── STEP 4: FAQs & Publish ── */}
+                {activeStep === 4 && (
+                    <motion.div
+                        key="step4"
+                        initial={{ opacity: 0, x: 30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="space-y-6"
+                    >
+                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm">
+                            <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
+                                    <HelpCircle className="w-4 h-4 text-orange-500" />
+                                </div>
+                                <h3 className="font-black text-slate-900">Frequently Asked Questions</h3>
+                            </div>
+                            <div className="p-6 space-y-6">
+                                {/* FAQ Form */}
+                                <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
+                                    <div className="space-y-2">
+                                        <label className={labelClass}>Question</label>
+                                        <input
+                                            type="text"
+                                            value={newFaq.question}
+                                            onChange={(e) => setNewFaq(prev => ({ ...prev, question: e.target.value }))}
+                                            placeholder="e.g. Do you offer home delivery?"
+                                            className={inputClass}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className={labelClass}>Answer</label>
+                                        <textarea
+                                            value={newFaq.answer}
+                                            onChange={(e) => setNewFaq(prev => ({ ...prev, answer: e.target.value }))}
+                                            placeholder="e.g. Yes, we offer free home delivery within 5km radius."
+                                            rows={3}
+                                            className={`${inputClass} resize-none`}
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={addFaq}
+                                        disabled={!newFaq.question.trim() || !newFaq.answer.trim()}
+                                        className="w-full py-3 bg-white border-2 border-orange-500 text-orange-600 rounded-xl font-black text-sm hover:bg-orange-500 hover:text-white transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <Plus className="w-4 h-4" /> Add FAQ Item
+                                    </button>
+                                </div>
+
+                                {/* FAQ List */}
+                                <div className="space-y-3">
+                                    <AnimatePresence>
+                                        {formData.faqs.map((faq, idx) => (
+                                            <motion.div
+                                                key={idx}
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, scale: 0.95 }}
+                                                className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-slate-200 transition-all group"
+                                            >
+                                                <div className="flex justify-between gap-4">
+                                                    <div className="flex-1 space-y-1">
+                                                        <h4 className="text-sm font-black text-slate-900 flex items-start gap-2">
+                                                            <span className="text-orange-500">Q.</span> {faq.question}
+                                                        </h4>
+                                                        <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                                                            <span className="text-blue-500 font-black">A.</span> {faq.answer}
+                                                        </p>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeFaq(idx)}
+                                                        className="w-8 h-8 rounded-lg bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </motion.div>
+                                        ))}
+                                    </AnimatePresence>
+
+                                    {formData.faqs.length === 0 && (
+                                        <div className="text-center py-10 border-2 border-dashed border-slate-100 rounded-2xl">
+                                            <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                                                <HelpCircle className="w-6 h-6 text-slate-300" />
+                                            </div>
+                                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">No FAQs added yet</p>
+                                            <p className="text-[10px] text-slate-400 mt-1">Help your customers by answering common questions.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setActiveStep(3)}
+                                className="flex-1 py-4 bg-slate-100 text-slate-700 rounded-2xl font-black text-base hover:bg-slate-200 transition-all flex items-center justify-center gap-2"
+                            >
+                                <ArrowLeft className="w-4 h-4" /> Back
+                            </button>
+                            <button
                                 type="submit"
-                                className="flex-[2] py-4 bg-gradient-to-r from-[#FF7A30] to-[#FF9050] text-white rounded-2xl font-black text-base  shadow-orange-500/20 hover:from-[#E86920] hover:to-[#FF7A30] transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
+                                disabled={loading}
+                                className="flex-[2] py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-2xl font-black text-base hover:shadow-orange-500/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 shadow-xl"
                             >
                                 {loading ? (
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                ) : galleryUploading ? (
                                     <>
-                                        <Loader2 className="w-5 h-5 animate-spin" /> Uploading Gallery...
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        Publishing Listing...
                                     </>
                                 ) : (
                                     <>
@@ -1910,18 +1968,6 @@ export default function AddListingPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
-            {/* Google Maps Script Loading */}
-            <Script
-                src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`}
-                onLoad={() => {
-                    console.log('[AddListing] Google Maps Script Loaded');
-                    setMapLoaded(true);
-                }}
-                onError={() => {
-                    console.error('[AddListing] Google Maps Script Failed to Load');
-                    setMapError(true);
-                }}
-            />
         </div>
     );
 }

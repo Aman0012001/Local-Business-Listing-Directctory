@@ -1,6 +1,6 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Not, In } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { SubscriptionPlan, SubscriptionPlanType } from '../../entities/subscription-plan.entity';
 
@@ -15,7 +15,8 @@ export class SubscriptionsSeederService implements OnModuleInit {
     ) { }
 
     async onModuleInit() {
-        const shouldSeed = this.configService.get<string>('SEED_DATABASE') === 'true';
+        const val = this.configService.get('SEED_DATABASE');
+        const shouldSeed = String(val) === 'true';
         if (shouldSeed) {
             await this.seedPlans();
         }
@@ -27,59 +28,56 @@ export class SubscriptionsSeederService implements OnModuleInit {
         const plans = [
             {
                 id: '00000000-0000-0000-0000-000000000001',
-                name: 'Free Starter',
+                name: 'Free',
                 planType: SubscriptionPlanType.FREE,
-                description: 'Essential tools for small local businesses starting out.',
+                description: 'Get your business online with a basic profile. No credit card required.',
                 price: 0,
                 billingCycle: 'monthly',
-                features: ["1 Business Listing", "Basic Search Discovery", "Email Support", "5 Photo Gallery"],
-                maxListings: 1,
+                dashboardFeatures: {
+                    showListings: true,       // can see their 1 listing
+                    canAddListing: true,       // can add 1 listing (enforced by maxListings)
+                    showSaved: false,
+                    showFollowing: false,
+                    showQueries: false,
+                    showLeads: false,
+                    showOffers: false,
+                    showReviews: false,
+                    showAnalytics: false,
+                    showChat: false,
+                    showDemand: false,
+                    showBroadcast: false,
+                    maxKeywords: 0,
+                },
                 isFeatured: false,
-                isActive: true,
-            },
-            {
-                id: '00000000-0000-0000-0000-000000000002',
-                name: 'Professional',
-                planType: SubscriptionPlanType.BASIC,
-                description: 'Everything you need to dominate your local market.',
-                price: 49,
-                billingCycle: 'monthly',
-                features: ["10 Business Listings", "Priority Discovery", "Featured Badge", "Unlimited Photos", "WhatsApp Integration", "Lead Exports"],
-                maxListings: 10,
-                isFeatured: true,
-                isActive: true,
-            },
-            {
-                id: '00000000-0000-0000-0000-000000000003',
-                name: 'Enterprise',
-                planType: SubscriptionPlanType.PREMIUM,
-                description: 'For multi-location brands and high-volume agencies.',
-                price: 199,
-                billingCycle: 'monthly',
-                features: ["Unlimited Listings", "Global Featured Banner", "API Access", "Dedicated Manager", "Custom Analytics"],
-                maxListings: 999,
-                isFeatured: false,
+                stripePriceId: null,
                 isActive: true,
             },
         ];
 
+        // Seeding / Updating
         for (const planData of plans) {
             const existing = await this.planRepository.findOne({
-                where: { planType: planData.planType }
+                where: { id: planData.id }
             });
 
             if (existing) {
-                // Update existing plan but keep stripePriceId if manually changed
-                this.logger.log(`Updating plan: ${planData.name}`);
-                await this.planRepository.update(existing.id, {
-                    ...planData,
-                });
+                this.logger.log(`Updating dashboard features for plan: ${planData.name} (preserving existing price/name)`);
+                // Destructure to exclude fields that only the Admin should control in live DB
+                const { price, name, id, ...configOnly } = planData;
+                await this.planRepository.update(existing.id, configOnly as any);
             } else {
-                this.logger.log(`Creating new plan: ${planData.name}`);
-                const plan = this.planRepository.create(planData);
+                this.logger.log(`Creating new plan: ${planData.name} with price ${planData.price}`);
+                const plan = this.planRepository.create(planData as any);
                 await this.planRepository.save(plan);
             }
         }
+
+        // Deactivate others
+        const activeIds = plans.map(p => p.id);
+        await this.planRepository.update(
+            { id: Not(In(activeIds)) },
+            { isActive: false }
+        );
 
         this.logger.log('✅ Subscription plans seeding completed.');
     }

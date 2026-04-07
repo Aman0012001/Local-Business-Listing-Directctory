@@ -3,10 +3,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    CreditCard, CheckCircle2, Clock, Zap, Crown, Building2, Check,
+    CreditCard, CheckCircle2, Clock, Zap, Check,
     AlertTriangle, FileText, Download, X, ChevronRight, Loader2,
-    Calendar, Receipt, BadgeCheck, Sparkles, RefreshCw, Eye, ChevronLeft
+    BadgeCheck, RefreshCw, Eye
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { api } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -18,11 +19,10 @@ interface Plan {
     description: string;
     price: number | string;
     billingCycle: string;
-    features: string[];
     maxListings: number;
     isFeatured: boolean;
-    isSponsored: boolean;
     isActive: boolean;
+    dashboardFeatures: Record<string, any>;
 }
 
 interface Subscription {
@@ -69,7 +69,7 @@ function InvoiceModal({ invoiceId, onClose, user }: { invoiceId: string; onClose
                 table { width: 100%; border-collapse: collapse; }
                 th, td { padding: 12px 16px; text-align: left; }
                 th { background: #f8fafc; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; }
-                .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #dcfce7; color: #16a34a; }
+                .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #fff7ed; color: #f97316; }
                 .total-row { border-top: 2px solid #f1f5f9; font-weight: 900; }
             </style>
         </head><body>${content}</body></html>`);
@@ -102,7 +102,7 @@ function InvoiceModal({ invoiceId, onClose, user }: { invoiceId: string; onClose
                 <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-2xl bg-orange-50 flex items-center justify-center">
-                            <Receipt className="w-5 h-5 text-orange-500" />
+                            <FileText className="w-5 h-5 text-orange-500" />
                         </div>
                         <div>
                             <h2 className="text-lg font-black text-slate-900">Invoice</h2>
@@ -133,13 +133,13 @@ function InvoiceModal({ invoiceId, onClose, user }: { invoiceId: string; onClose
                             {/* Invoice Header */}
                             <div className="flex items-start justify-between mb-10">
                                 <div>
-                                    <div className="logo text-2xl font-black text-orange-500 mb-1">BizDirectory</div>
+                                    <div className="logo text-2xl font-black text-orange-500 mb-1">naampata</div>
                                     <p className="text-xs text-slate-400 font-bold">Business Listings Platform</p>
                                 </div>
                                 <div className="text-right">
-                                    <div className="inline-block px-4 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-black uppercase tracking-wider mb-2">
-                                        {txn.status === 'completed' ? '✓ Paid' : txn.status}
-                                    </div>
+                                <div className="inline-block px-4 py-1.5 bg-orange-50 text-orange-700 rounded-full text-xs font-black uppercase tracking-wider mb-2">
+                                    {txn.status === 'completed' ? '✓ Paid' : txn.status}
+                                </div>
                                     <p className="text-sm font-black text-slate-900">{txn.invoiceNumber || `INV-${txn.id.slice(0, 8).toUpperCase()}`}</p>
                                     <p className="text-xs text-slate-400 font-bold mt-0.5">
                                         {invDate.toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -207,7 +207,7 @@ function InvoiceModal({ invoiceId, onClose, user }: { invoiceId: string; onClose
 
                             {/* Footer note */}
                             <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-                                <p className="text-xs text-slate-400 font-bold">Thank you for your business! For queries, contact support@bizdirectory.com</p>
+                                <p className="text-xs text-slate-400 font-bold">Thank you for your business! For queries, contact support@naampata.com</p>
                             </div>
                         </div>
                     )}
@@ -218,51 +218,82 @@ function InvoiceModal({ invoiceId, onClose, user }: { invoiceId: string; onClose
 }
 
 /* ─── Plan Card ─────────────────────────────────────────────────────────── */
-function PlanCard({ plan, isActive, currentPrice, onSelect, loading }: { plan: Plan; isActive: boolean; currentPrice?: number; onSelect: () => void; loading: boolean }) {
+function PlanCard({ plan, isActive, status, hasActivePaidPlan, onSelect, loading }: {
+    plan: Plan;
+    isActive: boolean;         // This plan IS the currently active plan
+    status?: string;           // Status of the active subscription
+    hasActivePaidPlan: boolean; // Vendor currently has any paid (non-free) active plan
+    onSelect: () => void;
+    loading: boolean;
+}) {
     const getColor = (type: string) => {
-        const colors: Record<string, { bg: string; text: string; border: string; icon: string; accent: string }> = {
-            free: { bg: 'bg-slate-50', text: 'text-slate-500', border: 'border-slate-200', icon: 'text-slate-400', accent: 'bg-slate-100' },
-            basic: { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200', icon: 'text-blue-500', accent: 'bg-blue-100' },
-            premium: { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200', icon: 'text-amber-500', accent: 'bg-amber-100' },
-            enterprise: { bg: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-200', icon: 'text-rose-500', accent: 'bg-rose-50' },
+        const colors: Record<string, { text: string; icon: string; accent: string }> = {
+            free:  { text: 'text-slate-500', icon: 'text-slate-400', accent: 'bg-slate-100' },
         };
-        return colors[type] || colors.basic;
+        return colors[type] || { text: 'text-orange-600',  icon: 'text-orange-500',  accent: 'bg-orange-100'  };
     };
 
     const getIcon = (type: string) => {
         switch (type) {
-            case 'free': return <Clock className="w-5 h-5" />;
-            case 'basic': return <Zap className="w-5 h-5" />;
-            case 'premium': return <Crown className="w-5 h-5" />;
-            case 'enterprise': return <Building2 className="w-5 h-5" />;
-            default: return <CreditCard className="w-5 h-5" />;
+            case 'free':  return <Clock className="w-5 h-5" />;
+            default:      return <Zap className="w-5 h-5" />;
         }
     };
 
-    const clr = getColor(plan.planType);
+    const clr       = getColor(plan.planType);
     const planPrice = Number(plan.price);
-    const isUpgrade = currentPrice !== undefined && planPrice > currentPrice;
-    const isDowngrade = currentPrice !== undefined && planPrice < currentPrice;
+    const isFree    = plan.planType === 'free';
+    const isPending = isActive && status === 'pending';
+
+    // Free plan is locked — it is the default fallback, not a selectable plan
+    // Paid plan (Basic) is always rechargeable, even when currently active
+    const isLocked   = isFree;                         // free plan: never directly selectable
+    const isRecharge = isActive && !isFree && !isPending; // active paid plan: show Recharge
+
+    // Border / background styling
+    const cardStyle = isActive && !isFree
+        ? isPending
+            ? 'border-amber-300 bg-amber-50/30'
+            : 'border-orange-400 bg-gradient-to-b from-orange-50 to-white shadow-lg shadow-orange-100'
+        : isFree
+            ? 'border-slate-100 bg-slate-50/60'
+            : 'border-slate-100 bg-white hover:border-slate-200 hover:shadow-md';
+
+    // Button label + style
+    const btnContent = () => {
+        if (loading)    return <Loader2 className="w-4 h-4 animate-spin" />;
+        if (isFree)     return <><CheckCircle2 className="w-4 h-4" /> Always Included</>;
+        if (isPending)  return <><Clock className="w-4 h-4" /> Pending Approval</>;
+        if (isRecharge) return <><RefreshCw className="w-4 h-4" /> Recharge Monthly</>;
+        return <>Activate Plan <ChevronRight className="w-4 h-4" /></>;
+    };
+
+    const btnClass = isFree
+        ? 'bg-slate-100 text-slate-400 cursor-default'
+        : isPending
+            ? 'bg-amber-100 text-amber-700 cursor-default'
+            : isRecharge
+                ? 'bg-[#FF7A30] hover:bg-[#E86920] text-white shadow-lg shadow-orange-900/10 cursor-pointer'
+                : 'bg-slate-900 hover:bg-black text-white shadow-lg shadow-slate-900/10 cursor-pointer';
 
     return (
         <motion.div
-            whileHover={{ y: -4 }}
-            className={`relative rounded-2xl border-2 p-6 flex flex-col transition-all ${isActive
-                ? 'border-orange-400 bg-gradient-to-b from-orange-50 to-white shadow-lg shadow-orange-100'
-                : 'border-slate-100 bg-white hover:border-slate-200 hover:shadow-md'
-                }`}
+            whileHover={isFree ? {} : { y: -4 }}
+            className={`relative rounded-2xl border-2 p-6 flex flex-col transition-all ${cardStyle}`}
         >
-            {isActive && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-orange-500 text-white text-[10px] font-black uppercase tracking-widest rounded-full whitespace-nowrap">
-                    ✓ Current Plan
+            {/* Badge: Current Plan or Pending */}
+            {isActive && !isFree && (
+                <div className={`absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 text-white text-[10px] font-black uppercase tracking-widest rounded-full whitespace-nowrap ${isPending ? 'bg-amber-500' : 'bg-orange-500'}`}>
+                    {isPending ? '⌛ Pending' : '✓ Current Plan'}
                 </div>
             )}
-            {plan.isFeatured && !isActive && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-full whitespace-nowrap">
-                    ⭐ Most Popular
+            {isFree && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-slate-400 text-white text-[10px] font-black uppercase tracking-widest rounded-full whitespace-nowrap">
+                    Default Free
                 </div>
             )}
 
+            {/* Plan identity */}
             <div className="flex items-center gap-3 mb-4">
                 <div className={`w-10 h-10 rounded-xl ${clr.accent} ${clr.icon} flex items-center justify-center`}>
                     {getIcon(plan.planType)}
@@ -273,52 +304,69 @@ function PlanCard({ plan, isActive, currentPrice, onSelect, loading }: { plan: P
                 </div>
             </div>
 
+            {/* Price */}
             <div className="mb-5">
                 <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-black text-slate-900">PKR {planPrice.toLocaleString()}</span>
-                    <span className="text-slate-400 font-bold text-sm">/{plan.billingCycle}</span>
+                    {planPrice === 0 ? (
+                        <span className="text-3xl font-black text-slate-400">Free</span>
+                    ) : (
+                        <>
+                            <span className="text-3xl font-black text-slate-900">PKR {planPrice.toLocaleString()}</span>
+                            <span className="text-slate-400 font-bold text-sm">/{plan.billingCycle}</span>
+                        </>
+                    )}
                 </div>
+                {!isFree && (
+                    <p className="text-xs text-slate-400 font-bold mt-1">Billed monthly · Each recharge extends by 30 days</p>
+                )}
                 <p className="text-slate-500 font-bold text-sm mt-2 leading-relaxed">{plan.description || 'Grow your business visibility'}</p>
             </div>
 
+            {/* Feature list */}
             <div className="space-y-2.5 flex-1 mb-6">
-                {plan.features.map((f, i) => (
-                    <div key={i} className="flex items-start gap-2.5">
-                        <div className="mt-0.5 w-4 h-4 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
-                            <Check className="w-2.5 h-2.5 text-emerald-500 stroke-[3]" />
+                {plan.dashboardFeatures && Object.entries(plan.dashboardFeatures).map(([key, enabled]) => {
+                    if (!enabled || key === 'maxKeywords') return null;
+                    const labels: Record<string, string> = {
+                        showListings:  'My Listings',
+                        canAddListing: 'Add Listing',
+                        showLeads:     'Leads',
+                        showOffers:    'Offers & Events',
+                        showReviews:   'Reviews',
+                        showAnalytics: 'Analytics',
+                        showSaved:     'Saved',
+                        showFollowing: 'Following',
+                        showQueries:   'Queries',
+                        showChat:      'Live Chat',
+                        showBroadcast: 'Broadcast Feed',
+                        showDemand:    'Hot Demand Insights',
+                    };
+                    const label = labels[key] || key.replace('show', '').replace(/([A-Z])/g, ' $1').trim();
+                    return (
+                        <div key={key} className="flex items-start gap-2.5">
+                            <div className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 ${isFree ? 'bg-slate-100' : 'bg-emerald-50'}`}>
+                                <Check className={`w-2.5 h-2.5 stroke-[3] ${isFree ? 'text-slate-400' : 'text-emerald-500'}`} />
+                            </div>
+                            <span className={`font-bold text-sm leading-tight ${isFree ? 'text-slate-400' : 'text-slate-600'}`}>{label}</span>
                         </div>
-                        <span className="text-slate-600 font-bold text-sm leading-tight">{f}</span>
-                    </div>
-                ))}
+                    );
+                })}
                 <div className="flex items-center gap-2.5 pt-1">
                     <div className="w-4 h-4 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
                         <FileText className="w-2.5 h-2.5 text-blue-500" />
                     </div>
-                    <span className="font-black text-slate-700 text-sm">{plan.maxListings} Listing{plan.maxListings !== 1 ? 's' : ''}</span>
+                    <span className="font-black text-slate-700 text-sm">
+                        {plan.maxListings >= 999 ? 'Unlimited Listings' : `${plan.maxListings} Listing${plan.maxListings !== 1 ? 's' : ''}`}
+                    </span>
                 </div>
             </div>
 
+            {/* CTA Button */}
             <button
                 onClick={onSelect}
-                disabled={isActive || loading}
-                className={`w-full py-3 rounded-xl font-black text-sm transition-all active:scale-[0.97] flex items-center justify-center gap-2 ${isActive
-                    ? 'bg-orange-50 text-orange-500 cursor-default'
-                    : isUpgrade
-                        ? 'bg-[#FF7A30] hover:bg-[#E86920] text-white shadow-lg shadow-orange-900/10'
-                        : 'bg-slate-900 hover:bg-black text-white shadow-lg shadow-slate-900/10'
-                    } disabled:opacity-60`}
+                disabled={isFree || isPending || loading}
+                className={`w-full py-3 rounded-xl font-black text-sm transition-all active:scale-[0.97] flex items-center justify-center gap-2 disabled:opacity-70 ${btnClass}`}
             >
-                {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                ) : isActive ? (
-                    <><CheckCircle2 className="w-4 h-4" /> Active</>
-                ) : isUpgrade ? (
-                    <><Sparkles className="w-4 h-4" /> Upgrade Plan</>
-                ) : isDowngrade ? (
-                    <><RefreshCw className="w-4 h-4" /> Downgrade Plan</>
-                ) : (
-                    <>Activate Plan <ChevronRight className="w-4 h-4" /></>
-                )}
+                {btnContent()}
             </button>
         </motion.div>
     );
@@ -327,7 +375,8 @@ function PlanCard({ plan, isActive, currentPrice, onSelect, loading }: { plan: P
 
 /* ─── Main Page ─────────────────────────────────────────────────────────── */
 export default function VendorSubscriptionPage() {
-    const { user } = useAuth();
+    const { user, loading: authLoading, syncProfile } = useAuth();
+    const router = useRouter();
     const [plans, setPlans] = useState<Plan[]>([]);
     const [activeSub, setActiveSub] = useState<Subscription | null>(null);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -336,6 +385,17 @@ export default function VendorSubscriptionPage() {
     const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
     const [tab, setTab] = useState<'plan' | 'invoices'>('plan');
     const [successMsg, setSuccessMsg] = useState('');
+
+    // Safety-net guard: only vendors can access this page
+    // Wait for auth to finish loading before checking role to avoid premature redirects
+    useEffect(() => {
+        if (authLoading) return; // Don't redirect while auth is still initializing
+        if (!user) {
+            router.replace('/login');
+        } else if (user.role !== 'vendor') {
+            router.replace('/');
+        }
+    }, [user, authLoading, router]);
 
     const fetchAll = async () => {
         setLoadingPage(true);
@@ -346,7 +406,47 @@ export default function VendorSubscriptionPage() {
                 api.subscriptions.getMyInvoices().catch(() => []),
             ]);
             setPlans(Array.isArray(p) ? p : []);
-            setActiveSub(s);
+            
+            const isAdminUser = user?.role === 'admin' || user?.role === 'superadmin';
+            if (isAdminUser) {
+                setActiveSub({
+                    id: 'super-admin-mock',
+                    status: 'active',
+                    startDate: new Date().toISOString(),
+                    endDate: s?.endDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+                    amount: 0,
+                    plan: {
+                        id: 'super-admin-id',
+                        name: 'Super Admin',
+                        planType: 'paid',
+                        description: 'Full unrestricted access to all business management tools.',
+                        price: 0,
+                        billingCycle: 'Yearly',
+                        maxListings: 999,
+                        isFeatured: true,
+                        isActive: true,
+                        dashboardFeatures: {
+                            showListings: true,
+                            canAddListing: true,
+                            showSaved: true,
+                            showFollowing: true,
+                            showQueries: true,
+                            showLeads: true,
+                            showOffers: true,
+                            showReviews: true,
+                            showAnalytics: true,
+                            showChat: true,
+                            showBroadcast: true,
+                            showDemand: true,
+                            maxKeywords: 999
+                        }
+                    },
+                    autoRenew: true
+                });
+            } else {
+                setActiveSub(s);
+            }
+
             setInvoices(Array.isArray(inv) ? inv : []);
         } catch (e) {
             console.error(e);
@@ -358,31 +458,31 @@ export default function VendorSubscriptionPage() {
     useEffect(() => { fetchAll(); }, []);
 
     const handleSelectPlan = async (plan: Plan) => {
-        const isUpgrade = activeSub && Number(plan.price) > Number(activeSub.plan.price);
-        const isDowngrade = activeSub && Number(plan.price) < Number(activeSub.plan.price);
+        // Free plan is never directly selectable — it's the automatic fallback
+        if (plan.planType === 'free') return;
 
-        let confirmMsg = 'Activate this plan?';
-        if (isUpgrade) confirmMsg = `Are you sure you want to upgrade to ${plan.name}? Your features will be expanded immediately.`;
-        if (isDowngrade) confirmMsg = `Are you sure you want to downgrade to ${plan.name}? Some features might be restricted.`;
-        if (activeSub && !isUpgrade && !isDowngrade) confirmMsg = `Switch to ${plan.name}? Current plan will be replaced.`;
+        const isRecharge = activeSub?.plan?.id === plan.id;
+
+        const confirmMsg = isRecharge
+            ? `Recharge your ${plan.name} plan for another 30 days?\n\nYou will be charged PKR ${Number(plan.price).toLocaleString()} via Stripe.`
+            : `Activate the ${plan.name} plan?\n\nYou will be charged PKR ${Number(plan.price).toLocaleString()}/month via Stripe.`;
 
         if (!confirm(confirmMsg)) return;
 
         setCheckingOut(plan.id);
         try {
-            if (activeSub) {
-                // Use the new changePlan endpoint
-                await api.subscriptions.changePlan(plan.id);
-                setSuccessMsg(`🎉 Successfully switched to ${plan.name}!`);
-            } else {
-                // Initial activation
-                await api.subscriptions.mockCheckout(plan.id);
-                setSuccessMsg('🎉 Plan activated successfully!');
+            const res = await api.subscriptions.createCheckout(plan.id);
+            if (res.checkoutUrl) {
+                window.location.href = res.checkoutUrl;
+                return; // Stripe checkout — browser navigates away
             }
+            // Fallback: free plan mock success (shouldn't reach here for paid plans)
+            setSuccessMsg(`🎉 Successfully activated ${plan.name}!`);
             setTimeout(() => setSuccessMsg(''), 4000);
             await fetchAll();
+            await syncProfile();
         } catch (err: any) {
-            alert(err.message || 'Failed to switch plan');
+            alert(err.message || 'Failed to process plan. Please try again.');
         } finally {
             setCheckingOut(null);
         }
@@ -449,31 +549,52 @@ export default function VendorSubscriptionPage() {
                 >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isExpiringSoon ? 'bg-red-100' : 'bg-white/10'}`}>
-                                {isExpiringSoon
-                                    ? <AlertTriangle className="w-6 h-6 text-red-500" />
-                                    : <BadgeCheck className="w-6 h-6 text-emerald-400" />
-                                }
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                                isExpiringSoon ? 'bg-red-100' : 
+                                activeSub.status === 'pending' ? 'bg-amber-100' : 'bg-white/10'
+                            }`}>
+                                {isExpiringSoon ? (
+                                    <AlertTriangle className="w-6 h-6 text-red-500" />
+                                ) : activeSub.status === 'pending' ? (
+                                    <Clock className="w-6 h-6 text-amber-500" />
+                                ) : (
+                                    <BadgeCheck className="w-6 h-6 text-emerald-400" />
+                                )}
                             </div>
                             <div>
-                                <p className={`text-xs font-black uppercase tracking-widest mb-1 ${isExpiringSoon ? 'text-red-400' : 'text-slate-400'}`}>
-                                    {isExpiringSoon ? '⚠ Expiring Soon' : 'Active Plan'}
+                                <p className={`text-xs font-black uppercase tracking-widest mb-1 ${
+                                    isExpiringSoon ? 'text-red-400' : 
+                                    activeSub.status === 'pending' ? 'text-amber-500' : 'text-slate-400'
+                                }`}>
+                                    {isExpiringSoon ? '⚠ Expiring Soon' : 
+                                     activeSub.status === 'pending' ? '⌛ Awaiting Admin Approval' : 'Active Plan'}
                                 </p>
                                 <h2 className={`text-xl font-black ${isExpiringSoon ? 'text-red-700' : 'text-white'}`}>
                                     {activeSub.plan?.name}
                                 </h2>
-                                <p className={`text-sm font-bold mt-0.5 ${isExpiringSoon ? 'text-red-500' : 'text-slate-400'}`}>
-                                    {daysLeft !== null && daysLeft > 0
-                                        ? `Expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''} · ${new Date(activeSub.endDate).toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' })}`
-                                        : `Expires: ${new Date(activeSub.endDate).toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' })}`
-                                    }
-                                </p>
+                                {activeSub.status === 'active' && activeSub.plan?.planType !== 'free' && activeSub.plan?.name?.toLowerCase() !== 'free' && (
+                                    <p className={`text-sm font-bold mt-0.5 ${isExpiringSoon ? 'text-red-500' : 'text-slate-400'}`}>
+                                        {daysLeft !== null && daysLeft > 3000 ? (
+                                            <span className="text-emerald-400">Lifetime Plan</span>
+                                        ) : (
+                                            daysLeft !== null && daysLeft > 0
+                                                ? `Expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''} · ${new Date(activeSub.endDate).toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                                                : `Expires: ${new Date(activeSub.endDate).toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                                        )}
+                                    </p>
+                                )}
+
+                                {activeSub.status === 'pending' && (
+                                    <p className="text-sm font-bold text-amber-400/80 mt-0.5">
+                                        Your payment is under review. Please wait for admin activation.
+                                    </p>
+                                )}
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
                             <div className={`text-center px-5 py-3 rounded-xl ${isExpiringSoon ? 'bg-red-100' : 'bg-white/10'}`}>
                                 <p className={`text-xs font-black uppercase tracking-wider ${isExpiringSoon ? 'text-red-400' : 'text-slate-400'}`}>Amount</p>
-                                <p className={`text-lg font-black ${isExpiringSoon ? 'text-red-700' : 'text-white'}`}>PKR {Number(activeSub.amount).toLocaleString()}</p>
+                                <p className={`text-lg font-black ${isExpiringSoon ? 'text-red-700' : 'text-white'}`}>{Number(activeSub.amount) === 0 ? 'Free' : `PKR ${Number(activeSub.amount).toLocaleString()}`}</p>
                             </div>
                             {isExpiringSoon && (
                                 <button
@@ -504,7 +625,7 @@ export default function VendorSubscriptionPage() {
                         onClick={() => setTab(t as any)}
                         className={`px-6 py-2.5 rounded-xl text-sm font-black transition-all capitalize ${tab === t ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
                     >
-                        {t === 'plan' ? '📦 Plans' : '🧾 Invoices'}
+                        {t === 'plan' ? '📦 Plans' : '📑 Invoices'}
                     </button>
                 ))}
             </div>
@@ -522,7 +643,8 @@ export default function VendorSubscriptionPage() {
                                         key={plan.id}
                                         plan={plan}
                                         isActive={activeSub?.plan?.id === plan.id}
-                                        currentPrice={activeSub ? Number(activeSub.plan.price) : undefined}
+                                        status={activeSub?.status}
+                                        hasActivePaidPlan={!!activeSub && Number(activeSub.plan?.price ?? 0) > 0}
                                         onSelect={() => handleSelectPlan(plan)}
                                         loading={checkingOut === plan.id}
                                     />
@@ -537,14 +659,14 @@ export default function VendorSubscriptionPage() {
                         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                             <div className="px-6 py-5 border-b border-slate-100 flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
-                                    <Receipt className="w-4 h-4 text-orange-500" />
+                                    <FileText className="w-4 h-4 text-orange-500" />
                                 </div>
                                 <h3 className="font-black text-slate-900">Invoice History</h3>
                                 <span className="ml-auto text-xs font-black text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full">{invoices.length} records</span>
                             </div>
                             {invoices.length === 0 ? (
                                 <div className="text-center py-16 text-slate-400">
-                                    <Receipt className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                                    <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
                                     <p className="font-bold">No invoices yet</p>
                                     <p className="text-sm mt-1">Invoices will appear here after plan activation.</p>
                                 </div>

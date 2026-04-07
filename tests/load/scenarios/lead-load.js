@@ -1,7 +1,7 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 
-const BASE_URL = __ENV.API_URL || 'http://localhost:3001/api/v1';
+const BASE_URL = __ENV.API_URL || 'http://process.env.NEXT_PUBLIC_API_URL/api/v1';
 
 export const options = {
     stages: [

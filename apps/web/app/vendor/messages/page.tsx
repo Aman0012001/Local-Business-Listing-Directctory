@@ -6,9 +6,11 @@ import {
     Send, Mail, Phone, Clock, Search, RefreshCw,
     CheckCircle, XCircle, PhoneCall, TrendingUp,
     ChevronLeft, ChevronRight, X, MessageSquare,
-    Filter, ChevronDown, Loader2, Users, Eye
+    Filter, ChevronDown, Loader2, Users, Eye, Lock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../../context/AuthContext';
+import Link from 'next/link';
 
 // ─── Types ─────────────────────────────────────────────────────────────
 type EnquiryStatus = 'new' | 'contacted' | 'converted' | 'lost';
@@ -124,7 +126,7 @@ function EnquiryDetailModal({ enquiry, onClose, onStatusChange }: {
                         <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Quick Actions</p>
                         <div className="flex gap-2 flex-wrap">
                             {enquiry.email && (
-                                <a href={`mailto:${enquiry.email}?subject=Re: Your Enquiry`}
+                                <a href={`mailto:${enquiry.email}?subject=Re: Your Query`}
                                     className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 hover:border-blue-400 hover:text-blue-600 transition-all shadow-sm">
                                     <Mail className="w-4 h-4" /> Reply via Email
                                 </a>
@@ -178,6 +180,7 @@ function StatCard({ label, value, color }: { label: string; value: number; color
 const LIMIT = 15;
 
 export default function VendorEnquiriesPage() {
+    const { user } = useAuth();
     const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
     const [stats, setStats] = useState<Record<string, number>>({});
     const [total, setTotal] = useState(0);
@@ -189,16 +192,27 @@ export default function VendorEnquiriesPage() {
     const [search, setSearch] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
 
+    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+    const features = activeSub?.plan?.dashboardFeatures || {};
+    const isVendor = user?.role === 'vendor';
+
     const fetchEnquiries = useCallback(async (silent = false) => {
+        if (!user) { setLoading(false); return; }
         if (!silent) setLoading(true); else setRefreshing(true);
         try {
-            const params: any = { page, limit: LIMIT, type: 'chat' };
+            const isVendorOrAdmin = user.role === 'vendor' || user.role === 'admin';
+            const params: any = { page, limit: LIMIT };
             if (filterStatus) params.status = filterStatus;
 
-            const [enqRes, statsRes] = await Promise.allSettled([
-                api.leads.getForVendor(params),
-                api.leads.getStats(),
-            ]);
+            // Only fetch stats if user has vendor or admin role to prevent 403 errors
+            const fetchPromises: Promise<any>[] = [api.leads.getForVendor(params)];
+            if (isVendorOrAdmin) {
+                fetchPromises.push(api.leads.getStats());
+            }
+
+            const results = await Promise.allSettled(fetchPromises);
+            const enqRes = results[0];
+            const statsRes = isVendorOrAdmin ? results[1] : null;
 
             if (enqRes.status === 'fulfilled') {
                 setEnquiries(enqRes.value.data || []);
@@ -208,7 +222,7 @@ export default function VendorEnquiriesPage() {
                 setEnquiries([]);
             }
 
-            if (statsRes.status === 'fulfilled') {
+            if (statsRes && statsRes.status === 'fulfilled') {
                 setStats(statsRes.value || {});
             }
         } catch (e) {
@@ -218,9 +232,20 @@ export default function VendorEnquiriesPage() {
             setLoading(false);
             setRefreshing(false);
         }
-    }, [page, filterStatus]);
+    }, [user, page, filterStatus]);
 
-    useEffect(() => { fetchEnquiries(); }, [fetchEnquiries]);
+    useEffect(() => {
+        fetchEnquiries();
+    }, [user, fetchEnquiries]);
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <div className="w-12 h-12 border-4 border-violet-600/20 border-t-violet-600 rounded-full animate-spin" />
+                <p className="text-slate-400 font-bold text-sm">Loading queries…</p>
+            </div>
+        );
+    }
 
     const handleStatusChange = async (id: string, status: EnquiryStatus) => {
         try {
@@ -249,7 +274,7 @@ export default function VendorEnquiriesPage() {
                         <div className="w-10 h-10 bg-gradient-to-br from-violet-100 to-blue-100 rounded-2xl flex items-center justify-center">
                             <Send className="w-5 h-5 text-violet-600" />
                         </div>
-                        <h1 className="text-4xl font-black text-slate-900 tracking-tight">Enquiries</h1>
+                        <h1 className="text-4xl font-black text-slate-900 tracking-tight">Queries</h1>
                         {stats.new > 0 && (
                             <span className="px-3 py-1 bg-violet-600 text-white text-xs font-black rounded-full animate-pulse">
                                 {stats.new} New
@@ -258,7 +283,7 @@ export default function VendorEnquiriesPage() {
                     </div>
                     <p className="text-slate-400 font-bold mt-1 ml-[52px]">Direct messages from customers on your listings</p>
                 </div>
-                <button id="refresh-enquiries-btn" onClick={() => fetchEnquiries(true)} disabled={refreshing}
+                <button id="refresh-queries-btn" onClick={() => fetchEnquiries(true)} disabled={refreshing}
                     className="p-3 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-slate-900 hover:border-slate-300 transition-all shadow-sm self-start">
                     <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
                 </button>
@@ -276,13 +301,13 @@ export default function VendorEnquiriesPage() {
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 mb-6 flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input id="enquiry-search" type="text" placeholder="Search by name, email, or message…"
+                    <input id="query-search" type="text" placeholder="Search by name, email, or message…"
                         value={search} onChange={e => setSearch(e.target.value)}
                         className="w-full pl-10 pr-4 py-2.5 text-sm font-medium bg-slate-50 rounded-xl border border-transparent focus:border-violet-400 focus:bg-white outline-none transition-all" />
                 </div>
                 <div className="relative">
                     <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                    <select id="enquiry-status-filter" value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}
+                    <select id="query-status-filter" value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}
                         className="pl-9 pr-8 py-2.5 text-sm font-bold bg-slate-50 rounded-xl border border-transparent focus:border-violet-400 outline-none appearance-none cursor-pointer">
                         <option value="">All Statuses</option>
                         {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
@@ -296,7 +321,7 @@ export default function VendorEnquiriesPage() {
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-24 gap-4">
                         <div className="w-12 h-12 border-4 border-violet-600/20 border-t-violet-600 rounded-full animate-spin" />
-                        <p className="text-slate-400 font-bold text-sm">Loading enquiries…</p>
+                        <p className="text-slate-400 font-bold text-sm">Loading queries…</p>
                     </div>
                 ) : filtered.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-24 gap-4">
@@ -304,7 +329,7 @@ export default function VendorEnquiriesPage() {
                             <MessageSquare className="w-10 h-10 text-violet-300" />
                         </div>
                         <div className="text-center">
-                            <p className="text-slate-700 font-black text-lg">No enquiries yet</p>
+                            <p className="text-slate-700 font-black text-lg">No queries yet</p>
                             <p className="text-slate-400 text-sm mt-1">When customers send you a message from your listing, it will appear here</p>
                         </div>
                     </div>
@@ -316,6 +341,7 @@ export default function VendorEnquiriesPage() {
                                 <thead>
                                     <tr className="border-b border-slate-100 bg-slate-50/50">
                                         <th className="px-6 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">From</th>
+                                        <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Type</th>
                                         <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Message</th>
                                         <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Status</th>
                                         <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Date</th>
@@ -337,11 +363,16 @@ export default function VendorEnquiriesPage() {
                                                             {(enq.name?.[0] || '?').toUpperCase()}
                                                         </div>
                                                         <div>
-                                                            <p className="font-black text-slate-900 text-sm">{enq.name || '—'}</p>
-                                                            {enq.email && <p className="text-xs text-slate-400 font-medium">{enq.email}</p>}
-                                                            {enq.phone && <a href={`tel:${enq.phone}`} onClick={e => e.stopPropagation()} className="text-xs text-blue-500 font-bold hover:underline">{enq.phone}</a>}
+                                                            <p className="font-black text-slate-900 text-sm whitespace-nowrap">{enq.name || '—'}</p>
+                                                            {enq.email && <p className="text-xs text-slate-400 font-medium whitespace-nowrap">{enq.email}</p>}
+                                                            {enq.phone && <a href={`tel:${enq.phone}`} onClick={e => e.stopPropagation()} className="text-xs text-blue-500 font-bold hover:underline whitespace-nowrap">{enq.phone}</a>}
                                                         </div>
                                                     </div>
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <span className="inline-flex items-center px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-lg">
+                                                        {(enq as any).type || 'Query'}
+                                                    </span>
                                                 </td>
                                                 <td className="px-4 py-4 max-w-[260px]">
                                                     <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed">{enq.message || '—'}</p>

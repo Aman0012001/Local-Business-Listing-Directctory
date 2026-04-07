@@ -6,7 +6,7 @@ import {
     ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, Not, Brackets } from 'typeorm';
+import { Repository, In, Not, Brackets, Like, MoreThan } from 'typeorm';
 import { Listing, BusinessStatus } from '../../entities/business.entity';
 import { BusinessHours, DayOfWeek } from '../../entities/business-hours.entity';
 import { BusinessAmenity } from '../../entities/business-amenity.entity';
@@ -14,6 +14,9 @@ import { Amenity } from '../../entities/amenity.entity';
 import { Category, CategoryStatus } from '../../entities/category.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { User, UserRole } from '../../entities/user.entity';
+import { ActivePlan, ActivePlanStatus } from '../../entities/active-plan.entity';
+import { Subscription, SubscriptionStatus } from '../../entities/subscription.entity';
+import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { SearchBusinessDto, SearchSortBy } from './dto/search-business.dto';
@@ -42,6 +45,12 @@ export class BusinessesService {
         private categoryRepository: Repository<Category>,
         @InjectRepository(Vendor)
         private vendorRepository: Repository<Vendor>,
+        @InjectRepository(ActivePlan)
+        private activePlanRepository: Repository<ActivePlan>,
+        @InjectRepository(Subscription)
+        private subscriptionRepository: Repository<Subscription>,
+        @InjectRepository(SubscriptionPlan)
+        private subscriptionPlanRepository: Repository<SubscriptionPlan>,
         private notificationsService: NotificationsService,
         private searchService: SearchService,
         private demandService: DemandService,
@@ -94,12 +103,51 @@ export class BusinessesService {
         // Generate unique slug
         const slug = generateUniqueSlug(createBusinessDto.title);
 
+        // Sanitize offerExpiresAt to prevent invalid date errors
+        let sanitizedExpiresAt = createBusinessDto.offerExpiresAt;
+        if (
+            sanitizedExpiresAt === '' || 
+            sanitizedExpiresAt === null || 
+            (typeof sanitizedExpiresAt === 'string' && (sanitizedExpiresAt.includes('NaN') || sanitizedExpiresAt.includes('Invalid')))
+        ) {
+            sanitizedExpiresAt = null as any;
+        }
+
+        // NEW: Check for ANY active featured/boosted plan (Unified Subscription Engine)
+        const [activeSub, activeNewPlan, referralPlan] = await Promise.all([
+            this.subscriptionRepository.findOne({
+                where: { vendorId: vendor.id, status: SubscriptionStatus.ACTIVE, endDate: MoreThan(new Date()) },
+                relations: ['plan']
+            }),
+            this.activePlanRepository.findOne({
+                where: { vendorId: vendor.id, status: ActivePlanStatus.ACTIVE, endDate: MoreThan(new Date()) },
+                relations: ['plan']
+            }),
+            // Check if their vendor profile is verified or they have an active referral plan
+            this.activePlanRepository.findOne({
+                where: [
+                    { vendorId: vendor.id, status: ActivePlanStatus.ACTIVE, transactionId: Like('%REFERRAL%') },
+                    { vendorId: vendor.id, status: ActivePlanStatus.ACTIVE, transactionId: 'MANUAL_REWARD_REPAIR' }
+                ]
+            })
+        ]);
+
+        const hasFeaturedSub = (activeSub?.plan?.isFeatured) || ((activeNewPlan?.plan?.features as any)?.isFeatured);
+        const hasBoostedSub = !!referralPlan || ((activeNewPlan?.plan?.features as any)?.top_ranking);
+
+        const shouldAutoApprove = vendor.isVerified || !!referralPlan || hasFeaturedSub;
+
         // Create listing
         const listing = this.listingRepository.create({
             ...createBusinessDto,
+            offerExpiresAt: sanitizedExpiresAt,
             vendorId: vendor.id,
             slug,
-            status: BusinessStatus.PENDING,
+            status: shouldAutoApprove ? BusinessStatus.APPROVED : BusinessStatus.PENDING,
+            isVerified: vendor.isVerified || !!referralPlan,
+            isFeatured: hasFeaturedSub || !!referralPlan,
+            isSponsored: hasBoostedSub,
+            approvedAt: shouldAutoApprove ? new Date() : null,
         });
 
         const savedListing = await this.listingRepository.save(listing);
@@ -128,14 +176,6 @@ export class BusinessesService {
 
         // Return fully populated listing
         const result = await this.findOne(savedListing.id, user);
-
-        // Broadcast to all users: new listing is live
-        this.notificationsService.broadcast({
-            title: '📍 New Business Listed!',
-            message: `"${result.title}" just joined ${result.category?.name ? result.category.name + ' listings' : 'our directory'}. Check it out!`,
-            type: 'new_listing',
-            data: { businessId: result.id, slug: result.slug },
-        }).catch(() => {/* non-blocking */ });
 
         // Notify Admin if there's a suggested category
         if (createBusinessDto.suggestedCategoryName) {
@@ -221,11 +261,23 @@ export class BusinessesService {
                 queryBuilder.orderBy(`array_position(ARRAY['${esIds.join("','")}']::uuid[], listing.id)`, 'ASC');
             }
         } else if (searchDto.query) {
-            // Text search fallback — matches title, description and vendor-added search keywords
-            queryBuilder.andWhere(
-                '(listing.title ILIKE :query OR listing.description ILIKE :query OR listing.metaKeywords ILIKE :query OR vendor.businessName ILIKE :query)',
-                { query: `%${searchDto.query}%` },
-            );
+            // Text search fallback — matches title, description and vendor/admin-added search keywords
+            const searchTerms = searchDto.query.toLowerCase().split(' ').filter(term => term.length > 0);
+            queryBuilder.andWhere(new Brackets((qb) => {
+                for (let i = 0; i < searchTerms.length; i++) {
+                    const term = searchTerms[i];
+                    qb.andWhere(
+                        new Brackets((innerQb) => {
+                            innerQb.where(`"listing"."name" ILIKE :term${i}`)
+                                .orWhere(`"listing"."description" ILIKE :term${i}`)
+                                .orWhere(`"listing"."meta_keywords" ILIKE :term${i}`)
+                                .orWhere(`"listing"."search_keywords"::text ILIKE :term${i}`)
+                                .orWhere(`"vendor"."business_name" ILIKE :term${i}`);
+                        }),
+                        { [`term${i}`]: `%${term}%` }
+                    );
+                }
+            }));
         }
 
         // Category filter
@@ -295,9 +347,10 @@ export class BusinessesService {
         // 1) Keyword boost: if the query matches a vendor's metaKeywords, rank that listing first
         if (searchDto.query) {
             queryBuilder.addSelect(
-                'CASE WHEN listing.metaKeywords ILIKE :query THEN 0 ELSE 1 END',
+                'CASE WHEN "listing"."search_keywords"::text ILIKE :queryBoost THEN 0 WHEN "listing"."meta_keywords" ILIKE :queryBoost THEN 1 ELSE 2 END',
                 'boost',
             );
+            queryBuilder.setParameter('queryBoost', `%${searchDto.query}%`);
             queryBuilder.addOrderBy('boost', 'ASC');
         }
 
@@ -517,6 +570,15 @@ export class BusinessesService {
 
         // Remove nested objects from update
         const { businessHours, amenityIds, ...updateData } = updateBusinessDto;
+
+        // Sanitize offerExpiresAt to prevent invalid date errors
+        if (
+            updateData.offerExpiresAt === '' || 
+            updateData.offerExpiresAt === null || 
+            (typeof updateData.offerExpiresAt === 'string' && (updateData.offerExpiresAt.includes('NaN') || updateData.offerExpiresAt.includes('Invalid')))
+        ) {
+            updateData.offerExpiresAt = null as any;
+        }
 
         // Apply updates to the listing object
         Object.assign(listing, updateData);

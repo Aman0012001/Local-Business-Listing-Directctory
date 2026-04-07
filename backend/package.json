@@ -10,7 +10,7 @@
         "build": "nest build",
         "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
         "start": "nest start",
-        "dev": "npm run start:dev",
+        "dev": "node scripts/ensure-port-free.js && npm run start:dev",
         "start:dev": "nest start --watch",
         "start:debug": "nest start --debug --watch",
         "start:prod": "node dist/main.js",
@@ -24,13 +24,15 @@
         "migration:run": "typeorm migration:run -d src/config/typeorm.config.ts",
         "migration:revert": "typeorm migration:revert -d src/config/typeorm.config.ts",
         "seed": "ts-node src/database/seeds/run-seeds.ts",
-        "search:sync": "curl -X POST http://localhost:3001/api/v1/search/sync"
+        "search:sync": "curl -X POST http://process.env.NEXT_PUBLIC_API_URL/api/v1/search/sync"
     },
     "engines": {
         "node": ">=20.0.0"
     },
     "dependencies": {
         "@elastic/elasticsearch": "^8.11.0",
+        "@google/generative-ai": "^0.24.1",
+        "@nestjs/cache-manager": "^3.1.0",
         "@nestjs/common": "^11.0.1",
         "@nestjs/config": "^4.0.3",
         "@nestjs/core": "^11.1.14",
@@ -48,6 +50,8 @@
         "@types/multer": "^2.0.0",
         "@types/web-push": "^3.6.4",
         "bcrypt": "^5.1.1",
+        "cache-manager": "^7.2.8",
+        "cache-manager-redis-yet": "^5.1.5",
         "class-transformer": "^0.5.1",
         "class-validator": "^0.14.0",
         "cloudinary": "^1.41.3",
@@ -55,6 +59,7 @@
         "google-auth-library": "^10.6.1",
         "helmet": "^8.1.0",
         "multer-storage-cloudinary": "^4.0.0",
+        "nanoid": "^3.3.4",
         "napi-postinstall": "^0.3.0",
         "passport": "^0.7.0",
         "passport-jwt": "^4.0.1",
@@ -64,6 +69,7 @@
         "rxjs": "^7.8.1",
         "socket.io": "^4.8.3",
         "streamifier": "^0.1.1",
+        "stripe": "^20.4.1",
         "typeorm": "^0.3.28",
         "unrs-resolver": "^1.11.1",
         "uuid": "^9.0.1",
@@ -88,6 +94,7 @@
         "eslint-config-prettier": "^9.1.0",
         "eslint-plugin-prettier": "^5.1.2",
         "jest": "^29.7.0",
+        "node-fetch": "^2.6.7",
         "prettier": "^3.1.1",
         "rimraf": "^5.0.5",
         "source-map-support": "^0.5.21",
@@ -96,7 +103,8 @@
         "ts-loader": "^9.2.1",
         "ts-node": "^10.9.2",
         "tsconfig-paths": "^4.2.0",
-        "typescript": "^5.3.3"
+        "typescript": "^5.3.3",
+        "yn": "^3.1.1"
     },
     "jest": {
         "moduleFileExtensions": [

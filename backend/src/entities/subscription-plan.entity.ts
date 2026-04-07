@@ -27,7 +27,6 @@ export class SubscriptionPlan {
         name: 'plan_type',
         type: 'enum',
         enum: SubscriptionPlanType,
-        unique: true,
     })
     planType: SubscriptionPlanType;
 
@@ -40,23 +39,14 @@ export class SubscriptionPlan {
     @Column({ name: 'billing_cycle', length: 20, default: 'monthly' })
     billingCycle: string;
 
-    @Column({ type: 'jsonb' })
-    features: string[];
-
-    @Column({ name: 'max_listings', default: 1 })
-    maxListings: number;
+    @Column({ name: 'stripe_price_id', nullable: true })
+    stripePriceId: string;
 
     @Column({ name: 'is_featured', default: false })
     isFeatured: boolean;
 
-    @Column({ name: 'is_sponsored', default: false })
-    isSponsored: boolean;
-
-    @Column({ name: 'analytics_enabled', default: false })
-    analyticsEnabled: boolean;
-
-    @Column({ name: 'priority_support', default: false })
-    prioritySupport: boolean;
+    @Column({ name: 'dashboard_features', type: 'jsonb', default: {} })
+    dashboardFeatures: any;
 
     @Column({ name: 'is_active', default: true })
     isActive: boolean;

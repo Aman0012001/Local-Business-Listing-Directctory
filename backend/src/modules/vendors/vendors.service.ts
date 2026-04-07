@@ -11,6 +11,7 @@ import { User, UserRole } from '../../entities/user.entity';
 import { Listing } from '../../entities/business.entity';
 import { Subscription } from '../../entities/subscription.entity';
 import { CreateVendorDto, UpdateVendorDto } from './dto/vendor.dto';
+import { OfferEvent, OfferType, OfferStatus } from '../../entities/offer-event.entity';
 
 @Injectable()
 export class VendorsService {
@@ -21,6 +22,8 @@ export class VendorsService {
         private userRepository: Repository<User>,
         @InjectRepository(Listing)
         private listingRepository: Repository<Listing>,
+        @InjectRepository(OfferEvent)
+        private offerEventRepository: Repository<OfferEvent>,
     ) { }
 
     /**
@@ -52,13 +55,36 @@ export class VendorsService {
      * Get current vendor profile
      */
     async getProfile(userId: string): Promise<Vendor> {
-        const vendor = await this.vendorRepository.findOne({
+        let vendor = await this.vendorRepository.findOne({
             where: { userId },
             relations: ['businesses', 'subscriptions'],
         });
 
         if (!vendor) {
-            throw new NotFoundException('Vendor profile not found');
+            console.log(`[VendorsService] No vendor record found for user ${userId} in getProfile — creating one`);
+            const user = await this.userRepository.findOne({ where: { id: userId } });
+            if (user && user.role === UserRole.VENDOR) {
+                vendor = this.vendorRepository.create({
+                    userId,
+                    isVerified: false,
+                });
+                try {
+                    await this.vendorRepository.save(vendor);
+                } catch (err: any) {
+                    if (err.code === '23505' || err.message?.includes('duplicate key')) {
+                        console.log(`[VendorsService] Handled concurrent creation for ${userId}`);
+                    } else {
+                        throw err;
+                    }
+                }
+                
+                return this.vendorRepository.findOne({
+                    where: { userId },
+                    relations: ['businesses', 'subscriptions'],
+                });
+            } else {
+                throw new NotFoundException('Vendor profile not found and user is not a vendor');
+            }
         }
 
         return vendor;
@@ -136,6 +162,91 @@ export class VendorsService {
         vendor.verificationDocuments = documents;
         // In a real app, this might trigger an admin notification
         return this.vendorRepository.save(vendor);
+    }
+
+    /**
+     * Get a public vendor profile by ID
+     */
+    async getPublicProfile(vendorId: string) {
+        const vendor = await this.vendorRepository.findOne({
+            where: { id: vendorId },
+            relations: ['user'],
+        });
+
+        if (!vendor) {
+            throw new NotFoundException('Vendor not found');
+        }
+
+        const listings = await this.listingRepository.find({
+            where: { vendorId: vendor.id, status: 'approved' as any },
+            relations: ['category'],
+            order: { averageRating: 'DESC' },
+        });
+
+        const avgRating = listings.length > 0
+            ? listings.reduce((acc, l) => acc + Number(l.averageRating), 0) / listings.length
+            : 0;
+
+        const totalViews = listings.reduce((acc, l) => acc + Number(l.totalViews || 0), 0);
+        const categories = [...new Set(listings.map(l => l.category?.name).filter(Boolean))];
+
+        // Fetch Offers and Events
+        const now = new Date();
+        const allOffersEvents = await this.offerEventRepository.createQueryBuilder('oe')
+            .where('oe.vendorId = :vendorId', { vendorId: vendor.id })
+            .andWhere('oe.isActive = :isActive', { isActive: true })
+            .andWhere('oe.status != :expired', { expired: OfferStatus.EXPIRED })
+            .andWhere('(oe.expiryDate IS NULL OR oe.expiryDate > :now)', { now })
+            .andWhere('(oe.endDate IS NULL OR oe.endDate > :now)', { now })
+            .orderBy('oe.createdAt', 'DESC')
+            .getMany();
+
+        const offers = allOffersEvents.filter(oe => oe.type === OfferType.OFFER);
+        const events = allOffersEvents.filter(oe => oe.type === OfferType.EVENT);
+
+        return {
+            id: vendor.id,
+            businessName: vendor.businessName || vendor.user?.fullName || 'Unnamed Business',
+            vendorName: vendor.user?.fullName || 'Vendor',
+            businessEmail: vendor.businessEmail || vendor.user?.email,
+            businessPhone: vendor.businessPhone,
+            businessAddress: vendor.businessAddress,
+            isVerified: vendor.isVerified,
+            socialLinks: vendor.socialLinks || [],
+            avatarUrl: vendor.user?.avatarUrl || null,
+            bio: vendor.bio,
+            listingCount: listings.length,
+            avgRating: parseFloat(avgRating.toFixed(1)),
+            totalViews,
+            categories,
+            createdAt: vendor.user?.createdAt,
+            listings: listings.map(l => ({
+                id: l.id,
+                title: l.title,
+                slug: l.slug,
+                images: l.images,
+                averageRating: l.averageRating,
+                totalReviews: l.totalReviews,
+                city: l.city,
+                categoryName: l.category?.name,
+            })),
+            offers: offers.map(o => ({
+                id: o.id,
+                title: o.title,
+                description: o.description,
+                imageUrl: o.imageUrl,
+                offerBadge: o.offerBadge,
+                expiryDate: o.expiryDate,
+            })),
+            events: events.map(e => ({
+                id: e.id,
+                title: e.title,
+                description: e.description,
+                imageUrl: e.imageUrl,
+                startDate: e.startDate,
+                endDate: e.endDate,
+            })),
+        };
     }
 
     /**

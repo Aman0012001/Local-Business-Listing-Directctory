@@ -33,6 +33,17 @@ export class AdminController {
         return this.adminService.getGlobalStats();
     }
 
+    @Get('heatmap-data')
+    @Roles(UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Get search heatmap data for super admin' })
+    @ApiResponse({ status: 200, description: 'Heatmap data retrieved successfully' })
+    getHeatmapData(
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string
+    ) {
+        return this.adminService.getHeatmapData(startDate, endDate);
+    }
+
     @Patch('business/:id/moderate')
     @ApiOperation({ summary: 'Approve, reject, or suspend a business' })
     @ApiResponse({ status: 200, description: 'Business status updated' })
@@ -157,6 +168,17 @@ export class AdminController {
         return this.adminService.toggleVerifiedListing(id, isVerified);
     }
 
+    @Patch('business/:id/search-keywords')
+    @Roles(UserRole.ADMIN)
+    @ApiOperation({ summary: 'Update business search keywords' })
+    @ApiResponse({ status: 200, description: 'Business search keywords updated' })
+    updateSearchKeywords(
+        @Param('id', ParseUuidPipe) id: string,
+        @Body('keywords') keywords: string[],
+    ) {
+        return this.adminService.updateSearchKeywords(id, keywords);
+    }
+
     @Get('settings')
     @Roles(UserRole.ADMIN)
     @ApiOperation({ summary: 'Get all system settings' })
@@ -172,4 +194,5 @@ export class AdminController {
     updateSettings(@Body() settings: Record<string, string>) {
         return this.adminService.updateSettings(settings);
     }
+
 }

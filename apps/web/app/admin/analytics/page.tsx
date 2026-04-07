@@ -2,18 +2,18 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { api } from '../../../lib/api';
-import Script from 'next/script';
-import { 
-    Search, 
-    TrendingUp, 
-    Map as MapIcon, 
-    Filter, 
+import {
+    Search,
+    TrendingUp,
+    Map as MapIcon,
+    Filter,
     RefreshCcw,
     MapPin,
     MousePointer2,
     BarChart3
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { MarkerClusterer } from '@googlemaps/markerclusterer';
 
 export default function SearchAnalyticsPage() {
     const [heatmapData, setHeatmapData] = useState<any[]>([]);
@@ -25,21 +25,20 @@ export default function SearchAnalyticsPage() {
         uniqueLocations: 0,
         topKeyword: 'N/A'
     });
-    
+
     const mapRef = useRef<HTMLDivElement>(null);
     const googleMapRef = useRef<google.maps.Map | null>(null);
-    const heatmapLayerRef = useRef<google.maps.visualization.HeatmapLayer | null>(null);
+    const markerClustererRef = useRef<MarkerClusterer | null>(null);
 
     const fetchHeatmapData = async () => {
         setLoading(true);
         try {
             const data = await api.demand.getHeatmap(keyword);
             setHeatmapData(data);
-            
-            // Calculate some basic stats from the heatmap data
+
             const total = data.reduce((acc, curr) => acc + parseInt(curr.intensity), 0);
-            const top = data.length > 0 ? data.sort((a,b) => parseInt(b.intensity) - parseInt(a.intensity))[0].keyword : 'N/A';
-            
+            const top = data.length > 0 ? [...data].sort((a, b) => parseInt(b.intensity) - parseInt(a.intensity))[0].keyword : 'N/A';
+
             setStats({
                 totalSearches: total,
                 uniqueLocations: data.length,
@@ -52,6 +51,19 @@ export default function SearchAnalyticsPage() {
         }
     };
 
+    // Check if Google Maps API is already loaded
+    useEffect(() => {
+        const checkMap = () => {
+            if (typeof window !== 'undefined' && window.google?.maps?.marker) {
+                setMapLoaded(true);
+            } else {
+                const timer = setTimeout(checkMap, 500);
+                return () => clearTimeout(timer);
+            }
+        };
+        return checkMap();
+    }, []);
+
     useEffect(() => {
         fetchHeatmapData();
     }, []);
@@ -60,77 +72,25 @@ export default function SearchAnalyticsPage() {
         if (mapLoaded && mapRef.current && !googleMapRef.current) {
             const map = new google.maps.Map(mapRef.current, {
                 zoom: 5,
-                center: { lat: 30.3753, lng: 69.3451 }, // Center on Pakistan as default base
-                mapId: '9bbf977755b39e6a', // Use a custom Map ID for advanced styling if available
+                center: { lat: 30.3753, lng: 69.3451 },
+                mapId: '9bbf977755b39e6a',
                 styles: [
                     { "elementType": "geometry", "stylers": [{ "color": "#242f3e" }] },
                     { "elementType": "labels.text.stroke", "stylers": [{ "color": "#242f3e" }] },
                     { "elementType": "labels.text.fill", "stylers": [{ "color": "#746855" }] },
-                    {
-                        "featureType": "administrative.locality",
-                        "elementType": "labels.text.fill",
-                        "stylers": [{ "color": "#d59563" }]
-                    },
-                    {
-                        "featureType": "poi",
-                        "elementType": "labels.text.fill",
-                        "stylers": [{ "color": "#d59563" }]
-                    },
-                    {
-                        "featureType": "poi.park",
-                        "elementType": "geometry",
-                        "stylers": [{ "color": "#263c3f" }]
-                    },
-                    {
-                        "featureType": "poi.park",
-                        "elementType": "labels.text.fill",
-                        "stylers": [{ "color": "#6b9a76" }]
-                    },
-                    {
-                        "featureType": "road",
-                        "elementType": "geometry",
-                        "stylers": [{ "color": "#38414e" }]
-                    },
-                    {
-                        "featureType": "road",
-                        "elementType": "geometry.stroke",
-                        "stylers": [{ "color": "#212a37" }]
-                    },
-                    {
-                        "featureType": "road",
-                        "elementType": "labels.text.fill",
-                        "stylers": [{ "color": "#9ca5b3" }]
-                    },
-                    {
-                        "featureType": "road.highway",
-                        "elementType": "geometry",
-                        "stylers": [{ "color": "#746855" }]
-                    },
-                    {
-                        "featureType": "road.highway",
-                        "elementType": "geometry.stroke",
-                        "stylers": [{ "color": "#1f2835" }]
-                    },
-                    {
-                        "featureType": "road.highway",
-                        "elementType": "labels.text.fill",
-                        "stylers": [{ "color": "#f3d19c" }]
-                    },
-                    {
-                        "featureType": "water",
-                        "elementType": "geometry",
-                        "stylers": [{ "color": "#17263c" }]
-                    },
-                    {
-                        "featureType": "water",
-                        "elementType": "labels.text.fill",
-                        "stylers": [{ "color": "#515c6d" }]
-                    },
-                    {
-                        "featureType": "water",
-                        "elementType": "labels.text.stroke",
-                        "stylers": [{ "color": "#17263c" }]
-                    }
+                    { "featureType": "administrative.locality", "elementType": "labels.text.fill", "stylers": [{ "color": "#d59563" }] },
+                    { "featureType": "poi", "elementType": "labels.text.fill", "stylers": [{ "color": "#d59563" }] },
+                    { "featureType": "poi.park", "elementType": "geometry", "stylers": [{ "color": "#263c3f" }] },
+                    { "featureType": "poi.park", "elementType": "labels.text.fill", "stylers": [{ "color": "#6b9a76" }] },
+                    { "featureType": "road", "elementType": "geometry", "stylers": [{ "color": "#38414e" }] },
+                    { "featureType": "road", "elementType": "geometry.stroke", "stylers": [{ "color": "#212a37" }] },
+                    { "featureType": "road", "elementType": "labels.text.fill", "stylers": [{ "color": "#9ca5b3" }] },
+                    { "featureType": "road.highway", "elementType": "geometry", "stylers": [{ "color": "#746855" }] },
+                    { "featureType": "road.highway", "elementType": "geometry.stroke", "stylers": [{ "color": "#1f2835" }] },
+                    { "featureType": "road.highway", "elementType": "labels.text.fill", "stylers": [{ "color": "#f3d19c" }] },
+                    { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#17263c" }] },
+                    { "featureType": "water", "elementType": "labels.text.fill", "stylers": [{ "color": "#515c6d" }] },
+                    { "featureType": "water", "elementType": "labels.text.stroke", "stylers": [{ "color": "#17263c" }] }
                 ]
             });
             googleMapRef.current = map;
@@ -139,38 +99,61 @@ export default function SearchAnalyticsPage() {
 
     useEffect(() => {
         if (googleMapRef.current && heatmapData.length > 0) {
-            const points = heatmapData.map(point => ({
-                location: new google.maps.LatLng(parseFloat(point.lat), parseFloat(point.lng)),
-                weight: parseInt(point.intensity)
-            }));
-
-            if (heatmapLayerRef.current) {
-                heatmapLayerRef.current.setMap(null);
+            // Clear existing clusters/markers
+            if (markerClustererRef.current) {
+                markerClustererRef.current.clearMarkers();
             }
 
-            const heatmap = new google.maps.visualization.HeatmapLayer({
-                data: points,
-                map: googleMapRef.current,
-                radius: 30, // Adjust density radius
-                opacity: 0.8,
-                gradient: [
-                    'rgba(0, 255, 255, 0)',
-                    'rgba(0, 255, 255, 1)',
-                    'rgba(0, 191, 255, 1)',
-                    'rgba(0, 127, 255, 1)',
-                    'rgba(0, 63, 255, 1)',
-                    'rgba(0, 0, 255, 1)',
-                    'rgba(0, 0, 223, 1)',
-                    'rgba(0, 0, 191, 1)',
-                    'rgba(0, 0, 159, 1)',
-                    'rgba(0, 0, 127, 1)',
-                    'rgba(63, 0, 91, 1)',
-                    'rgba(127, 0, 63, 1)',
-                    'rgba(191, 0, 31, 1)',
-                    'rgba(255, 0, 0, 1)'
-                ]
+            const markers = heatmapData.map(point => {
+                const position = { lat: parseFloat(point.lat), lng: parseFloat(point.lng) };
+
+                // Create custom marker element for search points
+                const markerContainer = document.createElement('div');
+                markerContainer.className = 'w-4 h-4 rounded-full bg-red-600/60 border border-white shadow-lg animate-pulse';
+
+                return new google.maps.marker.AdvancedMarkerElement({
+                    map: googleMapRef.current,
+                    position,
+                    content: markerContainer,
+                    title: `Intensity: ${point.intensity}`
+                });
             });
-            heatmapLayerRef.current = heatmap;
+
+            // Initialize MarkerClusterer with custom styling
+            markerClustererRef.current = new MarkerClusterer({
+                map: googleMapRef.current,
+                markers,
+                renderer: {
+                    render: ({ count, position }) => {
+                        const color = count > 50 ? '#dc2626' : count > 20 ? '#ea580c' : '#2563eb';
+                        const size = 30 + Math.min(count / 2, 30);
+
+                        const div = document.createElement('div');
+                        div.style.backgroundColor = color;
+                        div.style.color = 'white';
+                        div.style.borderRadius = '50%';
+                        div.style.width = `${size}px`;
+                        div.style.height = `${size}px`;
+                        div.style.display = 'flex';
+                        div.style.alignItems = 'center';
+                        div.style.justifyContent = 'center';
+                        div.style.fontSize = '12px';
+                        div.style.fontWeight = '900';
+                        div.style.border = '3px solid rgba(255,255,255,0.4)';
+                        div.style.boxShadow = '0 10px 25px -5px rgba(0,0,0,0.3)';
+                        div.textContent = count.toString();
+
+                        return new google.maps.marker.AdvancedMarkerElement({
+                            position,
+                            content: div,
+                        });
+                    }
+                }
+            });
+        } else if (googleMapRef.current && heatmapData.length === 0) {
+            if (markerClustererRef.current) {
+                markerClustererRef.current.clearMarkers();
+            }
         }
     }, [heatmapData, mapLoaded]);
 
@@ -226,7 +209,7 @@ export default function SearchAnalyticsPage() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.1 }}
                         key={i}
-                        className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center gap-6"
+                        className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-sm flex items-center gap-6"
                     >
                         <div className={`${stat.color} p-4 rounded-3xl text-white shadow-lg`}>
                             <stat.icon className="w-6 h-6" />
@@ -241,16 +224,30 @@ export default function SearchAnalyticsPage() {
 
             {/* Map Container */}
             <div className="relative">
-                <div 
-                    ref={mapRef} 
-                    className="w-full h-[600px] rounded-[3rem] overflow-hidden border-8 border-white shadow-2xl bg-slate-100"
+                <div
+                    ref={mapRef}
+                    className="w-full h-[600px] rounded-[1rem] overflow-hidden border-8 border-white shadow-2xl bg-slate-100"
                 />
-                
+
                 {loading && (
-                    <div className="absolute inset-0 bg-white/40 backdrop-blur-sm flex items-center justify-center rounded-[3rem]">
+                    <div className="absolute inset-0 bg-white/40 backdrop-blur-sm flex items-center justify-center rounded-[1rem]">
                         <div className="flex flex-col items-center gap-4">
                             <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
-                            <p className="font-bold text-slate-900 tracking-tight">Updating Heatmap...</p>
+                            <p className="font-bold text-slate-900 tracking-tight">Updating Density Clusters...</p>
+                        </div>
+                    </div>
+                )}
+
+                {!loading && heatmapData.length === 0 && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="bg-white/90 backdrop-blur-md px-10 py-12 rounded-[1rem] shadow-2xl border border-slate-100 text-center max-w-sm pointer-events-auto">
+                            <div className="w-16 h-16 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                                <MapIcon className="w-8 h-8 text-slate-300" />
+                            </div>
+                            <h3 className="text-xl font-black text-slate-900 mb-2">No Demand Data Found</h3>
+                            <p className="text-slate-500 font-bold text-sm leading-relaxed">
+                                We haven't captured any search locations for this filter yet. Try a different keyword or check back later!
+                            </p>
                         </div>
                     </div>
                 )}
@@ -259,7 +256,7 @@ export default function SearchAnalyticsPage() {
                 <div className="absolute bottom-10 left-10 bg-white/90 backdrop-blur-md p-6 rounded-[2rem] border border-white/20 shadow-xl max-w-xs">
                     <h3 className="font-black text-slate-900 mb-3 flex items-center gap-2">
                         <MapIcon className="w-5 h-5 text-red-600" />
-                        Heatmap Intensity
+                        Search Density
                     </h3>
                     <div className="h-4 w-full bg-gradient-to-r from-blue-500 via-green-500 to-red-600 rounded-full mb-2" />
                     <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-tighter">
@@ -269,11 +266,6 @@ export default function SearchAnalyticsPage() {
                     </div>
                 </div>
             </div>
-
-            <Script
-                src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=visualization`}
-                onLoad={() => setMapLoaded(true)}
-            />
         </div>
     );
 }

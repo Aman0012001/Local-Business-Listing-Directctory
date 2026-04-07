@@ -1,10 +1,14 @@
+"use client";
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { Menu, ChevronDown, MapPin, User as UserIcon, LogOut, X, Search, Building2, Globe, Bell, Check, Trash2, BellRing } from 'lucide-react';
+import { Menu, ChevronDown, MapPin, User as UserIcon, LogOut, X, Search, Building2, Globe, Bell, Check, Trash2, BellRing, Megaphone, MessageSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api, getImageUrl } from '../lib/api';
+import VendorAvatar from './VendorAvatar';
 import { Category, City } from '../types/api';
 import { usePushNotifications } from '../lib/usePushNotifications';
+import { chatApi } from '../services/chat.service';
 
 export default function Navbar() {
     const { user, logout } = useAuth();
@@ -14,28 +18,52 @@ export default function Navbar() {
     const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
     // ── Web Push Notifications ───────────────────────────────────────
-    const { supported: pushSupported, permission: pushPermission, isSubscribed: pushSubscribed, subscribe: enablePush, loading: pushLoading } = usePushNotifications(user?.id);
+    const { supported: pushSupported, permission: pushPermission, isSubscribed: pushSubscribed, subscribe: enablePush, loading: pushLoading } = usePushNotifications(user?.id, true);
 
     // ── Notifications ───────────────────────────────────────────────
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [unreadChatCount, setUnreadChatCount] = useState(0);
     const [showBell, setShowBell] = useState(false);
+    const [activeSub, setActiveSub] = useState<any>(null);
+    const [loadingSub, setLoadingSub] = useState(true);
     const bellRef = useRef<HTMLDivElement>(null);
 
     const fetchNotifications = useCallback(async () => {
         if (!user) return;
         try {
-            const res = await api.notifications.getAll();
-            setNotifications(res.notifications || []);
-            setUnreadCount(res.unreadCount || 0);
+            const [notifRes, chatRes] = await Promise.all([
+                api.notifications.getAll() as any,
+                chatApi.getUnreadCount() as any
+            ]);
+            setNotifications(notifRes.notifications || []);
+            setUnreadCount(notifRes.unreadCount || 0);
+            setUnreadChatCount(chatRes.count || 0);
         } catch { /* ignore */ }
     }, [user]);
 
     useEffect(() => {
         fetchNotifications();
+        
+        const fetchSub = async () => {
+            if (!user || user.role !== 'vendor') {
+                setLoadingSub(false);
+                return;
+            }
+            try {
+                const sub = await api.subscriptions.getActive();
+                setActiveSub(sub);
+            } catch (err) {
+                console.error('Failed to fetch active sub in navbar', err);
+            } finally {
+                setLoadingSub(false);
+            }
+        };
+
+        fetchSub();
         const interval = setInterval(fetchNotifications, 30000);
         return () => clearInterval(interval);
-    }, [fetchNotifications]);
+    }, [fetchNotifications, user]);
 
     // Close bell dropdown on outside click
     useEffect(() => {
@@ -225,6 +253,24 @@ export default function Navbar() {
                                                             <span className="text-[10px] text-slate-400 font-medium italic">Fresh arrivals this week</span>
                                                         </div>
                                                     </Link>
+                                                    <Link href="/offers-events" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
+                                                        <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-500">
+                                                            <Megaphone className="w-4 h-4" />
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-bold text-slate-900">Offer & Events</span>
+                                                            <span className="text-[10px] text-slate-400 font-medium italic">Best deals & local events</span>
+                                                        </div>
+                                                    </Link>
+                                                    <Link href="/broadcasts" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
+                                                        <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-500">
+                                                            <Megaphone className="w-4 h-4" />
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-bold text-slate-900">Broadcast Request</span>
+                                                            <span className="text-[10px] text-slate-400 font-medium italic">Get quotes from experts</span>
+                                                        </div>
+                                                    </Link>
                                                     <Link href="/search" className="mt-2 text-center py-2 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-900 border-t border-slate-50 pt-3">
                                                         Advanced Search
                                                     </Link>
@@ -295,18 +341,12 @@ export default function Navbar() {
                         {user ? (
                             <div className="flex items-center gap-3">
                                 <Link href={user.role === 'admin' || user.role === 'superadmin' ? '/admin' : '/vendor/dashboard'} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer group">
-                                    <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform overflow-hidden">
-                                        {user.avatarUrl ? (
-                                            <img
-                                                src={getImageUrl(user.avatarUrl) as string}
-                                                alt="Avatar"
-                                                className="w-full h-full object-cover"
-                                                key={user.avatarUrl}
-                                            />
-                                        ) : (
-                                            <UserIcon className="w-4 h-4 text-[#FF7A30]" />
-                                        )}
-                                    </div>
+                                    <VendorAvatar 
+                                        src={user.avatarUrl} 
+                                        alt={user.fullName || user.email} 
+                                        size="sm" 
+                                        className="shadow-sm group-hover:scale-110 transition-transform"
+                                    />
                                     <div className="flex flex-col">
                                         <span className="text-xs font-bold text-[#112D4E] leading-tight max-w-[80px] truncate">{user.fullName || user.email}</span>
                                         <span className="text-[8px] text-orange-600 font-bold uppercase tracking-widest">
@@ -326,6 +366,21 @@ export default function Navbar() {
                                         <BellRing className={`w-3.5 h-3.5 ${pushLoading ? 'animate-bounce' : ''}`} />
                                         {pushLoading ? 'Enabling…' : 'Enable Push'}
                                     </button>
+                                )}
+
+                                {user && (user.role === 'admin' || user.role === 'superadmin' || (activeSub?.plan?.dashboardFeatures?.showChat !== false)) && (
+                                    <Link
+                                        href="/vendor/chat"
+                                        className={`relative p-2.5 rounded-xl text-slate-500 hover:text-[#FF7A30] hover:bg-orange-50 transition-all ${loadingSub && user.role === 'vendor' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+                                        title="Messages"
+                                    >
+                                        <MessageSquare className="w-5 h-5" />
+                                        {unreadChatCount > 0 && (
+                                            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-emerald-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                                                {unreadChatCount > 9 ? '9+' : unreadChatCount}
+                                            </span>
+                                        )}
+                                    </Link>
                                 )}
 
                                 {/* 🔔 Notification Bell */}
@@ -452,9 +507,8 @@ export default function Navbar() {
             <div className={`lg:hidden fixed inset-0 z-50 transition-all duration-300 pointer-events-none ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0'}`}>
                 <div className={`absolute top-20 left-0 right-0 bg-white border-b border-slate-100 shadow-2xl transition-all duration-300 pointer-events-auto ${isMobileMenuOpen ? 'translate-y-0' : '-translate-y-full'}`}>
                     <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(100vh-5rem)]">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4">
                             <Link href="/" className="p-4 rounded-2xl bg-slate-50 text-center font-bold text-slate-900 border border-transparent active:border-slate-200">Home</Link>
-                            <Link href="/blog" className="p-4 rounded-2xl bg-slate-50 text-center font-bold text-slate-900 border border-transparent active:border-slate-200">Blog</Link>
                         </div>
 
                         <div className="space-y-4">

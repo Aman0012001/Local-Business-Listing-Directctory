@@ -8,11 +8,17 @@ import {
     UseGuards,
     Param,
     Query,
+    Req,
+    Headers,
+    RawBodyRequest,
+    BadRequestException
 } from '@nestjs/common';
+import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { PricingPlanType } from '../../entities/pricing-plan.entity';
 import { SubscriptionsService } from './subscriptions.service';
 import { SubscriptionCronService } from './subscription-cron.service';
-import { CreatePlanDto, UpdatePlanDto, CheckoutDto, AssignPlanDto, ChangePlanDto } from './dto/subscription.dto';
+import { CreatePlanDto, UpdatePlanDto, CheckoutDto, AssignPlanDto, ChangePlanDto, CreatePricingPlanDto, UpdatePricingPlanDto } from './dto/subscription.dto';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -36,6 +42,13 @@ export class SubscriptionsController {
     @ApiOperation({ summary: 'List all active subscription plans' })
     getPlans() {
         return this.subService.getPlans();
+    }
+
+    @Public()
+    @Get('pricing/plans')
+    @ApiOperation({ summary: 'List all active monetization plans (New System)' })
+    getPricingPlans(@Query('type') type?: PricingPlanType) {
+        return this.subService.getPricingPlans(type);
     }
 
     @Get('plans/admin')
@@ -71,6 +84,34 @@ export class SubscriptionsController {
     @ApiOperation({ summary: 'Delete a plan (Admin only)' })
     deletePlan(@Param('id') id: string) {
         return this.subService.deletePlan(id);
+    }
+
+    @Get('pricing/plans/admin')
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'List all PricingPlans for Admin' })
+    getPricingPlansForAdmin() {
+        return this.subService.getPricingPlansForAdmin();
+    }
+
+    @Post('pricing/plans')
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Create a new PricingPlan (Admin only)' })
+    createPricingPlan(@Body() dto: CreatePricingPlanDto) {
+        return this.subService.createPricingPlan(dto);
+    }
+
+    @Patch('pricing/plans/:id')
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Update a PricingPlan (Admin only)' })
+    updatePricingPlan(@Param('id') id: string, @Body() dto: UpdatePricingPlanDto) {
+        return this.subService.updatePricingPlan(id, dto);
+    }
+
+    @Delete('pricing/plans/:id')
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Delete a PricingPlan (Admin only)' })
+    deletePricingPlan(@Param('id') id: string) {
+        return this.subService.deletePricingPlan(id);
     }
 
     // ─── Admin Subscription Management ─────────────────────────────────────────
@@ -117,8 +158,25 @@ export class SubscriptionsController {
     @Post('checkout')
     @Roles(UserRole.VENDOR, UserRole.ADMIN, UserRole.SUPERADMIN)
     @ApiOperation({ summary: 'Initiate a checkout session' })
-    createCheckout(@CurrentUser() user: User, @Body() checkoutDto: CheckoutDto) {
-        return this.subService.createCheckoutSession(user.id, checkoutDto);
+    createCheckout(
+        @CurrentUser() user: User, 
+        @Body() checkoutDto: CheckoutDto,
+        @Headers('origin') origin: string,
+        @Headers('referer') referer: string
+    ) {
+        return this.subService.createCheckoutSession(user.id, checkoutDto, origin || referer);
+    }
+
+    @Post('pricing/checkout')
+    @Roles(UserRole.VENDOR, UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Initiate a checkout session for a PricingPlan' })
+    createPricingCheckout(
+        @CurrentUser() user: User, 
+        @Body() checkoutDto: CheckoutDto,
+        @Headers('origin') origin: string,
+        @Headers('referer') referer: string
+    ) {
+        return this.subService.createPricingCheckoutSession(user.id, checkoutDto.planId, checkoutDto.targetId, origin || referer);
     }
 
     @Get('active')
@@ -128,11 +186,26 @@ export class SubscriptionsController {
         return this.subService.getActiveSubscription(user.id);
     }
 
+    @Post('verify')
+    @Roles(UserRole.VENDOR, UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Manually verify a payment session if webhook failed' })
+    verifyPayment(@CurrentUser() user: User, @Body('sessionId') sessionId: string) {
+        if (!sessionId) throw new BadRequestException('sessionId is required');
+        return this.subService.verifyCheckoutSession(sessionId, user.id);
+    }
+
     @Get('my-invoices')
     @Roles(UserRole.VENDOR, UserRole.ADMIN, UserRole.SUPERADMIN)
     @ApiOperation({ summary: 'Get all invoices/transactions for the logged-in vendor' })
     getMyInvoices(@CurrentUser() user: User) {
         return this.subService.getTransactions(user.id);
+    }
+
+    @Get('active-promotions')
+    @Roles(UserRole.VENDOR, UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Get all active promotions/boosts for the logged-in vendor' })
+    getActivePromotions(@CurrentUser() user: User) {
+        return this.subService.getActivePromotions(user.id);
     }
 
     @Get('invoice/:id')
@@ -147,28 +220,55 @@ export class SubscriptionsController {
     @ApiOperation({ summary: 'Upgrade or downgrade subscription plan' })
     async changePlan(
         @CurrentUser() user: User,
-        @Body() dto: ChangePlanDto
+        @Body() dto: ChangePlanDto,
+        @Headers('origin') origin: string,
+        @Headers('referer') referer: string
     ) {
-        return this.subService.changeSubscription(user.id, dto.planId);
+        return this.subService.changeSubscription(user.id, dto.planId, origin || referer);
     }
 
     @Post('mock-success/:planId')
-
     @Roles(UserRole.VENDOR, UserRole.ADMIN, UserRole.SUPERADMIN)
     @ApiOperation({ summary: 'Mock a payment success for development' })
     async mockSuccess(
         @CurrentUser() user: User,
-        @Param('planId') planId: string
+        @Param('planId') planId: string,
+        @Query('system') system: 'old' | 'new' = 'new',
+        @Query('targetId') targetId?: string
     ) {
-        // Look up current vendor via active subscription or by querying vendors
+        if (system === 'new') {
+            const vendor = await (this.subService as any).vendorRepository.findOne({ where: { userId: user.id } });
+            return this.subService.processActivePlanSuccess(
+                vendor.id,
+                planId,
+                'MOCK-NEW-' + Date.now(),
+                'Mock',
+                targetId
+            );
+        }
+        
+        // Old system fallback
         const sub = await this.subService.getActiveSubscription(user.id).catch(() => null);
         const vendorId = (sub as any)?.vendorId;
-        // If no active sub, we rely on the service to find vendor by userId
         return this.subService.handleMockSubscriptionSuccess(
-            vendorId || user.id, // fallback: service will handle by userId lookup
+            vendorId || user.id,
             planId,
             'MOCK-SUB-' + Date.now()
         );
+    }
+
+    // --- Webhook ---
+    @Public()
+    @Post('webhook')
+    @ApiOperation({ summary: 'Stripe Webhook' })
+    async stripeWebhook(
+        @Headers('stripe-signature') signature: string,
+        @Req() req: RawBodyRequest<Request>,
+    ) {
+        if (!signature || !req.rawBody) {
+            throw new BadRequestException('Missing stripe signature or raw body');
+        }
+        return this.subService.handleStripeWebhook(signature, req.rawBody);
     }
 
     // Keep old endpoint for backward compat

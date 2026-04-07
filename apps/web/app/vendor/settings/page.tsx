@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Settings, User, Phone, MapPin, Globe, Save, Loader2, CheckCircle2, AlertCircle, Upload, KeyRound, Camera, ChevronDown, Clock, Facebook, Instagram, Linkedin, Twitter, Youtube, ExternalLink, Trash2, Plus, Share2 } from 'lucide-react';
 import { api, getImageUrl } from '../../../lib/api';
+import VendorAvatar from '../../../components/VendorAvatar';
 import { useAuth } from '../../../context/AuthContext';
 import { City } from '../../../types/api';
 
@@ -382,15 +383,13 @@ export default function AccountSettings() {
                     {/* Avatar Upload */}
                     <div className="flex flex-col sm:flex-row items-start gap-8 border-b border-slate-100 pb-8">
                         <div className="relative group">
-                            <div className="w-32 h-32 rounded-3xl overflow-hidden bg-slate-100 border-4 border-white ">
-                                {previewImage ? (
-                                    <img src={previewImage} alt="Profile" className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-blue-50 text-blue-300">
-                                        <User className="w-12 h-12" />
-                                    </div>
-                                )}
-                            </div>
+                            <VendorAvatar 
+                                src={avatarFile ? previewImage : formData.avatarUrl} 
+                                alt={formData.fullName || 'User'} 
+                                size="lg" 
+                                className="border-4 border-white shadow-lg"
+                                isPreview={!!avatarFile}
+                            />
                             <button
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}

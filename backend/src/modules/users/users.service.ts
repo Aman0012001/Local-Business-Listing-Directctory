@@ -16,6 +16,7 @@ import {
 } from '../../common/utils/pagination.util';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import * as bcrypt from 'bcrypt';
+import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 
 @Injectable()
 export class UsersService {
@@ -28,6 +29,7 @@ export class UsersService {
         private notificationRepository: Repository<Notification>,
         @InjectRepository(Listing)
         private businessRepository: Repository<Listing>,
+        private subscriptionsService: SubscriptionsService,
     ) { }
 
     /**
@@ -36,16 +38,62 @@ export class UsersService {
     async getProfile(id: string): Promise<User> {
         const user = await this.userRepository.findOne({
             where: { id },
-            relations: ['vendor'],
+            relations: ['vendor', 'vendor.subscriptions', 'vendor.subscriptions.plan', 'vendor.activePlans', 'vendor.activePlans.plan'],
         });
 
         if (!user) {
             throw new NotFoundException('User not found');
         }
 
-        user.isOnline = true;
-        user.lastActiveAt = new Date();
-        await this.userRepository.save(user);
+        // Normalize and merge subscription data for the frontend if vendor exists
+        if (user.vendor) {
+            let activeSubscription: any = null;
+            
+            // 1. Check legacy system for an active subscription
+            const oldSub = user.vendor.subscriptions?.find(s => s.status === 'active');
+            if (oldSub) {
+                activeSubscription = this.subscriptionsService.normalizeSubOrActivePlan(oldSub, false);
+            }
+            
+            // 2. Merge with any active plans from the new system
+            if (user.vendor.activePlans) {
+                user.vendor.activePlans.forEach((plan: any) => {
+                    if (plan.status === 'active') {
+                        const normalizedPlan = this.subscriptionsService.normalizeSubOrActivePlan(plan, true);
+                        if (!activeSubscription) {
+                            activeSubscription = normalizedPlan;
+                        } else {
+                            // Merge dashboard features (OR logic for booleans, Max logic for numbers)
+                            const merged = JSON.parse(JSON.stringify(activeSubscription.plan.dashboardFeatures));
+                            const additions = normalizedPlan.plan.dashboardFeatures;
+                            
+                            Object.keys(additions).forEach(key => {
+                                if (typeof additions[key] === 'boolean') {
+                                    merged[key] = merged[key] || additions[key];
+                                } else if (typeof additions[key] === 'number') {
+                                    merged[key] = Math.max(merged[key] || 0, additions[key]);
+                                }
+                            });
+                            
+                            activeSubscription.plan.dashboardFeatures = merged;
+                        }
+                    }
+                });
+            }
+
+            // Attaching normalized sub to vendor for frontend consumption
+            (user.vendor as any).activeSubscription = activeSubscription;
+        }
+
+        // Attempt to update online status but don't fail profile retrieval if it fails
+        try {
+            user.isOnline = true;
+            user.lastActiveAt = new Date();
+            await this.userRepository.save(user);
+        } catch (error) {
+            console.error(`[UsersService] Failed to update user online status for ${id}:`, error.message);
+            // We ignore this error and continue with the profile result
+        }
 
         return user;
     }

@@ -29,10 +29,18 @@ export class DemandController {
         return this.demandService.logSearch(data);
     }
 
+    @Get('summary-ai')
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Get AI-generated demand summary' })
+    async getAISummary(@Query('city') city?: string) {
+        return { summary: await this.demandService.getAIInsightsSummary(city) };
+    }
+
     @Get('insights')
     @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
     @ApiBearerAuth()
-    @ApiOperation({ summary: 'Get global demand insights (Admin only)' })
+    @ApiOperation({ summary: 'Get aggregated demand insights' })
     @ApiResponse({ status: 200, description: 'Demand insights retrieved' })
     async getInsights(@Query('city') city?: string) {
         return this.demandService.getInsights(city);

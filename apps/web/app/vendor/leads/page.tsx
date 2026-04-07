@@ -5,9 +5,11 @@ import { api } from '../../../lib/api';
 import {
     Phone, Mail, MessageSquare, Globe, Download, Filter,
     RefreshCw, TrendingUp, Users, CheckCircle, XCircle,
-    PhoneCall, ChevronDown, Search, Eye, ChevronLeft, ChevronRight, Loader2
+    PhoneCall, ChevronDown, Search, Eye, ChevronLeft, ChevronRight, Loader2, Lock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../../context/AuthContext';
+import Link from 'next/link';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type LeadStatus = 'new' | 'contacted' | 'converted' | 'lost';
@@ -182,6 +184,7 @@ function LeadDetailModal({ lead, onClose, onStatusChange }: {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function VendorLeadsPage() {
+    const { user } = useAuth();
     const [leads, setLeads] = useState<Lead[]>([]);
     const [stats, setStats] = useState<Record<string, number>>({});
     const [loading, setLoading] = useState(true);
@@ -197,18 +200,29 @@ export default function VendorLeadsPage() {
     const [filterStatus, setFilterStatus] = useState('');
     const [filterType, setFilterType] = useState('');
 
+    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+    const features = activeSub?.plan?.dashboardFeatures || {};
+    const isVendor = user?.role === 'vendor';
+
     const fetchLeads = useCallback(async (silent = false) => {
+        if (!user) { setLoading(false); return; }
         if (!silent) setLoading(true); else setRefreshing(true);
         try {
+            const isVendorOrAdmin = user.role === 'vendor' || user.role === 'admin';
             const params: any = { page, limit: LIMIT };
             if (filterStatus) params.status = filterStatus;
             if (filterType) params.type = filterType;
 
             // Fetch leads and stats independently so one failure doesn't block the other
-            const [leadsRes, statsRes] = await Promise.allSettled([
-                api.leads.getForVendor(params),
-                api.leads.getStats(),
-            ]);
+            // Only fetch stats if user has vendor or admin role to prevent 403 errors
+            const fetchPromises: Promise<any>[] = [api.leads.getForVendor(params)];
+            if (isVendorOrAdmin) {
+                fetchPromises.push(api.leads.getStats());
+            }
+
+            const results = await Promise.allSettled(fetchPromises);
+            const leadsRes = results[0];
+            const statsRes = isVendorOrAdmin ? results[1] : null;
 
             if (leadsRes.status === 'fulfilled') {
                 setLeads(leadsRes.value.data || []);
@@ -219,9 +233,9 @@ export default function VendorLeadsPage() {
                 setLeads([]);
             }
 
-            if (statsRes.status === 'fulfilled') {
+            if (statsRes && statsRes.status === 'fulfilled') {
                 setStats(statsRes.value || {});
-            } else {
+            } else if (statsRes) {
                 console.warn('Failed to fetch lead stats:', statsRes.reason);
             }
         } catch (e) {
@@ -231,9 +245,11 @@ export default function VendorLeadsPage() {
             setLoading(false);
             setRefreshing(false);
         }
-    }, [page, filterStatus, filterType]);
+    }, [user, page, filterStatus, filterType]);
 
-    useEffect(() => { fetchLeads(); }, [fetchLeads]);
+    useEffect(() => {
+        fetchLeads();
+    }, [user, fetchLeads]);
 
     const handleStatusChange = async (id: string, status: LeadStatus) => {
         try {
@@ -259,6 +275,17 @@ export default function VendorLeadsPage() {
             exportToCSV(all.data || []);
         } catch (e) { console.error('Download failed:', e); }
     };
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
+                <p className="text-slate-400 font-bold text-sm">Loading leads…</p>
+            </div>
+        );
+    }
+
+    // Leads unlocked for all vendors as per user request.
 
     const filtered = leads.filter(l => {
         if (!search) return true;
@@ -331,12 +358,7 @@ export default function VendorLeadsPage() {
 
             {/* Table */}
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                {loading ? (
-                    <div className="flex flex-col items-center justify-center py-24 gap-4">
-                        <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
-                        <p className="text-slate-400 font-bold text-sm">Loading leads…</p>
-                    </div>
-                ) : filtered.length === 0 ? (
+                {filtered.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-24 gap-3">
                         <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center">
                             <Users className="w-8 h-8 text-slate-300" />

@@ -19,6 +19,11 @@ export class CreatePlanDto {
     @IsEnum(SubscriptionPlanType)
     planType: SubscriptionPlanType;
 
+    @ApiPropertyOptional({ example: 'Unlimited listings for high-volume vendors' })
+    @IsOptional()
+    @IsString()
+    description?: string;
+
     @ApiProperty({ example: 499.00 })
     @IsNumber()
     price: number;
@@ -27,19 +32,19 @@ export class CreatePlanDto {
     @IsString()
     billingCycle: string;
 
-    @ApiProperty({ example: ['Priority Support', 'Featured Listing', 'Extended Analytics'] })
-    @IsArray()
-    @IsString({ each: true })
-    features: string[];
-
-    @ApiProperty({ example: 5 })
-    @IsNumber()
-    maxListings: number;
-
     @ApiProperty({ default: false })
     @IsOptional()
     @IsBoolean()
-    isSponsored?: boolean = false;
+    isFeatured?: boolean = false;
+
+    @ApiPropertyOptional({ example: { showAnalytics: true, showLeads: true } })
+    @IsOptional()
+    dashboardFeatures?: Record<string, boolean> = {};
+
+    @ApiPropertyOptional({ default: true })
+    @IsOptional()
+    @IsBoolean()
+    isActive?: boolean = true;
 }
 
 export class UpdatePlanDto {
@@ -55,6 +60,11 @@ export class UpdatePlanDto {
 
     @ApiPropertyOptional()
     @IsOptional()
+    @IsString()
+    description?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
     @IsNumber()
     price?: number;
 
@@ -65,24 +75,12 @@ export class UpdatePlanDto {
 
     @ApiPropertyOptional()
     @IsOptional()
-    @IsArray()
-    @IsString({ each: true })
-    features?: string[];
-
-    @ApiPropertyOptional()
-    @IsOptional()
-    @IsNumber()
-    maxListings?: number;
-
-    @ApiPropertyOptional()
-    @IsOptional()
     @IsBoolean()
     isFeatured?: boolean;
 
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ example: { showAnalytics: true, showLeads: true } })
     @IsOptional()
-    @IsBoolean()
-    isSponsored?: boolean;
+    dashboardFeatures?: Record<string, boolean>;
 
     @ApiPropertyOptional()
     @IsOptional()
@@ -92,12 +90,18 @@ export class UpdatePlanDto {
 
 export class CheckoutDto {
     @ApiProperty({ description: 'Plan UUID' })
-    @IsUUID()
+    @IsString()
     planId: string;
 
-    @ApiProperty({ example: 'monthly' })
+    @ApiPropertyOptional({ description: 'Target ID for boosts (Listing UUID, Offer UUID, etc.)' })
+    @IsOptional()
+    @IsUUID()
+    targetId?: string;
+
+    @ApiPropertyOptional({ example: 'monthly' })
+    @IsOptional()
     @IsString()
-    cycle: string;
+    cycle?: string;
 }
 
 export class AssignPlanDto {
@@ -106,7 +110,7 @@ export class AssignPlanDto {
     vendorId: string;
 
     @ApiProperty({ description: 'Plan UUID' })
-    @IsUUID()
+    @IsString()
     planId: string;
 
     @ApiPropertyOptional({ description: 'Duration in days', default: 30 })
@@ -117,7 +121,83 @@ export class AssignPlanDto {
 
 export class ChangePlanDto {
     @ApiProperty({ description: 'New Plan UUID' })
-    @IsUUID()
+    @IsString()
     planId: string;
 }
 
+export class CreatePricingPlanDto {
+    @ApiProperty({ example: '24 Hour Spotlight' })
+    @IsString()
+    name: string;
+
+    @ApiPropertyOptional({ example: 'Featured on home page for 24 hours' })
+    @IsOptional()
+    @IsString()
+    description?: string;
+
+    @ApiProperty({ example: 'homepage_featured' })
+    @IsString()
+    type: string;
+
+    @ApiProperty({ example: 499.00 })
+    @IsNumber()
+    price: number;
+
+    @ApiProperty({ example: 24 })
+    @IsNumber()
+    duration: number;
+
+    @ApiProperty({ example: 'hours' })
+    @IsString()
+    unit: string;
+
+    @ApiPropertyOptional({ default: true })
+    @IsOptional()
+    @IsBoolean()
+    isActive?: boolean = true;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    features?: Record<string, any>;
+}
+
+export class UpdatePricingPlanDto {
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    name?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    description?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    type?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsNumber()
+    price?: number;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsNumber()
+    duration?: number;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    unit?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsBoolean()
+    isActive?: boolean;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    features?: Record<string, any>;
+}

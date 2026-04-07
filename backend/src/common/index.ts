@@ -10,7 +10,6 @@ export * from './guards/firebase-auth.guard';
 
 // Interceptors
 export * from './interceptors/transform.interceptor';
-export * from './interceptors/logging.interceptor';
 
 // Filters
 export * from './filters/http-exception.filter';

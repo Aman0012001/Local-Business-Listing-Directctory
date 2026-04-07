@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { api } from '../lib/api';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
-const GOOGLE_CLIENT_ID = '696583631101-3td2apbr7d2tlbne4o6tmc0crg84u1nv.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '696583631101-3td2apbr7d2tlbne4o6tmc0crg84u1nv.apps.googleusercontent.com';
 
 // Ping interval: mark user as online every 90 seconds
 const PING_INTERVAL_MS = 90_000;
@@ -14,10 +14,11 @@ interface AuthContextType {
     user: any | null;
     loading: boolean;
     login: (credentials: any) => Promise<void>;
-    googleLogin: (credential: string, role?: string) => Promise<void>;
+    googleLogin: (credential: string, role?: string, referralCode?: string) => Promise<void>;
     register: (userData: any) => Promise<void>;
     logout: () => void;
     updateUser: (userData: any) => void;
+    syncProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -118,8 +119,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const redirectUser = (user: any) => {
         if (user.role === 'admin' || user.role === 'superadmin') {
             router.push('/admin');
-        } else {
+        } else if (user.role === 'vendor') {
             router.push('/vendor/dashboard');
+        } else {
+            // Regular users go to home page
+            router.push('/');
         }
     };
 
@@ -131,17 +135,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Immediately mark online in DB
         api.auth.ping().catch(() => {});
         startPing();
+        // Sync profile to ensure full data (relations like subscriptions)
+        await syncProfile();
         redirectUser(response.user);
     };
 
-    const googleLogin = async (credential: string, role?: string) => {
-        const response = await api.auth.googleLogin({ credential, role });
+    const googleLogin = async (credential: string, role?: string, referralCode?: string) => {
+        const response = await api.auth.googleLogin({ credential, role, referralCode });
         localStorage.setItem('token', response.tokens.accessToken);
         localStorage.setItem('user', JSON.stringify(response.user));
         setUser(response.user);
         // Immediately mark online in DB
         api.auth.ping().catch(() => {});
         startPing();
+        // Sync profile to ensure full data (relations like subscriptions)
+        await syncProfile();
         redirectUser(response.user);
     };
 
@@ -151,6 +159,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('user', JSON.stringify(response.user));
         setUser(response.user);
         startPing();
+        // Sync profile to ensure full data (relations like subscriptions)
+        await syncProfile();
         redirectUser(response.user);
     };
 
@@ -162,7 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return (
         <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-            <AuthContext.Provider value={{ user, loading, login, googleLogin, register, logout, updateUser }}>
+            <AuthContext.Provider value={{ user, loading, login, googleLogin, register, logout, updateUser, syncProfile }}>
                 {children}
             </AuthContext.Provider>
         </GoogleOAuthProvider>

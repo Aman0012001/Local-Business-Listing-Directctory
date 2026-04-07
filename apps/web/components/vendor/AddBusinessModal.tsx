@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Loader2, Store, MapPin, Phone, TextQuote, Layers, Sparkles, Plus, Check, Hash, Share2, Globe, MessageSquare, Navigation, ChevronDown } from 'lucide-react';
+import { X, Loader2, Store, MapPin, Phone, TextQuote, Layers, Sparkles, Plus, Check, Hash, Share2, Globe, MessageSquare, Navigation, ChevronDown, Tag, ImagePlus, HelpCircle, Trash2 } from 'lucide-react';
 import { api, getImageUrl } from '../../lib/api';
-import Script from 'next/script';
 import { Category, Business, City } from '../../types/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import CategorySearchSelect from '../CategorySearchSelect';
+import { useAuth } from '../../context/AuthContext';
 
 const SOCIAL_PLATFORMS = [
     { key: 'facebook', label: 'Facebook', emoji: '📘', color: '#1877F2', placeholder: 'https://facebook.com/yourbusiness' },
@@ -28,9 +28,11 @@ const TABS = [
     { id: 'location', label: 'Location', icon: MapPin },
     { id: 'media', label: 'Media & Amenities', icon: Sparkles },
     { id: 'social', label: 'Contact & Social', icon: Share2 },
+    { id: 'faqs', label: 'FAQs', icon: HelpCircle },
 ];
 
 export default function AddBusinessModal({ isOpen, onClose, onSuccess, business }: AddBusinessModalProps) {
+    const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState<Category[]>([]);
     const [cities, setCities] = useState<City[]>([]);
@@ -53,8 +55,18 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
         coverImageUrl: '',
         images: [] as string[],
         amenityIds: [] as string[],
-        metaKeywords: ''
+        metaKeywords: '',
+        hasOffer: false,
+        offerTitle: '',
+        offerDescription: '',
+        offerBadge: '',
+        offerExpiresAt: '',
+        offerBannerUrl: '',
+        faqs: [] as { question: string; answer: string }[]
     });
+
+    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
+    const maxKeywords = activeSub?.plan?.dashboardFeatures?.maxKeywords || 0;
 
     const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
     const [galleryUploading, setGalleryUploading] = useState(false);
@@ -66,7 +78,7 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
 
     const addKeyword = (raw: string) => {
         const tag = raw.trim().toLowerCase().replace(/[,]+$/, '');
-        if (tag && !keywords.includes(tag) && keywords.length < 20) {
+        if (tag && !keywords.includes(tag) && keywords.length < maxKeywords) {
             const updated = [...keywords, tag];
             setKeywords(updated);
             setFormData(prev => ({ ...prev, metaKeywords: updated.join(',') }));
@@ -111,6 +123,24 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
     const [newAmenityName, setNewAmenityName] = useState('');
     const [creatingAmenity, setCreatingAmenity] = useState(false);
 
+    const [newFaq, setNewFaq] = useState({ question: '', answer: '' });
+
+    const addFaq = () => {
+        if (!newFaq.question.trim() || !newFaq.answer.trim()) return;
+        setFormData(prev => ({
+            ...prev,
+            faqs: [...(prev.faqs || []), newFaq]
+        }));
+        setNewFaq({ question: '', answer: '' });
+    };
+
+    const removeFaq = (index: number) => {
+        setFormData(prev => ({
+            ...prev,
+            faqs: (prev.faqs || []).filter((_, i) => i !== index)
+        }));
+    };
+
     // Google Maps State & Refs
     const [mapError, setMapError] = useState(false);
     const [mapLoaded, setMapLoaded] = useState(false);
@@ -119,6 +149,7 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
     const mapRef = useRef<any>(null);
     const markerRef = useRef<any>(null);
     const mapContainerRef = useRef<HTMLDivElement>(null);
+    const initInProgress = useRef(false);
     const formDataRef = useRef(formData);
 
     useEffect(() => {
@@ -126,21 +157,38 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
     }, [formData]);
 
     useEffect(() => {
+        if (typeof window !== 'undefined' && (window as any).google?.maps?.importLibrary) {
+            setMapLoaded(true);
+            return;
+        }
+
+        const interval = setInterval(() => {
+            if (typeof window !== 'undefined' && (window as any).google?.maps?.importLibrary) {
+                setMapLoaded(true);
+                clearInterval(interval);
+            }
+        }, 1000);
+
         (window as any).gm_authFailure = () => {
-            console.error('Google Maps authentication failed - check API Key.');
+            console.error('[AddBusiness] Google Maps auth failure');
             setMapError(true);
         };
+
         return () => {
-            delete (window as any).gm_authFailure;
+            if (interval) clearInterval(interval);
         };
     }, []);
 
-    const updateLocationFromCoords = (lat: number, lng: number) => {
-        if (!(window as any).google) return;
-        const geocoder = new (window as any).google.maps.Geocoder();
-        geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
-            if (status === "OK" && results[0]) {
-                const place = results[0];
+    const updateLocationFromCoords = async (lat: number, lng: number) => {
+        setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
+        
+        try {
+            if (!(window as any).google || !(window as any).google.maps || !(window as any).google.maps.Geocoder) return;
+            const geocoder = new (window as any).google.maps.Geocoder();
+            const response = await geocoder.geocode({ location: { lat, lng } });
+
+            if (response.results?.[0]) {
+                const place = response.results[0];
                 let city = '';
                 let state = '';
                 let pincode = '';
@@ -169,112 +217,158 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                     city: city || prev.city,
                     state: state || prev.state,
                     pincode: pincode || prev.pincode,
-                    latitude: lat,
-                    longitude: lng,
                 }));
             }
-        });
+        } catch (error) {
+            console.error("Geocoding failed:", error);
+        }
     };
 
-    const initAutocomplete = () => {
-        if (!mapLoaded || !(window as any).google || !addressInputRef.current || !mapContainerRef.current) return;
+    const initAutocomplete = async () => {
+        if (!mapContainerRef.current || !addressInputRef.current || initInProgress.current) return;
 
-        const defaultCenter = { lat: formData.latitude, lng: formData.longitude };
+        try {
+            initInProgress.current = true;
+            const defaultCenter = { lat: formData.latitude, lng: formData.longitude };
+            
+            if (!(window as any).google?.maps?.importLibrary) {
+                console.warn('[AddBusiness] Google Maps importLibrary not available yet');
+                initInProgress.current = false;
+                return;
+            }
 
-        if (!mapRef.current) {
-            mapRef.current = new (window as any).google.maps.Map(mapContainerRef.current, {
-                center: defaultCenter,
-                zoom: 15,
-                mapTypeControl: false,
-                streetViewControl: false,
-                fullscreenControl: false,
-            });
+            const { Map } = await (window as any).google.maps.importLibrary("maps");
+            const { Autocomplete } = await (window as any).google.maps.importLibrary("places");
 
-            markerRef.current = new (window as any).google.maps.Marker({
-                position: defaultCenter,
-                map: mapRef.current,
-                draggable: true,
-                animation: (window as any).google.maps.Animation.DROP,
-                icon: {
-                    path: (window as any).google.maps.SymbolPath.CIRCLE,
-                    fillColor: '#f97316',
-                    fillOpacity: 1,
-                    strokeWeight: 4,
-                    strokeColor: '#ffffff',
-                    scale: 10
-                }
-            });
+            if (!mapRef.current) {
+                mapRef.current = new Map(mapContainerRef.current, {
+                    center: defaultCenter,
+                    zoom: 15,
+                    mapTypeId: 'roadmap',
+                    mapTypeControl: false,
+                    streetViewControl: false,
+                    fullscreenControl: false,
+                });
 
-            markerRef.current.addListener("dragend", () => {
-                const pos = markerRef.current.getPosition();
-                updateLocationFromCoords(pos.lat(), pos.lng());
-            });
+                console.log('[AddBusiness] Map instance created');
 
-            mapRef.current.addListener("click", (e: any) => {
-                if (e.latLng) {
-                    markerRef.current.setPosition(e.latLng);
-                    updateLocationFromCoords(e.latLng.lat(), e.latLng.lng());
-                }
-            });
-        }
-
-        if (!autoCompleteRef.current) {
-            autoCompleteRef.current = new (window as any).google.maps.places.Autocomplete(
-                addressInputRef.current,
-                {
-                    componentRestrictions: { country: "pk" },
-                    fields: ["address_components", "geometry", "formatted_address"],
-                }
-            );
-
-            autoCompleteRef.current.addListener("place_changed", () => {
                 try {
-                    const place = autoCompleteRef.current.getPlace();
-                    if (!place.geometry) return;
-
-                    const lat = place.geometry.location.lat();
-                    const lng = place.geometry.location.lng();
-
-                    mapRef.current.setCenter({ lat, lng });
-                    mapRef.current.setZoom(17);
-                    markerRef.current.setPosition({ lat, lng });
-
-                    let city = '';
-                    let state = '';
-                    let pincode = '';
-                    let address = place.formatted_address || '';
-
-                    place.address_components?.forEach((component: any) => {
-                        const types = component.types;
-                        if (types.includes("locality")) city = component.long_name;
-                        else if (types.includes("administrative_area_level_2") && !city) city = component.long_name;
-                        else if (types.includes("administrative_area_level_1")) state = component.long_name;
-                        else if (types.includes("postal_code")) pincode = component.long_name;
+                    const { Marker } = await (window as any).google.maps.importLibrary("marker");
+                    markerRef.current = new Marker({
+                        position: defaultCenter,
+                        map: mapRef.current,
+                        draggable: true,
+                        title: "Drag to set location",
+                        animation: (window as any).google?.maps?.Animation?.DROP
                     });
-
-                    let cleanAddress = address;
-                    [city, state, "Pakistan", pincode].forEach(term => {
-                        if (term) {
-                            const regex = new RegExp(`,?\\s*${term}\\s*,?`, 'gi');
-                            cleanAddress = cleanAddress.replace(regex, '').trim();
-                        }
-                    });
-                    cleanAddress = cleanAddress.replace(/,$/, '').trim();
-
-                    setFormData(prev => ({
-                        ...prev,
-                        address: cleanAddress || address || prev.address,
-                        city: city || prev.city,
-                        state: state || prev.state,
-                        pincode: pincode || prev.pincode,
-                        latitude: lat,
-                        longitude: lng,
-                    }));
-                } catch (err) {
-                    console.error("Error in place_changed handler:", err);
-                    setMapError(true);
+                    console.log('[AddBusiness] Legacy Marker initialized');
+                } catch (markerErr) {
+                    console.warn('[AddBusiness] Marker failure:', markerErr);
                 }
-            });
+
+                if (markerRef.current) {
+                    markerRef.current.addListener("dragend", (e: any) => {
+                        let lat: number, lng: number;
+                        if (e && e.latLng) {
+                            lat = typeof e.latLng.lat === 'function' ? e.latLng.lat() : e.latLng.lat;
+                            lng = typeof e.latLng.lng === 'function' ? e.latLng.lng() : e.latLng.lng;
+                        } else {
+                            const pos = markerRef.current.position;
+                            if (!pos) return;
+                            lat = typeof pos.lat === 'function' ? pos.lat() : pos.lat;
+                            lng = typeof pos.lng === 'function' ? pos.lng() : pos.lng;
+                        }
+                        updateLocationFromCoords(lat, lng);
+                    });
+                }
+
+                mapRef.current.addListener("click", (e: any) => {
+                    if (e.latLng) {
+                        const pos = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+                        if (markerRef.current) {
+                            if (markerRef.current.setPosition) {
+                                markerRef.current.setPosition(pos);
+                            } else {
+                                markerRef.current.position = pos;
+                            }
+                        }
+                        updateLocationFromCoords(pos.lat, pos.lng);
+                    }
+                });
+            } else {
+                // Handle map resize if container was hidden
+                if ((window as any).google?.maps?.event) {
+                    (window as any).google.maps.event.trigger(mapRef.current, 'resize');
+                }
+            }
+
+            if (!autoCompleteRef.current) {
+                autoCompleteRef.current = new Autocomplete(
+                    addressInputRef.current,
+                    {
+                        componentRestrictions: { country: "pk" },
+                        fields: ["address_components", "geometry", "formatted_address"],
+                    }
+                );
+
+                autoCompleteRef.current.addListener("place_changed", () => {
+                    try {
+                        const place = autoCompleteRef.current.getPlace();
+                        if (!place.geometry) return;
+
+                        const lat = place.geometry.location.lat();
+                        const lng = place.geometry.location.lng();
+                        const pos = { lat, lng };
+
+                        mapRef.current.setCenter(pos);
+                        mapRef.current.setZoom(17);
+                        if (markerRef.current.setPosition) {
+                            markerRef.current.setPosition(pos);
+                        } else {
+                            markerRef.current.position = pos;
+                        }
+
+                        let city = '';
+                        let state = '';
+                        let pincode = '';
+                        let address = place.formatted_address || '';
+
+                        place.address_components?.forEach((component: any) => {
+                            const types = component.types;
+                            if (types.includes("locality")) city = component.long_name;
+                            else if (types.includes("administrative_area_level_2") && !city) city = component.long_name;
+                            else if (types.includes("administrative_area_level_1")) state = component.long_name;
+                            else if (types.includes("postal_code")) pincode = component.long_name;
+                        });
+
+                        let cleanAddress = address;
+                        [city, state, "Pakistan", pincode].forEach(term => {
+                            if (term) {
+                                const regex = new RegExp(`,?\\s*${term}\\s*,?`, 'gi');
+                                cleanAddress = cleanAddress.replace(regex, '').trim();
+                            }
+                        });
+                        cleanAddress = cleanAddress.replace(/,$/, '').trim();
+
+                        setFormData(prev => ({
+                            ...prev,
+                            address: cleanAddress || address || prev.address,
+                            city: city || prev.city,
+                            state: state || prev.state,
+                            pincode: pincode || prev.pincode,
+                            latitude: lat,
+                            longitude: lng,
+                        }));
+                    } catch (err) {
+                        console.error("Error in place_changed handler:", err);
+                    }
+                });
+            }
+        } catch (err) {
+            console.error('[AddBusiness] Map initialization error:', err);
+            setMapError(true);
+        } finally {
+            initInProgress.current = false;
         }
     };
 
@@ -291,7 +385,7 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                     const pos = { lat: latitude, lng: longitude };
                     mapRef.current.setCenter(pos);
                     mapRef.current.setZoom(17);
-                    markerRef.current.setPosition(pos);
+                    markerRef.current.position = pos;
                     updateLocationFromCoords(latitude, longitude);
                 }
             },
@@ -358,7 +452,14 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                 coverImageUrl: business.coverImageUrl || '',
                 images: business.images || [],
                 amenityIds: business.businessAmenities?.map(ba => ba.amenity.id) || [],
-                metaKeywords: (business as any).metaKeywords || ''
+                metaKeywords: (business as any).metaKeywords || '',
+                hasOffer: (business as any).hasOffer || false,
+                offerTitle: (business as any).offerTitle || '',
+                offerDescription: (business as any).offerDescription || '',
+                offerBadge: (business as any).offerBadge || '',
+                offerExpiresAt: (business as any).offerExpiresAt ? new Date((business as any).offerExpiresAt).toISOString().split('T')[0] : '',
+                offerBannerUrl: (business as any).offerBannerUrl || '',
+                faqs: (business.faqs || []).filter(f => f && f.question && f.answer)
             });
             // Pre-fill gallery previews
             setGalleryPreviews(business.images || []);
@@ -387,12 +488,16 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
         try {
             // Handle empty strings for optional URL/Email fields (send null to clear them in backend)
             const submissionData = { ...formData };
-            const fieldsToPrune: string[] = ['coverImageUrl', 'website', 'metaKeywords', 'whatsapp'];
+            const fieldsToPrune: string[] = ['coverImageUrl', 'website', 'metaKeywords', 'whatsapp', 'offerExpiresAt'];
             fieldsToPrune.forEach(field => {
-                if ((submissionData as any)[field] === '') {
+                const val = (submissionData as any)[field];
+                if (val === '' || (typeof val === 'string' && val.includes('NaN'))) {
                     (submissionData as any)[field] = null;
                 }
             });
+
+            // Filter out empty FAQs
+            submissionData.faqs = (submissionData.faqs || []).filter(f => f.question.trim() && f.answer.trim());
 
             if (business) {
                 await api.listings.update(business.id, submissionData);
@@ -806,7 +911,7 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                                                 <div className="space-y-3">
                                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 flex items-center justify-between">
                                                         Search Keywords
-                                                        <span className="text-[9px] text-slate-300 normal-case tracking-normal">max 20 tags</span>
+                                                        <span className="text-[9px] text-slate-300 normal-case tracking-normal">max {maxKeywords} tags</span>
                                                     </label>
                                                     <div
                                                         onClick={() => keywordInputRef.current?.focus()}
@@ -839,6 +944,7 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                                                         />
                                                     </div>
                                                 </div>
+
                                             </motion.div>
                                         )}
 
@@ -888,12 +994,76 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                                                             return (
                                                                 <div key={link.platform} className="flex items-center gap-2 group/link">
                                                                     <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white" style={{ backgroundColor: platform.color }}>{platform.emoji}</div>
-                                                                    <input type="url" value={link.url} onChange={e => updateSocialUrl(link.platform, e.target.value)} placeholder={platform.placeholder} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
+                                                                    <input type="url" value={link.url || ''} onChange={e => updateSocialUrl(link.platform, e.target.value)} placeholder={platform.placeholder} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
                                                                     <button type="button" onClick={() => removeSocialLink(link.platform)} className="w-10 h-10 rounded-xl bg-slate-50 hover:bg-red-50 text-slate-400 flex items-center justify-center"><X className="w-4 h-4" /></button>
                                                                 </div>
                                                             );
                                                         })}
                                                     </div>
+                                                </div>
+                                            </motion.div>
+                                        )}
+
+                                        {activeTab === 'faqs' && (
+                                            <motion.div key="faqs" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-6">
+                                                <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Question</label>
+                                                        <input
+                                                            type="text"
+                                                            value={newFaq.question}
+                                                            onChange={(e) => setNewFaq(prev => ({ ...prev, question: e.target.value }))}
+                                                            placeholder="e.g. Do you offer home delivery?"
+                                                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-orange-400 outline-none"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Answer</label>
+                                                        <textarea
+                                                            value={newFaq.answer}
+                                                            onChange={(e) => setNewFaq(prev => ({ ...prev, answer: e.target.value }))}
+                                                            placeholder="e.g. Yes, we offer free home delivery..."
+                                                            rows={3}
+                                                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-orange-400 outline-none resize-none"
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={addFaq}
+                                                        disabled={!newFaq.question.trim() || !newFaq.answer.trim()}
+                                                        className="w-full py-3 bg-white border-2 border-orange-500 text-orange-600 rounded-xl font-black text-sm hover:bg-orange-500 hover:text-white transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                                    >
+                                                        <Plus className="w-4 h-4" /> Add FAQ Item
+                                                    </button>
+                                                </div>
+
+                                                <div className="space-y-3">
+                                                    {(formData.faqs || []).map((faq, idx) => (
+                                                        <div key={idx} className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm group">
+                                                            <div className="flex justify-between gap-4">
+                                                                <div className="flex-1 space-y-1">
+                                                                    <h4 className="text-sm font-black text-slate-900 flex items-start gap-2">
+                                                                        <span className="text-orange-500">Q.</span> {faq.question}
+                                                                    </h4>
+                                                                    <p className="text-xs text-slate-500 font-medium">
+                                                                        <span className="text-blue-500 font-black">A.</span> {faq.answer}
+                                                                    </p>
+                                                                </div>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => removeFaq(idx)}
+                                                                    className="w-8 h-8 rounded-lg bg-red-50 text-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                    {(!formData.faqs || formData.faqs.length === 0) && (
+                                                        <div className="text-center py-10 border-2 border-dashed border-slate-100 rounded-2xl">
+                                                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">No FAQs added yet</p>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </motion.div>
                                         )}
@@ -910,11 +1080,6 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                     </div>
                 )}
             </AnimatePresence>
-            <Script
-                src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`}
-                onLoad={() => setMapLoaded(true)}
-                onError={() => setMapError(true)}
-            />
         </>
     );
 }

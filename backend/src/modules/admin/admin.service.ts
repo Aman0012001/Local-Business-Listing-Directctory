@@ -14,13 +14,12 @@ import { Lead } from '../../entities/lead.entity';
 import { SavedListing } from '../../entities/favorite.entity';
 import { Comment as BusinessComment } from '../../entities/comment.entity';
 import { Notification } from '../../entities/notification.entity';
-import { Subscription } from '../../entities/subscription.entity';
+import { Subscription, SubscriptionStatus } from '../../entities/subscription.entity';
 import { CommentReply } from '../../entities/comment-reply.entity';
+import { createPaginatedResponse, calculateSkip } from '../../common/utils/pagination.util';
+import { SearchLog } from '../../entities/search-log.entity';
 import { SearchService } from '../search/search.service';
-import {
-    createPaginatedResponse,
-    calculateSkip,
-} from '../../common/utils/pagination.util';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AdminService {
@@ -53,7 +52,10 @@ export class AdminService {
         private subscriptionRepository: Repository<Subscription>,
         @InjectRepository(CommentReply)
         private commentReplyRepository: Repository<CommentReply>,
+        @InjectRepository(SearchLog)
+        private searchLogRepository: Repository<SearchLog>,
         private searchService: SearchService,
+        private notificationsService: NotificationsService,
     ) { }
 
     /**
@@ -113,6 +115,35 @@ export class AdminService {
     }
 
     /**
+     * Get Search Heatmap Data
+     */
+    async getHeatmapData(startDate?: string, endDate?: string) {
+        const query = this.searchLogRepository.createQueryBuilder('log')
+            .select('log.latitude', 'latitude')
+            .addSelect('log.longitude', 'longitude')
+            .addSelect('COUNT(log.id)', 'count')
+            .where('log.latitude IS NOT NULL')
+            .andWhere('log.longitude IS NOT NULL')
+            .groupBy('log.latitude')
+            .addGroupBy('log.longitude');
+
+        if (startDate) {
+            query.andWhere('log.searchedAt >= :startDate', { startDate: new Date(startDate) });
+        }
+        if (endDate) {
+            query.andWhere('log.searchedAt <= :endDate', { endDate: new Date(endDate) });
+        }
+
+        const rawData = await query.getRawMany();
+
+        return rawData.map(item => ({
+            latitude: parseFloat(item.latitude),
+            longitude: parseFloat(item.longitude),
+            weight: parseInt(item.count, 10) || 1,
+        }));
+    }
+
+    /**
      * Moderate a business listing
      */
     async moderateBusiness(id: string, dto: ModerateBusinessDto) {
@@ -128,6 +159,24 @@ export class AdminService {
         }
 
         const moderated = await this.businessRepository.save(business);
+
+        // Fetch fully populated listing for notification (need category name, slug etc)
+        const result = await this.businessRepository.findOne({
+            where: { id: moderated.id },
+            relations: ['category']
+        });
+
+        if (dto.status === BusinessStatus.APPROVED && result) {
+            // Broadcast to all users: new listing is live
+            /* 
+            this.notificationsService.broadcast({
+                title: '📍 New Business Listed!',
+                message: `"${result.title}" just joined ${result.category?.name ? result.category.name + ' listings' : 'our directory'}. Check it out!`,
+                type: 'new_listing',
+                data: { businessId: result.id, slug: result.slug },
+            }).catch(() => {});
+            */
+        }
 
         // Update in Elasticsearch (approval status changed)
         this.searchService.indexBusiness(moderated).catch(err => console.error('ES Approval Index Error:', err));
@@ -340,6 +389,8 @@ export class AdminService {
         const skip = calculateSkip(page, limit);
         const query = this.businessRepository.createQueryBuilder('business')
             .leftJoinAndSelect('business.vendor', 'vendor')
+            .leftJoinAndSelect('vendor.subscriptions', 'subscriptions', 'subscriptions.status = :activeStatus', { activeStatus: SubscriptionStatus.ACTIVE })
+            .leftJoinAndSelect('subscriptions.plan', 'plan')
             .leftJoinAndSelect('business.category', 'category')
             .orderBy('business.createdAt', 'DESC')
             .skip(skip)
@@ -463,5 +514,31 @@ export class AdminService {
                 totalVerified,
             },
         };
+    }
+
+    /**
+     * Update search keywords for a business
+     */
+    async updateSearchKeywords(id: string, keywords: string[]) {
+        const business = await this.businessRepository.findOne({
+            where: { id },
+            relations: ['vendor', 'vendor.subscriptions', 'vendor.subscriptions.plan'],
+        });
+        if (!business) throw new NotFoundException('Business not found');
+
+        // Check plan limits
+        const activeSubscription = business.vendor?.subscriptions?.find(s => s.status === SubscriptionStatus.ACTIVE);
+        const planLimit = activeSubscription?.plan?.dashboardFeatures?.['maxKeywords'] || 0;
+
+        if (keywords.length > planLimit) {
+            throw new BadRequestException(`Keyword limit exceeded for this plan (${planLimit} allowed)`);
+        }
+
+        business.searchKeywords = keywords;
+        const updated = await this.businessRepository.save(business);
+
+        // Update in Elasticsearch
+        this.searchService.indexBusiness(updated).catch(err => console.error('ES Keyword Index Error:', err));
+        return updated;
     }
 }

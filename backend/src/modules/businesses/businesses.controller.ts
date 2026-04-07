@@ -10,30 +10,40 @@ import {
     UseGuards,
     HttpCode,
     HttpStatus,
+    UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { CacheInterceptor } from '@nestjs/cache-manager';
 import { BusinessesService } from './businesses.service';
+import { SearchService } from '../search/search.service';
+import { AffiliateService } from '../affiliate/affiliate.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { SearchBusinessDto } from './dto/search-business.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CheckFeature } from '../../common/decorators/check-feature.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../../common/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { FeatureGateGuard } from '../../common/guards/feature-gate.guard';
 import { ParseUuidPipe } from '../../common/pipes/parse-uuid.pipe';
-import { Listing } from '../../entities/business.entity';
 import { User, UserRole } from '../../entities/user.entity';
 
 @ApiTags('businesses')
 @Controller('businesses')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class BusinessesController {
-    constructor(private readonly businessesService: BusinessesService) { }
+    constructor(
+        private readonly businessesService: BusinessesService,
+        private readonly searchService: SearchService,
+        private readonly affiliateService: AffiliateService,
+    ) { }
 
     @Post()
     @Roles(UserRole.VENDOR, UserRole.ADMIN)
+    @UseGuards(FeatureGateGuard)
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Create a new listing (Vendor only)' })
     @ApiResponse({ status: 201, description: 'Listing created successfully' })
@@ -42,10 +52,6 @@ export class BusinessesController {
         @Body() createBusinessDto: CreateBusinessDto,
         @CurrentUser() user: User,
     ) {
-        console.log(`[BusinessesController] Creating listing: "${createBusinessDto.title}". Images:`, createBusinessDto.images?.length || 0);
-        if (createBusinessDto.images) {
-            console.log(`[BusinessesController] Image URLs:`, createBusinessDto.images);
-        }
         return this.businessesService.create(createBusinessDto, user);
     }
 
@@ -72,9 +78,8 @@ export class BusinessesController {
         return this.businessesService.updateImage(id, imageUrl, user);
     }
 
-
-
     @Public()
+    @UseInterceptors(CacheInterceptor)
     @Get('search')
     @ApiOperation({ summary: 'Search listings with filters and geo-location' })
     @ApiResponse({ status: 200, description: 'Search results returned' })
@@ -84,20 +89,18 @@ export class BusinessesController {
 
     @Public()
     @UseGuards(OptionalJwtAuthGuard)
+    @UseInterceptors(CacheInterceptor)
     @Get('slug/:slug')
     @ApiOperation({ summary: 'Get listing by slug' })
     @ApiResponse({ status: 200, description: 'Listing found' })
     @ApiResponse({ status: 404, description: 'Listing not found' })
     findBySlug(@Param('slug') slug: string, @CurrentUser() user?: User) {
-        const fs = require('fs');
-        const path = require('path');
-        const logFile = path.join(process.cwd(), 'debug_logs.txt');
-        fs.appendFileSync(logFile, `[${new Date().toISOString()}] [BusinessesController] findBySlug: ${slug} (User: ${user?.email || 'Public'})\n`);
         return this.businessesService.findBySlug(slug, user);
     }
 
     @Public()
     @UseGuards(OptionalJwtAuthGuard)
+    @UseInterceptors(CacheInterceptor)
     @Get(':id')
     @ApiOperation({ summary: 'Get listing by ID' })
     @ApiResponse({ status: 200, description: 'Listing found' })
@@ -168,4 +171,12 @@ export class BusinessesController {
     createAmenity(@Body() data: { name: string, icon?: string }) {
         return this.businessesService.createAmenity(data.name, data.icon);
     }
+
+    @Post('sync')
+    @Public()
+    async sync() {
+        return this.searchService.reindexAll();
+    }
+
+
 }
