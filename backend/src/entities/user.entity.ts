@@ -6,6 +6,7 @@ import {
     UpdateDateColumn,
     OneToOne,
     OneToMany,
+    Index,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { Vendor } from './vendor.entity';
@@ -14,6 +15,7 @@ import { Lead } from './lead.entity';
 import { SavedListing } from './favorite.entity';
 import { Notification } from './notification.entity';
 import { Comment } from './comment.entity';
+import { Follow } from './follow.entity';
 
 export enum UserRole {
     USER = 'user',
@@ -58,6 +60,10 @@ export class User {
     @Column({ name: 'is_phone_verified', default: false })
     isPhoneVerified: boolean;
 
+    @Column({ name: 'is_online', default: false })
+    @Index()
+    isOnline: boolean;
+
     @Column({ nullable: true, length: 100 })
     city: string;
 
@@ -73,8 +79,20 @@ export class User {
     @Column({ name: 'provider', nullable: true, default: 'local' })
     provider: string;
 
+    @Column({ name: 'device_token', nullable: true, type: 'text' })
+    deviceToken: string;
+
+    @Column({ name: 'push_subscriptions', nullable: true, type: 'jsonb', default: '[]' })
+    pushSubscriptions: any[];
+
     @Column({ name: 'last_login_at', nullable: true, type: 'timestamp' })
     lastLoginAt: Date;
+
+    @Column({ name: 'last_logout_at', nullable: true, type: 'timestamp' })
+    lastLogoutAt: Date;
+
+    @Column({ name: 'last_active_at', nullable: true, type: 'timestamp' })
+    lastActiveAt: Date;
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
@@ -102,6 +120,11 @@ export class User {
     @OneToMany(() => Notification, (notification) => notification.user)
     notifications: Notification[];
 
+    @Exclude()
     @OneToMany(() => Comment, (comment) => comment.user)
     comments: Comment[];
+
+    @Exclude()
+    @OneToMany(() => Follow, (follow) => follow.user)
+    follows: Follow[];
 }

@@ -135,6 +135,28 @@ export class AdminController {
         return this.adminService.verifyVendor(id, status === 'true');
     }
 
+    @Patch('business/:id/featured')
+    @Roles(UserRole.ADMIN)
+    @ApiOperation({ summary: 'Toggle business featured status' })
+    @ApiResponse({ status: 200, description: 'Business featured status updated' })
+    toggleFeatured(
+        @Param('id', ParseUuidPipe) id: string,
+        @Body('isFeatured') isFeatured: boolean,
+    ) {
+        return this.adminService.toggleFeatured(id, isFeatured);
+    }
+
+    @Patch('business/:id/verify-listing')
+    @Roles(UserRole.ADMIN)
+    @ApiOperation({ summary: 'Toggle business verification status' })
+    @ApiResponse({ status: 200, description: 'Business verification status updated' })
+    toggleVerifiedListing(
+        @Param('id', ParseUuidPipe) id: string,
+        @Body('isVerified') isVerified: boolean,
+    ) {
+        return this.adminService.toggleVerifiedListing(id, isVerified);
+    }
+
     @Get('settings')
     @Roles(UserRole.ADMIN)
     @ApiOperation({ summary: 'Get all system settings' })

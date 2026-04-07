@@ -9,7 +9,7 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
-import { Expose } from 'class-transformer';
+import { Expose, Exclude } from 'class-transformer';
 import { Vendor } from './vendor.entity';
 import { Category } from './category.entity';
 import { BusinessHours } from './business-hours.entity';
@@ -18,6 +18,7 @@ import { Review } from './review.entity';
 import { Lead } from './lead.entity';
 import { SavedListing } from './favorite.entity';
 import { Comment } from './comment.entity';
+import { Follow } from './follow.entity';
 
 export enum BusinessStatus {
     PENDING = 'pending',
@@ -35,8 +36,12 @@ export class Listing {
     @Column({ name: 'vendor_id', type: 'uuid' })
     vendorId: string;
 
-    @Column({ name: 'category_id', type: 'uuid' })
+    @Column({ name: 'category_id', type: 'uuid', nullable: true })
+    @Index()
     categoryId: string;
+
+    @Column({ name: 'suggested_category_name', nullable: true, type: 'text' })
+    suggestedCategoryName: string;
 
     // Basic Info
     @Column({ name: 'name' })
@@ -167,6 +172,9 @@ export class Listing {
     @Column({ name: 'total_leads', default: 0 })
     totalLeads: number;
 
+    @Column({ name: 'followers_count', default: 0 })
+    followersCount: number;
+
     // SEO
     @Column({ name: 'meta_title', nullable: true })
     metaTitle: string;
@@ -224,18 +232,26 @@ export class Listing {
     @OneToMany(() => BusinessHours, (hours) => hours.business)
     businessHours: BusinessHours[];
 
+    @Exclude()
     @OneToMany(() => BusinessAmenity, (amenity) => amenity.business)
     businessAmenities: BusinessAmenity[];
 
+    @Exclude()
     @OneToMany(() => Review, (review) => review.business)
     reviews: Review[];
 
+    @Exclude()
     @OneToMany(() => Lead, (lead) => lead.business)
     leads: Lead[];
 
+    @Exclude()
     @OneToMany(() => SavedListing, (savedListing) => savedListing.business)
     savedListings: SavedListing[];
 
+    @Exclude()
     @OneToMany(() => Comment, (comment) => comment.business)
     comments: Comment[];
+
+    @OneToMany(() => Follow, (follow) => follow.business)
+    follows: Follow[];
 }

@@ -160,7 +160,7 @@ export default function AdminListingsPage() {
                                     </div>
 
                                     {/* Main Info */}
-                                    <div className="flex-1 min-w-0" style={{width: "100px"}}>
+                                    <div className="flex-1 min-w-0" style={{ width: "100px" }}>
                                         <h3 className="text-2xl font-black text-slate-900 mb-2 truncate group-hover:text-blue-600 transition-colors">{listing.title}</h3>
                                         <div className="flex flex-wrap gap-y-2 gap-x-5 text-sm">
                                             <span className="flex items-center gap-1.5 text-slate-600 font-bold">
@@ -199,7 +199,7 @@ export default function AdminListingsPage() {
                                                 <XCircle className="w-5 h-5" /> Reject
                                             </button>
                                             <button
-                                                onClick={() => window.open(`/listing/${listing.slug}`, '_blank')}
+                                                onClick={() => window.open(`/business/${listing.slug}`, '_blank')}
                                                 className="p-4 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-900 rounded-[1.5rem] border border-slate-100 transition-all active:scale-95"
                                                 title="Preview Listing"
                                             >

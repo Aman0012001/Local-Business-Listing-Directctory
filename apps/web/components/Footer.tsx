@@ -8,13 +8,14 @@ export default function Footer() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-12">
                     <div className="col-span-2">
-                        <Link href="/" className="flex items-center gap-2 mb-6 group">
-                            <div className="w-8 h-8 bg-[#112D4E] rounded-lg flex items-center justify-center relative shadow-md group-hover:bg-[#FF7A30] transition-colors duration-300">
-                                <MapPin className="w-5 h-5 text-white fill-white" />
+                        <Link href="/" className="flex items-center mb-6 group overflow-hidden h-16">
+                            <div className="h-24 w-40 relative transition-colors duration-300">
+                                <img
+                                    src="/logo.png"
+                                    alt="naampata logo"
+                                    className="absolute inset-0 w-full h-full object-contain scale-[2.5]"
+                                />
                             </div>
-                            <span className="text-xl font-black text-[#2D3E50] tracking-tight">
-                                LocalFind
-                            </span>
                         </Link>
                         <p className="text-slate-500 text-sm max-w-xs mb-6 font-medium leading-relaxed">
                             Discover the best local businesses, services, and professionals in your area. Your trusted local guide to everything around you.
@@ -52,7 +53,7 @@ export default function Footer() {
                 </div>
 
                 <div className="pt-8 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-400 font-bold">
-                    <p>© 2026 LocalFind Discovery. All rights reserved.</p>
+                    <p>© 2026 naampata. All rights reserved.</p>
                     <div className="flex gap-6">
                         <Link href="#" className="hover:text-[#FF7A30] transition-colors uppercase tracking-widest">Twitter</Link>
                         <Link href="#" className="hover:text-[#FF7A30] transition-colors uppercase tracking-widest">LinkedIn</Link>

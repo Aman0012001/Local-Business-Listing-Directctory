@@ -202,7 +202,7 @@ export default function AdminPlansPage() {
                         key={plan.id}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className={`group relative bg-white rounded-[32px] p-8 border-2 transition-all flex flex-col h-full ${plan.isActive
+                        className={`group relative bg-white rounded-[20px] p-8 border-2 transition-all flex flex-col h-full ${plan.isActive
                             ? 'border-slate-50  shadow-slate-200/40'
                             : 'border-slate-100 opacity-75 grayscale-[0.5]'
                             }`}
@@ -286,7 +286,7 @@ export default function AdminPlansPage() {
                 {/* Create Card Prompt */}
                 <button
                     onClick={() => handleOpenModal()}
-                    className="group border-4 border-dashed border-slate-100 rounded-[32px] flex flex-col items-center justify-center p-12 hover:border-slate-200 hover:bg-slate-50/50 transition-all min-h-[400px]"
+                    className="group border-4 border-dashed border-slate-100 rounded-[20px] flex flex-col items-center justify-center p-12 hover:border-slate-200 hover:bg-slate-50/50 transition-all min-h-[400px]"
                 >
                     <div className="w-20 h-20 rounded-[28px] bg-white  shadow-slate-200/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                         <Plus className="w-10 h-10 text-slate-400" />

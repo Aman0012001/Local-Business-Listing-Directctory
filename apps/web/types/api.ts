@@ -6,8 +6,9 @@ export interface Category {
     icon?: string;
     imageUrl?: string;
     parentId?: string;
-    displayOrder?: number;
+    displayOrder: number;
     status: 'active' | 'disabled';
+    source: 'google' | 'admin';
     businessCount?: number;
     subcategories?: Category[];
     createdAt: string;
@@ -73,7 +74,17 @@ export interface Business {
     vendor?: {
         id: string;
         userId?: string;
-        user?: { id: string; fullName?: string; };
+        user?: { 
+            id: string; 
+            fullName?: string; 
+            email?: string;
+            isOnline?: boolean;
+            lastLoginAt?: string;
+            lastActiveAt?: string;
+            lastLogoutAt?: string;
+        };
+        businessHours?: Record<string, { isOpen: boolean; openTime: string; closeTime: string }>;
+        socialLinks?: { platform: string; url: string; }[];
     };
     // SEO / Search
     metaKeywords?: string;
@@ -84,6 +95,9 @@ export interface Business {
     offerBadge?: string;
     offerExpiresAt?: string;
     offerBannerUrl?: string;
+    // Stats
+    followersCount?: number;
+    status: 'pending' | 'approved' | 'rejected' | 'disabled';
 }
 
 export interface Review {

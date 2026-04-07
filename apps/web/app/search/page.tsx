@@ -39,6 +39,14 @@ function SearchResults() {
                 ]);
                 setResults(searchRes.data);
                 setCategories(cats);
+
+                // Log demand if there's a query or category
+                if (query || categorySlug) {
+                    api.demand.logSearch({
+                        keyword: query || categorySlug,
+                        city: city || undefined,
+                    }).catch(err => console.error('Demand logging failed:', err));
+                }
             } catch (err) {
                 console.error('Search failed:', err);
             } finally {

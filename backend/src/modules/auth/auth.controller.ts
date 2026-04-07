@@ -65,6 +65,30 @@ export class AuthController {
         return this.authService.googleLogin(googleAuthDto);
     }
 
+    @Post('ping')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Mark user as online (heartbeat)' })
+    async ping(@CurrentUser() user: User) {
+        await this.authService.markOnline(user.id);
+        return { online: true };
+    }
+
+    @Public()
+    @Post('logout')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Logout user' })
+    @ApiResponse({ status: 200, description: 'Logout successful' })
+    async logout(@CurrentUser() user: User) {
+        if (user?.id) {
+            await this.authService.logout(user.id);
+        }
+        return { message: 'Logged out successfully' };
+    }
+
     @Get('me')
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()

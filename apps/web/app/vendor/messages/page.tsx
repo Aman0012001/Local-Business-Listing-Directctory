@@ -69,11 +69,11 @@ function EnquiryDetailModal({ enquiry, onClose, onStatusChange }: {
                 className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden z-10"
             >
                 {/* Top accent bar */}
-                <div className="h-1.5 w-full bg-gradient-to-r from-violet-500 via-blue-500 to-indigo-500" />
+                {/* <div className="h-1.5 w-full bg-gradient-to-r from-violet-500 via-blue-500 to-indigo-500" /> */}
 
                 <div className="p-8">
                     <div className="flex items-start justify-between mb-6">
-                        <div>
+                        <div className="flex">
                             <div className="flex items-center gap-3 mb-1">
                                 <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-100 to-blue-100 flex items-center justify-center text-violet-700 font-black text-lg">
                                     {(enquiry.name?.[0] || '?').toUpperCase()}

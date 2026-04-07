@@ -108,9 +108,15 @@ export class AuthService {
             throw new UnauthorizedException('Invalid credentials');
         }
 
-        // Update last login
+        // Update last login, isOnline and phone if provided
         user.lastLoginAt = new Date();
+        user.isOnline = true;
+        if (loginDto.phone && user.phone !== loginDto.phone) {
+            user.phone = loginDto.phone;
+        }
         await this.userRepository.save(user);
+
+        this.logger.log(`User ${user.email} logged in. isOnline set to true.`);
 
         // Generate tokens
         const tokens = await this.generateTokens(user);
@@ -192,11 +198,14 @@ export class AuthService {
                     user.avatarUrl = picture;
                 }
                 user.lastLoginAt = new Date();
+                user.isOnline = true;
                 await this.userRepository.save(user);
-                this.logger.log(`[GoogleAuth] Linked Google account to existing user: ${email}`);
+                this.logger.log(`[GoogleAuth] Linked Google account and marked online: ${email}`);
             } else {
                 user.lastLoginAt = new Date();
+                user.isOnline = true;
                 await this.userRepository.save(user);
+                this.logger.log(`[GoogleAuth] Marked existing Google user as online: ${email}`);
             }
         } else {
             // Create new user from Google profile
@@ -210,9 +219,10 @@ export class AuthService {
                 isEmailVerified: true,
                 isActive: true,
                 lastLoginAt: new Date(),
+                isOnline: true,
             });
             user = await this.userRepository.save(newUser);
-            this.logger.log(`[GoogleAuth] Created new user from Google: ${email}`);
+            this.logger.log(`[GoogleAuth] Created and marked online new user from Google: ${email}`);
         }
 
         // Generate tokens
@@ -245,6 +255,27 @@ export class AuthService {
         } catch (error) {
             throw new UnauthorizedException('Invalid refresh token');
         }
+    }
+
+    /**
+     * Logout user
+     */
+    async logout(userId: string): Promise<void> {
+        await this.userRepository.update(userId, {
+            isOnline: false,
+            lastLogoutAt: new Date(),
+        });
+        this.logger.log(`User ${userId} logged out. isOnline set to false.`);
+    }
+
+    /**
+     * Mark user as online (heartbeat ping)
+     */
+    async markOnline(userId: string): Promise<void> {
+        await this.userRepository.update(userId, {
+            isOnline: true,
+            lastActiveAt: new Date(),
+        });
     }
 
     /**

@@ -5,10 +5,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { SearchService } from './search.service';
 import { SearchController } from './search.controller';
 import { Listing } from '../../entities/business.entity';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Listing]),
+        NotificationsModule,
         ElasticsearchModule.registerAsync({
             imports: [ConfigModule],
             useFactory: async (configService: ConfigService) => ({

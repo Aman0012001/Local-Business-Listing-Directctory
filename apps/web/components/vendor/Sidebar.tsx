@@ -18,6 +18,9 @@ import {
     Phone,
     Megaphone,
     MessageSquare,
+    TrendingUp,
+    BarChart,
+    CreditCard,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getImageUrl, api } from '../../lib/api';
@@ -44,9 +47,13 @@ export default function Sidebar() {
         { name: 'Leads', icon: Phone, href: '/vendor/leads', badge: null },
         { name: 'Offers & Events', icon: Megaphone, href: '/vendor/offers', badge: null },
         { name: 'Comments', icon: MessageSquare, href: '/vendor/comments', badge: null },
+        { name: 'Analytics', icon: BarChart, href: '/vendor/analytics', badge: null },
         { name: 'Saved', icon: Heart, href: '/vendor/saved', badge: null },
+        { name: 'Following', icon: Bell, href: '/vendor/following', badge: null },
         { name: 'Reviews', icon: Star, href: '/vendor/reviews', badge: null },
         { name: 'Enquiries', icon: Send, href: '/vendor/messages', badge: newEnquiryCount > 0 ? String(newEnquiryCount) : null },
+        { name: 'Demand Insights', icon: TrendingUp, href: '/vendor/demand', badge: null },
+        { name: 'Subscription & Billing', icon: CreditCard, href: '/vendor/subscription', badge: null },
         { name: 'Notifications', icon: Bell, href: '/vendor/notifications', badge: null },
         { name: 'Settings', icon: Settings, href: '/vendor/settings', badge: null },
     ];
@@ -56,7 +63,7 @@ export default function Sidebar() {
             {/* Profile Info */}
             <div className="flex flex-col items-center mb-10 pt-4">
                 <div className="relative mb-4 group cursor-pointer">
-                    <div className="w-24 h-24 rounded-[32px] overflow-hidden border-4 border-white shadow-2xl transition-transform duration-500 group-hover:scale-105">
+                    <div className="w-24 h-24 rounded-[20px] overflow-hidden border-4 border-white shadow-2xl transition-transform duration-500 group-hover:scale-105">
                         <img
                             src={getImageUrl(user?.avatarUrl) || "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
                             alt="Profile"
@@ -89,7 +96,7 @@ export default function Sidebar() {
                     .filter(item => {
                         const isVendorOrAdmin = user?.role === 'vendor' || user?.role === 'admin' || user?.role === 'superadmin';
                         if (!isVendorOrAdmin) {
-                            return ['Dashboard', 'Saved', 'Notifications', 'Settings', 'Reviews'].includes(item.name);
+                            return ['Dashboard', 'Saved', 'Following', 'Notifications', 'Settings', 'Reviews'].includes(item.name);
                         }
                         return true;
                     })

@@ -99,3 +99,25 @@ export class CheckoutDto {
     @IsString()
     cycle: string;
 }
+
+export class AssignPlanDto {
+    @ApiProperty({ description: 'Vendor UUID' })
+    @IsUUID()
+    vendorId: string;
+
+    @ApiProperty({ description: 'Plan UUID' })
+    @IsUUID()
+    planId: string;
+
+    @ApiPropertyOptional({ description: 'Duration in days', default: 30 })
+    @IsOptional()
+    @IsNumber()
+    durationDays?: number;
+}
+
+export class ChangePlanDto {
+    @ApiProperty({ description: 'New Plan UUID' })
+    @IsUUID()
+    planId: string;
+}
+

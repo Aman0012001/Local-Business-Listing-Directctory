@@ -4,6 +4,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Search, ChevronDown, Check, LayoutGrid, Loader2 } from 'lucide-react';
 import { Category } from '../types/api';
 import { motion, AnimatePresence } from 'framer-motion';
+import DynamicIcon from './DynamicIcon';
 
 interface Props {
     categories: Category[];
@@ -51,7 +52,9 @@ export default function CategorySearchSelect({ categories, value, onChange, load
                     {loading ? (
                         <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
                     ) : (
-                        <div className="text-lg">{selectedCategory?.icon || <LayoutGrid className="w-4 h-4 text-slate-400" />}</div>
+                        <div className="text-lg flex items-center justify-center">
+                            {selectedCategory ? <DynamicIcon name={selectedCategory.icon} className="w-5 h-5 text-slate-600" /> : <LayoutGrid className="w-4 h-4 text-slate-400" />}
+                        </div>
                     )}
                     <span className={!selectedCategory ? 'text-slate-400' : ''}>
                         {loading ? 'Loading categories...' : selectedCategory?.name || '-- Select Category --'}
@@ -103,7 +106,7 @@ export default function CategorySearchSelect({ categories, value, onChange, load
                                             className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all ${isSelected ? 'bg-slate-900 text-white shadow-lg' : 'hover:bg-slate-50 text-slate-700'}`}
                                         >
                                             <div className="flex items-center gap-3">
-                                                <span className="text-lg">{cat.icon || '📁'}</span>
+                                                <DynamicIcon name={cat.icon} className="w-5 h-5" fallback="📁" />
                                                 <div className="text-left">
                                                     <p className="text-sm font-black">{cat.name}</p>
                                                     <p className={`text-[10px] font-bold uppercase tracking-wider ${isSelected ? 'text-white/50' : 'text-slate-400'}`}>{cat.slug}</p>

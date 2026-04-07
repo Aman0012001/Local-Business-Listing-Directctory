@@ -161,15 +161,30 @@ export class LeadsService {
         });
 
         if (!lead) {
-            throw new NotFoundException('Lead not found');
+            throw new NotFoundException(`Lead with ID ${id} not found`);
         }
 
-        // Check permissions (Only owner vendor or admin)
-        if (lead.business.vendor.userId !== userId) {
-            const user = await this.vendorRepository.manager.findOne(User, { where: { id: userId } });
-            if (user?.role !== UserRole.ADMIN) {
-                throw new ForbiddenException('You do not have permission to view this lead');
-            }
+        if (!lead.business || !lead.business.vendor) {
+            console.error(`[LeadsService] Lead ${id} missing business/vendor relation.`);
+            // Still allow access — just can't do ownership check
+            return lead;
+        }
+
+        // Fetch user role from DB
+        const user = await this.vendorRepository.manager.findOne(User, {
+            where: { id: userId },
+            select: ['id', 'role'],
+        });
+
+        // SuperAdmin and Admin: bypass ownership
+        if (user?.role === UserRole.SUPERADMIN || user?.role === UserRole.ADMIN) {
+            return lead;
+        }
+
+        const isOwner = lead.business.vendor.userId === userId;
+        if (!isOwner) {
+            console.warn(`[LeadsService] Access denied: user ${userId} tried to access lead ${id}`);
+            throw new ForbiddenException('You do not have permission to access this lead');
         }
 
         return lead;
@@ -182,19 +197,35 @@ export class LeadsService {
         id: string,
         updateLeadStatusDto: UpdateLeadStatusDto,
         userId: string,
-    ): Promise<Lead> {
-        const lead = await this.findOne(id, userId);
+    ): Promise<{ success: boolean; id: string; status: string }> {
+        console.log(`[LeadsService] updateStatus: id=${id}, status=${updateLeadStatusDto.status}, userId=${userId}`);
 
-        if (updateLeadStatusDto.status === LeadStatus.CONTACTED && !lead.contactedAt) {
-            lead.contactedAt = new Date();
+        // Permission check
+        await this.findOne(id, userId);
+
+        try {
+            const updateData: Partial<Lead> = {
+                status: updateLeadStatusDto.status,
+            };
+
+            if (updateLeadStatusDto.status === LeadStatus.CONTACTED) {
+                updateData.contactedAt = new Date();
+            } else if (updateLeadStatusDto.status === LeadStatus.CONVERTED) {
+                updateData.convertedAt = new Date();
+            }
+
+            if (updateLeadStatusDto.notes !== undefined) {
+                updateData.notes = updateLeadStatusDto.notes;
+            }
+
+            await this.leadRepository.update(id, updateData);
+            console.log(`[LeadsService] Lead ${id} updated to status: ${updateLeadStatusDto.status}`);
+
+            return { success: true, id, status: updateLeadStatusDto.status };
+        } catch (err) {
+            console.error(`[LeadsService] updateStatus DB Error for lead ${id}:`, err.message, err.code);
+            throw err;
         }
-
-        if (updateLeadStatusDto.status === LeadStatus.CONVERTED && !lead.convertedAt) {
-            lead.convertedAt = new Date();
-        }
-
-        Object.assign(lead, updateLeadStatusDto);
-        return this.leadRepository.save(lead);
     }
 
     /**

@@ -10,16 +10,6 @@ import * as compression from 'compression';
 async function bootstrap() {
     const app = await NestFactory.create(AppModule, { rawBody: true });
 
-    // Security and Performance
-    app.use(helmet({
-        crossOriginResourcePolicy: { policy: 'cross-origin' },
-        contentSecurityPolicy: {
-            directives: {
-                ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-                'upgrade-insecure-requests': null,
-            },
-        },
-    }));
     app.use(compression());
 
     // Enable shutdown hooks
@@ -37,8 +27,22 @@ async function bootstrap() {
     });
 
     // CORS
+    const corsOrigin = configService.get('CORS_ORIGIN');
+    const allowedOrigins = corsOrigin ? corsOrigin.split(',').map(o => o.trim()).filter(Boolean) : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+
     app.enableCors({
-        origin: '*',
+        origin: (origin, callback) => {
+            // Allow requests with no origin (like mobile apps or curl)
+            if (!origin) {
+                return callback(null, true);
+            }
+
+            if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+                callback(null, true);
+            } else {
+                callback(new Error('Not allowed by CORS'));
+            }
+        },
         credentials: true,
         methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
         allowedHeaders: [
@@ -49,6 +53,7 @@ async function bootstrap() {
             'X-HTTP-Method-Override',
             'Content-Range',
             'Range',
+            'Origin',
         ],
         exposedHeaders: ['Content-Range', 'X-Content-Range'],
     });
@@ -91,17 +96,8 @@ async function bootstrap() {
         SwaggerModule.setup('api/docs', app, document);
     }
 
-    // const port = configService.get('PORT') || 3001;
     const port = configService.get('PORT') || 3001;
-    console.log(`Starting application on port ${port}...`);
-    try {
-        await app.listen(port, '0.0.0.0');
-        console.log(`🚀 Application is running on: http://0.0.0.0:${port}`);
-        console.log(`📚 API Documentation: http://localhost:${port}/api/v1/docs`);
-    } catch (error) {
-        console.error('Failed to start application:', error);
-        process.exit(1);
-    }
+    await app.listen(port, '0.0.0.0');
 }
 
 bootstrap();

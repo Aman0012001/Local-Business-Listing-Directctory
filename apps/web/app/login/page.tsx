@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Loader2, Phone } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { useAuth } from '../../context/AuthContext';
@@ -11,6 +11,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [phone, setPhone] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -37,7 +38,7 @@ export default function LoginPage() {
         setLoading(true);
         setError('');
         try {
-            await login({ email, password });
+            await login({ email, password, ...(phone ? { phone } : {}) });
         } catch (err: any) {
             setError(err.message || 'Login failed. Please check your credentials.');
         } finally {
@@ -57,16 +58,30 @@ export default function LoginPage() {
                 <div className="max-w-md w-full relative z-10">
                     <div className="text-center mb-10">
                         <h1 className="text-4xl font-black text-slate-900 mb-3 tracking-tight">Welcome Back</h1>
-                        <p className="text-slate-500 font-medium">Sign in to your LocalFind account</p>
+                        <p className="text-slate-500 font-medium">Sign in to your naampata account</p>
                     </div>
 
-                    <div className="bg-white rounded-[32px] border border-slate-100 p-8 md:p-10 shadow-2xl shadow-blue-500/5">
+                    <div className="bg-white rounded-[20px] border border-slate-100 p-8 md:p-10 shadow-2xl shadow-blue-500/5">
                         {error && (
                             <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-bold border border-red-100 italic">
                                 {error}
                             </div>
                         )}
                         <form className="space-y-6" onSubmit={handleSubmit}>
+                            <div className="space-y-2">
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Number</label>
+                                <div className="relative">
+                                    <Phone className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
+                                    <input
+                                        type="tel"
+                                        className="w-full pl-14 pr-6 py-4 bg-slate-50 border-2 border-transparent focus:border-blue-500/20 focus:bg-white focus:ring-4 focus:ring-blue-500/5 rounded-2xl text-slate-900 font-bold transition-all outline-none"
+                                        placeholder="+1 234 567 890"
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
                             <div className="space-y-2">
                                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
                                 <div className="relative">
@@ -85,7 +100,7 @@ export default function LoginPage() {
                             <div className="space-y-2">
                                 <div className="flex justify-between ml-1">
                                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Password</label>
-                                    <Link href="/forgot-password" title="Forgot Password" className="text-[10px] font-black text-blue-600 hover:text-blue-700 uppercase tracking-widest transition-colors">Forgot?</Link>
+                                    {/* <Link href="/forgot-password" title="Forgot Password" className="text-[10px] font-black text-blue-600 hover:text-blue-700 uppercase tracking-widest transition-colors">Forgot?</Link> */}
                                 </div>
                                 <div className="relative">
                                     <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />

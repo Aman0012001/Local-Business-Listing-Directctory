@@ -10,6 +10,7 @@ import {
     UseGuards,
     HttpCode,
     HttpStatus,
+    Ip,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ReviewsService } from './reviews.service';
@@ -37,8 +38,12 @@ export class ReviewsController {
     @ApiOperation({ summary: 'Create a review' })
     @ApiResponse({ status: 201, description: 'Review created successfully' })
     @ApiResponse({ status: 409, description: 'You have already reviewed this business' })
-    create(@Body() createReviewDto: CreateReviewDto, @CurrentUser() user: User) {
-        return this.reviewsService.create(createReviewDto, user);
+    create(
+        @Body() createReviewDto: CreateReviewDto, 
+        @CurrentUser() user: User,
+        @Ip() ip: string,
+    ) {
+        return this.reviewsService.create(createReviewDto, user, ip);
     }
 
     @Public()
@@ -135,5 +140,27 @@ export class ReviewsController {
     @ApiResponse({ status: 204, description: 'Helpful mark removed' })
     removeHelpfulMark(@Param('id', ParseUuidPipe) id: string, @CurrentUser() user: User) {
         return this.reviewsService.removeHelpfulMark(id, user);
+    }
+
+    // Admin Endpoints
+    @Get('admin/all')
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Get all reviews (Admin only)' })
+    @ApiResponse({ status: 200, description: 'Reviews retrieved successfully' })
+    findAllForAdmin(@Query() query: any) {
+        return this.reviewsService.findAllForAdmin(query);
+    }
+
+    @Patch('admin/:id/moderate')
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Moderate review (Admin only)' })
+    @ApiResponse({ status: 200, description: 'Review moderated successfully' })
+    moderate(
+        @Param('id', ParseUuidPipe) id: string,
+        @Body() moderationDto: { isApproved?: boolean; isSuspicious?: boolean },
+    ) {
+        return this.reviewsService.moderate(id, moderationDto);
     }
 }

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -21,6 +22,10 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { HealthModule } from './modules/health/health.module';
 import { OffersModule } from './modules/offers/offers.module';
 import { CommentsModule } from './modules/comments/comments.module';
+import { DemandModule } from './modules/demand/demand.module';
+import { FollowsModule } from './modules/follows/follows.module';
+
+import { join } from 'path';
 
 @Module({
     imports: [
@@ -29,6 +34,7 @@ import { CommentsModule } from './modules/comments/comments.module';
             isGlobal: true,
             envFilePath: ['.env.local', '.env'],
         }),
+        ScheduleModule.forRoot(),
 
         // Database
         TypeOrmModule.forRootAsync({
@@ -67,6 +73,8 @@ import { CommentsModule } from './modules/comments/comments.module';
         HealthModule,
         OffersModule,
         CommentsModule,
+        DemandModule,
+        FollowsModule,
     ],
     providers: [
         {
@@ -76,3 +84,4 @@ import { CommentsModule } from './modules/comments/comments.module';
     ],
 })
 export class AppModule { }
+

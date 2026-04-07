@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Mail, Lock, User, ArrowRight, ShieldCheck, Loader2 } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, ShieldCheck, Loader2, Phone } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { useAuth } from '../../context/AuthContext';
@@ -12,6 +12,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 function RegisterForm() {
     const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -53,6 +54,7 @@ function RegisterForm() {
             await register({
                 fullName,
                 email,
+                phone,
                 password,
                 role: selectedRole
             });
@@ -75,7 +77,7 @@ function RegisterForm() {
                 <div className="max-w-md w-full relative z-10">
                     <div className="text-center mb-10">
                         <h1 className="text-4xl font-black text-slate-900 mb-3 tracking-tight">
-                            {selectedRole === 'vendor' ? 'Grow Your Business' : 'Join LocalFind'}
+                            {selectedRole === 'vendor' ? 'Grow Your Business' : 'Join naampata'}
                         </h1>
                         <p className="text-slate-500 font-medium">
                             {selectedRole === 'vendor'
@@ -84,7 +86,7 @@ function RegisterForm() {
                         </p>
                     </div>
 
-                    <div className="bg-white rounded-[32px] border border-slate-100 p-8 md:p-10 shadow-2xl shadow-blue-500/5">
+                    <div className="bg-white rounded-[20px] border border-slate-100 p-8 md:p-10 shadow-2xl shadow-blue-500/5">
                         <div className="flex bg-slate-50 p-1.5 rounded-2xl mb-8 border border-slate-100">
                             <button
                                 type="button"
@@ -120,6 +122,21 @@ function RegisterForm() {
                                         placeholder="Enter your full name"
                                         value={fullName}
                                         onChange={(e) => setFullName(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Number</label>
+                                <div className="relative">
+                                    <Phone className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
+                                    <input
+                                        required
+                                        type="tel"
+                                        className="w-full pl-14 pr-6 py-4 bg-slate-50 border-2 border-transparent focus:border-blue-500/20 focus:bg-white focus:ring-4 focus:ring-blue-500/5 rounded-2xl text-slate-900 font-bold transition-all outline-none"
+                                        placeholder="+1 234 567 890"
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value)}
                                     />
                                 </div>
                             </div>

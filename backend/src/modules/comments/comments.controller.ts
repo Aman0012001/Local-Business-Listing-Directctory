@@ -20,6 +20,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../entities/user.entity';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 import { CommentStatus } from '../../entities/comment.entity';
 
 @Controller()
@@ -35,6 +36,16 @@ export class CommentsController {
         return this.commentsService.create(userId, createCommentDto);
     }
 
+    @Public()
+    @Get('comments/public')
+    findAll(
+        @Query('page', new ParseIntPipe({ optional: true })) page = 1,
+        @Query('limit', new ParseIntPipe({ optional: true })) limit = 10,
+    ) {
+        return this.commentsService.findAllPublic(page, limit);
+    }
+
+    @Public()
     @Get('business/:businessId/comments')
     getByBusiness(
         @Param('businessId', ParseUUIDPipe) businessId: string,

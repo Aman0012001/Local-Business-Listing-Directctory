@@ -22,6 +22,7 @@ export class SavedListing {
     createdAt: Date;
 
     // Relations
+    @Exclude()
     @ManyToOne(() => User, (user) => user.savedListings)
     @JoinColumn({ name: 'user_id' })
     user: User;

@@ -8,6 +8,7 @@ import {
     OneToOne,
     JoinColumn,
 } from 'typeorm';
+import { Exclude } from 'class-transformer';
 import { Comment } from './comment.entity';
 import { Vendor } from './vendor.entity';
 
@@ -32,6 +33,7 @@ export class CommentReply {
     updatedAt: Date;
 
     // Relations
+    @Exclude()
     @OneToOne(() => Comment, (comment) => comment.reply, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'comment_id' })
     comment: Comment;

@@ -19,11 +19,14 @@ export * from './review-helpful-vote.entity';
 // Leads & Favorites
 export * from './lead.entity';
 export * from './favorite.entity';
+export * from './follow.entity';
 
 // Subscriptions & Payments
 export * from './subscription-plan.entity';
 export * from './subscription.entity';
 export * from './transaction.entity';
+export * from './search-log.entity';
+export * from './notification-log.entity';
 
 // Notifications
 export * from './notification.entity';

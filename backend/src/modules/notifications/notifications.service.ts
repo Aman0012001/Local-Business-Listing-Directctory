@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Notification } from '../../entities/notification.entity';
 import { NotificationsGateway } from './notifications.gateway';
 import { User } from '../../entities/user.entity';
+import { PushService } from './push.service';
 
 export interface CreateNotificationDto {
     userId: string;
@@ -22,7 +23,16 @@ export class NotificationsService {
         @InjectRepository(User)
         private userRepo: Repository<User>,
         private gateway: NotificationsGateway,
-    ) { }
+        @Inject(forwardRef(() => PushService))
+        private pushService: PushService,
+    ) {
+        try {
+            const fs = require('fs');
+            const path = require('path');
+            const logPath = path.join(process.cwd(), 'permanent_error_log.txt');
+            fs.appendFileSync(logPath, `[${new Date().toISOString()}] NotificationsService Constructor Called\n`);
+        } catch (e) {}
+    }
 
     /** Create and persist a notification, then push via WebSocket */
     async create(dto: CreateNotificationDto): Promise<Notification> {
@@ -35,8 +45,7 @@ export class NotificationsService {
         });
         const saved = await this.notificationRepo.save(notification);
 
-        // Push real-time to user if connected
-        this.gateway.sendToUser(dto.userId, 'notification', {
+        const payload = {
             id: saved.id,
             title: saved.title,
             message: saved.message,
@@ -44,7 +53,18 @@ export class NotificationsService {
             data: saved.data,
             isRead: false,
             createdAt: saved.createdAt,
-        });
+        };
+
+        // Push real-time via WebSocket (if tab is open)
+        this.gateway.sendToUser(dto.userId, 'notification', payload);
+
+        // Push via Web Push API (OS-level, works even when tab is closed)
+        this.pushService.sendToUser(dto.userId, {
+            title: saved.title,
+            message: saved.message,
+            type: saved.type,
+            url: dto.link || '/vendor/notifications',
+        }).catch(() => { /* non-critical */ });
 
         return saved;
     }
@@ -56,7 +76,29 @@ export class NotificationsService {
             where: { role: 'user' as any },
         });
         for (const user of users) {
-            await this.create({ ...dto, userId: user.id });
+             this.create({ ...dto, userId: user.id }).catch(() => {});
+        }
+    }
+
+    /** Send notification to all Admins */
+    async notifyAdmin(dto: Omit<CreateNotificationDto, 'userId'>): Promise<void> {
+        const admins = await this.userRepo.find({
+            select: ['id'],
+            where: { role: 'admin' as any },
+        });
+        for (const admin of admins) {
+            this.create({ ...dto, userId: admin.id }).catch(() => {});
+        }
+    }
+
+    /** Send notification to all Super Admins */
+    async notifySuperAdmin(dto: Omit<CreateNotificationDto, 'userId'>): Promise<void> {
+        const supers = await this.userRepo.find({
+            select: ['id'],
+            where: { role: 'superadmin' as any },
+        });
+        for (const sa of supers) {
+            this.create({ ...dto, userId: sa.id }).catch(() => {});
         }
     }
 
@@ -90,5 +132,15 @@ export class NotificationsService {
     /** Delete a single notification */
     async delete(id: string, userId: string): Promise<void> {
         await this.notificationRepo.delete({ id, userId });
+    }
+
+    /** Save a push subscription for a user */
+    async savePushSubscription(userId: string, subscription: any): Promise<void> {
+        await this.pushService.saveSubscription(userId, subscription);
+    }
+
+    /** Remove a push subscription for a user */
+    async removePushSubscription(userId: string, endpoint: string): Promise<void> {
+        await this.pushService.removeSubscription(userId, endpoint);
     }
 }

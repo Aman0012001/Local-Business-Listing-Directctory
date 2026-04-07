@@ -184,11 +184,11 @@ export class VendorsService {
             return {
                 id: vendor.id,
                 businessName: vendor.businessName || vendor.user?.fullName || 'Unnamed Business',
-                vendorName: vendor.user?.email
-                    ? vendor.user.email.split('@')[0]
-                    : (vendor.user?.fullName || vendor.businessName || 'Unknown'),
-                businessEmail: vendor.businessEmail,
-                businessPhone: vendor.businessPhone,
+                vendorName: vendor.user?.fullName || (vendor.user?.email ? vendor.user.email.split('@')[0] : 'Unknown'),
+                businessEmail: vendor.businessEmail || vendor.user?.email,
+                businessPhone: (vendor.businessPhone && vendor.businessPhone !== '0000000000')
+                    ? vendor.businessPhone
+                    : (vendor.user?.phone || listings[0]?.phone || null),
                 businessAddress: vendor.businessAddress,
                 isVerified: vendor.isVerified,
                 socialLinks: vendor.socialLinks || [],
@@ -198,6 +198,10 @@ export class VendorsService {
                 avgRating: parseFloat(parseFloat(stat?.avgRating || '0').toFixed(1)),
                 totalViews: parseInt(stat?.totalViews || '0'),
                 categories,
+                businessHours: vendor.businessHours ? Object.entries(vendor.businessHours).map(([day, val]) => ({
+                    dayOfWeek: day,
+                    ...val
+                })) : (listings[0]?.businessHours || []),
                 sampleListings: listings.slice(0, 3).map(l => ({
                     id: l.id,
                     title: l.title,

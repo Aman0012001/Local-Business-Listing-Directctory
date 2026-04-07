@@ -1,5 +1,6 @@
 import "./globals.css";
 import { AuthProvider } from '../context/AuthContext';
+import { SocketProvider } from '../context/SocketContext';
 import { Inter } from 'next/font/google';
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
@@ -11,7 +12,7 @@ const inter = Inter({
 });
 
 export const metadata = {
-    title: "LocalFind | Find Local Businesses",
+    title: "naampata | Find Local Businesses",
     description: "Discover the best local businesses, services, and products in your neighborhood.",
 };
 
@@ -24,7 +25,9 @@ export default function RootLayout({
         <html lang="en" className={`${inter.variable}`} suppressHydrationWarning>
             <body className="bg-white text-slate-900 min-h-screen antialiased font-sans" suppressHydrationWarning>
                 <AuthProvider>
-                    {children}
+                    <SocketProvider>
+                        {children}
+                    </SocketProvider>
                 </AuthProvider>
             </body>
         </html>

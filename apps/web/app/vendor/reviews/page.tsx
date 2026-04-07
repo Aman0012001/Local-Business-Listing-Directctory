@@ -139,16 +139,24 @@ export default function VendorReviews() {
         if (!user) return;
         setLoading(true);
         try {
-            const params: any = { page: 1, limit: 200 };
-            if (isVendor && (user as any).vendor?.id) {
-                params.vendorId = (user as any).vendor.id;
-            } else {
-                params.userId = user.id;
-            }
-            const res = await api.reviews.findAll(params);
-            setReviews(res.data || []);
+            // Use comments API instead of legacy reviews
+            const res = await api.comments.getVendorComments(1, 100);
+
+            // Map Comment data to Review type
+            const mapped: Review[] = (res.data || []).map((c: any) => ({
+                id: c.id,
+                rating: c.rating || 0,
+                comment: c.content,
+                createdAt: c.createdAt,
+                user: c.user,
+                business: c.business,
+                vendorResponse: c.reply?.replyText,
+                vendorResponseAt: c.reply?.createdAt
+            }));
+
+            setReviews(mapped);
         } catch (e) {
-            console.error('Failed to fetch reviews:', e);
+            console.error('Failed to fetch reviews (comments):', e);
         } finally {
             setLoading(false);
         }
@@ -198,11 +206,15 @@ export default function VendorReviews() {
         if (!respondingTo || !responseText.trim()) return;
         setIsSubmitting(true);
         try {
-            await api.reviews.respond(respondingTo.id, responseText);
+            // Use comments API for reply
+            await api.comments.reply(respondingTo.id, { replyText: responseText });
             setRespondingTo(null);
             setResponseText('');
             await fetchReviews();
-        } catch { alert('Failed to submit. Try again.'); }
+        } catch (error: any) {
+            console.error('Reply failed:', error);
+            alert(error.message || 'Failed to submit. Try again.');
+        }
         finally { setIsSubmitting(false); }
     };
 
@@ -221,7 +233,7 @@ export default function VendorReviews() {
         <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-32">
 
             {/* ── Header ─────────────────────────────────────────── */}
-            <div className="relative overflow-hidden bg-slate-900 rounded-[32px] p-8 sm:p-10 mb-8 shadow-2xl">
+            <div className="relative overflow-hidden bg-slate-900 rounded-[20px] p-8 sm:p-10 mb-8 shadow-2xl">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-amber-400/10 blur-[100px] rounded-full -mr-32 -mt-32" />
                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-600/15 blur-[80px] rounded-full -ml-24 -mb-24" />
 
@@ -396,7 +408,7 @@ export default function VendorReviews() {
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="bg-white rounded-[32px] w-full max-w-xl p-8 shadow-2xl relative z-10 border border-slate-100"
+                            className="bg-white rounded-[20px] w-full max-w-xl p-8 shadow-2xl relative z-10 border border-slate-100"
                         >
                             <button onClick={() => setRespondingTo(null)}
                                 className="absolute top-6 right-6 p-2 hover:bg-slate-50 rounded-full transition-colors">

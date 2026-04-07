@@ -7,11 +7,12 @@ import {
     Body,
     UseGuards,
     Param,
+    Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { SubscriptionsService } from './subscriptions.service';
-import { CreatePlanDto, UpdatePlanDto, CheckoutDto } from './dto/subscription.dto';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { SubscriptionCronService } from './subscription-cron.service';
+import { CreatePlanDto, UpdatePlanDto, CheckoutDto, AssignPlanDto, ChangePlanDto } from './dto/subscription.dto';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -20,97 +21,161 @@ import { User, UserRole } from '../../entities/user.entity';
 
 @ApiTags('subscriptions')
 @Controller('subscriptions')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(RolesGuard)
 @ApiBearerAuth()
 export class SubscriptionsController {
-    constructor(private readonly subService: SubscriptionsService) { }
+    constructor(
+        private readonly subService: SubscriptionsService,
+        private readonly cronService: SubscriptionCronService,
+    ) { }
+
+    // ─── Public / Plans ────────────────────────────────────────────────────────
 
     @Public()
     @Get('plans')
     @ApiOperation({ summary: 'List all active subscription plans' })
-    @ApiResponse({ status: 200, description: 'Plans retrieved successfully' })
     getPlans() {
         return this.subService.getPlans();
     }
 
     @Get('plans/admin')
-    @Roles(UserRole.ADMIN)
-    @ApiOperation({ summary: 'List all plans including inactive ones (Admin only)' })
-    @ApiResponse({ status: 200, description: 'Plans retrieved' })
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'List all plans including inactive (Admin only)' })
     getPlansForAdmin() {
         return this.subService.getPlansForAdmin();
     }
 
     @Get('plans/:id')
-    @Roles(UserRole.ADMIN)
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
     @ApiOperation({ summary: 'Get plan details by ID (Admin only)' })
-    @ApiResponse({ status: 200, description: 'Plan retrieved' })
     getPlanById(@Param('id') id: string) {
         return this.subService.getPlanById(id);
     }
 
     @Post('plans')
-    @Roles(UserRole.ADMIN)
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
     @ApiOperation({ summary: 'Create a new plan (Admin only)' })
-    @ApiResponse({ status: 201, description: 'Plan created' })
     createPlan(@Body() createPlanDto: CreatePlanDto) {
         return this.subService.createPlan(createPlanDto);
     }
 
     @Patch('plans/:id')
-    @Roles(UserRole.ADMIN)
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
     @ApiOperation({ summary: 'Update a plan (Admin only)' })
-    @ApiResponse({ status: 200, description: 'Plan updated' })
     updatePlan(@Param('id') id: string, @Body() updatePlanDto: UpdatePlanDto) {
         return this.subService.updatePlan(id, updatePlanDto);
     }
 
     @Delete('plans/:id')
-    @Roles(UserRole.ADMIN)
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
     @ApiOperation({ summary: 'Delete a plan (Admin only)' })
-    @ApiResponse({ status: 204, description: 'Plan deleted' })
     deletePlan(@Param('id') id: string) {
         return this.subService.deletePlan(id);
     }
 
+    // ─── Admin Subscription Management ─────────────────────────────────────────
+
+    @Get('admin/all')
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Get all vendor subscriptions (Admin only)' })
+    getAllSubscriptions(@Query('page') page = '1', @Query('limit') limit = '20') {
+        return this.subService.getAllSubscriptionsForAdmin(+page, +limit);
+    }
+
+    @Get('admin/transactions')
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Get all transactions (Admin only)' })
+    getAllTransactions(@Query('page') page = '1', @Query('limit') limit = '20') {
+        return this.subService.getAllTransactionsForAdmin(+page, +limit);
+    }
+
+    @Post('admin/assign')
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Admin assigns a plan to a vendor' })
+    @ApiResponse({ status: 201, description: 'Plan assigned successfully' })
+    assignPlan(@Body() dto: AssignPlanDto) {
+        return this.subService.assignPlanToVendor(dto);
+    }
+
+    @Patch('admin/:subId/cancel')
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Admin cancels a subscription' })
+    cancelSubscription(@Param('subId') subId: string) {
+        return this.subService.cancelSubscriptionAdmin(subId);
+    }
+
+    @Post('admin/trigger-expiry-check')
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Manually trigger the expiry reminder cron (Admin only)' })
+    async triggerExpiryCheck() {
+        const result = await this.cronService.sendExpiryReminders();
+        return { message: 'Expiry check complete', ...result };
+    }
+
+    // ─── Vendor Endpoints ───────────────────────────────────────────────────────
+
     @Post('checkout')
-    @Roles(UserRole.VENDOR, UserRole.ADMIN)
+    @Roles(UserRole.VENDOR, UserRole.ADMIN, UserRole.SUPERADMIN)
     @ApiOperation({ summary: 'Initiate a checkout session' })
-    @ApiResponse({ status: 201, description: 'Checkout session created' })
     createCheckout(@CurrentUser() user: User, @Body() checkoutDto: CheckoutDto) {
         return this.subService.createCheckoutSession(user.id, checkoutDto);
     }
 
     @Get('active')
-    @Roles(UserRole.VENDOR, UserRole.ADMIN)
-    @ApiOperation({ summary: 'Get current active subscription' })
-    @ApiResponse({ status: 200, description: 'Active subscription retrieved' })
+    @Roles(UserRole.VENDOR, UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Get current active subscription for logged-in vendor' })
     getActive(@CurrentUser() user: User) {
         return this.subService.getActiveSubscription(user.id);
     }
 
-    @Get('transactions')
-    @Roles(UserRole.VENDOR, UserRole.ADMIN)
-    @ApiOperation({ summary: 'Get transaction history' })
-    @ApiResponse({ status: 200, description: 'Transaction history retrieved' })
-    getTransactions(@CurrentUser() user: User) {
+    @Get('my-invoices')
+    @Roles(UserRole.VENDOR, UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Get all invoices/transactions for the logged-in vendor' })
+    getMyInvoices(@CurrentUser() user: User) {
         return this.subService.getTransactions(user.id);
     }
 
+    @Get('invoice/:id')
+    @Roles(UserRole.VENDOR, UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Get a single invoice detail for the logged-in vendor' })
+    getInvoice(@Param('id') id: string, @CurrentUser() user: User) {
+        return this.subService.getInvoiceDetail(id, user.id);
+    }
+
+    @Post('change')
+    @Roles(UserRole.VENDOR, UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Upgrade or downgrade subscription plan' })
+    async changePlan(
+        @CurrentUser() user: User,
+        @Body() dto: ChangePlanDto
+    ) {
+        return this.subService.changeSubscription(user.id, dto.planId);
+    }
+
     @Post('mock-success/:planId')
-    @Roles(UserRole.VENDOR, UserRole.ADMIN)
+
+    @Roles(UserRole.VENDOR, UserRole.ADMIN, UserRole.SUPERADMIN)
     @ApiOperation({ summary: 'Mock a payment success for development' })
-    @ApiResponse({ status: 201, description: 'Subscribed successfully' })
     async mockSuccess(
         @CurrentUser() user: User,
         @Param('planId') planId: string
     ) {
-        const sub = await this.subService.getActiveSubscription(user.id);
-        // This is just for development testing
+        // Look up current vendor via active subscription or by querying vendors
+        const sub = await this.subService.getActiveSubscription(user.id).catch(() => null);
+        const vendorId = (sub as any)?.vendorId;
+        // If no active sub, we rely on the service to find vendor by userId
         return this.subService.handleMockSubscriptionSuccess(
-            user.vendor.id,
+            vendorId || user.id, // fallback: service will handle by userId lookup
             planId,
             'MOCK-SUB-' + Date.now()
         );
+    }
+
+    // Keep old endpoint for backward compat
+    @Get('transactions')
+    @Roles(UserRole.VENDOR, UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Get transaction history (deprecated, use /my-invoices)' })
+    getTransactions(@CurrentUser() user: User) {
+        return this.subService.getTransactions(user.id);
     }
 }

@@ -6,8 +6,11 @@ import {
     OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { UseGuards, Logger } from '@nestjs/common';
+import { UseGuards, Logger, OnModuleInit } from '@nestjs/common';
 import { WsJwtGuard } from './ws-jwt.guard';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../../entities/user.entity';
 
 @WebSocketGateway({
     cors: {
@@ -15,7 +18,21 @@ import { WsJwtGuard } from './ws-jwt.guard';
     },
     namespace: 'notifications',
 })
-export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit {
+    constructor(
+        @InjectRepository(User)
+        private userRepository: Repository<User>,
+    ) {}
+
+    onModuleInit() {
+        // Run the reset in the background — don't block app startup on remote DB latency
+        setImmediate(() => {
+            this.userRepository.query('UPDATE users SET is_online = false')
+                .then(() => this.logger.log('isOnline reset complete for all users.'))
+                .catch((err: any) => this.logger.warn('Could not reset isOnline on startup: ' + err.message));
+        });
+    }
+
     @WebSocketServer()
     server: Server;
 
@@ -26,7 +43,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         this.logger.log(`Client connected: ${client.id}`);
     }
 
-    handleDisconnect(client: Socket) {
+    async handleDisconnect(client: Socket) {
         this.logger.log(`Client disconnected: ${client.id}`);
         // Remove from connected users map
         for (const [userId, sockets] of this.connectedUsers.entries()) {
@@ -34,6 +51,9 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
                 const updatedSockets = sockets.filter(id => id !== client.id);
                 if (updatedSockets.length === 0) {
                     this.connectedUsers.delete(userId);
+                    // Update DB status
+                    await this.userRepository.update(userId, { isOnline: false });
+                    this.logger.log(`User ${userId} is now offline (no active sessions)`);
                 } else {
                     this.connectedUsers.set(userId, updatedSockets);
                 }
@@ -44,14 +64,25 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
 
     @SubscribeMessage('authenticate')
     @UseGuards(WsJwtGuard)
-    handleAuthenticate(client: any) {
-        const userId = client.user.id;
+    async handleAuthenticate(client: any) {
+        const userId: string | undefined = client.user?.id;
+
+        // Guard: if JWT guard didn't populate the user (invalid/missing token), bail out safely
+        if (!userId) {
+            this.logger.warn(`handleAuthenticate: No userId found on socket ${client.id}. Skipping.`);
+            return { status: 'error', message: 'Not authenticated' };
+        }
+
         const sockets = this.connectedUsers.get(userId) || [];
         if (!sockets.includes(client.id)) {
             sockets.push(client.id);
         }
         this.connectedUsers.set(userId, sockets);
-        this.logger.log(`User ${userId} authenticated on socket ${client.id}`);
+        
+        // Update DB status
+        await this.userRepository.update(userId, { isOnline: true });
+        
+        this.logger.log(`User ${userId} authenticated on socket ${client.id} and is now online`);
         return { status: 'authenticated' };
     }
 

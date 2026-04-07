@@ -240,7 +240,7 @@ export default function AdminUsersPage() {
                     <p className="font-black uppercase tracking-widest text-sm">No users found</p>
                 </div>
             ) : (
-                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm relative">
                     {/* Table Header */}
                     <div className="hidden md:grid grid-cols-[2fr_1.5fr_1fr_1fr_auto] gap-4 px-6 py-4 border-b border-slate-50 bg-slate-50">
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">User</p>
@@ -258,7 +258,7 @@ export default function AdminUsersPage() {
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 transition={{ delay: idx * 0.02 }}
-                                className="grid md:grid-cols-[2fr_1.5fr_1fr_1fr_auto] gap-4 items-center px-6 py-5 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors"
+                                className={`grid md:grid-cols-[2fr_1.5fr_1fr_1fr_auto] gap-4 items-center px-6 py-5 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors ${openMenu === user.id ? 'relative z-50' : ''}`}
                             >
                                 {/* User Info */}
                                 <div className="flex items-center gap-3 min-w-0">

@@ -1,0 +1,157 @@
+[2026-03-11T19:20:31.572Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: vendore@gmail.com)
+[2026-03-11T19:20:31.573Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: vendore@gmail.com)
+[2026-03-11T19:20:32.504Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-11T19:20:32.505Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-11T19:20:32.940Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: vendore@gmail.com)
+[2026-03-11T19:20:32.941Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: vendore@gmail.com)
+[2026-03-11T19:20:33.816Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-11T19:20:33.816Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-11T19:26:05.701Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: aman@gmail.com)
+[2026-03-11T19:26:05.702Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: aman@gmail.com)
+[2026-03-11T19:26:06.718Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-11T19:26:07.138Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-11T19:26:07.569Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: aman@gmail.com)
+[2026-03-11T19:26:07.569Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: aman@gmail.com)
+[2026-03-11T19:26:08.522Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-11T19:26:08.939Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-11T19:28:49.628Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: aman@gmail.com)
+[2026-03-11T19:28:49.629Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: aman@gmail.com)
+[2026-03-11T19:28:49.643Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: aman@gmail.com)
+[2026-03-11T19:28:49.643Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: aman@gmail.com)
+[2026-03-11T19:28:50.516Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-11T19:28:50.703Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-11T19:28:50.937Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-11T19:28:51.105Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-11T19:41:38.389Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: aman@gmail.com)
+[2026-03-11T19:41:38.390Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: aman@gmail.com)
+[2026-03-11T19:41:39.416Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-11T19:41:39.843Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-11T19:41:40.334Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: aman@gmail.com)
+[2026-03-11T19:41:40.335Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: aman@gmail.com)
+[2026-03-11T19:41:41.235Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-11T19:41:41.662Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-11T19:41:42.082Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: aman@gmail.com)
+[2026-03-11T19:41:42.082Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: aman@gmail.com)
+[2026-03-11T19:41:43.094Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-11T19:41:43.510Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-11T19:42:20.423Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: aman@gmail.com)
+[2026-03-11T19:42:20.424Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: aman@gmail.com)
+[2026-03-11T19:42:21.294Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-11T19:42:21.704Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-11T19:42:22.121Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: aman@gmail.com)
+[2026-03-11T19:42:22.122Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: aman@gmail.com)
+[2026-03-11T19:42:22.971Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-11T19:42:23.381Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-11T19:42:50.718Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-11T19:42:50.719Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-11T19:42:51.583Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-11T19:42:51.990Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-11T19:57:51.955Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-11T19:57:51.958Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-11T19:57:52.999Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-11T19:57:53.419Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-11T19:57:53.424Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-11T19:57:53.424Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-11T19:57:54.477Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-11T19:57:54.987Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-11T20:03:56.222Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-11T20:03:56.223Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-11T20:04:00.147Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-11T20:04:00.552Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-11T20:47:52.749Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-11T20:47:52.752Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-11T20:47:56.794Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-11T20:47:57.206Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-11T22:39:20.022Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: vendore@gmail.com)
+[2026-03-11T22:39:20.028Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: vendore@gmail.com)
+[2026-03-11T22:39:21.157Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-11T22:39:21.160Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-11T22:39:21.619Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: vendore@gmail.com)
+[2026-03-11T22:39:21.620Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: vendore@gmail.com)
+[2026-03-11T22:39:22.576Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-11T22:39:22.577Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-11T22:44:33.156Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-11T22:44:33.157Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-11T22:44:34.282Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-11T22:44:34.684Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-11T22:44:34.689Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-11T22:44:34.690Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-11T22:44:35.580Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-11T22:44:35.992Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-11T22:47:20.040Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-11T22:47:20.041Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-11T22:47:24.272Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-11T22:47:24.682Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-11T22:47:54.533Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-11T22:47:54.534Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-11T22:47:59.453Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-11T22:47:59.872Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-12T07:56:38.880Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T07:56:38.886Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T07:56:39.956Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-12T07:56:40.395Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-12T07:56:40.401Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T07:56:40.402Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T07:56:41.335Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-12T07:56:41.757Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-12T08:42:51.246Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T08:42:51.248Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T08:42:52.731Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-12T08:49:00.240Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T08:49:00.242Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T08:49:07.777Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-12T08:49:08.311Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-12T08:52:51.015Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T08:52:51.016Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T08:52:52.486Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-12T08:52:52.904Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-12T08:52:52.908Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T08:52:52.909Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T08:52:54.148Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-12T08:52:54.736Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-12T09:04:05.251Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T09:04:05.252Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T09:04:09.311Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-12T09:04:09.912Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-12T09:05:55.410Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T09:05:55.411Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T09:05:56.445Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-12T09:05:56.855Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-12T09:05:56.860Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T09:05:56.860Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T09:05:58.007Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-12T09:05:58.426Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-12T15:03:48.636Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T15:03:48.640Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T16:14:19.919Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T16:14:19.920Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T16:14:21.103Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-12T16:14:21.521Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-12T16:14:21.526Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T16:14:21.527Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T16:14:22.580Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-12T16:14:23.017Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-12T16:14:38.717Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T16:14:38.717Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T16:14:39.939Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-12T16:14:40.478Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-12T16:18:20.794Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T16:18:20.794Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T16:18:25.269Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-12T16:18:25.676Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-12T16:25:44.914Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T16:25:44.915Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T16:25:50.936Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-12T16:25:51.453Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-12T16:35:14.951Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T16:35:14.952Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-03-12T16:35:22.249Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-12T16:35:22.911Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-12T19:15:00.480Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: vendore@gmail.com)
+[2026-03-12T19:15:00.482Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: vendore@gmail.com)
+[2026-03-12T19:15:01.689Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-12T19:15:01.689Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-03-12T19:15:02.097Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: vendore@gmail.com)
+[2026-03-12T19:15:02.097Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: vendore@gmail.com)
+[2026-03-12T19:15:03.083Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-03-12T19:15:03.083Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS

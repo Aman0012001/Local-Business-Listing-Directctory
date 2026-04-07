@@ -14,7 +14,9 @@ import {
     ShieldCheck,
     ShieldAlert,
     CreditCard,
-    LayoutGrid
+    LayoutGrid,
+    Activity,
+    Receipt,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getImageUrl } from '../../lib/api';
@@ -27,6 +29,10 @@ const menuItems = [
     { name: 'Businesses', icon: ListTree, href: '/admin/businesses', badge: null },
     { name: 'Listings Approval', icon: ShieldAlert, href: '/admin/listings', badge: null },
     { name: 'Plans', icon: CreditCard, href: '/admin/plans', badge: null },
+    { name: 'Subscriptions', icon: Receipt, href: '/admin/subscriptions', badge: null },
+    { name: 'Demand Insights', icon: Activity, href: '/admin/demand', badge: null },
+    { name: 'Search Heatmap', icon: ShieldCheck, href: '/admin/analytics', badge: 'New' },
+    { name: 'Review Moderation', icon: ShieldAlert, href: '/admin/reviews', badge: null },
     { name: 'Verifications', icon: CheckCircle, href: '/admin/verifications', badge: null },
     { name: 'Settings', icon: Settings, href: '/admin/settings', badge: null },
 ];
@@ -40,7 +46,7 @@ export default function AdminSidebar() {
             {/* Profile Info */}
             <div className="flex flex-col items-center mb-10 pt-4">
                 <div className="relative mb-4 group cursor-pointer">
-                    <div className="w-24 h-24 rounded-[32px] overflow-hidden border-4 border-white shadow-2xl transition-transform duration-500 group-hover:scale-105">
+                    <div className="w-24 h-24 rounded-[20px] overflow-hidden border-4 border-white shadow-2xl transition-transform duration-500 group-hover:scale-105">
                         <img
                             src={getImageUrl(user?.avatarUrl) || "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
                             alt="Profile"

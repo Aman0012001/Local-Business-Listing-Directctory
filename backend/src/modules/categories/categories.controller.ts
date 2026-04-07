@@ -41,13 +41,37 @@ export class CategoriesController {
         return this.categoriesService.create(createCategoryDto);
     }
 
+    @Post('admin/bulk-import-google')
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Bulk import common Google categories (Admin only)' })
+    @ApiResponse({ status: 200, description: 'Categories imported successfully' })
+    bulkImportGoogleCategories() {
+        return this.categoriesService.bulkImportGoogleCategories();
+    }
+
+    @Post('sync-google')
+    @Public()
+    @ApiOperation({ summary: 'Ensure a Google category exists (Public for vendor use)' })
+    @ApiResponse({ status: 201, description: 'Category ensured' })
+    ensureGoogleCategory(@Body('name') name: string) {
+        return this.categoriesService.ensureGoogleCategory(name);
+    }
+
     @Get('admin')
     @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
     @ApiBearerAuth()
-    @ApiOperation({ summary: 'Get all categories for admin (all statuses)' })
+    @ApiOperation({ summary: 'Get all categories for admin (all statuses with pagination)' })
+    @ApiQuery({ name: 'page', required: false, type: Number })
+    @ApiQuery({ name: 'limit', required: false, type: Number })
+    @ApiQuery({ name: 'search', required: false, type: String })
     @ApiResponse({ status: 200, description: 'Categories retrieved successfully' })
-    findAllAdmin() {
-        return this.categoriesService.findAllAdmin();
+    findAllAdmin(
+        @Query('page') page?: number,
+        @Query('limit') limit?: number,
+        @Query('search') search?: string,
+    ) {
+        return this.categoriesService.findAllAdmin(page, limit, search);
     }
 
     @Patch('admin/:id')
@@ -130,6 +154,19 @@ export class CategoriesController {
     @ApiResponse({ status: 404, description: 'Category not found' })
     findBySlug(@Param('slug') slug: string) {
         return this.categoriesService.findBySlug(slug);
+    }
+
+    @Public()
+    @Get('suggest')
+    @ApiOperation({ summary: 'Smart suggest categories based on title and description' })
+    @ApiQuery({ name: 'title', required: true, type: String })
+    @ApiQuery({ name: 'description', required: false, type: String })
+    @ApiResponse({ status: 200, description: 'Suggested categories retrieved' })
+    suggest(
+        @Query('title') title: string,
+        @Query('description') description?: string,
+    ) {
+        return this.categoriesService.suggestCategories(title, description || '');
     }
 
     @Public()
