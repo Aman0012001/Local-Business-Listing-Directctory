@@ -11,12 +11,12 @@ import { api, getImageUrl } from '../../../lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../../context/AuthContext';
 
-type Role = 'user' | 'vendor' | 'admin' | 'superadmin';
+type Role = 'user' | 'vendor' | 'superadmin';
 
 const ROLE_CONFIG: Record<Role, { label: string; cls: string; Icon: any }> = {
     user: { label: 'User', cls: 'bg-slate-100 text-slate-600 border-slate-200', Icon: UserIcon },
     vendor: { label: 'Vendor', cls: 'bg-blue-50 text-blue-700 border-blue-200', Icon: Briefcase },
-    admin: { label: 'Admin', cls: 'bg-amber-50 text-amber-700 border-amber-200', Icon: Shield },
+    // admin: { label: 'Admin', cls: 'bg-amber-50 text-amber-700 border-amber-200', Icon: Shield },
     superadmin: { label: 'Superadmin', cls: 'bg-red-50 text-red-700 border-red-200', Icon: Crown },
 };
 
@@ -174,7 +174,7 @@ export default function AdminUsersPage() {
 
             {/* Overview mini-stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {(['all', 'user', 'vendor', 'admin'] as const).map((r) => {
+                {(['all', 'user', 'vendor'] as const).map((r) => {
                     const cfg = r === 'all'
                         ? { label: 'All Users', cls: 'from-slate-700 to-slate-900', Icon: Users }
                         : { label: ROLE_CONFIG[r].label + 's', cls: ROLE_COLORS[r], Icon: ROLE_CONFIG[r].Icon };

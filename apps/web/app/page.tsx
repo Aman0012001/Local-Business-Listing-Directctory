@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Search, MapPin, ArrowRight, TrendingUp, Compass, Sliders, Users, Heart, Phone, ShieldCheck, Star, ChefHat, Stethoscope, Sparkles, Wrench, ChevronDown, Plane, GraduationCap, Gamepad2, Ticket, Smartphone, Headset, CheckCircle2 } from 'lucide-react';
+import { Search, MapPin, ArrowRight, TrendingUp, Compass, Sliders, Users, Heart, Phone, ShieldCheck, Star, ChefHat, Stethoscope, Sparkles, Wrench, ChevronDown, Plane, GraduationCap, Gamepad2, Ticket, Smartphone, Headset, CheckCircle2, Megaphone, Tag } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import BusinessCard from '../components/BusinessCard';
@@ -217,7 +217,7 @@ export default function HomePage() {
 
 
             {/* Hero Section */}
-            <section className="relative pt-16 pb-44 px-4 overflow-hidden bg-[#FBFBFC]" style={{ minHeight: "100vh" }}>
+            <section className="relative pt-10 pb-44 px-4 overflow-hidden bg-[#FBFBFC]" style={{ minHeight: "100vh" }}>
                 {/* Decorative Elements */}
                 <div className="absolute top-20 left-10 opacity-20 hidden md:block">
                     <div className="grid grid-cols-4 gap-2">
@@ -264,9 +264,9 @@ export default function HomePage() {
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2, duration: 0.5 }}
-                        className="max-w-5xl mx-auto bg-white rounded-[24px] shadow-[0_20px_50px_rgba(0,0,0,0.06)] p-2 md:p-3 flex flex-col md:flex-row items-stretch gap-2 border border-slate-100"
+                        className="max-w-5xl mx-auto bg-white rounded-[24px]  p-2 flex flex-col md:flex-row items-stretch gap-2 border border-slate-100"
                     >
-                        <div className="md:w-1/3 relative group">
+                        <div className="md:w-1/3 relative group ">
                             <CitySearchSelect
                                 cities={citiesList}
                                 value={selectedCity}
@@ -296,7 +296,7 @@ export default function HomePage() {
                                 <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 4 }}
-                                    className="absolute top-full left-0 right-0 mt-4 bg-white border border-slate-100 p-2 z-[100] max-h-[400px] overflow-y-auto shadow-2xl rounded-[20px]"
+                                    className="absolute top-full left-0 right-0 mt-4 bg-white border border-slate-100 p-2 z-[100] max-h-[400px] overflow-y-auto  rounded-[20px]"
                                 >
                                     {filteredCategories.length > 0 && (
                                         <div className="p-2">
@@ -327,7 +327,7 @@ export default function HomePage() {
 
                         <button
                             onClick={handleSearch}
-                            className="bg-[#FF7A30] hover:bg-[#E86920] text-white px-10 py-5 rounded-[20px] font-black text-lg transition-all shadow-lg shadow-orange-100 flex items-center justify-center gap-3 active:scale-95 shrink-0"
+                            className="bg-[#FF7A30] hover:bg-[#E86920] text-white px-10 py-3 rounded-[20px] font-black text-lg transition-all  shadow-orange-100 flex items-center justify-center gap-3 active:scale-95 shrink-0"
                         >
                             <Search className="w-5 h-5" />
                             Search
@@ -335,17 +335,38 @@ export default function HomePage() {
                     </motion.div>
 
                     {/* Quick Category Pills */}
-                    <div className="mt-12 flex flex-wrap justify-center gap-4">
-                        {quickCategories.map((cat, i) => (
-                            <Link
-                                key={i}
-                                href={`/search?category=${cat.slug}`}
-                                className={`flex items-center gap-3 px-6 py-3 rounded-full transition-all hover:shadow-xl hover:-translate-y-1 ${cat.color} border border-transparent hover:border-current/10 font-bold group shadow-sm`}
-                            >
-                                <span className="group-hover:scale-110 transition-transform">{cat.icon}</span>
-                                <span className="text-base tracking-tight">{cat.name}</span>
-                            </Link>
-                        ))}
+                    <div className="mt-8 grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+
+                        {/* Offers */}
+                        <Link href="/offers-events">
+                            <div className="group p-6 rounded-2xl bg-gradient-to-br from-orange-50 to-orange-100 hover:shadow-xl transition-all cursor-pointer">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-orange-500">
+                                        <Tag className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-lg text-slate-900">Explore Offers</h3>
+                                        <p className="text-sm text-slate-500">Best deals & local events near you</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </Link>
+
+                        {/* Broadcast */}
+                        <Link href="/broadcasts">
+                            <div className="group p-6 rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100 hover:shadow-xl transition-all cursor-pointer">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-indigo-500">
+                                        <Megaphone className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-lg text-slate-900">Post Your Requirement</h3>
+                                        <p className="text-sm text-slate-500">Get quotes from nearby businesses</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </Link>
+
                     </div>
 
                     {/* Feature Highlights Bar */}
