@@ -858,3 +858,24 @@ NotFoundException: Listing not found
 [2026-04-07T16:51:36.376Z] findBySlug: restaurants-best-pizza-mnm6c77s (User: mkuser@hey.com)
 [2026-04-07T16:51:37.599Z] findBySlug: restaurants-best-pizza-mnm6c77s - Found in DB. Status: approved
 [2026-04-07T16:51:38.002Z] findBySlug: restaurants-best-pizza-mnm6c77s - SUCCESS
+[2026-04-07T17:14:24.301Z] findBySlug: hair-salon-mmp8acr9 (User: mk@hey.com)
+[2026-04-07T17:14:24.931Z] findBySlug: hair-salon-mmp8acr9 - Found in DB. Status: approved
+[2026-04-07T17:14:25.232Z] findBySlug: hair-salon-mmp8acr9 - SUCCESS
+[2026-04-07T17:18:09.500Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: deepak@gmail.com)
+[2026-04-07T17:18:10.123Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-04-07T17:18:10.429Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-04-07T17:23:27.919Z] findBySlug: bright-future-academy-mn8n7y7p (User: deepak@gmail.com)
+[2026-04-07T17:23:28.857Z] findBySlug: bright-future-academy-mn8n7y7p - Found in DB. Status: approved
+[2026-04-07T17:23:29.159Z] findBySlug: bright-future-academy-mn8n7y7p - SUCCESS
+[2026-04-07T17:31:43.557Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-04-07T17:31:44.175Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-04-07T17:31:44.473Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-04-07T17:43:49.176Z] findBySlug: the-mk-tea-stall-mnof3q0j (User: mkuser@hey.com)
+[2026-04-07T17:43:49.832Z] findBySlug: the-mk-tea-stall-mnof3q0j - Found in DB. Status: approved
+[2026-04-07T17:43:50.126Z] findBySlug: the-mk-tea-stall-mnof3q0j - SUCCESS
+[2026-04-07T17:45:26.233Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: vendore@gmail.com)
+[2026-04-07T17:45:27.156Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-04-07T17:45:27.159Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-04-07T17:50:39.932Z] findBySlug: restaurants-best-pizza-mnm6c77s (User: mkuser@hey.com)
+[2026-04-07T17:50:41.211Z] findBySlug: restaurants-best-pizza-mnm6c77s - Found in DB. Status: approved
+[2026-04-07T17:50:41.525Z] findBySlug: restaurants-best-pizza-mnm6c77s - SUCCESS
