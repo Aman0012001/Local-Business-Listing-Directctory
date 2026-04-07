@@ -5,7 +5,10 @@ import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 import { chatApi } from '../services/chat.service';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '')?.replace('/api', '') || '';
+const SOCKET_URL =
+    process.env.NEXT_PUBLIC_SOCKET_URL ||
+    process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '')?.replace('/api', '') ||
+    'http://localhost:3001';
 
 let sharedSocket: Socket | null = null;
 let currentToken: string | null = null;
@@ -18,18 +21,18 @@ function getSocket(token: string): Socket {
         sharedSocket = null;
     }
 
-    if (!sharedSocket || !sharedSocket.connected) {
+    if (!sharedSocket) {
         currentToken = token;
         
-        // Ensure SOCKET_URL doesn't have a trailing slash for consistency
-        const cleanUrl = SOCKET_URL.endsWith('/') ? SOCKET_URL.slice(0, -1) : SOCKET_URL || '';
+        // Normalize the socket base URL so namespace connections resolve consistently.
+        const cleanUrl = SOCKET_URL.endsWith('/') ? SOCKET_URL.slice(0, -1) : SOCKET_URL;
         
         console.log(`[useChat] Connecting to socket at: ${cleanUrl}/chat`);
         
         sharedSocket = io(`${cleanUrl}/chat`, {
             auth: { token: `Bearer ${token}` },
-            // Prioritize polling first for a more stable handshake then upgrade to websocket
-            transports: ['polling', 'websocket'],
+            // Prefer websocket first to avoid flaky polling/CORS handshakes on some setups.
+            transports: ['websocket', 'polling'],
             reconnection: true,
             reconnectionAttempts: 5,
             reconnectionDelay: 1000,
@@ -44,7 +47,11 @@ function getSocket(token: string): Socket {
         sharedSocket.on('connect_error', (err) => {
             console.error('[useChat] Socket connection error:', err.message);
         });
+    } else if (!sharedSocket.connected && !sharedSocket.active) {
+        console.log('[useChat] Reconnecting existing chat socket...');
+        sharedSocket.connect();
     }
+
     return sharedSocket;
 }
 
@@ -104,7 +111,26 @@ export function useChat(conversationId?: string) {
 
         const onNewMessage = (message: any) => {
             if (message.conversationId === conversationId) {
-                setMessages(prev => [...prev, message]);
+                setMessages(prev => {
+                    if (prev.some(existing => existing.id === message.id)) {
+                        return prev;
+                    }
+
+                    const optimisticIdx = prev.findIndex(existing =>
+                        existing.isOptimistic &&
+                        existing.conversationId === message.conversationId &&
+                        existing.senderId === message.senderId &&
+                        existing.content.trim() === message.content.trim()
+                    );
+
+                    if (optimisticIdx > -1) {
+                        const next = [...prev];
+                        next[optimisticIdx] = message;
+                        return next;
+                    }
+
+                    return [...prev, message];
+                });
                 setIsTyping(false);
                 // Mark as read immediately if the conversation is active
                 if (conversationId) {
@@ -169,14 +195,15 @@ export function useChat(conversationId?: string) {
     }, [conversationId]);
 
     const sendMessage = useCallback(async (content: string) => {
-        if (!socketRef.current || !conversationId || !content.trim() || !user) return;
+        const trimmedContent = content.trim();
+        if (!socketRef.current || !conversationId || !trimmedContent || !user) return;
 
         const tempId = `temp-${Date.now()}`;
         const optimisticMessage = {
             id: tempId,
             conversationId,
             senderId: user.id,
-            content,
+            content: trimmedContent,
             createdAt: new Date().toISOString(),
             isOptimistic: true,
         };
@@ -184,10 +211,20 @@ export function useChat(conversationId?: string) {
         // Optimistically add message
         setMessages(prev => [...prev, optimisticMessage]);
 
-        socketRef.current.emit('sendMessage', {
-            conversationId,
-            content,
-        });
+        socketRef.current.emit(
+            'sendMessage',
+            {
+                conversationId,
+                content: trimmedContent,
+            },
+            (response?: { status?: string; message?: any }) => {
+                if (response?.status !== 'success' || !response.message) return;
+
+                setMessages(prev => prev.map(message =>
+                    message.id === tempId ? response.message : message
+                ));
+            }
+        );
     }, [conversationId, user]);
 
     const sendTyping = useCallback(() => {
