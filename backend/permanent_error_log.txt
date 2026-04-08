@@ -1080,3 +1080,8 @@ Details: {"query":"SELECT \"listing\".\"id\" AS \"listing_id\", \"listing\".\"ve
 [2026-04-07T16:34:50.460Z] NotificationsService Constructor Called
 [2026-04-07T16:38:11.727Z] NotificationsService Constructor Called
 [2026-04-07T16:38:42.508Z] NotificationsService Constructor Called
+[2026-04-07T17:42:48.700Z] NotificationsService Constructor Called
+[2026-04-07T17:42:50.682Z] NotificationsService Constructor Called
+[2026-04-07T17:43:05.826Z] NotificationsService Constructor Called
+[2026-04-07T17:43:07.920Z] NotificationsService Constructor Called
+[2026-04-07T18:12:20.075Z] NotificationsService Constructor Called
