@@ -224,7 +224,7 @@ export default function BroadcastRequestForm({ onSuccess }: BroadcastRequestForm
                                         autoFocus
                                         type="text"
                                         placeholder="e.g. Urgent Leak Repair, Modern Logo Design"
-                                        className="w-full px-8 py-6 rounded-[28px] bg-slate-50 border-4 border-transparent focus:border-blue-600 focus:bg-white outline-none transition-all font-black text-2xl text-slate-900 shadow-inner placeholder:text-slate-200"
+                                        className="w-full px-8 py-6 rounded-[20px] bg-slate-50 border-4 border-transparent focus:border-blue-400 focus:bg-white outline-none transition-all font-black text-2xl text-slate-900 shadow-inner placeholder:text-slate-200"
                                         value={formData.title}
                                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                                         onKeyDown={(e) => e.key === 'Enter' && nextStep()}
