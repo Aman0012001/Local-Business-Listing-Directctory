@@ -858,10 +858,11 @@ export default function HomePage() {
               ? statsComments.map((rev) => ({
                 id: rev.id,
                 name: rev.user?.fullName || "Aman U.",
+                location: rev.user?.branch || rev.user?.city || "",
                 role: "Verified Local",
                 text: rev.content,
                 rating: rev.rating || 5,
-                image: rev.user?.avatarUrl || null,
+                img: rev.user?.avatarUrl || null,
                 date: rev.createdAt,
                 business: rev.business?.title || "Local Shop",
               }))
