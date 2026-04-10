@@ -54,6 +54,11 @@ export class SearchOfferDto {
     @Type(() => Boolean)
     isFeatured?: boolean;
 
+    @ApiPropertyOptional({ example: 'homepage', description: 'Specific placement filter' })
+    @IsOptional()
+    @IsString()
+    placement?: string;
+
     @ApiPropertyOptional({ example: 10 })
     @IsOptional()
     @Type(() => Number)

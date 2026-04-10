@@ -79,7 +79,7 @@ export class PromotionsService implements OnModuleInit {
     async calculatePrice(dto: CalculatePriceDto, userId?: string, offerType: string = 'offer'): Promise<{ totalPrice: number; durationHours: number; breakup: any[]; isMinimumApplied?: boolean }> {
         let totalPrice = 0;
         const breakup = [];
-        const MIN_STRIPE_AMOUNT_PKR = 150;
+        // const MIN_STRIPE_AMOUNT_PKR = 150;
 
         // 1. Check if a fixed-price booster plan is selected
         let activePricingId = dto.pricingId;
@@ -136,14 +136,14 @@ export class PromotionsService implements OnModuleInit {
             }
         }
 
-        let isMinimumApplied = false;
+        // let isMinimumApplied = false;
         // If there's a cost but it's below the Stripe minimum of roughly ₨ 140, we round up to ₨ 150
-        if (totalPrice > 0 && totalPrice < MIN_STRIPE_AMOUNT_PKR) {
-            totalPrice = MIN_STRIPE_AMOUNT_PKR;
-            isMinimumApplied = true;
-        }
+        // if (totalPrice > 0 && totalPrice < MIN_STRIPE_AMOUNT_PKR) {
+        //     totalPrice = MIN_STRIPE_AMOUNT_PKR;
+        //     isMinimumApplied = true;
+        // }
 
-        return { totalPrice, durationHours, breakup, isMinimumApplied };
+        return { totalPrice, durationHours, breakup, isMinimumApplied: false };
     }
 
     /**
@@ -288,13 +288,18 @@ export class PromotionsService implements OnModuleInit {
             offer.isActive = true;
             offer.isFeatured = true;
             
+            // Sync placements
+            const currentPlacements = offer.placements || [];
+            const newPlacements = [...new Set([...currentPlacements, ...booking.placements])];
+            offer.placements = newPlacements;
+            
             // Set featuredUntil to the end of the booking duration
             if (!offer.featuredUntil || offer.featuredUntil < booking.endTime) {
                 offer.featuredUntil = booking.endTime;
             }
             
             await this.offerRepository.save(offer);
-            this.logger.log(`🚀 Boost activated for Offer: ${offer.title} until ${offer.featuredUntil}`);
+            this.logger.log(`🚀 Boost activated for Offer: ${offer.title} until ${offer.featuredUntil} with placements: ${newPlacements.join(', ')}`);
         }
 
         return { success: true, booking, offer };
@@ -321,6 +326,52 @@ export class PromotionsService implements OnModuleInit {
      */
     async handleExpirations() {
         const now = new Date();
+        
+        // 1. Find bookings that just expired
+        const expiredBookings = await this.bookingRepo.find({
+            where: {
+                status: BookingStatus.ACTIVE,
+                endTime: LessThan(now),
+            }
+        });
+
+        if (expiredBookings.length === 0) return 0;
+
+        this.logger.log(`Cleaning up ${expiredBookings.length} expired promotions...`);
+
+        // 2. Identify unique offers affected
+        const offerIds = [...new Set(expiredBookings.map(b => b.offerEventId))];
+
+        for (const offerId of offerIds) {
+            const offer = await this.offerRepository.findOne({ where: { id: offerId } });
+            if (!offer) continue;
+
+            // Find remaining active bookings for this offer
+            const activeBookings = await this.bookingRepo.find({
+                where: {
+                    offerEventId: offerId,
+                    status: BookingStatus.ACTIVE,
+                    endTime: MoreThan(now),
+                }
+            });
+
+            // Recalculate placements
+            const remainingPlacements = [];
+            activeBookings.forEach(b => {
+                remainingPlacements.push(...b.placements);
+            });
+            offer.placements = [...new Set(remainingPlacements)];
+
+            // If no active bookings left, we might want to toggle featured? 
+            // Only if isFeatured was set by promotions.
+            if (offer.placements.length === 0 && offer.featuredUntil && now > offer.featuredUntil) {
+                offer.isFeatured = false;
+            }
+
+            await this.offerRepository.save(offer);
+        }
+
+        // 3. Mark bookings as expired
         const result = await this.bookingRepo
             .createQueryBuilder()
             .update(PromotionBooking)

@@ -50,7 +50,7 @@ export default function CategoryDetailClient({ slug }: CategoryDetailClientProps
     useEffect(() => {
         const loadCategoryData = async () => {
             let actualSlug = slug;
-            
+
             // Handle SPA fallback where the page is served by a 'template' HTML file
             if ((slug === 'template' || slug === 'general') && typeof window !== 'undefined') {
                 const pathParts = window.location.pathname.split('/').filter(Boolean);
@@ -86,10 +86,10 @@ export default function CategoryDetailClient({ slug }: CategoryDetailClientProps
                 // Load category offers
                 try {
                     setOffersLoading(true);
-                    const offersRes = await api.offers.search({ 
+                    const offersRes = await api.offers.search({
                         categoryId: catData.id,
-                        isFeatured: true,
-                        limit: 4 
+                        placement: 'category',
+                        limit: 20
                     });
                     setCategoryOffers(offersRes.data);
                 } catch (err) {
@@ -197,7 +197,7 @@ export default function CategoryDetailClient({ slug }: CategoryDetailClientProps
                                     Exclusive {category.name} Deals
                                 </h2>
                             </div>
-                            
+
                             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
                                 {categoryOffers.map((offer) => (
                                     <motion.div
@@ -205,8 +205,8 @@ export default function CategoryDetailClient({ slug }: CategoryDetailClientProps
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
                                     >
-                                        <OfferCard 
-                                            offer={offer} 
+                                        <OfferCard
+                                            offer={offer}
                                             onEnquire={() => window.location.href = `/offers-events/${offer.id}`}
                                         />
                                     </motion.div>
