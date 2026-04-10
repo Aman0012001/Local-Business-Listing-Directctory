@@ -84,6 +84,10 @@ export class OfferEvent {
     @Column({ name: 'featured_until', type: 'timestamp', nullable: true })
     featuredUntil: Date;
 
+    @Column({ type: 'jsonb', default: '[]' })
+    @Index()
+    placements: string[];
+
     @Column({ type: 'jsonb', nullable: true, default: '[]' })
     highlights: string[];
 

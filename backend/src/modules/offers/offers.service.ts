@@ -75,7 +75,7 @@ export class OffersService {
     private validateOfferDuration(dto: CreateOfferDto | UpdateOfferDto, activeSub: any) {
         const type = dto.type || OfferType.OFFER;
         const features = activeSub.plan?.dashboardFeatures || activeSub.plan?.features || {};
-        
+
         const durationLimitKey = type === OfferType.EVENT ? 'maxEventDurationDays' : 'maxOfferDurationDays';
         // Default fallbacks if keys are missing from older plans
         const maxDays = features[durationLimitKey] || (type === OfferType.EVENT ? 7 : 15);
@@ -86,7 +86,7 @@ export class OffersService {
         if (startDateStr && endDateStr) {
             const start = new Date(startDateStr);
             const end = new Date(endDateStr);
-            
+
             const diffMs = end.getTime() - start.getTime();
             const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
@@ -96,6 +96,29 @@ export class OffersService {
                 );
             }
         }
+    }
+
+    /** Resolve legacy and current offer/event limits without changing other plan behavior */
+    private resolveOfferLimit(activeSub: any, type: OfferType): number {
+        const mergedFeatures = {
+            ...(activeSub?.plan?.dashboardFeatures || {}),
+            ...(activeSub?.plan?.features || {}),
+        };
+
+        const limitKey = type === OfferType.EVENT ? 'maxEvents' : 'maxOffers';
+        const rawLimit = mergedFeatures[limitKey];
+
+        if (rawLimit !== undefined && rawLimit !== null) {
+            return Number(rawLimit);
+        }
+
+        // Older subscription plans used a boolean "showOffers" flag instead of numeric limits.
+        // Treat that as access granted with no count cap, while keeping Free users blocked.
+        if (mergedFeatures.showOffers === true) {
+            return Number.POSITIVE_INFINITY;
+        }
+
+        return 0;
     }
 
     /** Create a new offer/event */
@@ -109,10 +132,8 @@ export class OffersService {
             throw new BadRequestException('No active subscription found. Please purchase a plan to create offers or events.');
         }
 
-        const features = activeSub.plan.features || {};
         const type = dto.type || OfferType.OFFER;
-        const limitKey = type === OfferType.EVENT ? 'maxEvents' : 'maxOffers';
-        const limit = features[limitKey] !== undefined ? Number(features[limitKey]) : 0;
+        const limit = this.resolveOfferLimit(activeSub, type);
 
         if (limit <= 0 && !dto.pricingId) {
             throw new ForbiddenException(`Your current plan (${activeSub.plan.name}) does not allow creating ${type}s. Please upgrade your plan.`);
@@ -180,7 +201,7 @@ export class OffersService {
     /** Public search for offers and events with filters */
     async findAllPublic(dto: SearchOfferDto) {
         try {
-            const { query, city, latitude, longitude, radius, type, categoryId, isFeatured, limit = 10, page = 1 } = dto;
+            const { query, city, latitude, longitude, radius, type, categoryId, isFeatured, placement, limit = 10, page = 1 } = dto;
             const skip = (Number(page) - 1) * Number(limit);
             const now = new Date();
 
@@ -218,9 +239,14 @@ export class OffersService {
             }
 
             // Placement logic
-            if (isFeatured === true) {
-                // Return only featured (either via old boolean or new booking 'homepage' or 'category')
-                qb.andWhere('(o.isFeatured = :trueVal OR pb.placements @> :hp OR pb.placements @> :catP)', {
+            if (placement) {
+                // STRICT: Only show offers specifically boosted for this placement
+                // We no longer include o.isFeatured automatically here to give 
+                // priority to paid placement slots on the homepage.
+                qb.andWhere('o.placements @> :p', { p: JSON.stringify([placement]) });
+            } else if (isFeatured === true) {
+                // Return only featured (either via old boolean or new placement system)
+                qb.andWhere('(o.isFeatured = :trueVal OR o.placements @> :hp OR o.placements @> :catP)', {
                     trueVal: true,
                     hp: JSON.stringify(['homepage']),
                     catP: JSON.stringify(['category'])
@@ -325,9 +351,10 @@ export class OffersService {
             .andWhere('o.status != :expired', { expired: OfferStatus.EXPIRED })
             .andWhere('(o.expiryDate IS NULL OR o.expiryDate > :now)', { now })
             .andWhere('(o.endDate IS NULL OR o.endDate > :now)', { now })
+            .andWhere('o.placements @> :p', { p: JSON.stringify(['listing']) })
             .orderBy('o.isFeatured', 'DESC')
             .addOrderBy('o.createdAt', 'DESC')
-            .take(6)
+            .take(20)
             .getMany();
 
         return offers.map(o => this.computeStatus(o));
@@ -364,7 +391,7 @@ export class OffersService {
             .from(OfferEvent)
             .where('(expiry_date IS NOT NULL AND expiry_date < :now) OR (end_date IS NOT NULL AND end_date < :now)', { now })
             .execute();
-        
+
         affected += result.affected || 0;
 
         // 2. Un-feature expired featured offers
