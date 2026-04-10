@@ -597,7 +597,7 @@ export default function BusinessDetailClient({
     }
     if (!business) return;
 
-    if (reviewComment.trim() && reviewComment.trim().length < 10) {
+    if (reviewComment.trim().length < 10) {
       alert("Review comment must be at least 10 characters long.");
       return;
     }
@@ -1125,9 +1125,11 @@ export default function BusinessDetailClient({
                                     </div>
                                   </div>
                                 </div>
-                                <p className="text-slate-600 leading-relaxed italic">
-                                  "{comment.comment}"
-                                </p>
+                                {comment.comment && (
+                                  <p className="text-slate-600 leading-relaxed italic">
+                                    "{comment.comment}"
+                                  </p>
+                                )}
 
                                 {/* Vendor Response (if any) */}
                                 {comment.vendorResponse && (
@@ -1676,6 +1678,7 @@ export default function BusinessDetailClient({
                 <div className="flex flex-col items-center text-center">
                   <Link
                     href={`/vendors/${business.vendor?.id || business.vendorId}`}
+                    target="_self"
                     className="flex flex-col items-center text-center group/vendor cursor-pointer"
                   >
                     <div className="w-24 h-24 bg-blue-50 rounded-3xl flex items-center justify-center text-blue-600 font-bold overflow-hidden shadow-inner mb-4 relative group">
@@ -1799,6 +1802,7 @@ export default function BusinessDetailClient({
                     <Link
                       id="view-vendor-profile-btn"
                       href={`/vendors/${business.vendor?.id || business.vendorId}`}
+                      target="_self"
                       className="block w-full py-4 bg-slate-50 text-slate-900 rounded-2xl font-black text-sm text-center hover:bg-slate-900 hover:text-white transition-all border border-slate-100 shadow-sm"
                       onClick={() => {
                         console.log(
@@ -1851,12 +1855,7 @@ export default function BusinessDetailClient({
                   </div>
                 )}
 
-                {/* Top accent stripe */}
-                {!offer.imageUrl && (
-                  <div
-                    className={`h-1.5 w-full ${offer.type === "event" ? "bg-gradient-to-r from-blue-500 to-indigo-500" : "bg-gradient-to-r from-orange-500 to-rose-500"}`}
-                  />
-                )}
+
 
                 <div className="p-6 flex flex-col flex-1 gap-3">
                   {/* Badge */}
