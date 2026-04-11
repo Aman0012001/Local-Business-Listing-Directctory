@@ -433,14 +433,12 @@ export default function HomePage() {
           <div className="mt-8 grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             {/* Offers */}
             <Link href="/offers-events">
-              <div className="group p-6 rounded-2xl bg-gradient-to-br from-orange-50 to-orange-100 hover:shadow-xl transition-all cursor-pointer">
+              <div className="group p-6 rounded-2xl ">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-orange-500">
-                    <Tag className="w-6 h-6" />
+                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-slate-900">                    <Tag className="w-6 h-6" />
                   </div>
                   <div>
                     <h3 className="font-bold text-lg text-slate-900">
-                      Explore Offers
                     </h3>
                     <p className="text-sm text-slate-500">
                       Best deals & local events near you
@@ -853,20 +851,23 @@ export default function HomePage() {
             },
           ];
           // Fallback to professional reviews if no community results
-          const cards =
-            statsComments && Array.isArray(statsComments) && statsComments.length > 0
-              ? statsComments.map((rev) => ({
+          const communityReviews = statsComments && Array.isArray(statsComments)
+            ? statsComments
+              .filter(rev => rev.comment && rev.comment.trim().length > 0)
+              .map((rev) => ({
                 id: rev.id,
                 name: rev.user?.fullName || "Aman U.",
                 location: rev.user?.branch || rev.user?.city || "",
                 role: "Verified Local",
-                text: rev.content,
+                text: rev.comment,
                 rating: rev.rating || 5,
                 img: rev.user?.avatarUrl || null,
                 date: rev.createdAt,
                 business: rev.business?.title || "Local Shop",
               }))
-              : fallbackReviews;
+            : [];
+
+          const cards = communityReviews.length > 0 ? communityReviews : fallbackReviews;
 
 
           const row1 = [...cards, ...cards, ...cards];

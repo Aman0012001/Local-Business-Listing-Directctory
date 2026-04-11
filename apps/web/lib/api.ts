@@ -1,6 +1,6 @@
 import { Business, Category, City, SearchResponse, Review, ReviewReply } from '../types/api';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:3001/api/v1';
 const API_ROOT = API_BASE_URL.split('/api')[0];
 
 console.log('[api.ts] Active API_BASE_URL:', API_BASE_URL);

@@ -274,8 +274,8 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                             View Details
                         </div>
                         {showChat && (
-                            <ChatTrigger 
-                                businessId={business.id} 
+                            <ChatTrigger
+                                businessId={business.id}
                                 businessName={business.title}
                                 className="flex-1"
                             />

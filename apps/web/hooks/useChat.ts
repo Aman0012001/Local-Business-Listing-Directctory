@@ -8,6 +8,7 @@ import { chatApi } from '../services/chat.service';
 const SOCKET_URL =
     process.env.NEXT_PUBLIC_SOCKET_URL ||
     process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '')?.replace('/api', '') ||
+    process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '')?.replace('/api', '') ||
     'http://localhost:3001';
 
 let sharedSocket: Socket | null = null;

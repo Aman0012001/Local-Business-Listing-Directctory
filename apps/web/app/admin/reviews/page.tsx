@@ -272,7 +272,7 @@ export default function ReviewModerationPage() {
         setActionLoading(id);
         try {
             const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-            await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1'}/reviews/${id}`, {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api/v1'}/reviews/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });

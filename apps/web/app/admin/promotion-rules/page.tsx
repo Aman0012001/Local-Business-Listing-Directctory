@@ -24,20 +24,20 @@ import { api } from "../../../lib/api";
 import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
-type Placement = "homepage" | "category" | "listing";
+type PromotionPlacement = "homepage" | "category" | "listing";
 
 interface PricingRule {
   id: string;
-  placement: Placement | string;
+  placement: PromotionPlacement | string;
   pricePerHour: number;
   pricePerDay: number;
   isActive: boolean;
 }
 
-const ALLOWED_PLACEMENTS: Placement[] = ["homepage", "category", "listing"];
+const ALLOWED_PLACEMENTS: PromotionPlacement[] = ["homepage", "category", "listing"];
 
 const PLACEMENT_INFO: Record<
-  Placement,
+  PromotionPlacement,
   {
     title: string;
     description: string;
@@ -200,8 +200,8 @@ export default function PromotionRulesPage() {
   //         )
   //       : 0;
   const visibleRules = rules.filter(
-    (rule): rule is PricingRule & { placement: Placement } =>
-      ALLOWED_PLACEMENTS.includes(rule.placement as Placement),
+    (rule): rule is PricingRule & { placement: PromotionPlacement } =>
+      ALLOWED_PLACEMENTS.includes(rule.placement as PromotionPlacement),
   );
 
   const activeRules = visibleRules.filter((r) => r.isActive).length;
