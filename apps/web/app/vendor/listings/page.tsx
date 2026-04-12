@@ -7,10 +7,12 @@ import AddBusinessModal from '../../../components/vendor/AddBusinessModal';
 import { useAuth } from '../../../context/AuthContext';
 import { api, getImageUrl } from '../../../lib/api';
 import { Business } from '../../../types/api';
+import { useRouter } from 'next/navigation';
 
 const PAGE_SIZE = 9;
 
 export default function VendorListings() {
+    const router = useRouter();
     const { user } = useAuth();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
@@ -39,7 +41,9 @@ export default function VendorListings() {
     };
 
     useEffect(() => {
-        if (user) fetchListings();
+        if (user) {
+            fetchListings();
+        }
     }, [user]);
 
     const handleEdit = (biz: Business) => {
@@ -96,7 +100,7 @@ export default function VendorListings() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <h1 className="text-3xl lg:text-5xl font-black text-slate-900 mb-2 tracking-tight">Your Listings</h1>
-                    <p className="text-slate-400 font-bold tracking-tight text-lg">Manage and track your business performances</p>
+                    <p className="text-slate-400 font-bold tracking-tight text-lg">Manage your business listings and their status</p>
                 </div>
                 {isAuthorized && (
                     <Link href="/vendor/add-listing" className="flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-2xl font-black  shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95 whitespace-nowrap">
@@ -104,6 +108,7 @@ export default function VendorListings() {
                     </Link>
                 )}
             </div>
+
 
             <AddBusinessModal
                 isOpen={isModalOpen}

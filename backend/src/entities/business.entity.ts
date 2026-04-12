@@ -240,7 +240,6 @@ export class Listing {
     @OneToMany(() => BusinessHours, (hours) => hours.business)
     businessHours: BusinessHours[];
 
-    @Exclude()
     @OneToMany(() => BusinessAmenity, (amenity) => amenity.business)
     businessAmenities: BusinessAmenity[];
 

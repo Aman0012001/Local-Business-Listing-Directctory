@@ -11,9 +11,11 @@ import {
     HttpCode,
     HttpStatus,
     UseInterceptors,
+    Inject,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
-import { CacheInterceptor } from '@nestjs/cache-manager';
+import { CacheInterceptor, CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { BusinessesService } from './businesses.service';
 import { SearchService } from '../search/search.service';
 import { AffiliateService } from '../affiliate/affiliate.service';
@@ -39,6 +41,7 @@ export class BusinessesController {
         private readonly businessesService: BusinessesService,
         private readonly searchService: SearchService,
         private readonly affiliateService: AffiliateService,
+        @Inject(CACHE_MANAGER) private cacheManager: Cache,
     ) { }
 
     @Post()
@@ -116,12 +119,30 @@ export class BusinessesController {
     @ApiResponse({ status: 200, description: 'Listing updated successfully' })
     @ApiResponse({ status: 403, description: 'Unauthorized access' })
     @ApiResponse({ status: 404, description: 'Listing not found' })
-    update(
+    async update(
         @Param('id', ParseUuidPipe) id: string,
         @Body() updateBusinessDto: UpdateBusinessDto,
         @CurrentUser() user: User,
     ) {
-        return this.businessesService.update(id, updateBusinessDto, user);
+        const result = await this.businessesService.update(id, updateBusinessDto, user);
+
+        // Invalidate cache
+        try {
+            // NestJS CacheInterceptor uses the request URL as the key by default
+            const prefix = '/api/v1/businesses';
+            await Promise.all([
+                this.cacheManager.del(`${prefix}/slug/${result.slug}`),
+                this.cacheManager.del(`${prefix}/${id}`),
+                // Also clear any cached search results that might be affected
+                this.cacheManager.del(`${prefix}/search`)
+            ]);
+            // For search, since it has query parameters, we can't easily clear specific keys 
+            // without a wildcard store. For now, we clear the main entries.
+        } catch (err) {
+            console.error('Cache Invalidation Error:', err);
+        }
+
+        return result;
     }
 
     @Delete(':id')

@@ -50,6 +50,7 @@ import ChatTrigger, {
   ChatTriggerHandle,
 } from "../../../components/chat/ChatTrigger";
 import { useChat } from "../../../hooks/useChat";
+import DynamicIcon from "../../../components/DynamicIcon";
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
   <svg
@@ -349,7 +350,7 @@ export default function BusinessDetailClient({
           });
         }
         setBusiness(data);
-
+        console.log("[BusinessDetail] Loaded Amenities:", data?.businessAmenities);
         // Load reviews (replaces legacy comments)
         try {
           const reviewsData = await api.reviews.getByBusiness(data.id);
@@ -469,14 +470,15 @@ export default function BusinessDetailClient({
   const handleContactIntent = async (
     action: "call" | "whatsapp" | "enquiry",
   ) => {
-    if (!user) {
-      alert("Please login to connect with this business.");
+    // For direct actions (Call/WhatsApp), generate lead immediately and then redirect
+    if (action === "enquiry") {
+      setPendingAction(null);
+      openEnquiryModal();
       return;
     }
 
-    if (action === "enquiry") {
-      setPendingAction(null);
-      chatRef.current?.open();
+    if (!user) {
+      alert("Please login to connect with this business.");
       return;
     }
 
@@ -968,24 +970,23 @@ export default function BusinessDetailClient({
                           {business.description}
                         </p>
 
-                        <div className="grid sm:grid-cols-2 gap-4 mt-12 mb-12">
-                          {[
-                            "Fast Delivery",
-                            "Premium Support",
-                            "Genuine Products",
-                            "100% Satisfaction",
-                          ].map((check) => (
-                            <div
-                              key={check}
-                              className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100"
-                            >
-                              <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                              <span className="font-medium text-slate-800">
-                                {check}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
+                        {business.businessAmenities && business.businessAmenities.length > 0 && (
+                          <div className="grid sm:grid-cols-2 gap-4 mt-12 mb-12">
+                            {business.businessAmenities.slice(0, 4).map((item: any, idx) => (
+                              <div
+                                key={idx}
+                                className="group flex items-center gap-4 p-5 bg-white rounded-[24px] border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-100 transition-all duration-300"
+                              >
+                                <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                                  <DynamicIcon name={item.amenity?.icon || "CheckCircle2"} className="w-6 h-6" />
+                                </div>
+                                <span className="font-bold text-slate-700 group-hover:text-slate-900 transition-colors">
+                                  {item.amenity?.name}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
 
                         {/* Detailed Map Section */}
                         <div className="mt-12 space-y-6">
@@ -1293,36 +1294,26 @@ export default function BusinessDetailClient({
                             ? business.businessAmenities.map((item, idx) => (
                               <div
                                 key={item.id || `amenity-${idx}`}
-                                className="flex items-center gap-3"
+                                className="group flex items-center gap-4 p-4 bg-slate-50 rounded-[20px] border border-transparent hover:border-blue-200 transition-all"
                               >
-                                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
-                                  <CheckCircle2 className="w-5 h-5" />
+                                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                  <DynamicIcon name={item.amenity?.icon || "CheckCircle2"} className="w-5 h-5" />
                                 </div>
                                 <span className="font-bold text-slate-700">
-                                  {item.amenity.name}
+                                  {item.amenity?.name || "Premium Amenity"}
                                 </span>
                               </div>
                             ))
-                            : [
-                              "Free WiFi",
-                              "Parking Space",
-                              "Accepts Cards",
-                              "Air Conditioned",
-                              "Wheelchair Access",
-                              "Outdoor Seating",
-                            ].map((item) => (
-                              <div
-                                key={item}
-                                className="flex items-center gap-3"
-                              >
-                                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
-                                  <CheckCircle2 className="w-5 h-5" />
+                            : (
+                              <div className="col-span-full py-16 text-center bg-slate-50 rounded-[32px] border-2 border-dashed border-slate-200">
+                                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-slate-300 mx-auto mb-4 shadow-sm">
+                                  <Info className="w-8 h-8" />
                                 </div>
-                                <span className="font-bold text-slate-700">
-                                  {item}
-                                </span>
+                                <p className="text-slate-500 font-bold italic">
+                                  No specific amenities listed for this business.
+                                </p>
                               </div>
-                            ))}
+                            )}
                         </div>
                       </div>
                     </div>
@@ -1495,11 +1486,11 @@ export default function BusinessDetailClient({
                   />
                 )}
 
-                {/* Quick Connect/Enquiry Button - Now opens Live Chat */}
+                {/* Quick Connect/Enquiry Button - Now opens Enquiry Modal as requested */}
                 {!isOwner && (
                   <button
                     id="send-enquiry-btn"
-                    onClick={() => handleContactIntent("enquiry")}
+                    onClick={() => openEnquiryModal()}
                     className="w-full py-4 bg-gradient-to-r from-violet-600 to-blue-600 text-white rounded-2xl font-bold flex items-center justify-center gap-3 hover:from-violet-700 hover:to-blue-700 transition-all shadow-lg shadow-violet-500/20 active:scale-95"
                   >
                     <Send className="w-5 h-5" /> Chat Now & Enquire
@@ -1676,7 +1667,7 @@ export default function BusinessDetailClient({
 
                 <div className="flex flex-col items-center text-center">
                   <Link
-                    href={`/vendors/${business.vendor?.id || business.vendorId}`}
+                    href={`/vendors/${business.vendorId || business.vendor?.id}`}
                     target="_self"
                     className="flex flex-col items-center text-center group/vendor cursor-pointer"
                   >
@@ -1800,13 +1791,13 @@ export default function BusinessDetailClient({
 
                     <Link
                       id="view-vendor-profile-btn"
-                      href={`/vendors/${business.vendor?.id || business.vendorId}`}
+                      href={`/vendors/${business.vendorId || business.vendor?.id}`}
                       target="_self"
                       className="block w-full py-4 bg-slate-50 text-slate-900 rounded-2xl font-black text-sm text-center hover:bg-slate-900 hover:text-white transition-all border border-slate-100 shadow-sm"
                       onClick={() => {
                         console.log(
                           "[BusinessDetailClient] Navigating to vendor profile:",
-                          business.vendor?.id || business.vendorId,
+                          business.vendorId || business.vendor?.id,
                         );
                       }}
                     >

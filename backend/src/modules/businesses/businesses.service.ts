@@ -633,7 +633,12 @@ export class BusinessesService {
 
         const [listings, total] = await this.listingRepository.findAndCount({
             where: { vendorId: vendor.id },
-            relations: ['category'],
+            relations: [
+                'category',
+                'businessHours',
+                'businessAmenities',
+                'businessAmenities.amenity'
+            ],
             order: { createdAt: 'DESC' },
             skip,
             take: limit,

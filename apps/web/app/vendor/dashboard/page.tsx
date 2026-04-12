@@ -197,7 +197,21 @@ export default function GenericDashboard() {
         showBroadcast: true,
         showDemand: true,
         maxKeywords: 999
-    } : (activeSub?.plan?.dashboardFeatures || {});
+    } : {
+        showListings: true,
+        showSaved: true,
+        showFollowing: true,
+        showQueries: true,
+        showLeads: true,
+        showOffers: true,
+        showReviews: true,
+        showAnalytics: true,
+        showChat: true,
+        showBroadcast: true,
+        showDemand: true,
+        canAddListing: true,
+        ...activeSub?.plan?.dashboardFeatures
+    };
 
 
     const vendorStats = [
@@ -207,8 +221,8 @@ export default function GenericDashboard() {
             icon: ListTree,
             color: 'bg-gradient-to-br from-[#3366CC] to-[#1144AA]',
             shadow: 'shadow-blue-500/20',
-            onClick: () => router.push('/vendor/add-listing'),
-            show: !!features.showListings
+            onClick: () => router.push('/vendor/listings'),
+            show: true
         },
         {
             label: 'Pending Approval',
@@ -217,7 +231,15 @@ export default function GenericDashboard() {
             color: 'bg-gradient-to-br from-amber-400 to-amber-600',
             shadow: 'shadow-amber-500/20',
             onClick: () => router.push('/vendor/pending-listings'),
-            show: !!features.showListings
+            show: true
+        },
+        {
+            label: 'Total Views',
+            value: stats?.totalViews || '0',
+            icon: TrendingUp,
+            color: 'bg-gradient-to-br from-[#33AA88] to-[#118866]',
+            shadow: 'shadow-emerald-500/20',
+            show: true
         },
         {
             label: 'Live Chat',
@@ -226,29 +248,24 @@ export default function GenericDashboard() {
             color: 'bg-gradient-to-br from-indigo-500 to-indigo-700',
             shadow: 'shadow-indigo-500/20',
             onClick: () => router.push('/vendor/chat'),
-            show: !!features.showChat
+            show: true
         },
-        ...(features.showAnalytics ? [{
-            label: 'Total Views',
-            value: stats?.totalViews || '0',
-            icon: Heart,
-            color: 'bg-gradient-to-br from-[#33AA88] to-[#118866]',
-            shadow: 'shadow-emerald-500/20'
-        }] : []),
-        ...(features.showLeads ? [{
+        {
             label: 'New Leads',
             value: String(newLeadsCount),
-            icon: MessageSquare,
+            icon: Sparkles,
             color: 'bg-gradient-to-br from-[#FFAA33] to-[#FF8811]',
-            shadow: 'shadow-orange-500/20'
-        }] : []),
-        ...(features.showReviews ? [{
+            shadow: 'shadow-orange-500/20',
+            show: true
+        },
+        {
             label: 'Total Reviews',
             value: stats?.totalReviews || recentReviews.length || '0',
             icon: Star,
             color: 'bg-gradient-to-br from-[#FF6644] to-[#EE4422]',
-            shadow: 'shadow-red-500/20'
-        }] : []),
+            shadow: 'shadow-red-500/20',
+            show: true
+        },
     ].filter(s => (s as any).show !== false);
 
     const userStats = [
@@ -461,16 +478,18 @@ export default function GenericDashboard() {
 
                     {/* Performance Insights (Vendor Only) */}
                     {(isVendor || isAdmin) && features.showAnalytics && (
-                        <div className="space-y-6 mb-10">
+                        <div className="space-y-6 mb-12">
                             <div className="flex items-center justify-between px-2">
-                                <h3 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-                                    <TrendingUp className="w-7 h-7 text-blue-600" />
-                                    Performance Analytics
-                                </h3>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+                                        <TrendingUp className="w-6 h-6" />
+                                    </div>
+                                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                                        Analytics Dashboard
+                                    </h3>
+                                </div>
                             </div>
-                            <div className="bg-white rounded-[16px] p-8 sm:p-10 border border-black  shadow-slate-200/20">
-                                <PerformanceChart stats={stats} />
-                            </div>
+                            <PerformanceChart stats={stats} />
                         </div>
                     )}
 

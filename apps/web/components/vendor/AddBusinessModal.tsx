@@ -451,14 +451,26 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                 longitude: Number(business.longitude) || -74.0060,
                 coverImageUrl: business.coverImageUrl || '',
                 images: business.images || [],
-                amenityIds: business.businessAmenities?.map(ba => ba.amenity.id) || [],
-                metaKeywords: (business as any).metaKeywords || '',
-                hasOffer: (business as any).hasOffer || false,
-                offerTitle: (business as any).offerTitle || '',
-                offerDescription: (business as any).offerDescription || '',
-                offerBadge: (business as any).offerBadge || '',
-                offerExpiresAt: (business as any).offerExpiresAt ? new Date((business as any).offerExpiresAt).toISOString().split('T')[0] : '',
-                offerBannerUrl: (business as any).offerBannerUrl || '',
+                // More robust mapping: try amenityId first, then ba.amenity.id
+                // Safely map businessAmenities to amenityIds
+                amenityIds: ((business as any).businessAmenities || []).map((ba: any) => {
+                    const id = ba.amenityId || ba.amenity?.id;
+                    return id ? String(id) : '';
+                }).filter((id: string) => id !== ''),
+                metaKeywords: business.metaKeywords || '',
+                hasOffer: business.hasOffer || false,
+                offerTitle: business.offerTitle || '',
+                offerDescription: business.offerDescription || '',
+                offerBadge: business.offerBadge || '',
+                offerExpiresAt: (() => {
+                    try {
+                        return business.offerExpiresAt ? new Date(business.offerExpiresAt).toISOString().split('T')[0] : '';
+                    } catch (e) {
+                        console.error("Invalid date for offerExpiresAt:", business.offerExpiresAt);
+                        return '';
+                    }
+                })(),
+                offerBannerUrl: business.offerBannerUrl || '',
                 faqs: (business.faqs || []).filter(f => f && f.question && f.answer)
             });
             // Pre-fill gallery previews
@@ -608,11 +620,12 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
 
     const toggleAmenity = (id: string) => {
         setFormData(prev => {
-            const exists = prev.amenityIds.includes(id);
+            const targetId = String(id);
+            const exists = prev.amenityIds.some(aid => String(aid) === targetId);
             if (exists) {
-                return { ...prev, amenityIds: prev.amenityIds.filter(a => a !== id) };
+                return { ...prev, amenityIds: prev.amenityIds.filter(a => String(a) !== targetId) };
             }
-            return { ...prev, amenityIds: [...prev.amenityIds, id] };
+            return { ...prev, amenityIds: [...prev.amenityIds, targetId] };
         });
     };
 
@@ -897,7 +910,7 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                                                     )}
                                                     <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
                                                         {amenities.map((amenity) => {
-                                                            const isSelected = formData.amenityIds.includes(amenity.id);
+                                                            const isSelected = formData.amenityIds.includes(String(amenity.id));
                                                             return (
                                                                 <button key={amenity.id} type="button" onClick={() => toggleAmenity(amenity.id)} className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left group ${isSelected ? 'bg-orange-50 border-orange-200 text-orange-700' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>
                                                                     <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${isSelected ? 'bg-orange-500 text-white' : 'bg-white border'}`}>{isSelected && <Check className="w-3.5 h-3.5" />}</div>
