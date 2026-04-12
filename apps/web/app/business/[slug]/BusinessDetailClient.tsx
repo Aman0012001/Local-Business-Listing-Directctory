@@ -1685,9 +1685,9 @@ export default function BusinessDetailClient({
 
                 <div className="flex flex-col items-center text-center">
                   <Link
-                    href={`/vendors/${business.vendorId || business.vendor?.id}`}
+                    href={(business.vendorId || business.vendor?.id) ? `/vendors/${business.vendorId || business.vendor?.id}` : "#"}
                     target="_self"
-                    className="flex flex-col items-center text-center group/vendor cursor-pointer"
+                    className={`flex flex-col items-center text-center group/vendor ${!(business.vendorId || business.vendor?.id) ? 'pointer-events-none' : 'cursor-pointer'}`}
                   >
                     <div className="w-24 h-24 bg-blue-50 rounded-3xl flex items-center justify-center text-blue-600 font-bold overflow-hidden shadow-inner mb-4 relative group">
                       {business.vendor?.user?.avatarUrl ? (
@@ -1800,23 +1800,15 @@ export default function BusinessDetailClient({
 
 
 
-                    <button
-                      type="button"
-                      id="view-vendor-profile-btn"
-                      className="block w-full py-4 bg-slate-50 text-slate-900 rounded-2xl font-black text-sm text-center hover:bg-slate-900 hover:text-white transition-all border border-slate-100 shadow-sm"
-                      onClick={() => {
-                        const targetId = business.vendorId || business.vendor?.id;
-                        console.log(
-                          "[BusinessDetailClient] Navigating to vendor profile:",
-                          targetId,
-                        );
-                        if (targetId) {
-                          window.location.href = `/vendors/${targetId}`;
-                        }
-                      }}
-                    >
-                      View Profile
-                    </button>
+                    {(business.vendorId || business.vendor?.id) && (
+                      <Link
+                        id="view-vendor-profile-btn"
+                        href={`/vendors/${business.vendorId || business.vendor?.id}`}
+                        className="block w-full py-4 bg-slate-50 text-slate-900 rounded-2xl font-black text-sm text-center hover:bg-slate-900 hover:text-white transition-all border border-slate-100 shadow-sm"
+                      >
+                        View Profile
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>

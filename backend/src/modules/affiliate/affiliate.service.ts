@@ -335,16 +335,16 @@ export class AffiliateService {
             throw new NotFoundException('Referral not found');
         }
 
-        return this.processSuccessfulReferral(referral.referredUserId);
+        return this.processSuccessfulReferral(referral.referredUserId, 0, true);
     }
 
     /**
      * Common logic to process a successful referral (signup -> purchase)
      * Rewards are only granted when the referred vendor makes a PAID purchase.
      */
-    async processSuccessfulReferral(referredUserId: string, paidAmount: number = 0) {
+    async processSuccessfulReferral(referredUserId: string, paidAmount: number = 0, force: boolean = false) {
         // Gate: Reward only for paid subscriptions
-        if (Number(paidAmount) <= 0) {
+        if (!force && Number(paidAmount) <= 0) {
             this.logger.debug(`[Referral] Skipping reward for user ${referredUserId} - Transaction amount is 0 (Free Plan). Referral remains PENDING.`);
             return { success: false, reason: 'Paid subscription required' };
         }

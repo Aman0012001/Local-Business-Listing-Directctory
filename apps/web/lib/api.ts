@@ -1,9 +1,9 @@
 import { Business, Category, City, SearchResponse, Review, ReviewReply } from '../types/api';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:3001/api/v1';
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:3001/api/v1').replace(/\/+$/, '');
 const API_ROOT = API_BASE_URL.split('/api')[0];
 
-console.log('[api.ts] Active API_BASE_URL:', API_BASE_URL);
+console.log('[api.ts] Unified API_BASE_URL:', API_BASE_URL);
 
 export const getImageUrl = (path: string | null | undefined) => {
     if (!path) return undefined;
@@ -52,46 +52,71 @@ async function fetcher<T>(endpoint: string, options?: FetcherOptions): Promise<T
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-            const error = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
+            let errorData: any;
+            const contentType = response.headers.get('content-type');
+            
+            if (contentType && contentType.includes('application/json')) {
+                errorData = await response.json().catch(() => ({ message: 'Failed to parse error response' }));
+            } else {
+                const text = await response.text();
+                errorData = { message: text || 'An unknown error occurred' };
+            }
 
             // Only redirect on 401 for protected (non-auth) endpoints.
-            // Auth endpoints (/auth/login, /auth/google, /auth/register) must
-            // throw so the login UI can display the real error message.
             const isAuthEndpoint = endpoint.startsWith('/auth/');
 
             if (response.status === 401 && !isAuthEndpoint) {
-                // Handle invalid/expired token globally
                 if (typeof window !== 'undefined') {
                     console.error('[api.ts] Unauthorized! Clearing token...');
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
                     window.location.href = '/login?error=expired';
                 }
-            } else {
-                // Only log stack traces for 500 errors to avoid console noise for expected validation constraints (400, 404)
-                if (response.status >= 500) {
-                    console.error(`[api.ts] API Error on ${endpoint}:`, response.status, response.statusText, JSON.stringify(error, null, 2));
-                }
+            } else if (response.status >= 500) {
+                console.error(`[api.ts] API Error on ${endpoint}:`, response.status, response.statusText, errorData);
             }
 
             if (options?.silent && response.status === 404) {
-                console.warn(`[api.ts] Silent 404 on ${endpoint}`);
                 return [] as any;
             }
-            throw new Error(error.message || 'API request failed');
+            throw new Error(errorData.message || 'API request failed');
         }
 
         // Check if the response has content before parsing as JSON
-        const text = await response.text();
-        return text ? JSON.parse(text) : (undefined as any);
+        const contentType = response.headers.get('content-type');
+        const isJson = contentType && contentType.includes('application/json');
+
+        if (response.status === 204) {
+            return (undefined as any);
+        }
+
+        if (isJson) {
+            const text = await response.text();
+            try {
+                return text ? JSON.parse(text) : (undefined as any);
+            } catch (e: any) {
+                console.error('[api.ts] JSON Parse Error:', e.message, 'Raw text:', text.substring(0, 200));
+                throw new Error('Invalid JSON response from server');
+            }
+        } else {
+            const text = await response.text();
+            // If it's not JSON but was successful, return text if possible or just plain object
+            return text as unknown as T;
+        }
     } catch (error: any) {
         clearTimeout(timeoutId);
+        
+        // Don't re-throw if it's already an error we processed (with a message we like)
+        if (error.message && (error.message.includes('Invalid JSON') || error.message.includes('Connection Failed'))) {
+            throw error;
+        }
 
-        // Comprehensive Network Error Logging (Chrome: "Failed to fetch", Firefox: "NetworkError when attempting to fetch resource")
+        // Comprehensive Network Error Logging
         const isNetworkError = (error instanceof TypeError && (
             error.message.includes('fetch') ||
             error.message.includes('NetworkError') ||
-            error.message.includes('Network Request Failed')
+            error.message.includes('Network Request Failed') ||
+            error.message.includes('Failed to fetch')
         ));
 
         if (isNetworkError) {
@@ -99,18 +124,15 @@ async function fetcher<T>(endpoint: string, options?: FetcherOptions): Promise<T
                 message: error.message,
                 name: error.name,
                 url: `${API_BASE_URL}${endpoint}`,
-                stack: error.stack,
                 apiUrlSet: API_BASE_URL,
             });
-            // Try to log the keys of the error object just in case
-            console.error('[api.ts] Network Error Object Keys:', Object.getOwnPropertyNames(error));
-
-            throw new Error(`Connection Failed: Unable to reach the backend at ${API_BASE_URL}. Ensure the server is running and CORS is allowed. Error: ${error.message}`);
+            throw new Error(`Connection Failed: Unable to reach the backend. Please check your internet or the server status.`);
         }
 
         if (error.name === 'AbortError') {
             throw new Error('Request timed out. Please check your connection.');
         }
+
         if (options?.silent) {
             console.warn(`[api.ts] Silent error on ${endpoint}`, error.message);
             return [] as any;
