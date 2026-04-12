@@ -12,6 +12,7 @@ import { ActivePlan } from '../../entities/active-plan.entity';
 import { PricingPlan } from '../../entities/pricing-plan.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { Listing } from '../../entities/business.entity';
+import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
 
 @Module({
     imports: [
@@ -25,7 +26,8 @@ import { Listing } from '../../entities/business.entity';
             ActivePlan,
             PricingPlan,
             Vendor,
-            Listing
+            Listing,
+            SubscriptionPlan
         ]),
     ],
     controllers: [AffiliateController],
