@@ -8,6 +8,7 @@ import {
     Search, Filter, Calendar, Mail, User as UserIcon
 } from 'lucide-react';
 import { api, getImageUrl } from '../../../lib/api';
+import { ListingImage } from '../../../components/ListingImage';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type Status = 'pending' | 'approved' | 'rejected' | 'suspended';
@@ -160,8 +161,8 @@ export default function AdminListingsPage() {
                                     {/* Visual Group */}
                                     <div className="flex items-center gap-6">
                                         <div className="w-24 h-24 rounded-3xl overflow-hidden flex-shrink-0 bg-slate-100 shadow-inner group-hover:scale-105 transition-transform duration-500">
-                                            <img
-                                                src={getImageUrl(listing.coverImageUrl) || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=400'}
+                                            <ListingImage
+                                                src={listing.coverImageUrl}
                                                 alt={listing.title}
                                                 className="w-full h-full object-cover"
                                             />

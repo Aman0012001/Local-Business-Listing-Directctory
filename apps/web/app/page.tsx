@@ -36,6 +36,7 @@ import BusinessCard from "../components/BusinessCard";
 import DynamicIcon from "../components/DynamicIcon";
 import OfferCard from "../components/OfferCard";
 import { api, getImageUrl } from "../lib/api";
+import { ListingImage } from "../components/ListingImage";
 import Link from "next/link";
 import { Category, Business, City } from "../types/api";
 import Slider from "react-slick";
@@ -759,13 +760,11 @@ export default function HomePage() {
                   href={`/search?city=${city.name}`}
                   className="relative h-48 rounded-2xl overflow-hidden block group shadow-lg"
                 >
-                  <img
-                    src={
-                      getImageUrl(city.heroImageUrl || city.imageUrl) ||
-                      "https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&q=80&w=400"
-                    }
+                  <ListingImage
+                    src={city.heroImageUrl || city.imageUrl}
                     alt={city.name}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 brightness-75 group-hover:brightness-90"
+                    iconSize={48}
                   />
                   <div className="absolute inset-x-0 bottom-6 text-center">
                     <span className="text-white text-xl font-black drop-shadow-lg tracking-tight">

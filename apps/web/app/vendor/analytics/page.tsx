@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { api, getImageUrl } from '../../../lib/api';
+import { ListingImage } from '../../../components/ListingImage';
 import { useAuth } from '../../../context/AuthContext';
 import { BarChart, TrendingUp, Eye, Phone, Heart, Star, ChevronRight, Loader2, Lock } from 'lucide-react';
 import PerformanceChart from '../../../components/vendor/PerformanceChart';
@@ -137,10 +138,9 @@ export default function VendorAnalyticsPage() {
                             <div className="flex items-center gap-4 flex-grow w-full">
                                 <span className="font-black text-slate-300 text-2xl w-6">#{index + 1}</span>
                                 <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0">
-                                    <img
-                                        src={getImageUrl(listing.coverImageUrl || listing.images?.[0]) || 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=400'}
-                                        alt={listing.title}
-                                        className="w-full h-full object-cover"
+                                    <ListingImage 
+                                        src={listing.coverImageUrl || listing.images?.[0]} 
+                                        alt={listing.title} 
                                     />
                                 </div>
                                 <div className="flex flex-col">

@@ -415,17 +415,17 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
     useEffect(() => {
         const fetchInitialData = async () => {
             try {
-                const [cats, cityList, amenityList, vendorProfile, businesses] = await Promise.all([
+                const [cats, cityList, amenityList, vendorProfile, businessesRes] = await Promise.all([
                     api.categories.getAll(),
                     api.cities.getAll(),
                     api.listings.getAmenities(),
                     api.vendors.getProfile().catch(() => null),
-                    api.listings.getVendorListings()
+                    api.listings.getMyListings()
                 ]);
                 setCategories(cats);
                 setCities(cityList);
                 setAmenities(amenityList || []);
-                setMyListingsCount(businesses.length);
+                setMyListingsCount(businessesRes?.data?.length || 0);
 
                 if (vendorProfile?.socialLinks) {
                     setSocialLinks(vendorProfile.socialLinks);

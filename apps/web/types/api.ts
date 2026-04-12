@@ -53,6 +53,28 @@ export interface BusinessAmenity {
     amenity: Amenity;
 }
 
+export interface Vendor {
+    id: string;
+    userId?: string;
+    businessName?: string;
+    businessEmail?: string;
+    businessPhone?: string;
+    user?: {
+        id: string;
+        fullName?: string;
+        email?: string;
+        phone?: string;
+        isOnline?: boolean;
+        lastLoginAt?: string;
+        lastActiveAt?: string;
+        lastLogoutAt?: string;
+        avatarUrl?: string;
+        createdAt?: string;
+    };
+    businessHours?: Record<string, { isOpen: boolean; openTime: string; closeTime: string }>;
+    socialLinks?: { platform: string; url: string; }[];
+}
+
 export interface Business {
     id: string;
     title: string;
@@ -81,23 +103,7 @@ export interface Business {
     businessHours?: BusinessHours[];
     businessAmenities?: BusinessAmenity[];
     vendorId?: string;
-    vendor?: {
-        id: string;
-        userId?: string;
-        user?: { 
-            id: string; 
-            fullName?: string; 
-            email?: string;
-            isOnline?: boolean;
-            lastLoginAt?: string;
-            lastActiveAt?: string;
-            lastLogoutAt?: string;
-            avatarUrl?: string;
-            createdAt?: string;
-        };
-        businessHours?: Record<string, { isOpen: boolean; openTime: string; closeTime: string }>;
-        socialLinks?: { platform: string; url: string; }[];
-    };
+    vendor?: Vendor;
     // SEO / Search
     metaKeywords?: string;
     searchKeywords?: string[];
@@ -139,13 +145,7 @@ export interface Review {
         title?: string;
         slug: string;
         coverImageUrl?: string;
-        vendor?: {
-            id: string;
-            businessName?: string;
-            user?: {
-                fullName: string;
-            };
-        };
+        vendor?: Vendor;
     };
     vendorResponse?: string;
     vendorResponseAt?: string;
@@ -221,18 +221,7 @@ export interface JobLeadResponse {
     id: string;
     jobLeadId: string;
     vendorId: string;
-    vendor?: {
-        id: string;
-        businessName: string;
-        businessPhone?: string;
-        businessEmail?: string;
-        user?: {
-            id: string;
-            fullName: string;
-            avatarUrl?: string;
-            phone?: string;
-        }
-    };
+    vendor?: Vendor;
     message: string;
     price?: number;
     status: 'pending' | 'accepted' | 'rejected';

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import AddBusinessModal from '../../../components/vendor/AddBusinessModal';
 import { useAuth } from '../../../context/AuthContext';
 import { api, getImageUrl } from '../../../lib/api';
+import { ListingImage } from '../../../components/ListingImage';
 import { Business } from '../../../types/api';
 
 const PAGE_SIZE = 9;
@@ -169,8 +170,8 @@ export default function VendorPendingListings() {
                     paginatedListings.map((biz: any) => (
                         <div key={biz.id} className="group bg-white rounded-[20px] overflow-hidden border border-black shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500 flex flex-col">
                             <div className="relative h-56 overflow-hidden">
-                                <img
-                                    src={getImageUrl(biz.coverImageUrl || biz.images?.[0]) || 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=400'}
+                                <ListingImage 
+                                    src={biz.coverImageUrl || biz.images?.[0]} 
                                     alt={biz.title}
                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                 />

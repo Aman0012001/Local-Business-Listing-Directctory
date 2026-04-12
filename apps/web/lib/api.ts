@@ -6,7 +6,7 @@ const API_ROOT = API_BASE_URL.split('/api')[0];
 console.log('[api.ts] Active API_BASE_URL:', API_BASE_URL);
 
 export const getImageUrl = (path: string | null | undefined) => {
-    if (!path) return null;
+    if (!path) return undefined;
     if (path.startsWith('data:')) return path; // Base64 preview
     if (path.startsWith('http')) return path; // Cloudinary or full URL
 

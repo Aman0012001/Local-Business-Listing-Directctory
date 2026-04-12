@@ -18,7 +18,7 @@ export default function AccountSettings() {
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const [previewImage, setPreviewImage] = useState<string | null | undefined>(null);
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [allCities, setAllCities] = useState<City[]>([]);
     const [availableStates, setAvailableStates] = useState<string[]>([]);

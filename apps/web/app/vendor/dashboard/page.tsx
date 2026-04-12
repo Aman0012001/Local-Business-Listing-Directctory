@@ -10,6 +10,7 @@ import { Star, ChevronRight, ListTree, Heart, MessageSquare, Plus, TrendingUp, L
 import { useAuth } from '../../../context/AuthContext';
 import Link from 'next/link';
 import { api, getImageUrl } from '../../../lib/api';
+import { ListingImage } from '../../../components/ListingImage';
 import { Business, Review } from '../../../types/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import VendorHotDemandWidget from '../../components/vendor/VendorHotDemandWidget';
@@ -460,7 +461,11 @@ export default function GenericDashboard() {
                                 savedBusinesses.slice(0, 4).map((biz) => (
                                     <Link key={biz.id} href={`/business/${biz.slug}`} className="flex items-center gap-5 p-4 rounded-[16px] bg-slate-50 border border-transparent hover:border-blue-500/20 hover:bg-white hover: transition-all group/item">
                                         <div className="w-16 h-16 rounded-[16px] overflow-hidden flex-shrink-0 shadow-md">
-                                            <img src={getImageUrl((biz as any).coverImageUrl || (biz as any).images?.[0]) || 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=400'} alt={biz.title} className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-500" />
+                                            <ListingImage 
+                                                src={(biz as any).coverImageUrl || (biz as any).images?.[0]} 
+                                                alt={biz.title} 
+                                                className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-500" 
+                                            />
                                         </div>
                                         <div className="overflow-hidden">
                                             <h4 className="font-black text-slate-900 truncate group-hover/item:text-blue-600 transition-colors">{biz.title}</h4>
@@ -502,7 +507,11 @@ export default function GenericDashboard() {
                                 followedBusinesses.slice(0, 4).map((biz) => (
                                     <Link key={biz.id} href={`/business/${biz.slug}`} className="flex items-center gap-5 p-4 rounded-[16px] bg-slate-50 border border-transparent hover:border-blue-500/20 hover:bg-white hover: transition-all group/item">
                                         <div className="w-16 h-16 rounded-[16px] overflow-hidden flex-shrink-0 shadow-md">
-                                            <img src={getImageUrl((biz as any).coverImageUrl || (biz as any).images?.[0]) || 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=400'} alt={biz.title} className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-500" />
+                                            <ListingImage 
+                                                src={(biz as any).coverImageUrl || (biz as any).images?.[0]} 
+                                                alt={biz.title} 
+                                                className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-500" 
+                                            />
                                         </div>
                                         <div className="overflow-hidden">
                                             <h4 className="font-black text-slate-900 truncate group-hover/item:text-blue-600 transition-colors">{(biz as any).title}</h4>
