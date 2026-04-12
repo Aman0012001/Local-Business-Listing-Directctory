@@ -1503,8 +1503,19 @@ export default function BusinessDetailClient({
                     <Send className="w-5 h-5" /> Chat Now & Enquire
                   </button>
                 )}
+
+                {/* View Vendor Profile Link */}
+                {/* {business.vendor?.id && (
+                  <Link
+                    href={`/vendors/${business.vendor.id}`}
+                    className={`w-full py-3 border border-slate-700/30 text-slate-300 hover:bg-slate-800 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all ${!isOwner ? 'mt-4' : 'mb-4'}`}
+                  >
+                    <User className="w-5 h-5" /> View Vendor Profile
+                  </Link>
+                )} */}
+
                 {isOwner && (
-                  <div className="w-full py-3 bg-blue-900/30 border border-blue-700/30 text-blue-300 rounded-2xl font-bold flex items-center justify-center gap-2 text-sm">
+                  <div className="w-full mt-4 py-3 bg-blue-900/30 border border-blue-700/30 text-blue-300 rounded-2xl font-bold flex items-center justify-center gap-2 text-sm">
                     <ShieldCheck className="w-4 h-4" /> You own this listing
                   </div>
                 )}
@@ -1789,20 +1800,23 @@ export default function BusinessDetailClient({
 
 
 
-                    <Link
+                    <button
+                      type="button"
                       id="view-vendor-profile-btn"
-                      href={`/vendors/${business.vendorId || business.vendor?.id}`}
-                      target="_self"
                       className="block w-full py-4 bg-slate-50 text-slate-900 rounded-2xl font-black text-sm text-center hover:bg-slate-900 hover:text-white transition-all border border-slate-100 shadow-sm"
                       onClick={() => {
+                        const targetId = business.vendorId || business.vendor?.id;
                         console.log(
                           "[BusinessDetailClient] Navigating to vendor profile:",
-                          business.vendorId || business.vendor?.id,
+                          targetId,
                         );
+                        if (targetId) {
+                          window.location.href = `/vendors/${targetId}`;
+                        }
                       }}
                     >
                       View Profile
-                    </Link>
+                    </button>
                   </div>
                 </div>
               </div>

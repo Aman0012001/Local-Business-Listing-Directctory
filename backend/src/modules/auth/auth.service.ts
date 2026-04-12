@@ -121,6 +121,10 @@ export class AuthService {
 
         // Auto-create affiliate record for vendors
         if (savedUser.role === UserRole.VENDOR) {
+            const vendor = this.vendorRepository.create({
+                userId: savedUser.id,
+                isVerified: false,
+            });
             const savedVendor = await this.vendorRepository.save(vendor);
             this.logger.log(`Auto-created vendor profile for user ${savedUser.id}`);
 
