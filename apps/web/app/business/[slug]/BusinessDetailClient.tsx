@@ -747,13 +747,7 @@ export default function BusinessDetailClient({
     .map((img) => getImageUrl(img))
     .filter(Boolean) as string[];
 
-  const defaultImages = [
-    "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200",
-    "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=800",
-    "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=600",
-  ];
-
-  const galleryImages = actualImages.length > 0 ? actualImages : defaultImages;
+  const galleryImages = actualImages;
 
   const openLightbox = (index: number) => {
     setCurrentImageIndex(index);
@@ -872,65 +866,90 @@ export default function BusinessDetailClient({
             </div>
 
             {/* Gallery */}
-            <div className="grid grid-cols-4 grid-rows-2 h-[500px] gap-4 mb-16 relative z-10">
-              <div
-                onClick={() => openLightbox(0)}
-                className="col-span-2 row-span-2 rounded-[24px] overflow-hidden border border-slate-100 bg-slate-50 cursor-pointer group/outer relative"
-              >
-                <img
-                  src={galleryImages[0]}
-                  className="w-full h-full object-cover group-hover/outer:scale-105 transition-transform duration-700"
-                  alt={business.title}
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover/outer:bg-black/10 transition-colors duration-300" />
-              </div>
-              <div
-                onClick={() => openLightbox(1)}
-                className="col-span-2 row-span-1 rounded-[24px] overflow-hidden border border-slate-100 bg-slate-50 cursor-pointer group/outer relative"
-              >
-                <img
-                  src={galleryImages[1]}
-                  className="w-full h-full object-cover group-hover/outer:scale-105 transition-transform duration-700"
-                  alt="Business interior"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover/outer:bg-black/10 transition-colors duration-300" />
-              </div>
-              <div
-                onClick={() => openLightbox(2)}
-                className="col-span-1 row-span-1 rounded-[20px] overflow-hidden border border-slate-100 bg-slate-50 cursor-pointer group/outer relative"
-              >
-                <img
-                  src={galleryImages[2]}
-                  className="w-full h-full object-cover group-hover/outer:scale-105 transition-transform duration-700"
-                  alt="Business storefront"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover/outer:bg-black/10 transition-colors duration-300" />
-              </div>
-              <div
-                onClick={() => openLightbox(3)}
-                className="col-span-1 row-span-1 rounded-[20px] bg-slate-900 flex flex-col items-center justify-center cursor-pointer hover:bg-blue-600 transition-all duration-300 group shadow-xl relative overflow-hidden"
-              >
-                {actualImages.length >= 4 && (
-                  <>
+            <div className="grid grid-cols-4 grid-rows-2 h-[500px] gap-4 mb-16 relative z-10 transition-all duration-500">
+              {galleryImages.length > 0 ? (
+                <>
+                  <div
+                    onClick={() => openLightbox(0)}
+                    className={`${galleryImages.length === 1 ? 'col-span-4' : 'col-span-2'} row-span-2 rounded-[24px] overflow-hidden border border-slate-100 bg-slate-50 cursor-pointer group/outer relative`}
+                  >
                     <img
-                      src={actualImages[3]}
-                      className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:scale-110 transition-transform duration-500 blur-[2px]"
-                      alt="More photos"
+                      src={galleryImages[0]}
+                      className="w-full h-full object-cover group-hover/outer:scale-105 transition-transform duration-700"
+                      alt={business.title}
                     />
-                    <div className="absolute inset-0 bg-slate-900/40 group-hover:bg-blue-600/40 transition-colors" />
-                  </>
-                )}
-                <div className="relative z-10 flex flex-col items-center">
-                  <Images className="w-5 h-5 text-white/50 mb-2 group-hover:scale-110 group-hover:text-white transition-all" />
-                  <span className="text-white font-black uppercase tracking-[0.2em] text-[10px]">
-                    {actualImages.length}{" "}
-                    {actualImages.length === 1 ? "Photo" : "Photos"}
-                  </span>
-                  <span className="text-white/40 font-bold uppercase tracking-widest text-[8px] mt-1">
-                    View All
-                  </span>
+                    <div className="absolute inset-0 bg-black/0 group-hover/outer:bg-black/10 transition-colors duration-300" />
+                    {galleryImages.length === 1 && (
+                      <div className="absolute bottom-6 right-6 px-4 py-2 bg-black/50 backdrop-blur-md rounded-xl text-white text-[10px] font-black uppercase tracking-widest border border-white/10">
+                        Featured Image
+                      </div>
+                    )}
+                  </div>
+                  {galleryImages.length > 1 && (
+                    <div
+                      onClick={() => openLightbox(1)}
+                      className={`${galleryImages.length === 2 ? 'col-span-2' : 'col-span-2'} row-span-1 rounded-[24px] overflow-hidden border border-slate-100 bg-slate-50 cursor-pointer group/outer relative`}
+                    >
+                      <img
+                        src={galleryImages[1]}
+                        className="w-full h-full object-cover group-hover/outer:scale-105 transition-transform duration-700"
+                        alt="Business interior"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover/outer:bg-black/10 transition-colors duration-300" />
+                    </div>
+                  )}
+                  {galleryImages.length > 2 && (
+                    <div
+                      onClick={() => openLightbox(2)}
+                      className="col-span-1 row-span-1 rounded-[20px] overflow-hidden border border-slate-100 bg-slate-50 cursor-pointer group/outer relative"
+                    >
+                      <img
+                        src={galleryImages[2]}
+                        className="w-full h-full object-cover group-hover/outer:scale-105 transition-transform duration-700"
+                        alt="Business storefront"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover/outer:bg-black/10 transition-colors duration-300" />
+                    </div>
+                  )}
+                  {galleryImages.length > 0 && (
+                    <div
+                      onClick={() => openLightbox(galleryImages.length > 3 ? 3 : 0)}
+                      className={`${galleryImages.length === 2 ? 'col-span-2' : 'col-span-1'} row-span-1 rounded-[20px] bg-slate-900 flex flex-col items-center justify-center cursor-pointer hover:bg-blue-600 transition-all duration-300 group shadow-xl relative overflow-hidden`}
+                    >
+                      {galleryImages.length >= 4 && (
+                        <>
+                          <img
+                            src={galleryImages[3]}
+                            className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:scale-110 transition-transform duration-500 blur-[2px]"
+                            alt="More photos"
+                          />
+                          <div className="absolute inset-0 bg-slate-900/40 group-hover:bg-blue-600/40 transition-colors" />
+                        </>
+                      )}
+                      <div className="relative z-10 flex flex-col items-center">
+                        <Images className="w-5 h-5 text-white/50 mb-2 group-hover:scale-110 group-hover:text-white transition-all" />
+                        <span className="text-white font-black uppercase tracking-[0.2em] text-[10px]">
+                          {galleryImages.length}{" "}
+                          {galleryImages.length === 1 ? "Photo" : "Photos"}
+                        </span>
+                        <span className="text-white/40 font-bold uppercase tracking-widest text-[8px] mt-1">
+                          {galleryImages.length > 3 ? "View All" : "Full View"}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="col-span-4 row-span-2 rounded-[32px] bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-300 gap-4 group hover:border-blue-200 transition-colors">
+                  <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-500">
+                    <Images className="w-10 h-10 opacity-20" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">No Gallery Photos</p>
+                    <p className="text-[10px] font-bold mt-1 text-slate-300 max-w-[200px]">The vendor has not uploaded any photos for this business yet.</p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Tabs / Content */}
@@ -970,23 +989,7 @@ export default function BusinessDetailClient({
                           {business.description}
                         </p>
 
-                        {business.businessAmenities && business.businessAmenities.length > 0 && (
-                          <div className="grid sm:grid-cols-2 gap-4 mt-12 mb-12">
-                            {business.businessAmenities.slice(0, 4).map((item: any, idx) => (
-                              <div
-                                key={idx}
-                                className="group flex items-center gap-4 p-5 bg-white rounded-[24px] border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-100 transition-all duration-300"
-                              >
-                                <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
-                                  <DynamicIcon name={item.amenity?.icon || "CheckCircle2"} className="w-6 h-6" />
-                                </div>
-                                <span className="font-bold text-slate-700 group-hover:text-slate-900 transition-colors">
-                                  {item.amenity?.name}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+
 
                         {/* Detailed Map Section */}
                         <div className="mt-12 space-y-6">
@@ -1288,33 +1291,37 @@ export default function BusinessDetailClient({
                         <h3 className="text-2xl font-bold text-slate-900 mb-8">
                           Business Amenities
                         </h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
-                          {business.businessAmenities &&
-                            business.businessAmenities.length > 0
-                            ? business.businessAmenities.map((item, idx) => (
-                              <div
-                                key={item.id || `amenity-${idx}`}
-                                className="group flex items-center gap-4 p-4 bg-slate-50 rounded-[20px] border border-transparent hover:border-blue-200 transition-all"
+                        {business.businessAmenities && business.businessAmenities.length > 0 ? (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                            {business.businessAmenities.map((item, idx) => (
+                              <motion.div
+                                key={idx}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.05 }}
+                                className="group flex items-center gap-4 p-5 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-100 transition-all hover:-translate-y-1"
                               >
-                                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-all">
-                                  <DynamicIcon name={item.amenity?.icon || "CheckCircle2"} className="w-5 h-5" />
+                                <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-blue-50 transition-colors">
+                                  <DynamicIcon name={item.amenity?.icon || "CheckCircle2"} className="w-6 h-6 text-slate-400 group-hover:text-blue-600 transition-colors" />
                                 </div>
-                                <span className="font-bold text-slate-700">
-                                  {item.amenity?.name || "Premium Amenity"}
-                                </span>
-                              </div>
-                            ))
-                            : (
-                              <div className="col-span-full py-16 text-center bg-slate-50 rounded-[32px] border-2 border-dashed border-slate-200">
-                                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-slate-300 mx-auto mb-4 shadow-sm">
-                                  <Info className="w-8 h-8" />
+                                <div>
+                                  <h4 className="font-bold text-slate-900 leading-tight">{item.amenity?.name}</h4>
+                                  <p className="text-xs text-slate-400 font-medium">Verified Amenity</p>
                                 </div>
-                                <p className="text-slate-500 font-bold italic">
-                                  No specific amenities listed for this business.
-                                </p>
-                              </div>
-                            )}
-                        </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="py-20 text-center">
+                            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                              <CheckCircle2 className="w-10 h-10 text-slate-200" />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-900 mb-2">No Amenities Listed</h3>
+                            <p className="text-slate-400 font-medium max-w-sm mx-auto">
+                              The vendor hasn't specified any amenities for this business yet.
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -1780,14 +1787,7 @@ export default function BusinessDetailClient({
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-slate-400 uppercase tracking-widest text-[9px]">
-                        Response Rate
-                      </span>
-                      <span className="font-black text-emerald-600">
-                        98% High
-                      </span>
-                    </div>
+
 
                     <Link
                       id="view-vendor-profile-btn"

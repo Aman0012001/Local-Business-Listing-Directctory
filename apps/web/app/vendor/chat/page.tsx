@@ -9,13 +9,13 @@ import { useChat, useChatSocket } from '../../../hooks/useChat';
 import { useNotifications } from '../../../hooks/useNotifications';
 import { getImageUrl } from '../../../lib/api';
 import Link from 'next/link';
+import { usePlanFeature } from '../../../hooks/usePlanFeature';
+import { FeatureGate } from '../../../components/vendor/FeatureGate';
 
 export default function VendorChatDashboard() {
     const { user } = useAuth();
     const isVendor = user?.role === 'vendor';
     const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
-    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
-    const features = activeSub?.plan?.dashboardFeatures || {};
 
     const [conversations, setConversations] = useState<any[]>([]);
     const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
@@ -155,7 +155,8 @@ export default function VendorChatDashboard() {
     }
 
     return (
-        <div className="flex flex-col h-full overflow-hidden">
+        <FeatureGate feature="showChat" title="Premium Messaging Locked" description="Real-time chat with customers is a premium feature. Upgrade to professional plans to interact instantly with your audience.">
+            <div className="flex flex-col h-full overflow-hidden">
             <div className="flex-1 flex w-full gap-6 overflow-hidden">
                 {/* Desktop Sidebar / Conversation List */}
                 <div className={`flex-col bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300 ${selectedConvId ? 'hidden md:flex' : 'flex'} w-full md:w-80 lg:w-96`}>
@@ -406,6 +407,7 @@ export default function VendorChatDashboard() {
                     )}
                 </div>
             </div>
-        </div>
+            </div>
+        </FeatureGate>
     );
 }

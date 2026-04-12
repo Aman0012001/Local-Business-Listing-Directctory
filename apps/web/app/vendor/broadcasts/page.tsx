@@ -6,16 +6,17 @@ import { Megaphone, ChevronRight, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useAuth } from '../../../context/AuthContext';
+import { usePlanFeature } from '../../../hooks/usePlanFeature';
+import { FeatureGate } from '../../../components/vendor/FeatureGate';
 
 export default function VendorBroadcastsPage() {
     const { user } = useAuth();
-    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
-    const features = activeSub?.plan?.dashboardFeatures || {};
     const isVendor = user?.role === 'vendor';
 
     
     return (
-        <div className="min-h-screen pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <FeatureGate feature="showBroadcast" title="Unlock Live Broadcasts" description="See real-time service requests from customers in your area. Respond instantly and grow your business today.">
+            <div className="min-h-screen pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Header */}
             <motion.div
                 initial={{ opacity: 0, y: -20 }}
@@ -45,6 +46,7 @@ export default function VendorBroadcastsPage() {
             <div className="bg-slate-50/30 rounded-[24px] p-8 sm:p-12 border-2 border-slate-50">
                 <BroadcastFeed />
             </div>
-        </div>
+            </div>
+        </FeatureGate>
     );
 }

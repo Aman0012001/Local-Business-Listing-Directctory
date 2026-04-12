@@ -6,6 +6,8 @@ import { useAuth } from '../../../context/AuthContext';
 import { BarChart, TrendingUp, Eye, Phone, Heart, Star, ChevronRight, Loader2, Lock } from 'lucide-react';
 import PerformanceChart from '../../../components/vendor/PerformanceChart';
 import Link from 'next/link';
+import { usePlanFeature } from '../../../hooks/usePlanFeature';
+import { FeatureGate } from '../../../components/vendor/FeatureGate';
 
 export default function VendorAnalyticsPage() {
     const { user } = useAuth();
@@ -13,8 +15,6 @@ export default function VendorAnalyticsPage() {
     const [listings, setListings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
-    const features = activeSub?.plan?.dashboardFeatures || {};
     const isVendor = user?.role === 'vendor';
 
     useEffect(() => {
@@ -53,7 +53,8 @@ export default function VendorAnalyticsPage() {
     const topListings = [...listings].sort((a, b) => b.totalViews - a.totalViews).slice(0, 5);
 
     return (
-        <div className="space-y-8 pb-20">
+        <FeatureGate feature="showAnalytics" title="Unlock Performance Analytics" description="Get deep insights into how your business is performing, track views, leads, and customer engagement trends.">
+            <div className="space-y-8 pb-20">
             {/* Header */}
             <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-3 text-blue-600 mb-2">
@@ -185,5 +186,6 @@ export default function VendorAnalyticsPage() {
                 </div>
             </div>
         </div>
+        </FeatureGate>
     );
 }

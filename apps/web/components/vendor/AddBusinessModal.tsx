@@ -7,6 +7,9 @@ import { Category, Business, City } from '../../types/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import CategorySearchSelect from '../CategorySearchSelect';
 import { useAuth } from '../../context/AuthContext';
+import { usePlanFeature } from '../../hooks/usePlanFeature';
+import { Lock } from 'lucide-react';
+import Link from 'next/link';
 
 const SOCIAL_PLATFORMS = [
     { key: 'facebook', label: 'Facebook', emoji: '📘', color: '#1877F2', placeholder: 'https://facebook.com/yourbusiness' },
@@ -66,7 +69,13 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
     });
 
     const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
-    const maxKeywords = activeSub?.plan?.dashboardFeatures?.maxKeywords || 0;
+    const { getFeatureValue, planName } = usePlanFeature();
+    const maxKeywords = getFeatureValue('maxKeywords') || 0;
+    const maxListings = getFeatureValue('maxListings') || 1;
+    
+    const [myListingsCount, setMyListingsCount] = useState<number | null>(null);
+    const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+    const canAddListing = isAdmin || (myListingsCount !== null && myListingsCount < maxListings);
 
     const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
     const [galleryUploading, setGalleryUploading] = useState(false);
@@ -406,15 +415,17 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
     useEffect(() => {
         const fetchInitialData = async () => {
             try {
-                const [cats, cityList, amenityList, vendorProfile] = await Promise.all([
+                const [cats, cityList, amenityList, vendorProfile, businesses] = await Promise.all([
                     api.categories.getAll(),
                     api.cities.getAll(),
                     api.listings.getAmenities(),
-                    api.vendors.getProfile().catch(() => null)
+                    api.vendors.getProfile().catch(() => null),
+                    api.listings.getVendorListings()
                 ]);
                 setCategories(cats);
                 setCities(cityList);
                 setAmenities(amenityList || []);
+                setMyListingsCount(businesses.length);
 
                 if (vendorProfile?.socialLinks) {
                     setSocialLinks(vendorProfile.socialLinks);
@@ -436,8 +447,18 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
 
     useEffect(() => {
         if (business && isOpen) {
+            const initialAmenityIds = ((business as any).businessAmenities || []).map((ba: any) => {
+                const id = ba.amenityId || ba.amenity?.id;
+                return id ? String(id) : '';
+            }).filter((id: string) => id !== '');
+
+            console.log("[AddBusinessModal] Initial Mapping Amenities:", {
+                businessAmenities: (business as any).businessAmenities,
+                mappedIds: initialAmenityIds
+            });
+
             setFormData({
-                title: business?.title || '',
+                title: business.title || '',
                 categoryId: business.category?.id || '',
                 description: business.description || '',
                 phone: business.phone || '',
@@ -451,12 +472,7 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                 longitude: Number(business.longitude) || -74.0060,
                 coverImageUrl: business.coverImageUrl || '',
                 images: business.images || [],
-                // More robust mapping: try amenityId first, then ba.amenity.id
-                // Safely map businessAmenities to amenityIds
-                amenityIds: ((business as any).businessAmenities || []).map((ba: any) => {
-                    const id = ba.amenityId || ba.amenity?.id;
-                    return id ? String(id) : '';
-                }).filter((id: string) => id !== ''),
+                amenityIds: initialAmenityIds,
                 metaKeywords: business.metaKeywords || '',
                 hasOffer: business.hasOffer || false,
                 offerTitle: business.offerTitle || '',
@@ -510,11 +526,18 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
 
             // Filter out empty FAQs
             submissionData.faqs = (submissionData.faqs || []).filter(f => f.question.trim() && f.answer.trim());
-
-            if (business) {
-                await api.listings.update(business.id, submissionData);
-            } else {
-                await api.listings.create(submissionData);
+            console.log("[AddBusinessModal] Submitting data:", submissionData);
+        
+            try {
+                if (business) {
+                    await api.listings.update(business.id, submissionData);
+                    console.log("[AddBusinessModal] Update success");
+                } else {
+                    await api.listings.create(submissionData);
+                }
+            } catch (err) {
+                console.error("[AddBusinessModal] Submission error:", err);
+                throw err;
             }
 
             // Save social links to vendor profile
@@ -722,6 +745,33 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                                                 <X className="w-3.5 h-3.5" />
                                             </div>
                                             {error}
+                                        </motion.div>
+                                    )}
+
+                                    {/* Limit Gate for NEW listings */}
+                                    {!business && !canAddListing && myListingsCount !== null && (
+                                        <motion.div
+                                            initial={{ opacity: 0, scale: 0.95 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            className="p-8 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl relative overflow-hidden mb-8"
+                                        >
+                                            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
+                                            <div className="relative z-10 flex flex-col items-center text-center">
+                                                <div className="w-16 h-16 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center mb-6">
+                                                    <Lock className="w-8 h-8 text-orange-500" />
+                                                </div>
+                                                <h3 className="text-xl font-black text-white mb-2">Limit Reached</h3>
+                                                <p className="text-slate-400 text-sm font-bold mb-6 italic leading-relaxed">
+                                                    Your <span className="text-orange-400 font-black">{planName}</span> plan allows for <span className="text-white">{maxListings}</span> business listing{maxListings > 1 ? 's' : ''}. 
+                                                    Please upgrade your plan to increase this limit.
+                                                </p>
+                                                <Link
+                                                    href="/vendor/subscription"
+                                                    className="w-full py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black text-sm transition-all shadow-lg shadow-orange-500/20 active:scale-[0.98]"
+                                                >
+                                                    Upgrade Plan Now
+                                                </Link>
+                                            </div>
                                         </motion.div>
                                     )}
 
@@ -1084,8 +1134,19 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                                 </div>
 
                                 <div className="p-6 border-t border-slate-100 bg-white/80 backdrop-blur-md">
-                                    <button disabled={loading || galleryUploading} type="submit" className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-sm hover:bg-orange-500 flex items-center justify-center gap-2">
-                                        {loading || galleryUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Store className="w-4 h-4" />{business ? 'Save Changes' : 'Publish Listing'}</>}
+                                    <button 
+                                        disabled={loading || galleryUploading || (!business && !canAddListing)} 
+                                        type="submit" 
+                                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-sm hover:bg-orange-500 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
+                                    >
+                                        {loading || galleryUploading ? (
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                        ) : (
+                                            <>
+                                                <Store className="w-4 h-4" />
+                                                {business ? 'Save Changes' : 'Publish Listing'}
+                                            </>
+                                        )}
                                     </button>
                                 </div>
                             </form>

@@ -10,6 +10,8 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../../context/AuthContext';
 import Link from 'next/link';
+import { usePlanFeature } from '../../../hooks/usePlanFeature';
+import { FeatureGate } from '../../../components/vendor/FeatureGate';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type LeadStatus = 'new' | 'contacted' | 'converted' | 'lost';
@@ -200,10 +202,6 @@ export default function VendorLeadsPage() {
     const [filterStatus, setFilterStatus] = useState('');
     const [filterType, setFilterType] = useState('');
 
-    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
-    const features = activeSub?.plan?.dashboardFeatures || {};
-    const isVendor = user?.role === 'vendor';
-
     const fetchLeads = useCallback(async (silent = false) => {
         if (!user) { setLoading(false); return; }
         if (!silent) setLoading(true); else setRefreshing(true);
@@ -303,7 +301,8 @@ export default function VendorLeadsPage() {
     ];
 
     return (
-        <div className="min-h-screen pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <FeatureGate feature="showLeads" title="Manage Your Business Leads" description="Track and respond to customers who have expressed interest in your business. Gain professional insights into your customer base.">
+            <div className="min-h-screen pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Header */}
             <div className="py-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
@@ -485,5 +484,6 @@ export default function VendorLeadsPage() {
                 )}
             </AnimatePresence>
         </div>
+        </FeatureGate>
     );
 }

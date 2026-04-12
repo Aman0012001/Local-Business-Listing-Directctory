@@ -450,7 +450,9 @@ export class ReviewsService {
         const queryBuilder = this.reviewRepository
             .createQueryBuilder('review')
             .leftJoinAndSelect('review.user', 'user')
-            .leftJoinAndSelect('review.business', 'business');
+            .leftJoinAndSelect('review.business', 'business')
+            .leftJoinAndSelect('business.vendor', 'vendor')
+            .leftJoinAndSelect('vendor.user', 'vendor_user');
 
         if (isSuspicious !== undefined) {
             queryBuilder.andWhere('review.isSuspicious = :isSuspicious', { 

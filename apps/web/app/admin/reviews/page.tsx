@@ -44,7 +44,16 @@ interface Review {
     helpfulCount: number;
     createdAt: string;
     user?: { fullName: string; email?: string };
-    business?: { name: string; slug?: string };
+    business?: { 
+        name: string; 
+        slug?: string;
+        vendor?: {
+            user?: {
+                fullName: string;
+            };
+            businessName?: string;
+        };
+    };
     vendorResponse?: string;
 }
 
@@ -518,8 +527,14 @@ export default function ReviewModerationPage() {
                                                         <Store className="w-3 h-3 text-slate-400" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Business</p>
-                                                        <p className="text-xs font-black text-slate-800">{review.business?.name || '—'}</p>
+                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Business / Owner</p>
+                                                        <p className="text-xs font-black text-slate-800">
+                                                            {review.business?.name || '—'} 
+                                                            <span className="text-slate-400 font-medium mx-1">/</span>
+                                                            <span className="text-slate-500">
+                                                                {review.business?.vendor?.user?.fullName || (review.business?.vendor as any)?.vendor_user?.fullName || review.business?.vendor?.businessName || 'Anonymous Owner'}
+                                                            </span>
+                                                        </p>
                                                     </div>
                                                 </div>
                                                 {review.ipAddress && (

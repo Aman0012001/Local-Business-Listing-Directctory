@@ -37,9 +37,9 @@ export class CreatePlanDto {
     @IsBoolean()
     isFeatured?: boolean = false;
 
-    @ApiPropertyOptional({ example: { showAnalytics: true, showLeads: true } })
+    @ApiPropertyOptional({ example: { showAnalytics: true, showLeads: true, maxListings: 1 } })
     @IsOptional()
-    dashboardFeatures?: Record<string, boolean> = {};
+    dashboardFeatures?: Record<string, any> = {};
 
     @ApiPropertyOptional({ default: true })
     @IsOptional()
@@ -78,9 +78,9 @@ export class UpdatePlanDto {
     @IsBoolean()
     isFeatured?: boolean;
 
-    @ApiPropertyOptional({ example: { showAnalytics: true, showLeads: true } })
+    @ApiPropertyOptional({ example: { showAnalytics: true, showLeads: true, maxListings: 1 } })
     @IsOptional()
-    dashboardFeatures?: Record<string, boolean>;
+    dashboardFeatures?: Record<string, any>;
 
     @ApiPropertyOptional()
     @IsOptional()

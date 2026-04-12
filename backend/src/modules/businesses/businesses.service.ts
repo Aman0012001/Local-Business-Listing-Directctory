@@ -131,6 +131,21 @@ export class BusinessesService {
                 ]
             })
         ]);
+        
+        // --- Limit Enforcement ---
+        // Get limits from features. Priority: ActivePlan (New Engine) -> Subscription (Old Engine) -> Default (Free: 1)
+        const planFeatures = (activeNewPlan?.plan?.features as any) || activeSub?.plan?.dashboardFeatures || { maxListings: 1 };
+        const maxListings = planFeatures.maxListings || 1;
+        
+        // Count existing listings
+        const existingCount = await this.listingRepository.count({
+            where: { vendorId: vendor.id }
+        });
+        
+        if (existingCount >= maxListings && ![UserRole.ADMIN, UserRole.SUPERADMIN].includes(user.role as UserRole)) {
+            throw new BadRequestException(`Business listing limit reached (${maxListings}). Please upgrade your plan to add more businesses.`);
+        }
+        // -------------------------
 
         const hasFeaturedSub = (activeSub?.plan?.isFeatured) || ((activeNewPlan?.plan?.features as any)?.isFeatured);
         const hasBoostedSub = !!referralPlan || ((activeNewPlan?.plan?.features as any)?.top_ranking);
@@ -510,6 +525,13 @@ export class BusinessesService {
         updateBusinessDto: UpdateBusinessDto,
         user: User,
     ): Promise<Listing> {
+        const log = (msg: string) => {
+            const fs = require('fs');
+            const path = require('path');
+            const logFile = path.join(process.cwd(), 'debug_logs.txt');
+            fs.appendFileSync(logFile, `[${new Date().toISOString()}] UPDATE BUSINESS ${id}: ${msg}\n`);
+        };
+
         const listing = await this.listingRepository.findOne({
             where: { id },
             relations: ['vendor'],
@@ -519,33 +541,68 @@ export class BusinessesService {
             throw new NotFoundException('Listing not found');
         }
 
-        // Check ownership - Reinforcing filtering as requested
+        log(`Current User: ${user.id}, Owner: ${listing.vendor.userId}`);
+
+        // Only owner or admin can update
         if (listing.vendor.userId !== user.id && user.role !== UserRole.ADMIN) {
-            throw new ForbiddenException('Unauthorized access');
+            throw new ForbiddenException('You do not have permission to update this listing');
         }
 
-        // Update slug if title changed
+        log(`Received payload keys: ${Object.keys(updateBusinessDto).join(', ')}`);
+        if (updateBusinessDto.amenityIds) {
+            log(`Amenity IDs count: ${updateBusinessDto.amenityIds.length}`);
+        }
+
+        const oldSlug = listing.slug;
+
+        // Map basic fields
         if (updateBusinessDto.title && updateBusinessDto.title !== listing.title) {
-            updateBusinessDto['slug'] = generateUniqueSlug(updateBusinessDto.title);
+            listing.title = updateBusinessDto.title;
+            listing.slug = generateUniqueSlug(updateBusinessDto.title);
+            log(`Title changed to: ${listing.title}, Slug to: ${listing.slug}`);
         }
 
-        // Verify category if changed
         if (updateBusinessDto.categoryId && updateBusinessDto.categoryId !== listing.categoryId) {
-            const category = await this.categoryRepository.findOne({
-                where: { id: updateBusinessDto.categoryId },
-            });
+            listing.categoryId = updateBusinessDto.categoryId;
+        }
 
-            if (!category) {
-                throw new NotFoundException('Category not found');
+        // Update basic text fields
+        const textFields = [
+            'description', 'shortDescription', 'email', 'phone', 'whatsapp',
+            'website', 'address', 'city', 'state', 'pincode', 'latitude', 'longitude',
+            'logoUrl', 'coverImageUrl', 'images', 'metaTitle', 'metaDescription',
+            'metaKeywords', 'hasOffer', 'offerTitle', 'offerDescription', 'offerBadge',
+            'offerExpiresAt', 'offerBannerUrl', 'faqs'
+        ];
+
+        textFields.forEach(field => {
+            if (updateBusinessDto[field] !== undefined) {
+                listing[field] = updateBusinessDto[field];
             }
+        });
 
-            if (category.status !== CategoryStatus.ACTIVE) {
-                throw new BadRequestException('Invalid category: selected category is disabled');
+        // Update amenities if provided
+        if (updateBusinessDto.amenityIds) {
+            log('Updating amenities joins...');
+            await this.businessAmenityRepository.delete({ businessId: id });
+            
+            if (updateBusinessDto.amenityIds.length > 0) {
+                const amenities = updateBusinessDto.amenityIds.map((amenityId) =>
+                    this.businessAmenityRepository.create({
+                        businessId: id,
+                        amenityId,
+                    }),
+                );
+                await this.businessAmenityRepository.save(amenities);
+                log(`Saved ${amenities.length} amenity records`);
+            } else {
+                log('Cleared all amenities (empty array received)');
             }
         }
 
-        // Update business hours if provided
+        // Handle Business Hours
         if (updateBusinessDto.businessHours) {
+            log('Updating business hours...');
             await this.businessHoursRepository.delete({ businessId: id });
             const hours = updateBusinessDto.businessHours.map((hour) =>
                 this.businessHoursRepository.create({
@@ -556,20 +613,8 @@ export class BusinessesService {
             await this.businessHoursRepository.save(hours);
         }
 
-        // Update amenities if provided
-        if (updateBusinessDto.amenityIds) {
-            await this.businessAmenityRepository.delete({ businessId: id });
-            const amenities = updateBusinessDto.amenityIds.map((amenityId) =>
-                this.businessAmenityRepository.create({
-                    businessId: id,
-                    amenityId,
-                }),
-            );
-            await this.businessAmenityRepository.save(amenities);
-        }
-
         // Remove nested objects from update
-        const { businessHours, amenityIds, ...updateData } = updateBusinessDto;
+        const { businessHours: _, amenityIds: __, ...updateData } = updateBusinessDto;
 
         // Sanitize offerExpiresAt to prevent invalid date errors
         if (
@@ -584,6 +629,7 @@ export class BusinessesService {
         Object.assign(listing, updateData);
 
         await this.listingRepository.save(listing);
+        log('Listing saved to database');
 
         const updatedListing = await this.findOne(id, user);
 

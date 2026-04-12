@@ -12,6 +12,7 @@ import { api, getImageUrl } from '../../../lib/api';
 import { Category, City } from '../../../types/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../../context/AuthContext';
+import { usePlanFeature } from '../../../hooks/usePlanFeature';
 import Link from 'next/link';
 
 const steps = [
@@ -64,13 +65,14 @@ export default function AddListingPage() {
     const [suggestionsLoading, setSuggestionsLoading] = useState(false);
     const [myListingsCount, setMyListingsCount] = useState<number | null>(null);
 
-    // Free plan: always active, allows 1 listing. Paid plan: controlled by dashboardFeatures.
-    const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
-    const features = activeSub?.plan?.dashboardFeatures || {};
+    // Use centralized feature gating
+    const { getFeatureValue, planName } = usePlanFeature();
+    const maxListings = getFeatureValue('maxListings') || 1;
     const isVendor = user?.role === 'vendor';
-    // On free plan (no paid sub): 1 listing allowed. On paid plan: allowed unless explicitly disabled.
-    // All vendors and admins have unrestricted listing creation as per Super Admin requirement.
-    const canAdd = true;
+    const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+    
+    // Explicitly check listing count against plan limit
+    const canAddListing = isAdmin || (myListingsCount !== null && myListingsCount < maxListings);
 
     useEffect(() => {
         if (typeof window !== 'undefined' && (window as any).google?.maps?.importLibrary) {
@@ -738,6 +740,43 @@ export default function AddListingPage() {
 
     return (
         <div className="max-w-4xl mx-auto pb-16">
+            {!canAddListing && !loading && myListingsCount !== null && (
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="mb-10 p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-700 shadow-2xl relative overflow-hidden"
+                >
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
+                    
+                    <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+                        <div className="w-20 h-20 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center shrink-0">
+                            <Lock className="w-10 h-10 text-orange-500" />
+                        </div>
+                        <div className="flex-1 text-center md:text-left">
+                            <h2 className="text-2xl font-black text-white mb-2 tracking-tight">Listing Limit Reached</h2>
+                            <p className="text-slate-400 font-bold mb-4">
+                                Your current <span className="text-orange-400">{planName}</span> plan allows for a maximum of <span className="text-white">{maxListings}</span> business listing{maxListings > 1 ? 's' : ''}. 
+                                You have already used all of them.
+                            </p>
+                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
+                                <Link
+                                    href="/vendor/subscription"
+                                    className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black text-sm transition-all shadow-lg shadow-orange-500/20"
+                                >
+                                    Upgrade Plan
+                                </Link>
+                                <Link
+                                    href="/vendor/listings"
+                                    className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl font-black text-sm transition-all"
+                                >
+                                    Manage Existing Listings
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+
             {/* Hero Header */}
             <div className="relative mb-10 rounded-3xl overflow-hidden bg-gradient-to-br from-[#0B2244] via-[#0D2E61] to-[#1a3a70] p-8 md:p-10 shadow-2xl">
                 {/* Decorative blobs */}
@@ -1882,8 +1921,8 @@ export default function AddListingPage() {
                             </button>
                             <button
                                 type="submit"
-                                disabled={loading}
-                                className="flex-[2] py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-2xl font-black text-base hover:shadow-orange-500/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 shadow-xl"
+                                disabled={loading || !canAddListing}
+                                className="flex-[2] py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-2xl font-black text-base hover:shadow-orange-500/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-xl"
                             >
                                 {loading ? (
                                     <>

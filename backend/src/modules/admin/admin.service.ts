@@ -389,6 +389,7 @@ export class AdminService {
         const skip = calculateSkip(page, limit);
         const query = this.businessRepository.createQueryBuilder('business')
             .leftJoinAndSelect('business.vendor', 'vendor')
+            .leftJoinAndSelect('vendor.user', 'user')
             .leftJoinAndSelect('vendor.subscriptions', 'subscriptions', 'subscriptions.status = :activeStatus', { activeStatus: SubscriptionStatus.ACTIVE })
             .leftJoinAndSelect('subscriptions.plan', 'plan')
             .leftJoinAndSelect('business.category', 'category')
@@ -466,13 +467,13 @@ export class AdminService {
             }
 
             log(`Main record removal...`);
-        const result = await this.businessRepository.remove(business);
+            const result = await this.businessRepository.remove(business);
 
-        // Remove from Elasticsearch
-        this.searchService.remove(id).catch(err => console.error('ES Delete Index Error:', err));
+            // Remove from Elasticsearch
+            this.searchService.remove(id).catch(err => console.error('ES Delete Index Error:', err));
 
-        log(`Successfully removed business: ${id}`);
-        return result;
+            log(`Successfully removed business: ${id}`);
+            return result;
         } catch (error: any) {
             log(`ERROR deleting business ${id}: ${error.message}\n${error.stack}`);
             throw error;

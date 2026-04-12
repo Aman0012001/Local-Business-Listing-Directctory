@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Star, MapPin, ShieldCheck, Clock, CheckCircle2, Users } from 'lucide-react';
+import { Star, MapPin, ShieldCheck, Clock, CheckCircle2, Users, Images } from 'lucide-react';
 import { Business } from '../types/api';
 import { getImageUrl } from '../lib/api';
 import { getBusinessOpenStatus } from '../lib/business-status';
@@ -101,11 +101,18 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                 <div className={`flex ${isList ? 'flex-row gap-8 items-center' : 'flex-col gap-6'} transition-all duration-700`}>
                     {/* Minimalist Image container */}
                     <div className={`relative overflow-hidden rounded-[20px] bg-slate-50 border border-slate-100/50 ${isList ? 'w-64 h-48 shrink-0' : 'aspect-[4/3] w-full'}`}>
-                        <img
-                            src={getImageUrl(business.coverImageUrl) || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=800'}
-                            alt={business.title}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1.5s] grayscale-[0.2] group-hover:grayscale-0"
-                        />
+                        {business.coverImageUrl ? (
+                            <img
+                                src={getImageUrl(business.coverImageUrl)}
+                                alt={business.title}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1.5s] grayscale-[0.2] group-hover:grayscale-0"
+                            />
+                        ) : (
+                            <div className="w-full h-full bg-slate-100 flex flex-col items-center justify-center text-slate-300 gap-2">
+                                <Images className="w-8 h-8 opacity-20" />
+                                <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-40">No Image</span>
+                            </div>
+                        )}
                         {business.isVerified && (
                             <div className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-md rounded-full shadow-sm text-blue-600 border border-white">
                                 <ShieldCheck className="w-4 h-4 fill-blue-600/10" />
@@ -150,11 +157,18 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                 <div className="bg-white rounded-2xl border border-black overflow-hidden hover:shadow-2xl hover:shadow-blue-500/5 transition-all duration-500 flex flex-col md:flex-row h-full md:h-64">
                     {/* Image Container */}
                     <div className="relative w-full md:w-80 h-48 md:h-full overflow-hidden">
-                        <img
-                            src={getImageUrl(business.coverImageUrl) || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=800'}
-                            alt={business.title}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                        />
+                        {business.coverImageUrl ? (
+                            <img
+                                src={getImageUrl(business.coverImageUrl)}
+                                alt={business.title}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                            />
+                        ) : (
+                            <div className="w-full h-full bg-slate-100 flex flex-col items-center justify-center text-slate-300 gap-2">
+                                <Images className="w-10 h-10 opacity-20" />
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">No Image</span>
+                            </div>
+                        )}
                         {business.isFeatured && (
                             <div className="absolute top-4 left-4 px-3 py-1 bg-blue-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-lg">
                                 Featured
@@ -224,11 +238,18 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
             <div className="bg-white rounded-2xl border  overflow-hidden hover: hover:shadow-blue-500/5 transition-all duration-500 flex flex-col h-full">
                 {/* Image Container */}
                 <div className="relative h-48 overflow-hidden">
-                    <img
-                        src={getImageUrl(business.coverImageUrl) || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=800'}
-                        alt={business.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                    />
+                    {business.coverImageUrl ? (
+                        <img
+                            src={getImageUrl(business.coverImageUrl)}
+                            alt={business.title}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        />
+                    ) : (
+                        <div className="w-full h-full bg-slate-100 flex flex-col items-center justify-center text-slate-300 gap-2">
+                            <Images className="w-10 h-10 opacity-20" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">No Image</span>
+                        </div>
+                    )}
                     {business.isVerified && (
                         <div className="absolute top-4 right-4 px-3 py-1 bg-amber-500 text-white text-[10px] font-bold uppercase tracking-widest rounded-full shadow-lg">
                             Verified

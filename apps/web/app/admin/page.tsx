@@ -118,7 +118,7 @@ export default function AdminDashboard() {
                             Manage All <ChevronRight className="w-4 h-4" />
                         </Link>
                     </div>
-                    <div className="space-y-4">
+                    <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                         {recentBusinesses.length > 0 ? (
                             recentBusinesses.map((business) => (
                                 <div key={business.id} className="p-6 bg-slate-50 rounded-3xl flex items-center justify-between group hover:bg-white hover:shadow-xl hover:shadow-slate-100 transition-all duration-500 border border-transparent hover:border-slate-100">
@@ -131,8 +131,11 @@ export default function AdminDashboard() {
                                             )}
                                         </div>
                                         <div>
-                                            <p className="font-black text-slate-900">{business.title}</p>
-                                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">
+                                            <p className="font-black text-slate-900 leading-tight">{business.title}</p>
+                                            <p className="text-[10px] text-slate-500 font-bold mt-0.5">
+                                                Owner: {business.vendor?.user?.fullName || business.vendor?.businessName || 'Business Owner'}
+                                            </p>
+                                            <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-1">
                                                 {business.category?.name || 'Uncategorized'} · {business.city}
                                             </p>
                                         </div>
@@ -176,7 +179,7 @@ export default function AdminDashboard() {
                 {/* System Tasks Placeholder */}
                 <div className="bg-slate-900 rounded-[16px] p-8 text-white shadow-2xl shadow-red-500/10">
                     <h3 className="text-2xl font-black mb-8 tracking-tight">Critical Actions</h3>
-                    <div className="space-y-4">
+                    <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar-dark">
                         <Link href="/admin/reports" className="w-full p-6 bg-white/5 rounded-3xl flex items-center gap-4 hover:bg-white/10 transition-all text-left block">
                             <div className="w-12 h-12 bg-red-500/20 rounded-2xl flex items-center justify-center">
                                 <ShieldAlert className="w-6 h-6 text-red-500" />

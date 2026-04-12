@@ -37,11 +37,11 @@ const getPlaceholderData = (): PerformanceDataPoint[] => {
 export default function PerformanceChart({ stats }: PerformanceChartProps) {
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
-    const chartData = useMemo(() => 
-        stats?.analytics && stats.analytics.length > 0 
-            ? stats.analytics 
+    const chartData = useMemo(() =>
+        stats?.analytics && stats.analytics.length > 0
+            ? stats.analytics
             : getPlaceholderData()
-    , [stats?.analytics]);
+        , [stats?.analytics]);
 
     // Calculate max value for scaling, ensure it's at least 10
     const maxVal = useMemo(() => {
@@ -56,14 +56,14 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
     // Helper to generate a smooth Cubic Bezier path
     const getSmoothPath = (key: 'views' | 'leads') => {
         if (chartData.length < 2) return "";
-        
+
         const points = chartData.map((d, i) => ({
             x: (i / (chartData.length - 1)) * width,
             y: height - (d[key] / maxVal) * height
         }));
 
         let path = `M ${points[0].x} ${points[0].y}`;
-        
+
         for (let i = 0; i < points.length - 1; i++) {
             const p0 = points[i];
             const p1 = points[i + 1];
@@ -72,10 +72,10 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
             const cp1y = p0.y;
             const cp2x = p0.x + (p1.x - p0.x) / 2;
             const cp2y = p1.y;
-            
+
             path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p1.x} ${p1.y}`;
         }
-        
+
         return path;
     };
 
@@ -99,7 +99,7 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
                             <p className="text-xs text-slate-400 font-medium">Daily views and lead conversion metrics</p>
                         </div>
                         <div className="flex items-center gap-4">
-                             <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest">
+                            <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest">
                                 <div className="flex items-center gap-1.5">
                                     <span className="w-2 h-2 rounded-full bg-blue-500" />
                                     <span className="text-slate-500">Views</span>
@@ -108,7 +108,7 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
                                     <span className="w-2 h-2 rounded-full bg-[#FF7A30]" />
                                     <span className="text-slate-500">Leads</span>
                                 </div>
-                             </div>
+                            </div>
                         </div>
                     </div>
 
@@ -203,30 +203,30 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
                             {/* Active Point Highlight */}
                             {hoveredIndex !== null && (
                                 <>
-                                    <line 
-                                        x1={(hoveredIndex / (chartData.length - 1)) * width} 
-                                        y1={0} 
-                                        x2={(hoveredIndex / (chartData.length - 1)) * width} 
-                                        y2={height} 
-                                        stroke="#F1F5F9" 
-                                        strokeWidth="2" 
-                                        strokeDasharray="4 4" 
+                                    <line
+                                        x1={(hoveredIndex / (chartData.length - 1)) * width}
+                                        y1={0}
+                                        x2={(hoveredIndex / (chartData.length - 1)) * width}
+                                        y2={height}
+                                        stroke="#F1F5F9"
+                                        strokeWidth="2"
+                                        strokeDasharray="4 4"
                                     />
-                                    <circle 
-                                        cx={(hoveredIndex / (chartData.length - 1)) * width} 
-                                        cy={height - (chartData[hoveredIndex].views / maxVal) * height} 
-                                        r="6" 
-                                        fill="white" 
-                                        stroke="#3B82F6" 
-                                        strokeWidth="3" 
+                                    <circle
+                                        cx={(hoveredIndex / (chartData.length - 1)) * width}
+                                        cy={height - (chartData[hoveredIndex].views / maxVal) * height}
+                                        r="6"
+                                        fill="white"
+                                        stroke="#3B82F6"
+                                        strokeWidth="3"
                                     />
-                                    <circle 
-                                        cx={(hoveredIndex / (chartData.length - 1)) * width} 
-                                        cy={height - (chartData[hoveredIndex].leads / maxVal) * height} 
-                                        r="6" 
-                                        fill="white" 
-                                        stroke="#FF7A30" 
-                                        strokeWidth="3" 
+                                    <circle
+                                        cx={(hoveredIndex / (chartData.length - 1)) * width}
+                                        cy={height - (chartData[hoveredIndex].leads / maxVal) * height}
+                                        r="6"
+                                        fill="white"
+                                        stroke="#FF7A30"
+                                        strokeWidth="3"
                                     />
                                 </>
                             )}
@@ -273,7 +273,7 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
                     </div>
                 </div>
 
-                </div>
             </div>
+        </div>
     );
 }

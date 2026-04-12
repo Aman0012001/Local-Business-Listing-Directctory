@@ -13,6 +13,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getImageUrl, api } from '../../lib/api';
 import VendorAvatar from '../VendorAvatar';
 import { chatApi } from '../../services/chat.service';
+import { usePlanFeature, DashboardFeatures } from '../../hooks/usePlanFeature';
 
 export default function Sidebar() {
     const { user, logout } = useAuth();
@@ -21,8 +22,7 @@ export default function Sidebar() {
     const [unreadChatCount, setUnreadChatCount] = useState(0);
     const [newBroadcastCount, setNewBroadcastCount] = useState(0);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
-    const [activeSub, setActiveSub] = useState<any>(null);
-    const [loadingSub, setLoadingSub] = useState(true);
+    const { hasFeature, planName } = usePlanFeature();
 
     // Close mobile sidebar on route change
     useEffect(() => {
@@ -48,52 +48,29 @@ export default function Sidebar() {
                 .catch(() => { });
         };
 
-        const fetchSub = async () => {
-            if (user?.role !== 'vendor') {
-                setLoadingSub(false);
-                return;
-            }
-
-            // If user already has activeSubscription from profile sync, use it as initial state
-            if (user?.vendor?.activeSubscription) {
-                setActiveSub(user.vendor.activeSubscription);
-            }
-
-            try {
-                const sub = await api.subscriptions.getActive();
-                if (sub) {
-                    setActiveSub(sub);
-                }
-            } catch (err) {
-                console.error('Failed to fetch active sub', err);
-            } finally {
-                setLoadingSub(false);
-            }
-        };
-
         refreshStats();
-        fetchSub();
+        // Removed fetchSub as usePlanFeature handles it via AuthContext sync
         const interval = setInterval(refreshStats, 30000);
         return () => clearInterval(interval);
     }, [user]);
 
-    const menuItems = [
+    const menuItems: { name: string; icon: any; href: string; badge: string | null; feature?: keyof DashboardFeatures; iconColor?: string }[] = [
         { name: 'Dashboard', icon: LayoutDashboard, href: '/vendor/dashboard', badge: null },
-        { name: 'My Listings', icon: ListTree, href: '/vendor/listings', badge: null },
-        { name: 'Pending Approval', icon: Clock, href: '/vendor/pending-listings', badge: null },
-        { name: 'Add Listing', icon: Plus, href: '/vendor/add-listing', badge: null },
-        { name: 'Leads', icon: Phone, href: '/vendor/leads', badge: null },
-        { name: 'Offers & Events', icon: Megaphone, href: '/vendor/offers', badge: null },
-        { name: 'Reviews', icon: Star, href: '/vendor/reviews', badge: null },
-        { name: 'Analytics', icon: BarChart, href: '/vendor/analytics', badge: null },
-        { name: 'Saved', icon: Heart, href: '/vendor/saved', badge: null },
-        { name: 'Following', icon: UserPlus, href: '/vendor/following', badge: null },
-        { name: 'Queries', icon: Send, href: '/vendor/messages', badge: newEnquiryCount > 0 ? String(newEnquiryCount) : null },
-        { name: 'Live Chat', icon: MessageSquare, iconColor: 'text-emerald-500', href: '/vendor/chat', badge: unreadChatCount > 0 ? String(unreadChatCount) : null },
-        { name: 'Hot Demand Insights', icon: TrendingUp, href: '/vendor/demand', badge: null },
+        { name: 'My Listings', icon: ListTree, href: '/vendor/listings', badge: null, feature: 'showListings' },
+        { name: 'Pending Approval', icon: Clock, href: '/vendor/pending-listings', badge: null, feature: 'showListings' },
+        { name: 'Add Listing', icon: Plus, href: '/vendor/add-listing', badge: null, feature: 'canAddListing' },
+        { name: 'Leads', icon: Phone, href: '/vendor/leads', badge: null, feature: 'showLeads' },
+        { name: 'Offers & Events', icon: Megaphone, href: '/vendor/offers', badge: null, feature: 'showOffers' },
+        { name: 'Reviews', icon: Star, href: '/vendor/reviews', badge: null, feature: 'showReviews' },
+        { name: 'Analytics', icon: BarChart, href: '/vendor/analytics', badge: null, feature: 'showAnalytics' },
+        { name: 'Saved', icon: Heart, href: '/vendor/saved', badge: null, feature: 'showSaved' },
+        { name: 'Following', icon: UserPlus, href: '/vendor/following', badge: null, feature: 'showFollowing' },
+        { name: 'Queries', icon: Send, href: '/vendor/messages', badge: newEnquiryCount > 0 ? String(newEnquiryCount) : null, feature: 'showQueries' },
+        { name: 'Live Chat', icon: MessageSquare, iconColor: 'text-emerald-500', href: '/vendor/chat', badge: unreadChatCount > 0 ? String(unreadChatCount) : null, feature: 'showChat' },
+        { name: 'Hot Demand Insights', icon: TrendingUp, href: '/vendor/demand', badge: null, feature: 'showDemand' },
         { name: 'Subscription & Billing', icon: CreditCard, href: '/vendor/subscription', badge: null },
         { name: 'Offer Plans', icon: Gift, href: '/vendor/offer-plans', badge: '🔥' },
-        { name: 'Broadcast Feed', icon: Megaphone, href: '/vendor/broadcasts', badge: newBroadcastCount > 0 ? String(newBroadcastCount) : null },
+        { name: 'Broadcast Feed', icon: Megaphone, href: '/vendor/broadcasts', badge: newBroadcastCount > 0 ? String(newBroadcastCount) : null, feature: 'showBroadcast' },
         { name: 'Notifications', icon: Bell, href: '/vendor/notifications', badge: null },
         { name: 'Affiliate', icon: Gift, href: '/vendor/affiliate', badge: 'Rewards' },
         { name: 'Settings', icon: Settings, href: '/vendor/settings', badge: null },
@@ -102,8 +79,14 @@ export default function Sidebar() {
     const filteredItems = menuItems.filter(item => {
         const isVendorOrAdmin = user?.role === 'vendor' || user?.role === 'admin' || user?.role === 'superadmin';
         
-        // Show all items to vendors and admins
-        if (isVendorOrAdmin) return true;
+        // Show all items to admins
+        if (user?.role === 'admin' || user?.role === 'superadmin') return true;
+
+        if (user?.role === 'vendor') {
+            // If item has a feature requirement, check it
+            if (item.feature && !hasFeature(item.feature)) return false;
+            return true;
+        }
 
         // For regular users/customers, show a limited subset
         return ['Dashboard', 'Live Chat', 'Saved', 'Following', 'Notifications', 'Settings'].includes(item.name);
@@ -130,9 +113,14 @@ export default function Sidebar() {
                         </span>
                         <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-transform group-hover:translate-y-0.5" />
                     </button>
-                    <div className="flex items-center justify-center gap-1.5 px-3 py-1 bg-blue-50/50 rounded-full w-fit mx-auto border border-blue-100/50">
-                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
-                        <span className="text-[9px] text-blue-600 font-black uppercase tracking-widest">{user?.role || 'vendor account'}</span>
+                    <div className="flex flex-col items-center gap-1">
+                        <div className="flex items-center justify-center gap-1.5 px-3 py-1 bg-blue-50/50 rounded-full w-fit mx-auto border border-blue-100/50">
+                            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
+                            <span className="text-[9px] text-blue-600 font-black uppercase tracking-widest">{user?.role || 'vendor account'}</span>
+                        </div>
+                        {user?.role === 'vendor' && (
+                            <span className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">{planName} Plan</span>
+                        )}
                     </div>
                 </div>
             </div>

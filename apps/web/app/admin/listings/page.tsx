@@ -184,8 +184,7 @@ export default function AdminListingsPage() {
                                                 {listing.city}, {listing.state}
                                             </span>
                                             <span className="flex items-center gap-1.5 text-slate-600 font-bold">
-                                                <UserIcon className="w-4 h-4 text-slate-400" />
-                                                {listing.vendor?.businessName || 'Anonymous Vendor'}
+                                                <span className="text-slate-400 font-medium">Owner:</span> {listing.vendor?.user?.fullName || (listing.vendor as any)?.vendor_user?.fullName || listing.vendor?.businessName || 'Anonymous Owner'}
                                             </span>
                                             <span className="flex items-center gap-1.5 text-slate-600 font-bold">
                                                 <Mail className="w-4 h-4 text-slate-400" />

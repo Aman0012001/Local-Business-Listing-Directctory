@@ -18,10 +18,12 @@ import MyJobLeads from '../../../components/leads/MyJobLeads';
 import MyInquiries from '../../../components/leads/MyInquiries';
 import { chatApi } from '../../../services/chat.service';
 import { useChatSocket } from '../../../hooks/useChat';
+import { usePlanFeature } from '../../../hooks/usePlanFeature';
 
 export default function GenericDashboard() {
     const router = useRouter();
     const { user, updateUser } = useAuth();
+    const { hasFeature, planName, isFree, loading: planLoading } = usePlanFeature();
     const [stats, setStats] = useState<any>(null);
     const [savedBusinesses, setSavedBusinesses] = useState<Business[]>([]);
     const [recentReviews, setRecentReviews] = useState<any[]>([]);
@@ -157,61 +159,6 @@ export default function GenericDashboard() {
         };
     }, [socket]);
 
-    const activeSub = isAdmin ? {
-        plan: {
-            name: 'Super Admin',
-            planType: 'paid',
-            dashboardFeatures: {
-                showListings: true,
-                canAddListing: true,
-                showSaved: true,
-                showFollowing: true,
-                showQueries: true,
-                showLeads: true,
-                showOffers: true,
-                showReviews: true,
-                showAnalytics: true,
-                showChat: true,
-                showBroadcast: true,
-                showDemand: true,
-                maxKeywords: 999
-            }
-        },
-        endDate: user?.vendor?.activeSubscription?.endDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'active'
-    } : (user?.vendor?.activeSubscription || user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active'));
-
-    
-    // Default features logic - All vendors and admins have full access
-    const features: Record<string, any> = isAdmin ? {
-        showListings: true,
-        canAddListing: true,
-        showSaved: true,
-        showFollowing: true,
-        showQueries: true,
-        showLeads: true,
-        showOffers: true,
-        showReviews: true,
-        showAnalytics: true,
-        showChat: true,
-        showBroadcast: true,
-        showDemand: true,
-        maxKeywords: 999
-    } : {
-        showListings: true,
-        showSaved: true,
-        showFollowing: true,
-        showQueries: true,
-        showLeads: true,
-        showOffers: true,
-        showReviews: true,
-        showAnalytics: true,
-        showChat: true,
-        showBroadcast: true,
-        showDemand: true,
-        canAddListing: true,
-        ...activeSub?.plan?.dashboardFeatures
-    };
 
 
     const vendorStats = [
@@ -222,7 +169,7 @@ export default function GenericDashboard() {
             color: 'bg-gradient-to-br from-[#3366CC] to-[#1144AA]',
             shadow: 'shadow-blue-500/20',
             onClick: () => router.push('/vendor/listings'),
-            show: true
+            show: hasFeature('showListings')
         },
         {
             label: 'Pending Approval',
@@ -231,7 +178,7 @@ export default function GenericDashboard() {
             color: 'bg-gradient-to-br from-amber-400 to-amber-600',
             shadow: 'shadow-amber-500/20',
             onClick: () => router.push('/vendor/pending-listings'),
-            show: true
+            show: hasFeature('showListings')
         },
         {
             label: 'Total Views',
@@ -239,7 +186,7 @@ export default function GenericDashboard() {
             icon: TrendingUp,
             color: 'bg-gradient-to-br from-[#33AA88] to-[#118866]',
             shadow: 'shadow-emerald-500/20',
-            show: true
+            show: hasFeature('showAnalytics')
         },
         {
             label: 'Live Chat',
@@ -248,7 +195,7 @@ export default function GenericDashboard() {
             color: 'bg-gradient-to-br from-indigo-500 to-indigo-700',
             shadow: 'shadow-indigo-500/20',
             onClick: () => router.push('/vendor/chat'),
-            show: true
+            show: hasFeature('showChat')
         },
         {
             label: 'New Leads',
@@ -256,7 +203,7 @@ export default function GenericDashboard() {
             icon: Sparkles,
             color: 'bg-gradient-to-br from-[#FFAA33] to-[#FF8811]',
             shadow: 'shadow-orange-500/20',
-            show: true
+            show: hasFeature('showLeads')
         },
         {
             label: 'Total Reviews',
@@ -264,7 +211,7 @@ export default function GenericDashboard() {
             icon: Star,
             color: 'bg-gradient-to-br from-[#FF6644] to-[#EE4422]',
             shadow: 'shadow-red-500/20',
-            show: true
+            show: hasFeature('showReviews')
         },
     ].filter(s => (s as any).show !== false);
 
@@ -372,7 +319,7 @@ export default function GenericDashboard() {
                             {isVendor ? "Here's what's happening with your business today." : "Everything you need to manage your favorite places and feedback."}
                         </p>
                     </div>
-                    {((isVendor || isAdmin) ? features.canAddListing : false) && (
+                    {((isVendor || isAdmin) ? hasFeature('canAddListing') : false) && (
                         <Link href="/vendor/add-listing" className="flex items-center gap-2 px-8 py-4 bg-slate-900 text-white rounded-[16px] font-black  shadow-slate-200 hover:scale-105 active:scale-95 transition-all w-fit">
                             <Plus className="w-5 h-5" /> New Listing
                         </Link>
@@ -381,7 +328,7 @@ export default function GenericDashboard() {
             </motion.div>
 
             {/* Active Subscription Status Banner */}
-            {(isVendor || isAdmin) && activeSub && (
+            {(isVendor || isAdmin) && user?.vendor?.activeSubscription && (
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -398,12 +345,12 @@ export default function GenericDashboard() {
                                     Active Plan
                                 </p>
                                 <h2 className="text-xl sm:text-3xl font-black text-white tracking-tight mb-2">
-                                    {activeSub.plan?.name}
+                                    {planName}
                                 </h2>
                                 <p className="text-slate-400 font-bold text-xs sm:text-sm flex items-center gap-2">
                                     <Clock className="w-3.5 h-3.5 text-slate-500" />
                                     {(() => {
-                                        const end = new Date(activeSub.endDate);
+                                        const end = new Date(user?.vendor?.activeSubscription.endDate);
                                         const days = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
                                         
                                         if (days > 3000) {
@@ -442,7 +389,7 @@ export default function GenericDashboard() {
 
                     {/* Job Leads Section */}
                     {(isVendor || isAdmin) ? (
-                        features.showLeads && (
+                        hasFeature('showLeads') && (
                             <div className="bg-white rounded-[16px] p-8 sm:p-10 border border-black shadow-slate-200/20">
                                 <VendorLeadsInbox />
                             </div>
@@ -477,7 +424,7 @@ export default function GenericDashboard() {
                     )}
 
                     {/* Performance Insights (Vendor Only) */}
-                    {(isVendor || isAdmin) && features.showAnalytics && (
+                    {(isVendor || isAdmin) && hasFeature('showAnalytics') && (
                         <div className="space-y-6 mb-12">
                             <div className="flex items-center justify-between px-2">
                                 <div className="flex items-center gap-3">
@@ -494,7 +441,7 @@ export default function GenericDashboard() {
                     )}
 
                     {/* Saved Businesses Section (Common) */}
-                    {((isVendor || isAdmin) ? features.showSaved : true) && (
+                    {((isVendor || isAdmin) ? hasFeature('showSaved') : true) && (
                         <section className="bg-white rounded-[16px] p-8 sm:p-10 border border-black  shadow-slate-200/20 relative overflow-hidden group">
                         <div className="flex items-center justify-between mb-8">
                             <div className="flex items-center gap-4">
@@ -536,7 +483,7 @@ export default function GenericDashboard() {
                     )}
 
                     {/* Followed Businesses Section */}
-                    {((isVendor || isAdmin) ? features.showFollowing : true) && (
+                    {((isVendor || isAdmin) ? hasFeature('showFollowing') : true) && (
                         <section className="bg-white rounded-[16px] p-8 sm:p-10 border border-black  shadow-slate-200/20 relative overflow-hidden group">
                         <div className="flex items-center justify-between mb-8">
                             <div className="flex items-center gap-4">
@@ -619,11 +566,11 @@ export default function GenericDashboard() {
                         title={isVendor || isAdmin ? "Recent Reviews" : "My Recent Reviews"}
                     />
 
-                    {isVendor && features.showDemand && (
+                    {isVendor && hasFeature('showDemand') && (
                         <VendorHotDemandWidget insights={demandInsights} loading={loading} />
                     )}
 
-                    {((isVendor || isAdmin) && features.showChat) && (
+                    {((isVendor || isAdmin) && hasFeature('showChat')) && (
                         <section className="bg-white rounded-[16px] p-8 border border-black shadow-slate-200/20">
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-3">
@@ -694,7 +641,7 @@ export default function GenericDashboard() {
                         </section>
                     )}
 
-                    {isVendor && features.showQueries && (
+                    {isVendor && hasFeature('showQueries') && (
                         <section className="bg-white rounded-[16px] p-8 border border-black  shadow-slate-200/20 opacity-60 grayscale-[0.5] scale-95 origin-top">
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-3">

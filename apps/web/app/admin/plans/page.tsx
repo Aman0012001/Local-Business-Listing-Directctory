@@ -20,7 +20,7 @@ interface Plan {
     billingCycle: string;
     isFeatured: boolean;
     isActive: boolean;
-    dashboardFeatures: Record<string, boolean>;
+    dashboardFeatures: Record<string, any>;
 }
 
 export default function AdminPlansPage() {
@@ -53,6 +53,7 @@ export default function AdminPlansPage() {
             showFollowing: false,
             showListings: true,
             canAddListing: true,
+            maxListings: 1,
         }
     });
 
@@ -83,7 +84,7 @@ export default function AdminPlansPage() {
                 billingCycle: plan.billingCycle,
                 isFeatured: plan.isFeatured,
                 isActive: plan.isActive,
-                dashboardFeatures: (plan.dashboardFeatures as any) || {
+                dashboardFeatures: {
                     showAnalytics: false,
                     showOffers: false,
                     showLeads: false,
@@ -96,6 +97,8 @@ export default function AdminPlansPage() {
                     showFollowing: false,
                     showListings: true,
                     canAddListing: true,
+                    maxListings: 1,
+                    ...(plan.dashboardFeatures || {})
                 }
             });
         } else {
@@ -121,6 +124,7 @@ export default function AdminPlansPage() {
                     showFollowing: false,
                     showListings: true,
                     canAddListing: true,
+                    maxListings: 1,
                 }
             });
         }
@@ -269,16 +273,16 @@ export default function AdminPlansPage() {
                                 <Edit2 className="w-3.5 h-3.5" />
                                 Edit Plan
                             </button>
-                                <button
-                                    onClick={() => toggleStatus(plan)}
-                                    className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all active:scale-95 shadow-sm ${plan.isActive
-                                        ? 'bg-emerald-50 hover:bg-emerald-500 hover:text-white text-emerald-600'
-                                        : 'bg-slate-100 hover:bg-slate-200 text-slate-400'
-                                        }`}
-                                    title={plan.isActive ? 'Deactivate Plan' : 'Activate Plan'}
-                                >
-                                    {plan.isActive ? <CheckCircle2 className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
-                                </button>
+                            <button
+                                onClick={() => toggleStatus(plan)}
+                                className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all active:scale-95 shadow-sm ${plan.isActive
+                                    ? 'bg-emerald-50 hover:bg-emerald-500 hover:text-white text-emerald-600'
+                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-400'
+                                    }`}
+                                title={plan.isActive ? 'Deactivate Plan' : 'Activate Plan'}
+                            >
+                                {plan.isActive ? <CheckCircle2 className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
+                            </button>
                             <button
                                 onClick={() => handleDelete(plan.id)}
                                 disabled={deletingId === plan.id}
@@ -358,8 +362,6 @@ export default function AdminPlansPage() {
                                                     className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all font-bold text-slate-900">
                                                     <option value="free">Free Tier</option>
                                                     <option value="basic">Basic Business</option>
-                                                    <option value="premium">Premium Growth</option>
-                                                    <option value="enterprise">Enterprise Elite</option>
                                                 </select>
                                             </div>
                                             <div className="space-y-2">
@@ -376,8 +378,7 @@ export default function AdminPlansPage() {
                                                 <select value={formData.billingCycle} onChange={e => setFormData(prev => ({ ...prev, billingCycle: e.target.value }))}
                                                     className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all font-bold text-slate-900">
                                                     <option value="monthly">Every Month</option>
-                                                    <option value="quarterly">Every 3 Months</option>
-                                                    <option value="yearly">Every Year</option>
+
                                                 </select>
                                             </div>
                                         </div>
@@ -397,16 +398,18 @@ export default function AdminPlansPage() {
                                         </div>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                             {[
-                                                { id: 'showAnalytics', label: 'Analytics Hub' },
-                                                { id: 'showLeads', label: 'Sales Leads' },
-                                                { id: 'showOffers', label: 'Boost Engine' },
-                                                { id: 'showDemand', label: 'Hot Insights' },
-                                                { id: 'showQueries', label: 'Direct Mail' },
-                                                { id: 'showReviews', label: 'Reputation' },
-                                                { id: 'showChat', label: 'Live Messaging' },
-                                                { id: 'showBroadcast', label: 'Global Feed' },
-                                                { id: 'showListings', label: 'Inventory' },
-                                                { id: 'canAddListing', label: 'Creation access' },
+                                                { id: 'canAddListing', label: 'Add Listing' },
+                                                { id: 'showListings', label: 'Listings' },
+                                                { id: 'showLeads', label: 'Leads' },
+                                                { id: 'showOffers', label: 'Offers & Events' },
+                                                { id: 'showReviews', label: 'Reviews' },
+                                                { id: 'showAnalytics', label: 'Analytics' },
+                                                { id: 'showFollowing', label: 'Following' },
+                                                { id: 'showQueries', label: 'Queries' },
+                                                { id: 'showChat', label: 'Live Chat' },
+                                                { id: 'showDemand', label: 'Hot Demand Insights' },
+                                                { id: 'showBroadcast', label: 'Broadcast Feed' },
+                                                { id: 'showSaved', label: 'Saved Items' },
                                             ].map((feature) => {
                                                 const isActive = formData.dashboardFeatures[feature.id as keyof typeof formData.dashboardFeatures];
                                                 return (
@@ -416,8 +419,8 @@ export default function AdminPlansPage() {
                                                             dashboardFeatures: { ...prev.dashboardFeatures, [feature.id]: !isActive }
                                                         }))}
                                                         className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all group ${isActive
-                                                                ? 'border-emerald-500 bg-emerald-50/30 text-slate-900'
-                                                                : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200'
+                                                            ? 'border-emerald-500 bg-emerald-50/30 text-slate-900'
+                                                            : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200'
                                                             }`}>
                                                         <span className={`text-[10px] font-black uppercase tracking-tight ${isActive ? 'text-emerald-700' : ''}`}>{feature.label}</span>
                                                         <div className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors ${isActive ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-transparent'}`}>
@@ -426,6 +429,33 @@ export default function AdminPlansPage() {
                                                     </button>
                                                 );
                                             })}
+                                        </div>
+
+                                        {/* NEW: Max Listings Control */}
+                                        <div className="mt-6 p-6 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between gap-6">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
+                                                    <Building2 className="w-5 h-5 text-slate-400" />
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Listing Capacity</h4>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Maximum active business listings allowed</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    max="1000"
+                                                    value={formData.dashboardFeatures.maxListings || 1}
+                                                    onChange={e => setFormData(prev => ({
+                                                        ...prev,
+                                                        dashboardFeatures: { ...prev.dashboardFeatures, maxListings: parseInt(e.target.value) || 1 }
+                                                    }))}
+                                                    className="w-24 px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all font-black text-center text-slate-900"
+                                                />
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Listings</span>
+                                            </div>
                                         </div>
                                     </section>
 

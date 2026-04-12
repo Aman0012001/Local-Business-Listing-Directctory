@@ -139,6 +139,13 @@ export interface Review {
         title?: string;
         slug: string;
         coverImageUrl?: string;
+        vendor?: {
+            id: string;
+            businessName?: string;
+            user?: {
+                fullName: string;
+            };
+        };
     };
     vendorResponse?: string;
     vendorResponseAt?: string;

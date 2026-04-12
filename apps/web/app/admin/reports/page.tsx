@@ -262,7 +262,7 @@ export default function AdminReportsPage() {
                                                                 </div>
                                                                 <div>
                                                                     <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-0.5">Owner</p>
-                                                                    <p className="text-[11px] font-black text-slate-600">{business.vendor?.businessName || 'Owner'}</p>
+                                                                    <p className="text-[11px] font-black text-slate-600">{business.vendor?.user?.fullName || business.vendor?.businessName || 'Anonymous Owner'}</p>
                                                                 </div>
                                                             </div>
                                                             <div className="flex items-center gap-2">

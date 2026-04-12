@@ -216,7 +216,7 @@ export default function AdminBusinessesPage() {
                                             </td>
                                             <td className="px-6 py-5">
                                                 <div className="flex flex-col">
-                                                    <span className="text-sm font-bold text-slate-700">{b.vendor?.businessName || 'Individual Vendor'}</span>
+                                                    <span className="text-sm font-bold text-slate-700">{b.vendor?.user?.fullName || b.vendor?.businessName || 'Anonymous Owner'}</span>
                                                     <span className="text-[11px] text-slate-400 font-medium">{b.vendor?.businessEmail || 'No Email'}</span>
                                                 </div>
                                             </td>
