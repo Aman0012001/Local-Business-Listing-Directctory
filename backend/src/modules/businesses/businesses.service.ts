@@ -228,8 +228,13 @@ export class BusinessesService {
             openNow,
             sortBy,
             userId,
+            filter,
         } = searchDto;
         const skip = calculateSkip(page, limit);
+
+        // Quick Filters
+        const isFeaturedFilter = filter === 'featured' || featuredOnly;
+        const isNewFilter = filter === 'new';
 
         // Async Search Logging
         if (latitude && longitude) {
@@ -330,8 +335,13 @@ export class BusinessesService {
         }
 
         // Featured only
-        if (featuredOnly) {
+        if (isFeaturedFilter) {
             queryBuilder.andWhere('listing.isFeatured = :featured', { featured: true });
+        }
+        if (isNewFilter) {
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            queryBuilder.andWhere('listing.createdAt >= :sevenDaysAgo', { sevenDaysAgo });
         }
         if (verifiedOnly) {
             queryBuilder.andWhere('listing.isVerified = :verified', { verified: true });
@@ -370,24 +380,31 @@ export class BusinessesService {
         }
 
         // 2) Secondary sort (user-selected or default relevance)
-        switch (sortBy) {
-            case SearchSortBy.DISTANCE:
-                if (latitude && longitude) {
-                    queryBuilder.addOrderBy('distance', 'ASC');
-                }
-                break;
-            case SearchSortBy.RATING:
-                queryBuilder.addOrderBy('listing.averageRating', 'DESC');
-                break;
-            case 'newest':
-                queryBuilder.addOrderBy('listing.createdAt', 'DESC');
-                break;
-            default:
-                // Relevance (sponsored > featured > rating)
-                queryBuilder
-                    .addOrderBy('listing.isSponsored', 'DESC')
-                    .addOrderBy('listing.isFeatured', 'DESC')
-                    .addOrderBy('listing.averageRating', 'DESC');
+        if (filter === 'new' || (sortBy as any) === 'newest' || sortBy === SearchSortBy.NEWEST) {
+            // For "New" sort, we prioritize createdAt above all else (after query boost if present)
+            queryBuilder
+                .addOrderBy('listing.createdAt', 'DESC')
+                .addOrderBy('listing.isSponsored', 'DESC')
+                .addOrderBy('listing.isFeatured', 'DESC')
+                .addOrderBy('listing.averageRating', 'DESC');
+        } else {
+            switch (sortBy) {
+                case SearchSortBy.DISTANCE:
+                    if (latitude && longitude) {
+                        queryBuilder.addOrderBy('distance', 'ASC');
+                    }
+                    break;
+                case SearchSortBy.RATING:
+                    queryBuilder.addOrderBy('listing.averageRating', 'DESC');
+                    break;
+                default:
+                    // Relevance (sponsored > featured > newest > rating)
+                    queryBuilder
+                        .addOrderBy('listing.isSponsored', 'DESC')
+                        .addOrderBy('listing.isFeatured', 'DESC')
+                        .addOrderBy('listing.createdAt', 'DESC')
+                        .addOrderBy('listing.averageRating', 'DESC');
+            }
         }
 
         try {

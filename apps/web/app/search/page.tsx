@@ -23,6 +23,8 @@ function SearchResults() {
     const longitude = searchParams.get('longitude') || '';
     const openNow = searchParams.get('openNow') === 'true';
     const verifiedOnly = searchParams.get('verifiedOnly') === 'true';
+    const filter = searchParams.get('filter') || '';
+    const featuredOnly = filter === 'featured';
 
     const [results, setResults] = useState<Business[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
@@ -45,6 +47,8 @@ function SearchResults() {
                         longitude: longitude ? Number(longitude) : undefined,
                         openNow: openNow || undefined,
                         verifiedOnly: verifiedOnly || undefined,
+                        featuredOnly: featuredOnly || undefined,
+                        filter: filter || undefined,
                         limit: 20
                     }),
                     api.categories.getAll()
@@ -68,7 +72,7 @@ function SearchResults() {
             }
         };
         loadData();
-    }, [query, city, categorySlug, minRating, radius, latitude, longitude, openNow, verifiedOnly]);
+    }, [query, city, categorySlug, minRating, radius, latitude, longitude, openNow, verifiedOnly, featuredOnly, filter]);
 
     const handleNearMe = () => {
         if (!navigator.geolocation) {
@@ -120,7 +124,11 @@ function SearchResults() {
                                 <span className="text-slate-900">Search Results</span>
                             </div>
                             <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-tight">
-                                {city ? (
+                                {filter === 'featured' ? (
+                                    <>Featured <span className="text-blue-600">Businesses</span></>
+                                ) : filter === 'new' ? (
+                                    <>Newest <span className="text-blue-600">Listings</span></>
+                                ) : city ? (
                                     <>Results for <span className="text-blue-600">"{query || 'Businesses'}"</span> in <span className="text-blue-600">{city}</span></>
                                 ) : query ? (
                                     <>Find the best <span className="text-blue-600">"{query}"</span></>
@@ -152,6 +160,37 @@ function SearchResults() {
                         </div>
 
                         <div className={`${showFilters ? 'block' : 'hidden lg:block'} space-y-12 animate-in fade-in duration-500`}>
+                            {/* Sort Filter - NEW */}
+                            <div>
+                                <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mb-6">Sort By</h4>
+                                <div className="grid grid-cols-1 gap-2">
+                                    <button
+                                        onClick={() => updateFilter('filter', filter === 'new' ? null : 'new')}
+                                        className={`py-4 px-6 rounded-2xl border transition-all text-[10px] font-black uppercase tracking-widest flex items-center justify-between group ${filter === 'new' ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200 hover:text-slate-900'}`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-2 rounded-lg transition-colors ${filter === 'new' ? 'bg-blue-600 text-white' : 'bg-slate-50 text-slate-400 group-hover:bg-slate-100 group-hover:text-slate-900'}`}>
+                                                <Clock className="w-3.5 h-3.5" />
+                                            </div>
+                                            <span>Newest First</span>
+                                        </div>
+                                        {filter === 'new' && <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />}
+                                    </button>
+
+                                    <button
+                                        onClick={() => updateFilter('filter', filter === 'featured' ? null : 'featured')}
+                                        className={`py-4 px-6 rounded-2xl border transition-all text-[10px] font-black uppercase tracking-widest flex items-center justify-between group ${filter === 'featured' ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200 hover:text-slate-900'}`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-2 rounded-lg transition-colors ${filter === 'featured' ? 'bg-orange-600 text-white' : 'bg-slate-50 text-slate-400 group-hover:bg-slate-100 group-hover:text-slate-900'}`}>
+                                                <Star className="w-3.5 h-3.5" />
+                                            </div>
+                                            <span>Featured</span>
+                                        </div>
+                                        {filter === 'featured' && <div className="w-1.5 h-1.5 rounded-full bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]" />}
+                                    </button>
+                                </div>
+                            </div>
                             {/* Category Filter */}
                             <div>
                                 <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mb-6">Department</h4>

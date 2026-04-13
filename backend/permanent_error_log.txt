@@ -1105,3 +1105,13 @@ Details: {"query":"SELECT \"listing\".\"id\" AS \"listing_id\", \"listing\".\"ve
 [2026-04-12T05:43:27.180Z] NotificationsService Constructor Called
 [2026-04-12T05:53:48.894Z] NotificationsService Constructor Called
 [2026-04-12T11:09:03.177Z] NotificationsService Constructor Called
+[2026-04-13T16:30:58.459Z] NotificationsService Constructor Called
+[2026-04-13T16:34:44.253Z] NotificationsService Constructor Called
+[2026-04-13T16:55:23.795Z] NotificationsService Constructor Called
+[2026-04-13T16:55:23.796Z] NotificationsService Constructor Called
+[2026-04-13T17:04:12.824Z] NotificationsService Constructor Called
+[Search ERROR] 2026-04-13T17:10:56.079Z: connect ENETUNREACH 66.33.22.240:45505
+Stack: Error: connect ENETUNREACH 66.33.22.240:45505
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+Details: {"errno":-4062,"code":"ENETUNREACH","syscall":"connect","address":"66.33.22.240","port":45505}
+

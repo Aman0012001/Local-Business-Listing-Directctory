@@ -66,6 +66,15 @@ const StatusBadge = ({ status }: { status?: string }) => {
     );
 };
 
+const isNewBusiness = (createdAt?: string) => {
+    if (!createdAt) return false;
+    const created = new Date(createdAt);
+    const now = new Date();
+    const diff = now.getTime() - created.getTime();
+    const days = diff / (1000 * 60 * 60 * 24);
+    return days <= 7;
+};
+
 interface BusinessCardProps {
     business: Business;
     variant?: 'green' | 'blue' | 'white' | 'dark' | 'minimal';
@@ -109,8 +118,18 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                             iconSize={32}
                         />
                         {business.isVerified && (
-                            <div className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-md rounded-full shadow-sm text-blue-600 border border-white">
+                            <div className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-md rounded-full shadow-sm text-blue-600 border border-white z-10">
                                 <ShieldCheck className="w-4 h-4 fill-blue-600/10" />
+                            </div>
+                        )}
+                        {business.isFeatured && (String(business.isFeatured) === 'true' || business.isFeatured === true) && (
+                            <div className="absolute top-4 left-4 px-3 py-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg z-10">
+                                Featured
+                            </div>
+                        )}
+                        {isNewBusiness(business.createdAt) && (
+                            <div className={`absolute ${business.isFeatured ? 'top-[44px]' : 'top-4'} left-4 px-3 py-1 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg z-10`}>
+                                New
                             </div>
                         )}
                     </div>
@@ -158,9 +177,14 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                             iconSize={48}
                         />
-                        {business.isFeatured && (
+                        {business.isFeatured && (String(business.isFeatured) === 'true' || business.isFeatured === true) && (
                             <div className="absolute top-4 left-4 px-3 py-1 bg-blue-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-lg">
                                 Featured
+                            </div>
+                        )}
+                        {isNewBusiness(business.createdAt) && (
+                            <div className={`absolute ${business.isFeatured ? 'top-[44px]' : 'top-4'} left-4 px-3 py-1 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-lg`}>
+                                New
                             </div>
                         )}
                     </div>
@@ -234,8 +258,18 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                         iconSize={40}
                     />
                     {business.isVerified && (
-                        <div className="absolute top-4 right-4 px-3 py-1 bg-amber-500 text-white text-[10px] font-bold uppercase tracking-widest rounded-full shadow-lg">
+                        <div className="absolute top-4 right-4 px-3 py-1 bg-amber-500 text-white text-[10px] font-bold uppercase tracking-widest rounded-full shadow-lg z-10">
                             Verified
+                        </div>
+                    )}
+                    {business.isFeatured && (String(business.isFeatured) === 'true' || business.isFeatured === true) && (
+                        <div className="absolute top-4 left-4 px-3 py-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg z-10">
+                            Featured
+                        </div>
+                    )}
+                    {isNewBusiness(business.createdAt) && (
+                        <div className={`absolute ${business.isFeatured ? 'top-[44px]' : 'top-4'} left-4 px-3 py-1 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg z-10`}>
+                            New
                         </div>
                     )}
                 </div>

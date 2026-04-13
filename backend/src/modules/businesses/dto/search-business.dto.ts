@@ -95,6 +95,11 @@ export class SearchBusinessDto extends PaginationDto {
     @IsBoolean()
     verifiedOnly?: boolean = false;
 
+    @ApiPropertyOptional({ example: 'new', description: 'Quick filter (new, featured)' })
+    @IsOptional()
+    @IsString()
+    filter?: string;
+
     @ApiPropertyOptional({ enum: SearchSortBy, default: SearchSortBy.RELEVANCE })
     @IsOptional()
     @IsEnum(SearchSortBy)

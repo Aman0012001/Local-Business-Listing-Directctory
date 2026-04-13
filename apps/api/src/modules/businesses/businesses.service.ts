@@ -43,14 +43,24 @@ export class BusinessesService {
     }
 
     async search(params: any): Promise<{ data: Business[], total: number, page: number, limit: number }> {
-        const { limit = 20, page = 1, featuredOnly, categorySlug, city, query } = params;
+        const { limit = 20, page = 1, featuredOnly, verifiedOnly, categorySlug, city, query, minRating } = params;
 
         const queryBuilder = this.businessesRepository.createQueryBuilder('business')
             .leftJoinAndSelect('business.category', 'category')
-            .where('business.status = :status', { status: BusinessStatus.APPROVED });
+            .leftJoinAndSelect('business.vendor', 'vendor')
+        // Base condition: Approved status
+        queryBuilder.where('business.status = :status', { status: BusinessStatus.APPROVED });
 
-        if (featuredOnly === 'true' || featuredOnly === true) {
-            queryBuilder.andWhere('business.isFeatured = :isFeatured', { isFeatured: true });
+        // Featured filtering - handles "true", true, and "featured" value from multiple sources
+        const shouldShowFeaturedOnly = params.featuredOnly === 'true' || params.featuredOnly === true || params.filter === 'featured';
+        if (shouldShowFeaturedOnly) {
+            queryBuilder.andWhere('business.isFeatured = :isFeaturedVal', { isFeaturedVal: true });
+        }
+
+        // Verified filtering - joined from vendor
+        const shouldShowVerifiedOnly = params.verifiedOnly === 'true' || params.verifiedOnly === true;
+        if (shouldShowVerifiedOnly) {
+            queryBuilder.andWhere('vendor.isVerified = :isVerifiedVal', { isVerifiedVal: true });
         }
 
         if (categorySlug) {
@@ -61,13 +71,27 @@ export class BusinessesService {
             queryBuilder.andWhere('LOWER(business.city) = LOWER(:city)', { city });
         }
 
+        if (minRating) {
+            queryBuilder.andWhere('business.averageRating >= :minRating', { minRating: Number(minRating) });
+        }
+
         if (query) {
             queryBuilder.andWhere('(LOWER(business.name) LIKE LOWER(:query) OR LOWER(business.description) LIKE LOWER(:query))', { query: `%${query}%` });
         }
 
+        // Apply sorting
+        if (params.filter === 'new') {
+            queryBuilder.orderBy('business.createdAt', 'DESC');
+            queryBuilder.addOrderBy('business.isFeatured', 'DESC');
+        } else {
+            // Default: Featured first, then newest
+            queryBuilder.orderBy('business.isFeatured', 'DESC');
+            queryBuilder.addOrderBy('business.createdAt', 'DESC');
+        }
+
         const [data, total] = await queryBuilder
-            .take(limit)
-            .skip((page - 1) * limit)
+            .take(Number(limit))
+            .skip((Number(page) - 1) * Number(limit))
             .getManyAndCount();
 
         return {
