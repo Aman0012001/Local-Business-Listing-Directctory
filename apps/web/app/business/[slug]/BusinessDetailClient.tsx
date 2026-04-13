@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import {
   Star,
   MapPin,
@@ -123,6 +124,7 @@ export default function BusinessDetailClient({
   slug,
 }: BusinessDetailClientProps) {
   const { user } = useAuth();
+  const router = useRouter();
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("Overview");
@@ -435,7 +437,7 @@ export default function BusinessDetailClient({
 
   const handleLike = async () => {
     if (!user) {
-      alert("Please login to add to favorites");
+      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
     if (!business) return;
@@ -470,15 +472,15 @@ export default function BusinessDetailClient({
   const handleContactIntent = async (
     action: "call" | "whatsapp" | "enquiry",
   ) => {
+    if (!user) {
+      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
+
     // For direct actions (Call/WhatsApp), generate lead immediately and then redirect
     if (action === "enquiry") {
       setPendingAction(null);
       openEnquiryModal();
-      return;
-    }
-
-    if (!user) {
-      alert("Please login to connect with this business.");
       return;
     }
 
@@ -584,6 +586,10 @@ export default function BusinessDetailClient({
   };
 
   const openEnquiryModal = () => {
+    if (!user) {
+      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
     setEnquirySuccess(false);
     setEnquiryError("");
     setEnquiryMessage("");
@@ -593,7 +599,7 @@ export default function BusinessDetailClient({
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      alert("Please login to write a review");
+      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
     if (!business) return;
@@ -625,7 +631,7 @@ export default function BusinessDetailClient({
 
   const handleReplySubmit = async (reviewId: string) => {
     if (!user) {
-      alert("Please login to reply");
+      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
     if (!isOwner) {
@@ -1074,7 +1080,13 @@ export default function BusinessDetailClient({
                             </div>
                           ) : (
                             <button
-                              onClick={() => setShowReviewModal(true)}
+                              onClick={() => {
+                                if (!user) {
+                                  router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+                                  return;
+                                }
+                                setShowReviewModal(true);
+                              }}
                               className="px-6 py-2 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-all"
                             >
                               Write a Review

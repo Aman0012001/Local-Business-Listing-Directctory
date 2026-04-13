@@ -397,23 +397,25 @@ export default function GenericDashboard() {
                         )
                     ) : (
                         <div className="space-y-10">
-                            {/* Upgrade to Vendor CTA */}
-                            <div className="bg-gradient-to-br from-[#0B2244] to-[#1a3a70] rounded-[16px] p-8 sm:p-10 shadow-2xl relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-6 border-2 border-orange-500/20">
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/20 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
-                                <div className="relative z-10">
-                                    <h3 className="text-2xl font-black text-white mb-2">Own a Business?</h3>
-                                    <p className="text-blue-200 font-bold max-w-md">
-                                        Upgrade to a Business Account to list your services, track performance, and connect with your local community.
-                                    </p>
+                            {/* Upgrade to Vendor CTA - Only for non-vendors who might want to upgrade */}
+                            {!isVendor && !isAdmin && user?.role !== 'user' && (
+                                <div className="bg-gradient-to-br from-[#0B2244] to-[#1a3a70] rounded-[16px] p-8 sm:p-10 shadow-2xl relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-6 border-2 border-orange-500/20">
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/20 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+                                    <div className="relative z-10">
+                                        <h3 className="text-2xl font-black text-white mb-2">Own a Business?</h3>
+                                        <p className="text-blue-200 font-bold max-w-md">
+                                            Upgrade to a Business Account to list your services, track performance, and connect with your local community.
+                                        </p>
+                                    </div>
+                                    <Link 
+                                        href="/vendor/upgrade" 
+                                        className="relative z-10 flex items-center justify-center gap-2 px-8 py-4 bg-[#FF7A30] hover:bg-[#E86920] text-white rounded-[16px] font-black transition-all shadow-xl shadow-orange-900/20 whitespace-nowrap active:scale-95"
+                                    >
+                                        <Sparkles className="w-5 h-5 flex-shrink-0" />
+                                        Become a Vendor
+                                    </Link>
                                 </div>
-                                <Link 
-                                    href="/vendor/upgrade" 
-                                    className="relative z-10 flex items-center justify-center gap-2 px-8 py-4 bg-[#FF7A30] hover:bg-[#E86920] text-white rounded-[16px] font-black transition-all shadow-xl shadow-orange-900/20 whitespace-nowrap active:scale-95"
-                                >
-                                    <Sparkles className="w-5 h-5 flex-shrink-0" />
-                                    Become a Vendor
-                                </Link>
-                            </div>
+                            )}
 
                             <div className="bg-white rounded-[16px] p-8 sm:p-10 border border-black shadow-slate-200/20">
                                 <MyInquiries />

@@ -52,6 +52,11 @@ export const usePlanFeature = () => {
         // Admins/Superadmins bypass all gating
         if (user?.role === 'admin' || user?.role === 'superadmin') return true;
         
+        // Standard users bypass gating for core community features
+        if (user?.role === 'user' && ['showChat', 'showSaved', 'showFollowing', 'showReviews'].includes(featureName as string)) {
+            return true;
+        }
+
         // If it's a vendor, check their active plan features
         return !!features[featureName];
     };
