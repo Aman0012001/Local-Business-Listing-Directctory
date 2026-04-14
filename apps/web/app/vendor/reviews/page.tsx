@@ -10,6 +10,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { api, getImageUrl } from '../../../lib/api';
 import { Review } from '../../../types/api';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FeatureGate } from '../../../components/vendor/FeatureGate';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 const formatDate = (d: string) => {
@@ -187,7 +188,7 @@ export default function VendorReviews() {
     }, [reviews, ratingFilter, listingFilter, search]);
 
     const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-    const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+    const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * PAGE_SIZE);
 
     const handleReply = async () => {
         if (!respondingTo || !responseText.trim()) return;
@@ -217,237 +218,239 @@ export default function VendorReviews() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-32">
+        <FeatureGate feature="showReviews" title="Customer Reviews" description="Monitor and respond to customer feedback across all your business listings. Build trust and reputation with expert responses.">
+            <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-32">
 
-            {/* ── Header ─────────────────────────────────────────── */}
-            <div className="relative overflow-hidden bg-slate-900 rounded-[20px] p-8 sm:p-10 mb-8 shadow-2xl">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-amber-400/10 blur-[100px] rounded-full -mr-32 -mt-32" />
-                <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-600/15 blur-[80px] rounded-full -ml-24 -mb-24" />
+                {/* ── Header ─────────────────────────────────────────── */}
+                <div className="relative overflow-hidden bg-slate-900 rounded-[20px] p-8 sm:p-10 mb-8 shadow-2xl">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-amber-400/10 blur-[100px] rounded-full -mr-32 -mt-32" />
+                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-600/15 blur-[80px] rounded-full -ml-24 -mb-24" />
 
-                <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
-                    <div>
-                        <h1 className="text-4xl font-black text-white tracking-tight mb-2">Business Reputation</h1>
-                        <p className="text-slate-400 font-bold">All customer reviews across your listings</p>
-                    </div>
-
-                    {/* Stats pills */}
-                    <div className="flex flex-wrap items-center gap-4">
-                        <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl px-6 py-4 text-center">
-                            <div className="text-4xl font-black text-white tabular-nums">{stats.avg || '—'}</div>
-                            <StarRow rating={Math.round(stats.avg)} />
-                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Avg Rating</div>
+                    <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+                        <div>
+                            <h1 className="text-4xl font-black text-white tracking-tight mb-2">Business Reputation</h1>
+                            <p className="text-slate-400 font-bold">All customer reviews across your listings</p>
                         </div>
-                        <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl px-6 py-4 text-center">
-                            <div className="text-4xl font-black text-white tabular-nums">{stats.total}</div>
-                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Total Reviews</div>
-                        </div>
-                        {isVendor && (
-                            <div className="bg-amber-500/20 border border-amber-400/20 rounded-2xl px-6 py-4 text-center">
-                                <div className="text-4xl font-black text-amber-400 tabular-nums">{stats.unanswered}</div>
-                                <div className="text-[10px] font-black text-amber-400/70 uppercase tracking-widest mt-1">Unanswered</div>
+
+                        {/* Stats pills */}
+                        <div className="flex flex-wrap items-center gap-4">
+                            <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl px-6 py-4 text-center">
+                                <div className="text-4xl font-black text-white tabular-nums">{stats.avg || '—'}</div>
+                                <StarRow rating={Math.round(stats.avg)} />
+                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Avg Rating</div>
                             </div>
-                        )}
+                            <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl px-6 py-4 text-center">
+                                <div className="text-4xl font-black text-white tabular-nums">{stats.total}</div>
+                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Total Reviews</div>
+                            </div>
+                            {isVendor && (
+                                <div className="bg-amber-500/20 border border-amber-400/20 rounded-2xl px-6 py-4 text-center">
+                                    <div className="text-4xl font-black text-amber-400 tabular-nums">{stats.unanswered}</div>
+                                    <div className="text-[10px] font-black text-amber-400/70 uppercase tracking-widest mt-1">Unanswered</div>
+                                </div>
+                            )}
+                        </div>
                     </div>
+
+                    {/* Rating distribution */}
+                    {stats.total > 0 && (
+                        <div className="relative z-10 mt-8 bg-white/5 rounded-2xl p-5 border border-white/10 space-y-2">
+                            {stats.distribution.map(({ star, count }) => (
+                                <RatingBar key={star} star={star} count={count} total={stats.total} />
+                            ))}
+                        </div>
+                    )}
                 </div>
 
-                {/* Rating distribution */}
-                {stats.total > 0 && (
-                    <div className="relative z-10 mt-8 bg-white/5 rounded-2xl p-5 border border-white/10 space-y-2">
-                        {stats.distribution.map(({ star, count }) => (
-                            <RatingBar key={star} star={star} count={count} total={stats.total} />
-                        ))}
+                {/* ── Filters ────────────────────────────────────────── */}
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 mb-6 flex flex-col sm:flex-row gap-3">
+                    {/* Search */}
+                    <div className="relative border border-slate-100 rounded-xl overflow-hidden flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input
+                            id="review-search"
+                            type="text"
+                            placeholder="Search by reviewer name or comment…"
+                            value={search}
+                            onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
+                            className="w-full pl-10 pr-4 py-2.5 text-sm font-medium bg-slate-50 border-none focus:bg-white outline-none transition-all"
+                        />
                     </div>
-                )}
-            </div>
 
-            {/* ── Filters ────────────────────────────────────────── */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 mb-6 flex flex-col sm:flex-row gap-3">
-                {/* Search */}
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                        id="review-search"
-                        type="text"
-                        placeholder="Search by reviewer name or comment…"
-                        value={search}
-                        onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
-                        className="w-full pl-10 pr-4 py-2.5 text-sm font-medium bg-slate-50 rounded-xl border border-transparent focus:border-amber-400 focus:bg-white outline-none transition-all"
-                    />
-                </div>
-
-                {/* Rating filter */}
-                <div className="relative">
-                    <Star className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                    <select
-                        id="review-rating-filter"
-                        value={ratingFilter}
-                        onChange={e => { setRatingFilter(e.target.value === '' ? '' : Number(e.target.value)); setCurrentPage(1); }}
-                        className="pl-9 pr-8 py-2.5 text-sm font-bold bg-slate-50 rounded-xl border border-transparent focus:border-amber-400 outline-none appearance-none cursor-pointer"
-                    >
-                        <option value="">All Ratings</option>
-                        {[5, 4, 3, 2, 1].map(s => <option key={s} value={s}>{s} Stars</option>)}
-                    </select>
-                </div>
-
-                {/* Listing filter */}
-                {listings.length > 1 && (
-                    <div className="relative">
-                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    {/* Rating filter */}
+                    <div className="relative border border-slate-100 rounded-xl overflow-hidden">
+                        <Star className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <select
-                            id="review-listing-filter"
-                            value={listingFilter}
-                            onChange={e => { setListingFilter(e.target.value); setCurrentPage(1); }}
-                            className="pl-9 pr-8 py-2.5 text-sm font-bold bg-slate-50 rounded-xl border border-transparent focus:border-amber-400 outline-none appearance-none cursor-pointer max-w-[200px] truncate"
+                            id="review-rating-filter"
+                            value={ratingFilter}
+                            onChange={e => { setRatingFilter(e.target.value === '' ? '' : Number(e.target.value)); setCurrentPage(1); }}
+                            className="pl-9 pr-8 py-2.5 text-sm font-bold bg-slate-50 border-none outline-none appearance-none cursor-pointer"
                         >
-                            <option value="">All Listings</option>
-                            {listings.map(l => <option key={l.id} value={l.id}>{l.title}</option>)}
+                            <option value="">All Ratings</option>
+                            {[5, 4, 3, 2, 1].map(s => <option key={s} value={s}>{s} Stars</option>)}
                         </select>
                     </div>
+
+                    {/* Listing filter */}
+                    {listings.length > 1 && (
+                        <div className="relative border border-slate-100 rounded-xl overflow-hidden">
+                            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                            <select
+                                id="review-listing-filter"
+                                value={listingFilter}
+                                onChange={e => { setListingFilter(e.target.value); setCurrentPage(1); }}
+                                className="pl-9 pr-8 py-2.5 text-sm font-bold bg-slate-50 border-none outline-none appearance-none cursor-pointer max-w-[200px] truncate"
+                            >
+                                <option value="">All Listings</option>
+                                {listings.map(l => <option key={l.id} value={l.id}>{l.title}</option>)}
+                            </select>
+                        </div>
+                    )}
+
+                    {/* Refresh */}
+                    <button onClick={fetchReviews} disabled={loading}
+                        className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-slate-400 hover:text-slate-700 hover:border-slate-300 transition-all">
+                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                    </button>
+                </div>
+
+                {/* Result count */}
+                {(search || ratingFilter !== '' || listingFilter) && (
+                    <p className="text-xs font-bold text-slate-400 mb-4">
+                        Showing {filtered.length} of {stats.total} reviews
+                        {ratingFilter !== '' && ` · ${ratingFilter}★ only`}
+                        {listingFilter && ` · ${listings.find(l => l.id === listingFilter)?.title}`}
+                    </p>
                 )}
 
-                {/* Refresh */}
-                <button onClick={fetchReviews} disabled={loading}
-                    className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-slate-400 hover:text-slate-700 hover:border-slate-300 transition-all">
-                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                </button>
-            </div>
-
-            {/* Result count */}
-            {(search || ratingFilter !== '' || listingFilter) && (
-                <p className="text-xs font-bold text-slate-400 mb-4">
-                    Showing {filtered.length} of {stats.total} reviews
-                    {ratingFilter !== '' && ` · ${ratingFilter}★ only`}
-                    {listingFilter && ` · ${listings.find(l => l.id === listingFilter)?.title}`}
-                </p>
-            )}
-
-            {/* ── Reviews Grid ────────────────────────────────────── */}
-            {filtered.length === 0 && !loading ? (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                    className="flex flex-col items-center justify-center py-24 gap-4">
-                    <div className="w-20 h-20 bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl flex items-center justify-center">
-                        <Star className="w-10 h-10 text-amber-300" />
+                {/* ── Reviews Grid ────────────────────────────────────── */}
+                {filtered.length === 0 && !loading ? (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                        className="flex flex-col items-center justify-center py-24 gap-4">
+                        <div className="w-20 h-20 bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl flex items-center justify-center">
+                            <Star className="w-10 h-10 text-amber-300" />
+                        </div>
+                        <div className="text-center">
+                            <p className="text-slate-700 font-black text-lg">
+                                {stats.total === 0
+                                    ? 'No reviews yet'
+                                    : 'No reviews match your filters'}
+                            </p>
+                            <p className="text-slate-400 text-sm mt-1">
+                                {stats.total === 0
+                                    ? 'Encourage your customers to leave a review on your listings!'
+                                    : 'Try adjusting your search or filters.'}
+                            </p>
+                            {(search || ratingFilter !== '' || listingFilter) && (
+                                <button onClick={() => { setSearch(''); setRatingFilter(''); setListingFilter(''); }}
+                                    className="mt-4 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all">
+                                    Clear Filters
+                                </button>
+                            )}
+                        </div>
+                    </motion.div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <AnimatePresence mode="popLayout">
+                            {paginated.map((review, idx) => (
+                                <ReviewCard
+                                    key={review.id}
+                                    review={review}
+                                    isVendor={isVendor}
+                                    onReply={setRespondingTo}
+                                />
+                            ))}
+                        </AnimatePresence>
                     </div>
-                    <div className="text-center">
-                        <p className="text-slate-700 font-black text-lg">
-                            {stats.total === 0
-                                ? 'No reviews yet'
-                                : 'No reviews match your filters'}
-                        </p>
-                        <p className="text-slate-400 text-sm mt-1">
-                            {stats.total === 0
-                                ? 'Encourage your customers to leave a review on your listings!'
-                                : 'Try adjusting your search or filters.'}
-                        </p>
-                        {(search || ratingFilter !== '' || listingFilter) && (
-                            <button onClick={() => { setSearch(''); setRatingFilter(''); setListingFilter(''); }}
-                                className="mt-4 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all">
-                                Clear Filters
-                            </button>
-                        )}
+                )}
+
+                {/* ── Pagination ─────────────────────────────────────── */}
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-3 mt-12">
+                        <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}
+                            className="p-3 bg-white border border-slate-200 rounded-xl text-slate-400 hover:border-slate-300 disabled:opacity-30 transition-all">
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
+                        <div className="flex items-center gap-2">
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
+                                <button key={n} onClick={() => setCurrentPage(n)}
+                                    className={`w-10 h-10 rounded-xl font-black text-sm border transition-all ${currentPage === n ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-400 border-slate-200 hover:border-slate-400'}`}>
+                                    {n}
+                                </button>
+                            ))}
+                        </div>
+                        <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}
+                            className="p-3 bg-white border border-slate-200 rounded-xl text-slate-400 hover:border-slate-300 disabled:opacity-30 transition-all">
+                            <ChevronRight className="w-5 h-5" />
+                        </button>
                     </div>
-                </motion.div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <AnimatePresence mode="popLayout">
-                        {paginated.map((review, idx) => (
-                            <ReviewCard
-                                key={review.id}
-                                review={review}
-                                isVendor={isVendor}
-                                onReply={setRespondingTo}
-                            />
-                        ))}
-                    </AnimatePresence>
-                </div>
-            )}
+                )}
 
-            {/* ── Pagination ─────────────────────────────────────── */}
-            {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-3 mt-12">
-                    <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}
-                        className="p-3 bg-white border border-slate-200 rounded-xl text-slate-400 hover:border-slate-300 disabled:opacity-30 transition-all">
-                        <ChevronLeft className="w-5 h-5" />
-                    </button>
-                    <div className="flex items-center gap-2">
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
-                            <button key={n} onClick={() => setCurrentPage(n)}
-                                className={`w-10 h-10 rounded-xl font-black text-sm border transition-all ${currentPage === n ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-400 border-slate-200 hover:border-slate-400'}`}>
-                                {n}
-                            </button>
-                        ))}
-                    </div>
-                    <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}
-                        className="p-3 bg-white border border-slate-200 rounded-xl text-slate-400 hover:border-slate-300 disabled:opacity-30 transition-all">
-                        <ChevronRight className="w-5 h-5" />
-                    </button>
-                </div>
-            )}
-
-            {/* ── Reply Modal ────────────────────────────────────── */}
-            <AnimatePresence>
-                {respondingTo && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            onClick={() => setRespondingTo(null)}
-                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" />
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="bg-white rounded-[20px] w-full max-w-xl p-8 shadow-2xl relative z-10 border border-slate-100"
-                        >
-                            <button onClick={() => setRespondingTo(null)}
-                                className="absolute top-6 right-6 p-2 hover:bg-slate-50 rounded-full transition-colors">
-                                <X className="w-6 h-6 text-slate-400" />
-                            </button>
-
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
-                                    <MessageSquareQuote className="w-6 h-6 text-blue-600" />
-                                </div>
-                                <div>
-                                    <h2 className="text-2xl font-black text-slate-900">Post Response</h2>
-                                    <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-0.5">
-                                        Replying to {respondingTo.user?.fullName}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="bg-slate-50 rounded-2xl p-5 mb-6 border border-slate-100">
-                                <div className="flex items-center gap-1 mb-2">
-                                    <StarRow rating={respondingTo.rating} />
-                                </div>
-                                <p className="text-slate-500 font-bold italic text-sm">"{respondingTo.comment}"</p>
-                            </div>
-
-                            <textarea
-                                value={responseText}
-                                onChange={e => setResponseText(e.target.value)}
-                                placeholder="Type your professional response here..."
-                                className="w-full h-36 bg-white border border-slate-200 rounded-2xl p-5 text-slate-700 font-bold focus:outline-none focus:ring-4 focus:ring-blue-600/10 transition-all resize-none"
-                            />
-
-                            <div className="flex gap-3 mt-6">
+                {/* ── Reply Modal ────────────────────────────────────── */}
+                <AnimatePresence>
+                    {respondingTo && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                onClick={() => setRespondingTo(null)}
+                                className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" />
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                                className="bg-white rounded-[20px] w-full max-w-xl p-8 shadow-2xl relative z-10 border border-slate-100"
+                            >
                                 <button onClick={() => setRespondingTo(null)}
-                                    className="flex-1 py-3.5 bg-slate-100 text-slate-500 font-black rounded-2xl hover:bg-slate-200 transition-all">
-                                    Cancel
+                                    className="absolute top-6 right-6 p-2 hover:bg-slate-50 rounded-full transition-colors">
+                                    <X className="w-6 h-6 text-slate-400" />
                                 </button>
-                                <button
-                                    disabled={isSubmitting || !responseText.trim()}
-                                    onClick={handleReply}
-                                    className="flex-[2] py-3.5 bg-blue-600 text-white font-black rounded-2xl shadow-lg hover:bg-blue-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-                                >
-                                    {isSubmitting
-                                        ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                        : <><Send className="w-4 h-4" /> Submit Response</>
-                                    }
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
-        </div>
+
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
+                                        <MessageSquareQuote className="w-6 h-6 text-blue-600" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-2xl font-black text-slate-900">Post Response</h2>
+                                        <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-0.5">
+                                            Replying to {respondingTo.user?.fullName}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-slate-50 rounded-2xl p-5 mb-6 border border-slate-100">
+                                    <div className="flex items-center gap-1 mb-2">
+                                        <StarRow rating={respondingTo.rating} />
+                                    </div>
+                                    <p className="text-slate-500 font-bold italic text-sm">"{respondingTo.comment}"</p>
+                                </div>
+
+                                <textarea
+                                    value={responseText}
+                                    onChange={e => setResponseText(e.target.value)}
+                                    placeholder="Type your professional response here..."
+                                    className="w-full h-36 bg-white border border-slate-200 rounded-2xl p-5 text-slate-700 font-bold focus:outline-none focus:ring-4 focus:ring-blue-600/10 transition-all resize-none"
+                                />
+
+                                <div className="flex gap-3 mt-6">
+                                    <button onClick={() => setRespondingTo(null)}
+                                        className="flex-1 py-3.5 bg-slate-100 text-slate-500 font-black rounded-2xl hover:bg-slate-200 transition-all">
+                                        Cancel
+                                    </button>
+                                    <button
+                                        disabled={isSubmitting || !responseText.trim()}
+                                        onClick={handleReply}
+                                        className="flex-[2] py-3.5 bg-blue-600 text-white font-black rounded-2xl shadow-lg hover:bg-blue-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        {isSubmitting
+                                            ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            : <><Send className="w-4 h-4" /> Submit Response</>
+                                        }
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
+            </div>
+        </FeatureGate>
     );
 }

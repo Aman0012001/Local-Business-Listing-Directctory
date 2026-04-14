@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../../../lib/api';
+import { FeatureGate } from '../../../components/vendor/FeatureGate';
 import {
     Send, Mail, Phone, Clock, Search, RefreshCw,
     CheckCircle, XCircle, PhoneCall, TrendingUp,
@@ -266,201 +267,203 @@ export default function VendorEnquiriesPage() {
     });
 
     return (
-        <div className="min-h-screen pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Header */}
-            <div className="py-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <div className="flex items-center gap-3 mb-1">
-                        <div className="w-10 h-10 bg-gradient-to-br from-violet-100 to-blue-100 rounded-2xl flex items-center justify-center">
-                            <Send className="w-5 h-5 text-violet-600" />
-                        </div>
-                        <h1 className="text-4xl font-black text-slate-900 tracking-tight">Queries</h1>
-                        {stats.new > 0 && (
-                            <span className="px-3 py-1 bg-violet-600 text-white text-xs font-black rounded-full animate-pulse">
-                                {stats.new} New
-                            </span>
-                        )}
-                    </div>
-                    <p className="text-slate-400 font-bold mt-1 ml-[52px]">Direct messages from customers on your listings</p>
-                </div>
-                <button id="refresh-queries-btn" onClick={() => fetchEnquiries(true)} disabled={refreshing}
-                    className="p-3 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-slate-900 hover:border-slate-300 transition-all shadow-sm self-start">
-                    <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
-                </button>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <StatCard label="Total" value={total} color="text-slate-900" />
-                <StatCard label="New" value={stats.new || 0} color="text-violet-600" />
-                <StatCard label="Contacted" value={stats.contacted || 0} color="text-amber-600" />
-                <StatCard label="Converted" value={stats.converted || 0} color="text-green-600" />
-            </div>
-
-            {/* Filters */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 mb-6 flex flex-col sm:flex-row gap-3">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input id="query-search" type="text" placeholder="Search by name, email, or message…"
-                        value={search} onChange={e => setSearch(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 text-sm font-medium bg-slate-50 rounded-xl border border-transparent focus:border-violet-400 focus:bg-white outline-none transition-all" />
-                </div>
-                <div className="relative">
-                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                    <select id="query-status-filter" value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}
-                        className="pl-9 pr-8 py-2.5 text-sm font-bold bg-slate-50 rounded-xl border border-transparent focus:border-violet-400 outline-none appearance-none cursor-pointer">
-                        <option value="">All Statuses</option>
-                        {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                    </select>
-                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                </div>
-            </div>
-
-            {/* List */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                {loading ? (
-                    <div className="flex flex-col items-center justify-center py-24 gap-4">
-                        <div className="w-12 h-12 border-4 border-violet-600/20 border-t-violet-600 rounded-full animate-spin" />
-                        <p className="text-slate-400 font-bold text-sm">Loading queries…</p>
-                    </div>
-                ) : filtered.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-24 gap-4">
-                        <div className="w-20 h-20 bg-gradient-to-br from-violet-50 to-blue-50 rounded-3xl flex items-center justify-center">
-                            <MessageSquare className="w-10 h-10 text-violet-300" />
-                        </div>
-                        <div className="text-center">
-                            <p className="text-slate-700 font-black text-lg">No queries yet</p>
-                            <p className="text-slate-400 text-sm mt-1">When customers send you a message from your listing, it will appear here</p>
-                        </div>
-                    </div>
-                ) : (
-                    <>
-                        {/* Desktop table */}
-                        <div className="hidden md:block overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="border-b border-slate-100 bg-slate-50/50">
-                                        <th className="px-6 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">From</th>
-                                        <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Type</th>
-                                        <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Message</th>
-                                        <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Status</th>
-                                        <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Date</th>
-                                        <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-50">
-                                    <AnimatePresence>
-                                        {filtered.map((enq, i) => (
-                                            <motion.tr key={enq.id}
-                                                initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: i * 0.03 }}
-                                                className="hover:bg-violet-50/30 transition-colors group cursor-pointer"
-                                                onClick={() => setSelectedEnquiry(enq)}
-                                            >
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0 ${enq.status === 'new' ? 'bg-gradient-to-br from-violet-200 to-blue-200 text-violet-700' : 'bg-slate-100 text-slate-500'}`}>
-                                                            {(enq.name?.[0] || '?').toUpperCase()}
-                                                        </div>
-                                                        <div>
-                                                            <p className="font-black text-slate-900 text-sm whitespace-nowrap">{enq.name || '—'}</p>
-                                                            {enq.email && <p className="text-xs text-slate-400 font-medium whitespace-nowrap">{enq.email}</p>}
-                                                            {enq.phone && <a href={`tel:${enq.phone}`} onClick={e => e.stopPropagation()} className="text-xs text-blue-500 font-bold hover:underline whitespace-nowrap">{enq.phone}</a>}
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-4">
-                                                    <span className="inline-flex items-center px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-lg">
-                                                        {(enq as any).type || 'Query'}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-4 max-w-[260px]">
-                                                    <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed">{enq.message || '—'}</p>
-                                                </td>
-                                                <td className="px-4 py-4">
-                                                    <div className="relative inline-block mt-0.5">
-                                                        <select
-                                                            value={enq.status}
-                                                            onChange={(e) => {
-                                                                e.stopPropagation();
-                                                                handleStatusChange(enq.id, e.target.value as EnquiryStatus);
-                                                            }}
-                                                            onClick={e => e.stopPropagation()}
-                                                            className={`appearance-none pl-3 pr-8 py-1 rounded-full text-xs font-bold border outline-none cursor-pointer transition-all ${STATUS_CONFIG[enq.status].bg} ${STATUS_CONFIG[enq.status].color} focus:ring-2 focus:ring-current/20`}
-                                                        >
-                                                            {(Object.keys(STATUS_CONFIG) as EnquiryStatus[]).map(s => (
-                                                                <option key={s} value={s} className="bg-white text-slate-900 font-bold">{STATUS_CONFIG[s].label}</option>
-                                                            ))}
-                                                        </select>
-                                                        <ChevronDown className={`absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none opacity-60`} />
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-4">
-                                                    <p className="text-xs text-slate-400 font-medium whitespace-nowrap">
-                                                        {new Date(enq.createdAt).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                                    </p>
-                                                </td>
-                                                <td className="px-4 py-4">
-                                                    <button className="p-2 rounded-xl bg-slate-100 text-slate-400 hover:bg-violet-100 hover:text-violet-600 transition-all opacity-0 group-hover:opacity-100">
-                                                        <Eye className="w-4 h-4" />
-                                                    </button>
-                                                </td>
-                                            </motion.tr>
-                                        ))}
-                                    </AnimatePresence>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* Mobile cards */}
-                        <div className="md:hidden divide-y divide-slate-50">
-                            {filtered.map(enq => (
-                                <div key={enq.id} className="p-4 flex items-start gap-3" onClick={() => setSelectedEnquiry(enq)}>
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black flex-shrink-0 ${enq.status === 'new' ? 'bg-gradient-to-br from-violet-200 to-blue-200 text-violet-700' : 'bg-slate-100 text-slate-500'}`}>
-                                        {(enq.name?.[0] || '?').toUpperCase()}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center justify-between gap-2 mb-1">
-                                            <p className="font-black text-slate-900 text-sm truncate">{enq.name || '—'}</p>
-                                            <StatusBadge status={enq.status} />
-                                        </div>
-                                        {enq.message && <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">{enq.message}</p>}
-                                        <p className="text-[10px] text-slate-300 font-medium mt-1">{new Date(enq.createdAt).toLocaleDateString()}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Pagination */}
-                        {totalPages > 1 && (
-                            <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
-                                <p className="text-xs text-slate-400 font-medium">Page {page} of {totalPages} · {total} total</p>
-                                <div className="flex items-center gap-2">
-                                    <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                                        className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:border-slate-300 disabled:opacity-40">
-                                        <ChevronLeft className="w-4 h-4" />
-                                    </button>
-                                    <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                                        className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:border-slate-300 disabled:opacity-40">
-                                        <ChevronRight className="w-4 h-4" />
-                                    </button>
-                                </div>
+        <FeatureGate feature="showQueries" title="Customer Enquiries" description="Connect with potential customers directly through our secure messaging system. Respond to leads and convert inquiries into bookings.">
+            <div className="min-h-screen pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Header */}
+                <div className="py-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <div className="flex items-center gap-3 mb-1">
+                            <div className="w-10 h-10 bg-gradient-to-br from-violet-100 to-blue-100 rounded-2xl flex items-center justify-center">
+                                <Send className="w-5 h-5 text-violet-600" />
                             </div>
-                        )}
-                    </>
-                )}
-            </div>
+                            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Queries</h1>
+                            {stats.new > 0 && (
+                                <span className="px-3 py-1 bg-violet-600 text-white text-xs font-black rounded-full animate-pulse">
+                                    {stats.new} New
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-slate-400 font-bold mt-1 ml-[52px]">Direct messages from customers on your listings</p>
+                    </div>
+                    <button id="refresh-queries-btn" onClick={() => fetchEnquiries(true)} disabled={refreshing}
+                        className="p-3 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-slate-900 hover:border-slate-300 transition-all shadow-sm self-start">
+                        <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+                    </button>
+                </div>
 
-            {/* Detail Modal */}
-            <AnimatePresence>
-                {selectedEnquiry && (
-                    <EnquiryDetailModal
-                        enquiry={selectedEnquiry}
-                        onClose={() => setSelectedEnquiry(null)}
-                        onStatusChange={handleStatusChange}
-                    />
-                )}
-            </AnimatePresence>
-        </div>
+                {/* Stats */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    <StatCard label="Total" value={total} color="text-slate-900" />
+                    <StatCard label="New" value={stats.new || 0} color="text-violet-600" />
+                    <StatCard label="Contacted" value={stats.contacted || 0} color="text-amber-600" />
+                    <StatCard label="Converted" value={stats.converted || 0} color="text-green-600" />
+                </div>
+
+                {/* Filters */}
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 mb-6 flex flex-col sm:flex-row gap-3">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input id="query-search" type="text" placeholder="Search by name, email, or message…"
+                            value={search} onChange={e => setSearch(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2.5 text-sm font-medium bg-slate-50 rounded-xl border border-transparent focus:border-violet-400 focus:bg-white outline-none transition-all" />
+                    </div>
+                    <div className="relative">
+                        <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                        <select id="query-status-filter" value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}
+                            className="pl-9 pr-8 py-2.5 text-sm font-bold bg-slate-50 rounded-xl border border-transparent focus:border-violet-400 outline-none appearance-none cursor-pointer">
+                            <option value="">All Statuses</option>
+                            {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                        </select>
+                        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    </div>
+                </div>
+
+                {/* List */}
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center py-24 gap-4">
+                            <div className="w-12 h-12 border-4 border-violet-600/20 border-t-violet-600 rounded-full animate-spin" />
+                            <p className="text-slate-400 font-bold text-sm">Loading queries…</p>
+                        </div>
+                    ) : filtered.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-24 gap-4">
+                            <div className="w-20 h-20 bg-gradient-to-br from-violet-50 to-blue-50 rounded-3xl flex items-center justify-center">
+                                <MessageSquare className="w-10 h-10 text-violet-300" />
+                            </div>
+                            <div className="text-center">
+                                <p className="text-slate-700 font-black text-lg">No queries yet</p>
+                                <p className="text-slate-400 text-sm mt-1">When customers send you a message from your listing, it will appear here</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Desktop table */}
+                            <div className="hidden md:block overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="border-b border-slate-100 bg-slate-50/50">
+                                            <th className="px-6 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">From</th>
+                                            <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Type</th>
+                                            <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Message</th>
+                                            <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Status</th>
+                                            <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Date</th>
+                                            <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50">
+                                        <AnimatePresence>
+                                            {filtered.map((enq, i) => (
+                                                <motion.tr key={enq.id}
+                                                    initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: i * 0.03 }}
+                                                    className="hover:bg-violet-50/30 transition-colors group cursor-pointer"
+                                                    onClick={() => setSelectedEnquiry(enq)}
+                                                >
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0 ${enq.status === 'new' ? 'bg-gradient-to-br from-violet-200 to-blue-200 text-violet-700' : 'bg-slate-100 text-slate-500'}`}>
+                                                                {(enq.name?.[0] || '?').toUpperCase()}
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-black text-slate-900 text-sm whitespace-nowrap">{enq.name || '—'}</p>
+                                                                {enq.email && <p className="text-xs text-slate-400 font-medium whitespace-nowrap">{enq.email}</p>}
+                                                                {enq.phone && <a href={`tel:${enq.phone}`} onClick={e => e.stopPropagation()} className="text-xs text-blue-500 font-bold hover:underline whitespace-nowrap">{enq.phone}</a>}
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <span className="inline-flex items-center px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-lg">
+                                                            {(enq as any).type || 'Query'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-4 max-w-[260px]">
+                                                        <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed">{enq.message || '—'}</p>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <div className="relative inline-block mt-0.5">
+                                                            <select
+                                                                value={enq.status}
+                                                                onChange={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleStatusChange(enq.id, e.target.value as EnquiryStatus);
+                                                                }}
+                                                                onClick={e => e.stopPropagation()}
+                                                                className={`appearance-none pl-3 pr-8 py-1 rounded-full text-xs font-bold border outline-none cursor-pointer transition-all ${STATUS_CONFIG[enq.status].bg} ${STATUS_CONFIG[enq.status].color} focus:ring-2 focus:ring-current/20`}
+                                                            >
+                                                                {(Object.keys(STATUS_CONFIG) as EnquiryStatus[]).map(s => (
+                                                                    <option key={s} value={s} className="bg-white text-slate-900 font-bold">{STATUS_CONFIG[s].label}</option>
+                                                                ))}
+                                                            </select>
+                                                            <ChevronDown className={`absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none opacity-60`} />
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <p className="text-xs text-slate-400 font-medium whitespace-nowrap">
+                                                            {new Date(enq.createdAt).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                        </p>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <button className="p-2 rounded-xl bg-slate-100 text-slate-400 hover:bg-violet-100 hover:text-violet-600 transition-all opacity-0 group-hover:opacity-100">
+                                                            <Eye className="w-4 h-4" />
+                                                        </button>
+                                                    </td>
+                                                </motion.tr>
+                                            ))}
+                                        </AnimatePresence>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Mobile cards */}
+                            <div className="md:hidden divide-y divide-slate-50">
+                                {filtered.map(enq => (
+                                    <div key={enq.id} className="p-4 flex items-start gap-3" onClick={() => setSelectedEnquiry(enq)}>
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black flex-shrink-0 ${enq.status === 'new' ? 'bg-gradient-to-br from-violet-200 to-blue-200 text-violet-700' : 'bg-slate-100 text-slate-500'}`}>
+                                            {(enq.name?.[0] || '?').toUpperCase()}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between gap-2 mb-1">
+                                                <p className="font-black text-slate-900 text-sm truncate">{enq.name || '—'}</p>
+                                                <StatusBadge status={enq.status} />
+                                            </div>
+                                            {enq.message && <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">{enq.message}</p>}
+                                            <p className="text-[10px] text-slate-300 font-medium mt-1">{new Date(enq.createdAt).toLocaleDateString()}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Pagination */}
+                            {totalPages > 1 && (
+                                <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
+                                    <p className="text-xs text-slate-400 font-medium">Page {page} of {totalPages} · {total} total</p>
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+                                            className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:border-slate-300 disabled:opacity-40">
+                                            <ChevronLeft className="w-4 h-4" />
+                                        </button>
+                                        <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+                                            className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:border-slate-300 disabled:opacity-40">
+                                            <ChevronRight className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+
+                {/* Detail Modal */}
+                <AnimatePresence>
+                    {selectedEnquiry && (
+                        <EnquiryDetailModal
+                            enquiry={selectedEnquiry}
+                            onClose={() => setSelectedEnquiry(null)}
+                            onStatusChange={handleStatusChange}
+                        />
+                    )}
+                </AnimatePresence>
+            </div>
+        </FeatureGate>
     );
 }

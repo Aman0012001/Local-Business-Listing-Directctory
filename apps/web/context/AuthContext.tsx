@@ -116,11 +116,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-    const redirectUser = (user: any) => {
+    const redirectUser = (user: any, isSignup: boolean = false) => {
         if (user.role === 'admin' || user.role === 'superadmin') {
             router.push('/admin');
         } else if (user.role === 'vendor') {
-            router.push('/vendor/dashboard');
+            if (isSignup) {
+                router.push('/business-setup');
+            } else {
+                router.push('/vendor/dashboard');
+            }
         } else {
             // Regular users go to home page
             router.push('/');
@@ -137,7 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         startPing();
         // Sync profile to ensure full data (relations like subscriptions)
         await syncProfile();
-        redirectUser(response.user);
+        redirectUser(response.user, false);
     };
 
     const googleLogin = async (credential: string, role?: string, referralCode?: string) => {
@@ -150,7 +154,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         startPing();
         // Sync profile to ensure full data (relations like subscriptions)
         await syncProfile();
-        redirectUser(response.user);
+        
+        // If they chose a role (sign-up context), redirect to business-setup
+        const isSignUp = !!role;
+        redirectUser(response.user, isSignUp);
     };
 
     const register = async (userData: any) => {
@@ -161,7 +168,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         startPing();
         // Sync profile to ensure full data (relations like subscriptions)
         await syncProfile();
-        redirectUser(response.user);
+        redirectUser(response.user, true);
     };
 
     const updateUser = (userData: any) => {

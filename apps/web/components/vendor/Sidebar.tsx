@@ -83,8 +83,7 @@ export default function Sidebar() {
         if (user?.role === 'admin' || user?.role === 'superadmin') return true;
 
         if (user?.role === 'vendor') {
-            // If item has a feature requirement, check it
-            if (item.feature && !hasFeature(item.feature)) return false;
+            // Show all items to vendors, restricting access on the page level
             return true;
         }
 

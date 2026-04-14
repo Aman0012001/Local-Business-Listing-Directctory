@@ -29,7 +29,7 @@ interface AddBusinessModalProps {
 const TABS = [
     { id: 'general', label: 'General', icon: Store },
     { id: 'location', label: 'Location', icon: MapPin },
-    { id: 'media', label: 'Media & Amenities', icon: Sparkles },
+    { id: 'media', label: 'Media & Amenities', icon: ImagePlus },
     { id: 'social', label: 'Contact & Social', icon: Share2 },
     { id: 'faqs', label: 'FAQs', icon: HelpCircle },
 ];
@@ -837,7 +837,7 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                                                                     <img src={getImageUrl(formData.coverImageUrl) || ""} className="w-full h-full object-cover" />
                                                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                                                         <label className="cursor-pointer">
-                                                                            <Sparkles className="w-5 h-5 text-white" />
+                                                                            <ImagePlus className="w-5 h-5 text-white" />
                                                                             <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                                                                         </label>
                                                                     </div>
@@ -847,7 +847,7 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                                                                 <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                                                                 <div className="flex flex-col items-center gap-2 text-slate-400 group">
                                                                     <div className="p-3 rounded-xl bg-white border border-slate-100 text-orange-500 shadow-sm group-hover:scale-110 transition-transform">
-                                                                        <Sparkles className="w-4 h-4" />
+                                                                        <ImagePlus className="w-4 h-4" />
                                                                     </div>
                                                                     <p className="text-[10px] font-black uppercase text-slate-500 mt-1">
                                                                         {formData.coverImageUrl ? 'Change Cover' : 'Upload Cover Photo'}

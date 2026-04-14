@@ -17,7 +17,7 @@ import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
+  Zap,
   Star,
   Home,
   Layout,
@@ -26,6 +26,7 @@ import {
 import { api } from "../../../lib/api";
 import { useAuth } from "../../../context/AuthContext";
 import Link from "next/link";
+import { FeatureGate } from "../../../components/vendor/FeatureGate";
 
 type OfferType = "offer" | "event";
 type OfferStatus = "active" | "scheduled" | "expired";
@@ -438,7 +439,8 @@ export default function VendorOffersPage() {
       .sort((a: number, b: number) => a - b)[0] ?? 0;
 
   return (
-    <div className="max-w-6xl mx-auto pb-16">
+    <FeatureGate feature="showOffers" title="Offers & Events" description="Create and manage your business offers, promotions, and special events. Access to this feature depends on your subscription plan.">
+      <div className="max-w-6xl mx-auto pb-16">
       {/* Header */}
       <div className="relative mb-8 rounded-3xl overflow-hidden bg-gradient-to-br from-[#0B2244] via-[#0D2E61] to-[#1a3a70] p-8 shadow-2xl">
         <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/20 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
@@ -813,7 +815,7 @@ export default function VendorOffersPage() {
                 <div className="space-y-6 pt-4 border-t border-slate-100">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-orange-500 shadow-lg shadow-orange-500/20 flex items-center justify-center">
-                      <Sparkles className="w-5 h-5 text-white" />
+                      <Zap className="w-5 h-5 text-white" />
                     </div>
                     <div>
                       <p className="text-sm font-black text-slate-900 leading-tight">
@@ -1257,7 +1259,7 @@ export default function VendorOffersPage() {
                     {saving ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      <Sparkles className="w-4 h-4" />
+                      <Zap className="w-4 h-4" />
                     )}
                     {editingId
                       ? "Save Changes"
@@ -1324,5 +1326,6 @@ export default function VendorOffersPage() {
         )}
       </AnimatePresence>
     </div>
+    </FeatureGate>
   );
 }

@@ -53,3 +53,7 @@ export * from './chat-message.entity';
 // Promotions
 export * from './promotion-pricing-rule.entity';
 export * from './promotion-booking.entity';
+
+// Business Setup
+export * from './business-question.entity';
+export * from './vendor-attribute.entity';

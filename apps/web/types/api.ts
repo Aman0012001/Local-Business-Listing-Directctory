@@ -229,3 +229,12 @@ export interface JobLeadResponse {
     status: 'pending' | 'accepted' | 'rejected';
     createdAt: string;
 }
+
+export interface BusinessQuestion {
+    id: string;
+    category: string;
+    question: string;
+    options: string[];
+    isActive: boolean;
+    order: number;
+}

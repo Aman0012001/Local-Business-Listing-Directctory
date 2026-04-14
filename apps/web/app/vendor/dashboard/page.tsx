@@ -6,7 +6,7 @@ import StatsGrid from '../../../components/vendor/StatsGrid';
 import PerformanceChart from '../../../components/vendor/PerformanceChart';
 import RecentReviews from '../../../components/vendor/RecentReviews';
 import MessageCenter from '../../../components/vendor/MessageCenter';
-import { Star, ChevronRight, ListTree, Heart, MessageSquare, Plus, TrendingUp, Loader2, Bell, CheckCircle2, Sparkles, Share2, Copy, Gift, Mail, Clock, BadgeCheck } from 'lucide-react';
+import { Star, ChevronRight, ListTree, Heart, MessageSquare, Plus, TrendingUp, Loader2, Bell, CheckCircle2, Zap, Share2, Copy, Gift, Mail, Clock, BadgeCheck } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import Link from 'next/link';
 import { api, getImageUrl } from '../../../lib/api';
@@ -201,7 +201,7 @@ export default function GenericDashboard() {
         {
             label: 'New Leads',
             value: String(newLeadsCount),
-            icon: Sparkles,
+            icon: Zap,
             color: 'bg-gradient-to-br from-[#FFAA33] to-[#FF8811]',
             shadow: 'shadow-orange-500/20',
             show: hasFeature('showLeads')
@@ -411,7 +411,7 @@ export default function GenericDashboard() {
                                         href="/vendor/upgrade" 
                                         className="relative z-10 flex items-center justify-center gap-2 px-8 py-4 bg-[#FF7A30] hover:bg-[#E86920] text-white rounded-[16px] font-black transition-all shadow-xl shadow-orange-900/20 whitespace-nowrap active:scale-95"
                                     >
-                                        <Sparkles className="w-5 h-5 flex-shrink-0" />
+                                        <Zap className="w-5 h-5 flex-shrink-0" />
                                         Become a Vendor
                                     </Link>
                                 </div>

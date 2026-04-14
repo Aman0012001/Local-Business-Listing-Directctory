@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Lock, Sparkles, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Lock, ChevronRight, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { usePlanFeature, DashboardFeatures } from '../../hooks/usePlanFeature';
@@ -37,13 +37,6 @@ export const FeatureGate: React.FC<FeatureGateProps> = ({
                 <div className="w-24 h-24 bg-slate-900 rounded-[32px] flex items-center justify-center shadow-2xl relative z-10">
                     <Lock className="w-10 h-10 text-white" />
                 </div>
-                <motion.div 
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                    className="absolute -top-4 -right-4 w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-xl z-20"
-                >
-                    <Sparkles className="w-6 h-6" />
-                </motion.div>
                 <div className="absolute inset-0 bg-blue-500/20 rounded-[32px] blur-2xl transform scale-110 -z-10" />
             </div>
 

@@ -100,6 +100,12 @@ export class UpdateVendorDto {
     @ValidateNested({ each: true })
     @Type(() => SocialLinkDto)
     socialLinks?: SocialLinkDto[];
+
+    @ApiPropertyOptional({ example: 'A brief bio about the business' })
+    @IsOptional()
+    @Transform(trimToUndefined)
+    @IsString()
+    bio?: string;
 }
 
 export class SocialLinkDto {

@@ -30,6 +30,7 @@ import { AffiliateModule } from './modules/affiliate/affiliate.module';
 import { JobLeadsModule } from './modules/job-leads/job-leads.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { PromotionsModule } from './modules/promotions/promotions.module';
+import { BusinessSetupModule } from './modules/business-setup/business-setup.module';
 
 import { join } from 'path';
 
@@ -112,6 +113,7 @@ import { join } from 'path';
         JobLeadsModule,
         ChatModule,
         PromotionsModule,
+        BusinessSetupModule,
     ],
     providers: [
         {

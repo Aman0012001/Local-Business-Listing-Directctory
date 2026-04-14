@@ -685,5 +685,11 @@ export const api = {
             api.post<{ sessionId: string; checkoutUrl: string }>('/promotions/book', data),
         verifySession: (sessionId: string) => fetcher<any>(`/promotions/verify-session?session_id=${sessionId}`),
     },
+    businessSetup: {
+        getQuestions: () => fetcher<any[]>('/business-setup/questions'),
+        getStatus: () => fetcher<{ isCompleted: boolean }>('/business-setup/status'),
+        saveAnswers: (answers: Record<string, string | string[]>) => 
+            api.post<{ success: boolean }>('/business-setup/answers', { answers }),
+    },
 };
 

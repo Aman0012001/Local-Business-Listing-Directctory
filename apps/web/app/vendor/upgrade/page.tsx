@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Building2, Phone, ArrowRight, Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Building2, Phone, ArrowRight, Loader2, Zap, CheckCircle2 } from 'lucide-react';
 import { api } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -50,7 +50,7 @@ export default function VendorUpgradePage() {
 
                 <div className="mb-10 relative">
                     <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-50 rounded-2xl flex items-center justify-center mb-6">
-                        <Sparkles className="w-8 h-8 text-orange-500" />
+                        <Zap className="w-8 h-8 text-orange-500" />
                     </div>
                     <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-3">Upgrade to Business Account</h1>
                     <p className="text-slate-500 font-bold leading-relaxed">

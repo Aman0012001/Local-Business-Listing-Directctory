@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
+import { FeatureGate } from '../../../components/vendor/FeatureGate';
 import Link from 'next/link';
 
 interface CommentItem {
@@ -121,7 +122,8 @@ export default function VendorCommentsPage() {
     const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' });
 
     return (
-        <div className="max-w-6xl mx-auto pb-16">
+        <FeatureGate feature="showReviews" title="Manage Customer Feedback" description="View and respond to customer reviews for all your business listings. Build trust and improve your reputation today.">
+            <div className="max-w-6xl mx-auto pb-16">
             {/* Header */}
             <div className="relative mb-8 rounded-[20px] overflow-hidden bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#334155] p-10 shadow-2xl">
                 <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
@@ -393,6 +395,7 @@ export default function VendorCommentsPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+            </div>
+        </FeatureGate>
     );
 }
