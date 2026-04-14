@@ -4,6 +4,7 @@ import {
     ForbiddenException,
     BadRequestException,
     ConflictException,
+    OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, Not, Brackets, Like, MoreThan } from 'typeorm';
@@ -31,7 +32,7 @@ import { SearchService } from '../search/search.service';
 import { DemandService } from '../demand/demand.service';
 
 @Injectable()
-export class BusinessesService {
+export class BusinessesService implements OnModuleInit {
     constructor(
         @InjectRepository(Listing)
         private listingRepository: Repository<Listing>,
@@ -55,6 +56,24 @@ export class BusinessesService {
         private searchService: SearchService,
         private demandService: DemandService,
     ) { }
+    
+    async onModuleInit() {
+        // Backfill logic for recent_until
+        try {
+            const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+            // Native query is faster for backfill
+            await this.listingRepository.query(`
+                ALTER TABLE businesses ADD COLUMN IF NOT EXISTS recent_until TIMESTAMP NULL;
+                UPDATE businesses 
+                SET recent_until = created_at + INTERVAL '7 days' 
+                WHERE recent_until IS NULL;
+                CREATE INDEX IF NOT EXISTS idx_recent_until ON businesses(recent_until);
+            `);
+            console.log('[BusinessesService] Backfill and index for recent_until completed.');
+        } catch (error) {
+            console.error('[BusinessesService] Backfill for recent_until failed:', error);
+        }
+    }
 
     /**
      * Create a new listing
@@ -163,6 +182,7 @@ export class BusinessesService {
             isFeatured: hasFeaturedSub || !!referralPlan,
             isSponsored: hasBoostedSub,
             approvedAt: shouldAutoApprove ? new Date() : null,
+            recentUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Default 7 days
         });
 
         const savedListing = await this.listingRepository.save(listing);
@@ -339,9 +359,18 @@ export class BusinessesService {
             queryBuilder.andWhere('listing.isFeatured = :featured', { featured: true });
         }
         if (isNewFilter) {
+            const now = new Date();
             const sevenDaysAgo = new Date();
             sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-            queryBuilder.andWhere('listing.createdAt >= :sevenDaysAgo', { sevenDaysAgo });
+            
+            // Priority: recentUntil > NOW() OR (recentUntil IS NULL AND createdAt >= 7 days ago)
+            queryBuilder.andWhere(new Brackets((qb) => {
+                qb.where('listing.recentUntil > :now', { now })
+                  .orWhere(new Brackets((inner) => {
+                      inner.where('listing.recentUntil IS NULL')
+                           .andWhere('listing.createdAt >= :sevenDaysAgo', { sevenDaysAgo });
+                  }));
+            }));
         }
         if (verifiedOnly) {
             queryBuilder.andWhere('listing.isVerified = :verified', { verified: true });

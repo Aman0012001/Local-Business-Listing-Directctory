@@ -233,34 +233,43 @@ export default function AdminBusinessesPage() {
                                             <td className="px-6 py-5">
                                                 <StatusBadge status={b.status} />
                                             </td>
-                                            <td className="px-6 py-5 text-right">
-                                                <div className="relative inline-block text-left" onClick={e => e.stopPropagation()}>
+                                            <td className="px-6 py-5 text-right">                                                <div className="flex items-center justify-end gap-2" onClick={e => e.stopPropagation()}>
                                                     <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            if (openMenu === b.id) {
-                                                                setOpenMenu(null);
-                                                            } else {
-                                                                const rect = e.currentTarget.getBoundingClientRect();
-                                                                setMenuPosition({
-                                                                    top: rect.bottom + window.scrollY,
-                                                                    left: rect.right - 224 + window.scrollX // 224 is the menu width (w-56)
-                                                                });
-                                                                setOpenMenu(b.id);
-                                                            }
-                                                        }}
-                                                        className={`w-10 h-10 flex items-center justify-center rounded-2xl transition-all border ${openMenu === b.id
-                                                            ? 'bg-slate-900 text-white border-slate-900 shadow-lg'
-                                                            : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100 border-transparent hover:border-slate-200'}`}
+                                                        onClick={() => setSelectedBusiness(b)}
+                                                        className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white border border-slate-200 text-slate-400 hover:text-slate-900 transition-all shadow-sm"
+                                                        title="Quick View"
                                                     >
-                                                        {actionLoading?.startsWith(b.id) ? (
-                                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                                        ) : (
-                                                            <MoreVertical className="w-4 h-4" />
-                                                        )}
+                                                        <Search className="w-4 h-4" />
                                                     </button>
-
+                                                    
+                                                    <div className="relative inline-block text-left">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (openMenu === b.id) {
+                                                                    setOpenMenu(null);
+                                                                } else {
+                                                                    const rect = e.currentTarget.getBoundingClientRect();
+                                                                    setMenuPosition({
+                                                                        top: rect.bottom,
+                                                                        left: rect.right
+                                                                    });
+                                                                    setOpenMenu(b.id);
+                                                                }
+                                                            }}
+                                                            className={`w-10 h-10 flex items-center justify-center rounded-2xl transition-all border ${openMenu === b.id
+                                                                ? 'bg-slate-900 text-white border-slate-900 shadow-lg'
+                                                                : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100 border-transparent hover:border-slate-200'}`}
+                                                        >
+                                                            {actionLoading?.startsWith(b.id) ? (
+                                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                            ) : (
+                                                                <MoreVertical className="w-4 h-4" />
+                                                            )}
+                                                        </button>
+                                                    </div>
                                                 </div>
+
                                             </td>
                                         </motion.tr>
                                     ))}
@@ -451,10 +460,10 @@ export default function AdminBusinessesPage() {
                                 initial={{ opacity: 0, scale: 0.95, y: -10 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                                className="fixed z-[9999] bg-white rounded-3xl shadow-2xl shadow-slate-900/10 border border-slate-100 py-3 w-64 overflow-hidden"
+                                className="fixed z-[9999] bg-white rounded-3xl shadow-2xl shadow-slate-900/40 border border-slate-100 py-3 w-64 overflow-hidden"
                                 style={{
-                                    top: menuPosition.top + 8,
-                                    left: menuPosition.left - 30 // Shifted for better alignment
+                                    top: menuPosition.top + 12,
+                                    left: menuPosition.left - 256 // Align to right of button (menu width is 256/w-64)
                                 }}
                                 onClick={e => e.stopPropagation()}
                             >

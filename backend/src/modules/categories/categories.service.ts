@@ -438,6 +438,7 @@ export class CategoriesService {
         return this.categoryRepository.save(category);
     }
 
+
     /**
      * Check if a category is a descendant of another
      */
@@ -488,7 +489,7 @@ export class CategoriesService {
     }
 
     /**
-     * Get popular categories (by business count)
+     * Get popular categories (by business count, prioritized by isFeatured)
      */
     async getPopularCategories(limit = 10): Promise<any[]> {
         const query = this.categoryRepository

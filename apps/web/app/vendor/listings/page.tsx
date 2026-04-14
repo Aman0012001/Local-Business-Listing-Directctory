@@ -144,7 +144,7 @@ export default function VendorListings() {
                             onChange={e => setSortOrder(e.target.value as any)}
                             className="px-6 py-3 bg-slate-50 text-slate-600 rounded-2xl font-bold border border-transparent hover:border-slate-200 transition-all outline-none"
                         >
-                            <option value="newest">Newest First</option>
+                            <option value="newest">Recent First</option>
                             <option value="rated">Highest Rated</option>
                             <option value="views">Most Views</option>
                         </select>

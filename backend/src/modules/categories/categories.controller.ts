@@ -101,6 +101,7 @@ export class CategoriesController {
         return this.categoriesService.updateStatus(id, status);
     }
 
+
     @Delete('admin/:id')
     @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
     @ApiBearerAuth()

@@ -222,6 +222,10 @@ export class Listing {
     @Column({ type: 'jsonb', default: '[]' })
     faqs: { question: string; answer: string }[];
 
+    @Column({ name: 'recent_until', nullable: true, type: 'timestamp' })
+    @Index()
+    recentUntil: Date;
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 

@@ -5,7 +5,7 @@ import {
     Users, Search, RefreshCw, Loader2, Shield, ShieldAlert,
     ShieldCheck, ShieldOff, UserCheck, UserX, ChevronLeft,
     ChevronRight, Mail, Calendar, Chrome, KeyRound, MoreVertical,
-    Briefcase, User as UserIcon, Crown, Trash2
+    Briefcase, User as UserIcon, Crown, Trash2, Eye, X
 } from 'lucide-react';
 import { api, getImageUrl } from '../../../lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -80,6 +80,8 @@ export default function AdminUsersPage() {
     const [page, setPage] = useState(1);
     const [meta, setMeta] = useState<any>({ total: 0, totalPages: 1 });
     const [openMenu, setOpenMenu] = useState<string | null>(null);
+    const [selectedUser, setSelectedUser] = useState<any>(null);
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const LIMIT = 15;
 
     const fetchUsers = useCallback(async (p = page) => {
@@ -299,17 +301,26 @@ export default function AdminUsersPage() {
 
                                 {/* Actions */}
                                 {user.role !== 'superadmin' && (
-                                    <div className="relative flex-shrink-0" onClick={e => e.stopPropagation()}>
+                                    <div className="flex items-center justify-end gap-2" onClick={e => e.stopPropagation()}>
                                         <button
-                                            onClick={() => setOpenMenu(openMenu === user.id ? null : user.id)}
-                                            className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-900"
+                                            onClick={() => { setSelectedUser(user); setIsDetailsModalOpen(true); }}
+                                            className="w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-slate-900 transition-all shadow-sm"
+                                            title="View Details"
                                         >
-                                            {actionLoading?.startsWith(user.id) ? (
-                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                            ) : (
-                                                <MoreVertical className="w-4 h-4" />
-                                            )}
+                                            <Eye className="w-4 h-4" />
                                         </button>
+
+                                        <div className="relative flex-shrink-0">
+                                            <button
+                                                onClick={() => setOpenMenu(openMenu === user.id ? null : user.id)}
+                                                className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-900"
+                                            >
+                                                {actionLoading?.startsWith(user.id) ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                    <MoreVertical className="w-4 h-4" />
+                                                )}
+                                            </button>
 
                                         <AnimatePresence>
                                             {openMenu === user.id && (
@@ -330,6 +341,7 @@ export default function AdminUsersPage() {
                                                 </motion.div>
                                             )}
                                         </AnimatePresence>
+                                        </div>
                                     </div>
                                 )}
                             </motion.div>
@@ -377,6 +389,120 @@ export default function AdminUsersPage() {
                     </div>
                 </div>
             )}
+            {/* User Details Modal */}
+            <AnimatePresence>
+                {isDetailsModalOpen && selectedUser && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsDetailsModalOpen(false)}
+                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100"
+                        >
+                            {/* Modal Header */}
+                            <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between">
+                                <div>
+                                    <h2 className="text-xl font-black text-slate-900">User Profile</h2>
+                                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-0.5">Account Identification: {selectedUser.id.slice(0, 8)}...</p>
+                                </div>
+                                <button
+                                    onClick={() => setIsDetailsModalOpen(false)}
+                                    className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400 hover:text-slate-900"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            {/* Modal Content */}
+                            <div className="px-8 py-8 space-y-8 max-h-[70vh] overflow-y-auto">
+                                <div className="flex items-center gap-6">
+                                    <div className={`w-24 h-24 rounded-3xl bg-gradient-to-br ${ROLE_COLORS[selectedUser.role] || ROLE_COLORS.user} flex items-center justify-center shadow-xl overflow-hidden`}>
+                                        {selectedUser.avatarUrl ? (
+                                            <img src={getImageUrl(selectedUser.avatarUrl) || ''} alt={selectedUser.fullName} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <span className="text-white font-black text-3xl">{getInitials(selectedUser.fullName)}</span>
+                                        )}
+                                    </div>
+                                    <div className="space-y-2">
+                                        <h3 className="text-2xl font-black text-slate-900">{selectedUser.fullName || '—'}</h3>
+                                        <div className="flex flex-wrap gap-2">
+                                            <RolePill role={selectedUser.role} />
+                                            <StatusBadge active={selectedUser.isActive} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div className="space-y-1.5 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <div className="flex items-center gap-2 text-slate-400 mb-1">
+                                            <Mail className="w-4 h-4" />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">Email Address</span>
+                                        </div>
+                                        <p className="text-sm font-bold text-slate-700">{selectedUser.email}</p>
+                                    </div>
+                                    <div className="space-y-1.5 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <div className="flex items-center gap-2 text-slate-400 mb-1">
+                                            <Calendar className="w-4 h-4" />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">Joined On</span>
+                                        </div>
+                                        <p className="text-sm font-bold text-slate-700">{formatDate(selectedUser.createdAt)}</p>
+                                    </div>
+                                    <div className="space-y-1.5 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <div className="flex items-center gap-2 text-slate-400 mb-1">
+                                            <KeyRound className="w-4 h-4" />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">Auth Provider</span>
+                                        </div>
+                                        <div className="pt-1">
+                                            <ProviderBadge provider={selectedUser.provider} />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <div className="flex items-center gap-2 text-slate-400 mb-1">
+                                            <Shield className="w-4 h-4" />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">Security Status</span>
+                                        </div>
+                                        <p className={`text-sm font-black ${selectedUser.isActive ? 'text-emerald-600' : 'text-red-500'}`}>
+                                            {selectedUser.isActive ? 'PASSED / VERIFIED' : 'SUSPENDED / BLOCKED'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {(selectedUser.city || selectedUser.country) && (
+                                    <div className="p-5 bg-indigo-50/50 rounded-2xl border border-indigo-100">
+                                        <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-3">Location Details</h4>
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600">
+                                                <Users className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-black text-slate-900">{selectedUser.city || '—'}</p>
+                                                <p className="text-xs font-bold text-slate-400">{selectedUser.country || 'Not Specified'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Modal Footer */}
+                            <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex justify-end">
+                                <button
+                                    onClick={() => setIsDetailsModalOpen(false)}
+                                    className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-black text-sm rounded-2xl transition-all shadow-lg active:scale-95"
+                                >
+                                    Close Details
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

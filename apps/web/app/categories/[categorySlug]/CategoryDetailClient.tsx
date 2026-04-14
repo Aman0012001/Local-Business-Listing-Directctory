@@ -307,7 +307,7 @@ export default function CategoryDetailClient({ slug }: CategoryDetailClientProps
                                 >
                                     <option value="relevance">By Significance</option>
                                     <option value="rating">Top Performance</option>
-                                    <option value="newest">Recent Addition</option>
+                                    <option value="newest">Recent Listing</option>
                                 </select>
 
                                 <div className="flex items-center gap-4">

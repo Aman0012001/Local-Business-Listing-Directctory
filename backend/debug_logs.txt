@@ -891,3 +891,45 @@ NotFoundException: Listing not found
 [2026-04-13T19:37:44.744Z] findBySlug: test-mnh4bnro (User: superadmin@example.com)
 [2026-04-13T19:37:46.714Z] findBySlug: test-mnh4bnro - Found in DB. Status: approved
 [2026-04-13T19:37:47.188Z] findBySlug: test-mnh4bnro - SUCCESS
+[2026-04-14T14:15:43.907Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: superadmin@example.com)
+[2026-04-14T14:15:45.948Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - Found in DB. Status: approved
+[2026-04-14T14:15:46.359Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - SUCCESS
+[2026-04-14T14:17:13.019Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: superadmin@example.com)
+[2026-04-14T14:17:13.618Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - ERROR: column Listing__Listing_category.is_featured does not exist
+QueryFailedError: column Listing__Listing_category.is_featured does not exist
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
+    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
+    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
+    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:519:29)
+[2026-04-14T14:17:33.425Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: superadmin@example.com)
+[2026-04-14T14:17:34.095Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - ERROR: column Listing__Listing_category.is_featured does not exist
+QueryFailedError: column Listing__Listing_category.is_featured does not exist
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
+    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
+    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
+    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:519:29)
+[2026-04-14T14:18:18.023Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: superadmin@example.com)
+[2026-04-14T14:18:18.590Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - ERROR: column Listing__Listing_category.is_featured does not exist
+QueryFailedError: column Listing__Listing_category.is_featured does not exist
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
+    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
+    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
+    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:519:29)
+[2026-04-14T14:20:13.429Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: superadmin@example.com)
+[2026-04-14T14:20:14.530Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - Found in DB. Status: approved
+[2026-04-14T14:20:14.924Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - SUCCESS
+[2026-04-14T14:33:46.977Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: superadmin@example.com)
+[2026-04-14T14:33:48.623Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - Found in DB. Status: approved
+[2026-04-14T14:33:49.129Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - SUCCESS

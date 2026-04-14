@@ -118,6 +118,7 @@ export interface Business {
     followersCount?: number;
     status: 'pending' | 'approved' | 'rejected' | 'disabled';
     faqs?: { question: string; answer: string }[];
+    recentUntil?: string;
     createdAt: string;
     updatedAt?: string;
 }

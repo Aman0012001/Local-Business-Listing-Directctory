@@ -168,7 +168,11 @@ export class SearchService implements OnModuleInit {
         const qb = this.businessRepository
             .createQueryBuilder('b')
             .leftJoinAndSelect('b.category', 'category')
-            .where('b.status = :status', { status: BusinessStatus.APPROVED });
+            .where('b.status = :status', { status: BusinessStatus.APPROVED })
+            .andWhere(new Brackets(qb => {
+                qb.where('category.id IS NULL')
+                  .orWhere('category.status = :catStatus', { catStatus: 'active' });
+            }));
 
         if (query) {
             const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 0);
@@ -368,11 +372,6 @@ export class SearchService implements OnModuleInit {
 
         // Ranking functions
         const functions: any[] = [
-            // Boost Featured
-            {
-                filter: { term: { is_featured: true } }, 
-                weight: 2.0
-            },
             // Boost Verified
             {
                 filter: { term: { is_verified: true } }, // Changed to is_verified

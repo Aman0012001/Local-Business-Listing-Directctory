@@ -136,6 +136,7 @@ export default function AdminCategoriesPage() {
         }
     };
 
+
     const handleDelete = async () => {
         if (!selectedCategory) return;
         setActionLoading('delete');
@@ -335,29 +336,36 @@ export default function AdminCategoriesPage() {
                                                     </span>
                                                 </td>
                                                 <td className="px-8 py-6">
-                                                    <button
-                                                        onClick={() => handleToggleStatus(c)}
-                                                        disabled={actionLoading === c.id}
-                                                        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all ${c.status === 'active'
-                                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100'
-                                                            : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
-                                                            }`}
-                                                    >
-                                                        {actionLoading === c.id ? (
-                                                            <Loader2 className="w-3 h-3 animate-spin" />
-                                                        ) : (
-                                                            <>
-                                                                {c.status === 'active' ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                                                                {c.status}
-                                                            </>
-                                                        )}
-                                                    </button>
+                                                    <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${c.status === 'active'
+                                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                                                        : 'bg-slate-100 text-slate-500 border-slate-200'
+                                                        }`}>
+                                                        {c.status === 'active' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+                                                        {c.status}
+                                                    </span>
                                                 </td>
                                                 <td className="px-8 py-6">
                                                     <span className="text-sm text-slate-500 font-medium">{new Date(c.createdAt).toLocaleDateString()}</span>
                                                 </td>
                                                 <td className="px-8 py-6 text-right">
                                                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={() => handleToggleStatus(c)}
+                                                            disabled={actionLoading === c.id}
+                                                            className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all shadow-sm ${c.status === 'active'
+                                                                ? 'bg-emerald-50 border-emerald-200 text-emerald-600 hover:bg-emerald-100'
+                                                                : 'bg-white border-slate-200 text-slate-400 hover:text-emerald-600 hover:border-emerald-600'
+                                                                }`}
+                                                            title={c.status === 'active' ? 'Hide from entire system' : 'Unhide in entire system'}
+                                                        >
+                                                            {actionLoading === c.id ? (
+                                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                            ) : (
+                                                                <>
+                                                                    {c.status === 'active' ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4 text-red-500" />}
+                                                                </>
+                                                            )}
+                                                        </button>
                                                         <button
                                                             onClick={() => openEditModal(c)}
                                                             className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-900 hover:border-slate-900 transition-all shadow-sm"
@@ -526,6 +534,7 @@ export default function AdminCategoriesPage() {
                                         </div>
                                     </div>
                                 </div>
+
 
                                 <div className="flex gap-4 pt-4">
                                     <button

@@ -127,7 +127,7 @@ function SearchResults() {
                                 {filter === 'featured' ? (
                                     <>Featured <span className="text-blue-600">Businesses</span></>
                                 ) : filter === 'new' ? (
-                                    <>Newest <span className="text-blue-600">Listings</span></>
+                                    <>Recent <span className="text-blue-600">Listings</span></>
                                 ) : city ? (
                                     <>Results for <span className="text-blue-600">"{query || 'Businesses'}"</span> in <span className="text-blue-600">{city}</span></>
                                 ) : query ? (
@@ -172,7 +172,7 @@ function SearchResults() {
                                             <div className={`p-2 rounded-lg transition-colors ${filter === 'new' ? 'bg-blue-600 text-white' : 'bg-slate-50 text-slate-400 group-hover:bg-slate-100 group-hover:text-slate-900'}`}>
                                                 <Clock className="w-3.5 h-3.5" />
                                             </div>
-                                            <span>Newest First</span>
+                                            <span>Recent Listings</span>
                                         </div>
                                         {filter === 'new' && <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />}
                                     </button>

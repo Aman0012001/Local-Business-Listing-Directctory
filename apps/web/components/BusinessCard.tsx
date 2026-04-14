@@ -66,10 +66,13 @@ const StatusBadge = ({ status }: { status?: string }) => {
     );
 };
 
-const isNewBusiness = (createdAt?: string) => {
+const isNewBusiness = (createdAt?: string, recentUntil?: string) => {
+    const now = new Date();
+    if (recentUntil) {
+        return new Date(recentUntil) > now;
+    }
     if (!createdAt) return false;
     const created = new Date(createdAt);
-    const now = new Date();
     const diff = now.getTime() - created.getTime();
     const days = diff / (1000 * 60 * 60 * 24);
     return days <= 7;
@@ -117,9 +120,9 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1.5s] grayscale-[0.2] group-hover:grayscale-0"
                             iconSize={32}
                         />
-                        {isNewBusiness(business.createdAt) && (
+                        {isNewBusiness(business.createdAt, business.recentUntil) && (
                             <div className="absolute top-4 left-4 px-3 py-1 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg z-10">
-                                New
+                                Recent
                             </div>
                         )}
                     </div>
@@ -167,9 +170,9 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                             iconSize={48}
                         />
-                        {isNewBusiness(business.createdAt) && (
+                        {isNewBusiness(business.createdAt, business.recentUntil) && (
                             <div className="absolute top-4 left-4 px-3 py-1 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-lg">
-                                New
+                                Recent
                             </div>
                         )}
                     </div>
@@ -239,9 +242,9 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                         iconSize={40}
                     />
-                    {isNewBusiness(business.createdAt) && (
+                    {isNewBusiness(business.createdAt, business.recentUntil) && (
                         <div className="absolute top-4 left-4 px-3 py-1 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg z-10">
-                            New
+                            Recent
                         </div>
                     )}
                 </div>

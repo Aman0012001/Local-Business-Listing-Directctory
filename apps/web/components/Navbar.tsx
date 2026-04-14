@@ -44,7 +44,7 @@ export default function Navbar() {
 
     useEffect(() => {
         fetchNotifications();
-        
+
         const fetchSub = async () => {
             if (!user || user.role !== 'vendor') {
                 setLoadingSub(false);
@@ -249,7 +249,7 @@ export default function Navbar() {
                                                             <Search className="w-4 h-4" />
                                                         </div>
                                                         <div className="flex flex-col">
-                                                            <span className="text-sm font-bold text-slate-900">Newly Added</span>
+                                                            <span className="text-sm font-bold text-slate-900">New Listings</span>
                                                             <span className="text-[10px] text-slate-400 font-medium italic">Fresh arrivals this week</span>
                                                         </div>
                                                     </Link>
@@ -341,10 +341,10 @@ export default function Navbar() {
                         {user ? (
                             <div className="flex items-center gap-3">
                                 <Link href={user.role === 'admin' || user.role === 'superadmin' ? '/admin' : '/vendor/dashboard'} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer group">
-                                    <VendorAvatar 
-                                        src={user.avatarUrl} 
-                                        alt={user.fullName || user.email} 
-                                        size="sm" 
+                                    <VendorAvatar
+                                        src={user.avatarUrl}
+                                        alt={user.fullName || user.email}
+                                        size="sm"
                                         className="shadow-sm group-hover:scale-110 transition-transform"
                                     />
                                     <div className="flex flex-col">
