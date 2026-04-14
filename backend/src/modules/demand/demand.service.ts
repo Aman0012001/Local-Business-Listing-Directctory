@@ -114,7 +114,7 @@ export class DemandService {
 
             // Growth calculation (compare last hour vs previous hour)
             const growth = cPrev === 0 ? (c1h > 0 ? 100 : 0) : Math.round(((c1h - cPrev) / cPrev) * 100);
-            const isTrending = growth >= 50 && c1h >= 3;
+            const isTrending = growth >= 30 && c1h >= 1;
 
             return {
                 keyword: res.keyword,

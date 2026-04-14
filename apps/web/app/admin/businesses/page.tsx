@@ -193,9 +193,13 @@ export default function AdminBusinessesPage() {
                                             <td className="px-6 py-5 cursor-pointer" onClick={() => setSelectedBusiness(b)}>
                                                 <div className="flex items-center gap-4">
                                                     <div className="relative">
-                                                        <div className="w-14 h-14 rounded-2xl bg-slate-100 flex-shrink-0 overflow-hidden shadow-inner flex items-center justify-center">
-                                                            {b.logoUrl ? (
-                                                                <img src={getImageUrl(b.logoUrl) || ''} alt={b.title} className="w-full h-full object-cover" />
+                                                        <div className="w-14 h-14 rounded-2xl bg-slate-100 flex-shrink-0 overflow-hidden shadow-inner flex items-center justify-center border border-slate-100">
+                                                            {(b.logoUrl || b.coverImageUrl || (b.images && b.images.length > 0)) ? (
+                                                                <img 
+                                                                    src={getImageUrl(b.logoUrl || b.coverImageUrl || b.images[0]) || ''} 
+                                                                    alt={b.title} 
+                                                                    className="w-full h-full object-cover" 
+                                                                />
                                                             ) : (
                                                                 <Store className="w-6 h-6 text-slate-300" />
                                                             )}
@@ -251,8 +255,8 @@ export default function AdminBusinessesPage() {
                                                                 } else {
                                                                     const rect = e.currentTarget.getBoundingClientRect();
                                                                     setMenuPosition({
-                                                                        top: rect.bottom,
-                                                                        left: rect.right
+                                                                        top: rect.bottom + window.scrollY,
+                                                                        left: rect.right + window.scrollX
                                                                     });
                                                                     setOpenMenu(b.id);
                                                                 }
@@ -344,8 +348,11 @@ export default function AdminBusinessesPage() {
                                 <div className="flex items-start justify-between mb-10">
                                     <div className="flex items-center gap-5">
                                         <div className="w-20 h-20 rounded-3xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden shadow-sm shrink-0">
-                                            {selectedBusiness.logoUrl ? (
-                                                <img src={getImageUrl(selectedBusiness.logoUrl) || ''} className="w-full h-full object-cover" />
+                                            {(selectedBusiness.logoUrl || selectedBusiness.coverImageUrl || (selectedBusiness.images && selectedBusiness.images.length > 0)) ? (
+                                                <img 
+                                                    src={getImageUrl(selectedBusiness.logoUrl || selectedBusiness.coverImageUrl || selectedBusiness.images[0]) || ''} 
+                                                    className="w-full h-full object-cover" 
+                                                />
                                             ) : (
                                                 <Store className="w-10 h-10 text-slate-200" />
                                             )}
@@ -439,6 +446,20 @@ export default function AdminBusinessesPage() {
                                     </div>
                                 </div>
 
+                                {selectedBusiness.searchKeywords && selectedBusiness.searchKeywords.length > 0 && (
+                                    <div className="border-t border-slate-50 pt-8 mt-6">
+                                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-4">Search Keywords</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {selectedBusiness.searchKeywords.map((kw: string, i: number) => (
+                                                <span key={i} className="px-3 py-1.5 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-bold uppercase tracking-wider border border-slate-100 flex items-center gap-2">
+                                                    <Search className="w-3 h-3 text-slate-400" />
+                                                    {kw}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="border-t border-slate-50 pt-8 mt-10">
                                     <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-4">Business Narrative</p>
                                     <p className="text-slate-500 text-sm leading-relaxed whitespace-pre-line font-medium italic">
@@ -460,10 +481,10 @@ export default function AdminBusinessesPage() {
                                 initial={{ opacity: 0, scale: 0.95, y: -10 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                                className="fixed z-[9999] bg-white rounded-3xl shadow-2xl shadow-slate-900/40 border border-slate-100 py-3 w-64 overflow-hidden"
+                                className="absolute z-[9999] bg-white rounded-3xl shadow-2xl shadow-slate-900/40 border border-slate-100 py-3 w-64 overflow-hidden"
                                 style={{
                                     top: menuPosition.top + 12,
-                                    left: menuPosition.left - 256 // Align to right of button (menu width is 256/w-64)
+                                    left: menuPosition.left - 256
                                 }}
                                 onClick={e => e.stopPropagation()}
                             >

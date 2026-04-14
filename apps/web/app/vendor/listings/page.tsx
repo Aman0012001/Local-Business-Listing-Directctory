@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, Filter, MoreVertical, Star, MapPin, Eye, MessageSquare, Loader2, ChevronLeft, ChevronRight, X, Lock } from 'lucide-react';
+import { Plus, Search, Filter, MoreVertical, Star, MapPin, Eye, MessageSquare, Loader2, ChevronLeft, ChevronRight, X, Lock, Hash, CheckCircle2, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import AddBusinessModal from '../../../components/vendor/AddBusinessModal';
 import { useAuth } from '../../../context/AuthContext';
@@ -10,6 +10,7 @@ import { ListingImage } from '../../../components/ListingImage';
 import { Business } from '../../../types/api';
 import { useRouter } from 'next/navigation';
 import { FeatureGate } from '../../../components/vendor/FeatureGate';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const PAGE_SIZE = 9;
 
@@ -28,6 +29,11 @@ export default function VendorListings() {
     const isVendor = user?.role === 'vendor';
     const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
     const features = activeSub?.plan?.dashboardFeatures || {};
+
+    // Keywords Modal State
+    const [keywordsModal, setKeywordsModal] = useState<{ id: string, title: string, keywords: string[], limit: number } | null>(null);
+    const [newKeyword, setNewKeyword] = useState('');
+    const [actionLoading, setActionLoading] = useState<string | null>(null);
 
     const fetchListings = async () => {
         try {
@@ -51,6 +57,21 @@ export default function VendorListings() {
     const handleEdit = (biz: Business) => {
         setEditingBusiness(biz);
         setIsModalOpen(true);
+    };
+
+    const updateKeywords = async (id: string, keywords: string[]) => {
+        try {
+            setActionLoading('keywords');
+            await api.listings.update(id, { searchKeywords: keywords });
+            setListings(prev => prev.map(b => b.id === id ? { ...b, searchKeywords: keywords } : b));
+            setKeywordsModal(null);
+            setNewKeyword('');
+        } catch (error) {
+            console.error('Error updating keywords:', error);
+            alert('Failed to save keywords. Please try again.');
+        } finally {
+            setActionLoading(null);
+        }
     };
 
     // ── Derived: filter + sort ──────────────────────────────────────────
@@ -181,7 +202,7 @@ export default function VendorListings() {
 
                 {/* Boost Banner */}
                 <div className="rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 p-4 flex flex-col sm:flex-row items-center gap-4">
-                    <div className="w-11 h-11 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0 text-xl">🔥</div>
+                    {/* <div className="w-11 h-11 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0 text-xl"></div> */}
                     <div className="flex-1 text-center sm:text-left">
                         <p className="font-black text-slate-900 text-sm">Boost Offers & Events on Your Listings</p>
                         <p className="text-xs font-bold text-slate-500 mt-0.5">Feature your deals on the homepage, category pages & search results with a plan starting from PKR 100</p>
@@ -202,8 +223,8 @@ export default function VendorListings() {
                         paginatedListings.map((biz: any) => (
                             <div key={biz.id} className="group bg-white rounded-[20px] overflow-hidden border border-black shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500 flex flex-col">
                                 <div className="relative h-56 overflow-hidden">
-                                    <ListingImage 
-                                        src={biz.coverImageUrl || biz.images?.[0]} 
+                                    <ListingImage
+                                        src={biz.coverImageUrl || biz.images?.[0]}
                                         alt={biz.title}
                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                     />
@@ -254,13 +275,33 @@ export default function VendorListings() {
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-3 mt-8">
-                                        <button onClick={() => handleEdit(biz)} className="py-3.5 px-4 bg-slate-900 text-white rounded-xl font-black text-xs hover:bg-slate-800 transition-all active:scale-95">
-                                            Edit Listing
+                                    <div className="space-y-3 mt-8">
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <button onClick={() => handleEdit(biz)} className="py-3.5 px-4 bg-slate-900 text-white rounded-xl font-black text-xs hover:bg-slate-800 transition-all active:scale-95">
+                                                Edit Listing
+                                            </button>
+                                            <Link href={`/business/${biz.slug}`} className="py-3.5 px-4 bg-white text-slate-900 border border-black rounded-xl font-black text-xs hover:bg-slate-50 transition-all active:scale-95 text-center">
+                                                View Page
+                                            </Link>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                const limit = activeSub?.plan?.dashboardFeatures?.maxKeywords || 15;
+                                                // Convert metaKeywords string to array if searchKeywords is missing
+                                                const currentKeywords = biz.searchKeywords ||
+                                                    (biz.metaKeywords ? biz.metaKeywords.split(',').map((k: string) => k.trim()).filter(Boolean) : []);
+
+                                                setKeywordsModal({
+                                                    id: biz.id,
+                                                    title: biz.title,
+                                                    keywords: currentKeywords,
+                                                    limit
+                                                });
+                                            }}
+                                            className="w-full flex items-center justify-center gap-2 py-3.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl font-black text-xs hover:bg-blue-100 transition-all active:scale-95"
+                                        >
+                                            <Hash className="w-4 h-4" /> Manage Keywords
                                         </button>
-                                        <Link href={`/business/${biz.slug}`} className="py-3.5 px-4 bg-white text-slate-900 border border-black rounded-xl font-black text-xs hover:bg-slate-50 transition-all active:scale-95 text-center">
-                                            View Page
-                                        </Link>
                                     </div>
                                 </div>
                             </div>
@@ -303,6 +344,99 @@ export default function VendorListings() {
                         </div>
                     </div>
                 )}
+
+                {/* Keywords Modal */}
+                <AnimatePresence>
+                    {keywordsModal && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                                className="bg-white rounded-[2rem] p-10 max-w-lg w-full shadow-2xl relative overflow-hidden text-left"
+                            >
+                                <div className="absolute top-0 left-0 w-full h-2 bg-blue-500" />
+                                <div className="flex items-center gap-4 mb-8">
+                                    <div className="w-16 h-16 bg-blue-50 rounded-3xl flex items-center justify-center">
+                                        <Hash className="w-8 h-8 text-blue-500" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h3 className="text-xl font-black text-slate-900 truncate">Search Keywords</h3>
+                                        <p className="text-slate-400 font-medium text-sm truncate">Limit: {keywordsModal.keywords.length} / {keywordsModal.limit}</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={newKeyword}
+                                            onChange={(e) => setNewKeyword(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && newKeyword.trim() && keywordsModal.keywords.length < keywordsModal.limit) {
+                                                    const kw = newKeyword.trim().toLowerCase();
+                                                    if (!keywordsModal.keywords.includes(kw)) {
+                                                        setKeywordsModal({ ...keywordsModal, keywords: [...keywordsModal.keywords, kw] });
+                                                    }
+                                                    setNewKeyword('');
+                                                }
+                                            }}
+                                            disabled={keywordsModal.keywords.length >= keywordsModal.limit}
+                                            placeholder={keywordsModal.keywords.length >= keywordsModal.limit ? "Limit reached" : "Add keyword and press Enter..."}
+                                            className="flex-1 px-5 py-3.5 rounded-2xl border border-slate-100 bg-slate-50 text-slate-900 font-bold focus:outline-none focus:ring-4 focus:ring-blue-50 placeholder:text-slate-300 text-sm"
+                                        />
+                                        <button
+                                            onClick={() => {
+                                                if (newKeyword.trim() && keywordsModal.keywords.length < keywordsModal.limit) {
+                                                    const kw = newKeyword.trim().toLowerCase();
+                                                    if (!keywordsModal.keywords.includes(kw)) {
+                                                        setKeywordsModal({ ...keywordsModal, keywords: [...keywordsModal.keywords, kw] });
+                                                    }
+                                                    setNewKeyword('');
+                                                }
+                                            }}
+                                            disabled={!newKeyword.trim() || keywordsModal.keywords.length >= keywordsModal.limit}
+                                            className="p-3.5 bg-blue-500 text-white rounded-2xl disabled:opacity-50"
+                                        >
+                                            <CheckCircle2 className="w-5 h-5" />
+                                        </button>
+                                    </div>
+
+                                    <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1 rounded-xl">
+                                        {keywordsModal.keywords.map((kw, i) => (
+                                            <span key={i} className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg font-bold text-xs uppercase tracking-wider">
+                                                #{kw}
+                                                <XCircle
+                                                    className="w-4 h-4 text-slate-400 hover:text-red-500 cursor-pointer"
+                                                    onClick={() => setKeywordsModal({ ...keywordsModal, keywords: keywordsModal.keywords.filter(k => k !== kw) })}
+                                                />
+                                            </span>
+                                        ))}
+                                        {keywordsModal.keywords.length === 0 && (
+                                            <p className="text-slate-300 text-sm italic font-medium w-full text-center py-4">No keywords assigned yet.</p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 mt-10">
+                                    <button
+                                        onClick={() => { setKeywordsModal(null); setNewKeyword(''); }}
+                                        className="px-6 py-4 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-[20px] font-black text-sm transition-all"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={() => updateKeywords(keywordsModal.id, keywordsModal.keywords)}
+                                        disabled={!!actionLoading}
+                                        className="px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-[20px] font-black text-sm shadow-blue-500/30 transition-all disabled:opacity-50"
+                                    >
+                                        {actionLoading?.includes('keywords') ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Save Keywords'}
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
             </div>
         </FeatureGate>
     );

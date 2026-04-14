@@ -61,6 +61,17 @@ export class Vendor {
     @Column({ name: 'social_links', nullable: true, type: 'jsonb', default: '[]' })
     socialLinks: { platform: string, url: string }[];
 
+    @Column({ length: 100, default: 'Pakistan', nullable: true })
+    @Index()
+    country: string;
+
+    @Column({ length: 100, nullable: true })
+    @Index()
+    city: string;
+
+    @Column({ length: 100, nullable: true })
+    state: string;
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 

@@ -26,7 +26,7 @@ function RegisterForm() {
     useEffect(() => {
         const queryRole = searchParams.get('role');
         const ref = searchParams.get('ref');
-        
+
         // Priority for referral code: URL 'ref' parameter -> session storage fallback
         if (ref) {
             setReferralCode(ref);
@@ -38,7 +38,7 @@ function RegisterForm() {
                 setSelectedRole('vendor');
             }
         }
-        
+
         if (queryRole === 'vendor') {
             setSelectedRole('vendor');
         } else if (queryRole === 'user') {
@@ -203,10 +203,8 @@ function RegisterForm() {
                                 </div>
                             )}
 
-                            <div className="flex items-start gap-3 px-1">
-                                <div className="mt-1">
-                                    <input required type="checkbox" className="w-4 h-4 rounded border-slate-200 text-blue-600 focus:ring-blue-500/20 transition-all cursor-pointer" />
-                                </div>
+                            <div className="flex items-start gap-3 px-1 leading-5">
+                                <input required type="checkbox" className="w-4 h-4 rounded border-slate-200 text-blue-600 focus:ring-blue-500/20 transition-all cursor-pointer mt-0.5" />
                                 <p className="text-[10px] text-slate-400 font-bold leading-relaxed uppercase tracking-wider">
                                     I agree to the <Link href="/terms" className="text-blue-600 hover:text-blue-700 transition-colors">Terms</Link> and <Link href="/privacy" className="text-blue-600 hover:text-blue-700 transition-colors">Privacy Policy</Link>
                                 </p>

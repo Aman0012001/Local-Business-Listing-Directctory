@@ -1,7 +1,9 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { BusinessQuestion, VendorAttribute, Vendor } from '../../entities';
+import { BusinessQuestion } from '../../entities/business-question.entity';
+import { VendorAttribute } from '../../entities/vendor-attribute.entity';
+import { Vendor } from '../../entities/vendor.entity';
 import { SaveAnswersDto } from './dto/save-answers.dto';
 
 @Injectable()
@@ -18,10 +20,49 @@ export class BusinessSetupService {
     ) { }
 
     async getQuestions(): Promise<BusinessQuestion[]> {
-        return this.questionRepository.find({
+        const questions = await this.questionRepository.find({
             where: { isActive: true },
             order: { category: 'ASC', order: 'ASC' },
         });
+
+        if (questions.length === 0) {
+            this.logger.log('No questions found in database, returning fallbacks.');
+            // Fallback questions to ensure the 4-step wizard works even without seeding
+            return [
+                {
+                    id: 'fallback-1',
+                    category: 'Service Mode',
+                    question: 'How do you provide your services?',
+                    options: ['Home Service', 'In-store / Studio', 'Online / Virtual', 'Emergency Services'],
+                    isActive: true,
+                    order: 1,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                },
+                {
+                    id: 'fallback-2',
+                    category: 'Payment Methods',
+                    question: 'Which payment methods do you accept?',
+                    options: ['Cash', 'UPI / QR Code', 'Credit/Debit Card', 'Net Banking', 'Digital Wallets'],
+                    isActive: true,
+                    order: 2,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                },
+                {
+                    id: 'fallback-3',
+                    category: 'Business Features',
+                    question: 'What amenities or features does your business offer?',
+                    options: ['WiFi Available', 'Parking Space', 'Air Conditioned', 'Wheelchair Accessible', 'Waiting Area', 'Contactless Delivery'],
+                    isActive: true,
+                    order: 3,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                }
+            ] as BusinessQuestion[];
+        }
+
+        return questions;
     }
 
     async getSetupStatus(userId: string): Promise<{ isCompleted: boolean; answers: Record<string, string[]> }> {

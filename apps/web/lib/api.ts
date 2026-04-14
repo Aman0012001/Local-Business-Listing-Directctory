@@ -77,7 +77,7 @@ async function fetcher<T>(endpoint: string, options?: FetcherOptions): Promise<T
             }
 
             if (options?.silent && response.status === 404) {
-                return [] as any;
+                return null as any;
             }
             throw new Error(errorData.message || 'API request failed');
         }
@@ -135,7 +135,7 @@ async function fetcher<T>(endpoint: string, options?: FetcherOptions): Promise<T
 
         if (options?.silent) {
             console.warn(`[api.ts] Silent error on ${endpoint}`, error.message);
-            return [] as any;
+            return null as any;
         }
         throw error;
     }
@@ -686,8 +686,8 @@ export const api = {
         verifySession: (sessionId: string) => fetcher<any>(`/promotions/verify-session?session_id=${sessionId}`),
     },
     businessSetup: {
-        getQuestions: () => fetcher<any[]>('/business-setup/questions'),
-        getStatus: () => fetcher<{ isCompleted: boolean }>('/business-setup/status'),
+        getQuestions: () => fetcher<any[]>('/business-setup/questions', { silent: true }),
+        getStatus: () => fetcher<{ isCompleted: boolean; answers: Record<string, string[]> }>('/business-setup/status', { silent: true }),
         saveAnswers: (answers: Record<string, string | string[]>) => 
             api.post<{ success: boolean }>('/business-setup/answers', { answers }),
     },

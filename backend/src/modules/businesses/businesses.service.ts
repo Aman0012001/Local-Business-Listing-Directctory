@@ -256,12 +256,12 @@ export class BusinessesService implements OnModuleInit {
         const isFeaturedFilter = filter === 'featured' || featuredOnly;
         const isNewFilter = filter === 'new';
 
-        // Async Search Logging
-        if (latitude && longitude) {
+        // Async Search Logging - Log any significant search intent
+        if (searchDto.query || city || categorySlug || categoryId || (latitude && longitude)) {
             this.demandService.logSearch({
-                keyword: searchDto.query || '',
-                city: searchDto.city,
-                categorySlug: searchDto.categorySlug,
+                keyword: searchDto.query || categorySlug || '',
+                city: city || searchDto.city,
+                categorySlug: categorySlug,
                 latitude,
                 longitude,
                 userId,

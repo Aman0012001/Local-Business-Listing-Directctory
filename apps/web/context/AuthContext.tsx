@@ -79,8 +79,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         initAuth();
 
-        // Stop heartbeat on unmount
-        return () => stopPing();
+        // Cross-tab syncing
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'user' && e.newValue) {
+                try {
+                    setUser(JSON.parse(e.newValue));
+                } catch (e) {
+                    console.error('Cross-tab sync error:', e);
+                }
+            } else if (e.key === 'token' && !e.newValue) {
+                setUser(null);
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+
+        return () => {
+            stopPing();
+            window.removeEventListener('storage', handleStorageChange);
+        };
     }, []);
 
     const logout = async () => {

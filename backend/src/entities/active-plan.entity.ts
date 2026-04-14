@@ -50,7 +50,7 @@ export class ActivePlan {
     @Column({ name: 'amount_paid', type: 'decimal', precision: 10, scale: 2, nullable: true })
     amountPaid: number;
 
-    @Column({ name: 'transaction_id', nullable: true })
+    @Column({ name: 'transaction_id', nullable: true, length: 255 })
     transactionId: string;
 
     @CreateDateColumn({ name: 'created_at' })

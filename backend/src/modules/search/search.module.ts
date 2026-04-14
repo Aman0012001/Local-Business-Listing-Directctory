@@ -6,11 +6,13 @@ import { SearchService } from './search.service';
 import { SearchController } from './search.controller';
 import { Listing } from '../../entities/business.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { DemandModule } from '../demand/demand.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Listing]),
         NotificationsModule,
+        DemandModule,
         ElasticsearchModule.registerAsync({
             imports: [ConfigModule],
             useFactory: async (configService: ConfigService) => {

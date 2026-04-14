@@ -192,9 +192,26 @@ export default function AdminListingsPage() {
                                                 {listing.vendor?.businessEmail || 'No Email'}
                                             </span>
                                         </div>
-                                        <p className="text-slate-400 text-sm mt-4 line-clamp-2 leading-relaxed">
+                                        <p className="text-slate-400 text-sm mt-4 line-clamp-2 leading-relaxed italic">
                                             {listing.description || 'No description provided by the vendor.'}
                                         </p>
+
+                                        {/* Search Keywords Tags */}
+                                        {listing.searchKeywords && listing.searchKeywords.length > 0 && (
+                                            <div className="flex flex-wrap gap-2 mt-4">
+                                                {listing.searchKeywords.slice(0, 8).map((kw: string, i: number) => (
+                                                    <span key={i} className="px-2.5 py-1 bg-slate-50 text-slate-500 rounded-lg text-[10px] font-black uppercase tracking-wider border border-slate-100 flex items-center gap-1.5">
+                                                        <Search className="w-2.5 h-2.5 opacity-50" />
+                                                        {kw}
+                                                    </span>
+                                                ))}
+                                                {listing.searchKeywords.length > 8 && (
+                                                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest self-center ml-1">
+                                                        +{listing.searchKeywords.length - 8} more
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Actions */}
@@ -214,17 +231,26 @@ export default function AdminListingsPage() {
                                             >
                                                 <XCircle className="w-5 h-5" /> Reject
                                             </button>
-                                            <button
+                                            {/* <button
                                                 onClick={() => {
+                                                    // Get the vendor's subscription plan limit, fallback to 15 for free/pending vendors
+                                                    // For Admins, we should always allow at least 15 for moderation purposes
                                                     const activeSub = listing.vendor?.subscriptions?.find((s: any) => s.status === 'active');
-                                                    const limit = activeSub?.plan?.dashboardFeatures?.maxKeywords || 0;
-                                                    setKeywordsModal({ id: listing.id, title: listing.title, keywords: listing.searchKeywords || [], limit });
+                                                    const planLimit = activeSub?.plan?.dashboardFeatures?.maxKeywords || 0;
+                                                    const limit = Math.max(planLimit, 15);
+
+                                                    setKeywordsModal({
+                                                        id: listing.id,
+                                                        title: listing.title,
+                                                        keywords: listing.searchKeywords || [],
+                                                        limit
+                                                    });
                                                 }}
                                                 className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-white hover:bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-[20px] font-black text-sm transition-all active:scale-95"
                                                 title="Manage Search Keywords"
                                             >
                                                 <Search className="w-5 h-5" /> Keywords
-                                            </button>
+                                            </button> */}
                                             <button
                                                 onClick={() => window.open(`/business/${listing.slug}`, '_blank')}
                                                 className="p-4 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-900 rounded-[20px] border border-slate-100 transition-all active:scale-95"
@@ -325,7 +351,7 @@ export default function AdminListingsPage() {
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
                             className="bg-white rounded-[2rem] p-10 max-w-lg w-full shadow-2xl relative overflow-hidden"
                         >
-                            <div className="absolute top-0 left-0 w-full h-2 bg-indigo-500" />
+                            {/* <div className="absolute top-0 left-0 w-full h-2 bg-indigo-500" /> */}
                             <div className="flex items-center gap-4 mb-8">
                                 <div className="w-16 h-16 bg-indigo-50 rounded-3xl flex items-center justify-center">
                                     <Search className="w-8 h-8 text-indigo-500" />

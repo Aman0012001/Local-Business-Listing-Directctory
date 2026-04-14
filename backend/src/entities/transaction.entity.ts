@@ -44,10 +44,10 @@ export class Transaction {
     @Column({ name: 'payment_gateway', nullable: true, length: 50 })
     paymentGateway: string;
 
-    @Column({ name: 'gateway_transaction_id', nullable: true })
+    @Column({ name: 'gateway_transaction_id', nullable: true, length: 255 })
     gatewayTransactionId: string;
 
-    @Column({ name: 'stripe_session_id', nullable: true })
+    @Column({ name: 'stripe_session_id', nullable: true, length: 255 })
     stripeSessionId: string;
 
     // Status
@@ -60,7 +60,7 @@ export class Transaction {
     status: PaymentStatus;
 
     // Invoice
-    @Column({ name: 'invoice_number', nullable: true, unique: true, length: 50 })
+    @Column({ name: 'invoice_number', nullable: true, unique: true, length: 255 })
     @Index()
     invoiceNumber: string;
 

@@ -20,14 +20,12 @@ const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL ||
      'http://localhost:3001');
 
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
-    const { user } = useAuth();
+    const { user, syncProfile } = useAuth();
     const [socket, setSocket] = useState<Socket | null>(null);
     const [connected, setConnected] = useState(false);
 
     useEffect(() => {
-        // Only connect if user is logged in
         if (!user) {
-            console.log('[SocketContext] No user found, disconnecting if needed');
             if (socket) {
                 socket.disconnect();
                 setSocket(null);
@@ -36,16 +34,10 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
             return;
         }
 
-        console.log('[SocketContext] User logged in:', user.email, 'Checking token...');
         const token = localStorage.getItem('token');
-        if (!token) {
-            console.warn('[SocketContext] No token found in localStorage');
-            return;
-        }
+        if (!token) return;
 
         const cleanUrl = SOCKET_URL.endsWith('/') ? SOCKET_URL.slice(0, -1) : SOCKET_URL;
-        console.log('[SocketContext] Attempting connection to:', `${cleanUrl}/notifications`);
-
         const newSocket = io(`${cleanUrl}/notifications`, {
             auth: { token: `Bearer ${token}` },
             transports: ['polling', 'websocket'],
@@ -54,31 +46,29 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         });
 
         newSocket.on('connect', () => {
-            console.log('[SocketContext] Connection established. Socket ID:', newSocket.id);
             setConnected(true);
-
-            console.log('[SocketContext] Sending authenticate event...');
-            newSocket.emit('authenticate', (response: any) => {
-                console.log('[SocketContext] Authentication callback received:', response);
-            });
+            newSocket.emit('authenticate');
         });
 
-        newSocket.on('disconnect', () => {
-            console.log('[SocketContext] Disconnected from socket server');
-            setConnected(false);
+        // Real-time subscription sync
+        newSocket.on('subscription_updated', async (data: any) => {
+            console.log('[SocketContext] Real-time subscription update received');
+            try {
+                await syncProfile();
+            } catch (err) {
+                console.error('[SocketContext] Profile sync failed:', err);
+            }
         });
 
-        newSocket.on('connect_error', (error) => {
-            console.error('[SocketContext] Connection error:', error);
-            setConnected(false);
-        });
+        newSocket.on('disconnect', () => setConnected(false));
+        newSocket.on('connect_error', () => setConnected(false));
 
         setSocket(newSocket);
 
         return () => {
             newSocket.disconnect();
         };
-    }, [user]);
+    }, [user, syncProfile]);
 
     return (
         <SocketContext.Provider value={{ socket, connected }}>

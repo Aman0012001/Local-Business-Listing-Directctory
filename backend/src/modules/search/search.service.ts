@@ -6,6 +6,7 @@ import { Repository, Brackets } from 'typeorm';
 import { Listing, BusinessStatus } from '../../entities/business.entity';
 import { SearchBusinessDto, SearchSortBy } from '../businesses/dto/search-business.dto';
 import { DayOfWeek } from '../../entities/business-hours.entity';
+import { DemandService } from '../demand/demand.service';
 
 @Injectable()
 export class SearchService implements OnModuleInit {
@@ -18,6 +19,7 @@ export class SearchService implements OnModuleInit {
         private readonly configService: ConfigService,
         @InjectRepository(Listing)
         private readonly businessRepository: Repository<Listing>,
+        private readonly demandService: DemandService,
     ) { }
 
     onModuleInit() {
@@ -291,6 +293,17 @@ export class SearchService implements OnModuleInit {
     }
 
     async search(searchDto: SearchBusinessDto) {
+        // Log search for demand insights
+        if (searchDto.query || searchDto.categorySlug) {
+            this.demandService.logSearch({
+                keyword: searchDto.query || searchDto.categorySlug,
+                city: searchDto.city,
+                categorySlug: searchDto.categorySlug,
+                latitude: searchDto.latitude,
+                longitude: searchDto.longitude,
+            }).catch(err => this.logger.error(`Failed to log search: ${err.message}`));
+        }
+
         if (!this.isElasticAvailable) {
             return this.dbSearch(searchDto);
         }

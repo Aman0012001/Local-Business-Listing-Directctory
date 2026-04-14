@@ -27,6 +27,7 @@ import { OfferEvent } from '../../entities/offer-event.entity';
 import { ConfigService } from '@nestjs/config';
 import { AffiliateService } from '../affiliate/affiliate.service';
 import { PromotionsService } from '../promotions/promotions.service';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 import Stripe from 'stripe';
 
 @Injectable()
@@ -60,7 +61,8 @@ export class SubscriptionsService implements OnModuleInit {
         private affiliateService: AffiliateService,
         @Inject(forwardRef(() => PromotionsService))
         private promotionsService: PromotionsService,
-    ) {}
+        private notificationsGateway: NotificationsGateway,
+    ) { }
 
 
     onModuleInit() {
@@ -221,8 +223,8 @@ export class SubscriptionsService implements OnModuleInit {
         // Cancel existing active subscription
         await this.subscriptionRepository.update(
             { vendorId: dto.vendorId, status: SubscriptionStatus.ACTIVE },
-            { 
-                status: SubscriptionStatus.CANCELLED, 
+            {
+                status: SubscriptionStatus.CANCELLED,
                 cancelledAt: new Date(),
                 cancellationReason: 'Cancelled to assign new plan'
             }
@@ -272,7 +274,7 @@ export class SubscriptionsService implements OnModuleInit {
         });
 
         await this.transactionRepository.save(transaction);
-        
+
         // Featured Listing Integration
         if (plan.isFeatured) {
             this.logger.log(`🌟 Admin Assigned Featured Plan. Marking all listings of vendor ${dto.vendorId} as featured.`);
@@ -297,11 +299,11 @@ export class SubscriptionsService implements OnModuleInit {
         });
 
         // Fetch back updated subscription with relations if needed
-        const updatedSub = await this.subscriptionRepository.findOne({ 
+        const updatedSub = await this.subscriptionRepository.findOne({
             where: { id: subscriptionId },
             relations: ['plan', 'vendor']
         });
-        
+
         return updatedSub;
     }
 
@@ -334,19 +336,19 @@ export class SubscriptionsService implements OnModuleInit {
         const frontendUrl = this.configService.get<string>('FRONTEND_URL') || '';
         // Support comma-separated list of URLs (local and production)
         const allowedUrls = frontendUrl ? frontendUrl.split(',').map(url => url.trim()) : [];
-        
+
         // Priority: 1. FRONTEND_URL config, 2. Dynamic origin from request, 3. Localhost fallback
         const baseUrl = allowedUrls[0] || origin || 'http://localhost:3000';
 
         // ── Ensure plan has a valid Stripe Price ID (matching the current price) ────────────────
         let needsNewPrice = !plan.stripePriceId;
-        
+
         if (plan.stripePriceId) {
             try {
                 // Check if the price exists on Stripe and matches our current plan price
                 const stripePrice = await this.stripe.prices.retrieve(plan.stripePriceId);
                 const currentAmount = Math.round(Number(plan.price) * 100);
-                
+
                 if (stripePrice.unit_amount !== currentAmount || !stripePrice.active) {
                     this.logger.warn(`Stripe price ${plan.stripePriceId} mismatch (Active: ${stripePrice.active}, Amount: ${stripePrice.unit_amount} vs Expected: ${currentAmount}). Regenerating...`);
                     needsNewPrice = true;
@@ -432,7 +434,7 @@ export class SubscriptionsService implements OnModuleInit {
             line_items: [{ price: plan.stripePriceId, quantity: 1 }],
             mode: 'subscription',
             success_url: `${baseUrl}/vendor/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url:  `${baseUrl}/vendor/subscription?canceled=true`,
+            cancel_url: `${baseUrl}/vendor/subscription?canceled=true`,
         });
 
         this.logger.log(`Stripe checkout session created: ${session.id} for vendor ${vendor.id}`);
@@ -449,7 +451,7 @@ export class SubscriptionsService implements OnModuleInit {
     async verifyCheckoutSession(sessionId: string, userId: string) {
         try {
             const session = await this.stripe.checkout.sessions.retrieve(sessionId);
-            
+
             if (session.payment_status === 'paid') {
                 // Check if we already processed it
                 const existingTransaction = await this.transactionRepository.findOne({
@@ -465,12 +467,12 @@ export class SubscriptionsService implements OnModuleInit {
                     if (session.subscription && vendorId) {
                         const subscription = await this.stripe.subscriptions.retrieve(session.subscription as string);
                         const priceId = subscription.items.data[0].price.id;
-                        
+
                         const plan = await this.planRepository.findOne({ where: { stripePriceId: priceId } });
                         if (plan) {
                             const sub = await this.processSubscriptionSuccess(vendorId, plan.id, session.id, 'Stripe');
-                            return { 
-                                success: true, 
+                            return {
+                                success: true,
                                 planName: plan.name,
                                 planType: plan.planType,
                                 amount: plan.price,
@@ -485,8 +487,8 @@ export class SubscriptionsService implements OnModuleInit {
                     const { planId, targetId } = session.metadata;
                     if (vendorId && planId) {
                         const activePlan = await this.processActivePlanSuccess(vendorId, planId, session.id, 'Stripe', targetId);
-                        return { 
-                            success: true, 
+                        return {
+                            success: true,
                             type: activePlan.plan?.type || 'plan',
                             planName: activePlan.plan?.name || 'Active Plan',
                             endDate: activePlan.endDate,
@@ -512,7 +514,18 @@ export class SubscriptionsService implements OnModuleInit {
         gatewayTransactionId: string,
         gateway: 'Stripe' | 'Mock' | 'Admin',
         amount?: number
-    ) {
+    ): Promise<Subscription> {
+        // Idempotency check: Don't process the same transaction twice
+        const existingTrans = await this.transactionRepository.findOne({
+            where: { gatewayTransactionId },
+            relations: ['subscription', 'subscription.plan']
+        });
+
+        if (existingTrans && existingTrans.subscription) {
+            this.logger.log(`[processSubscriptionSuccess] Transaction ${gatewayTransactionId} already processed. Returning existing sub.`);
+            return existingTrans.subscription;
+        }
+
         const plan = await this.planRepository.findOne({ where: { id: planId } });
         if (!plan) throw new NotFoundException('Plan not found');
 
@@ -530,7 +543,7 @@ export class SubscriptionsService implements OnModuleInit {
 
         if (activeSub) {
             this.logger.log(`🔄 Extending existing active "${activeSub.plan.name}" plan for vendor ${vendor.id}`);
-            
+
             // "Perfectly" extend the existing plan (recharge)
             const currentEndDate = new Date(activeSub.endDate);
             // If the plan is still active and valid, start adding from the current end date.
@@ -585,22 +598,34 @@ export class SubscriptionsService implements OnModuleInit {
         }
 
         // 3. Generate Invoice Number
-        const prefix = gateway === 'Stripe' ? 'INV-STRIPE' : gateway === 'Admin' ? 'INV-ADMIN' : 'INV-MOCK';
-        const invoiceNumber = `${prefix}-${Date.now().toString().slice(-8)}`;
+        const prefix = gateway === 'Stripe' ? 'ST' : gateway === 'Admin' ? 'AD' : 'MC';
+        const invoiceNumber = gateway === 'Stripe'
+            ? `INV-${prefix}-${gatewayTransactionId.slice(-30)}`
+            : `INV-${prefix}-${Date.now().toString().slice(-8)}`;
 
         // 4. Record Transaction (Invoice)
-        const transaction = this.transactionRepository.create({
-            subscriptionId: savedSub.id,
-            vendorId: vendor.id,
-            amount: amount ?? plan.price,
-            status: PaymentStatus.COMPLETED,
-            paidAt: now,
-            gatewayTransactionId,
-            paymentGateway: gateway,
-            invoiceNumber,
-        });
+        try {
+            const transaction = this.transactionRepository.create({
+                subscriptionId: savedSub.id,
+                vendorId: vendor.id,
+                amount: amount ?? plan.price,
+                status: PaymentStatus.COMPLETED,
+                paidAt: now,
+                gatewayTransactionId,
+                paymentGateway: gateway,
+                invoiceNumber,
+            });
 
-        await this.transactionRepository.save(transaction);
+            await this.transactionRepository.save(transaction);
+        } catch (err) {
+            if (err.message.includes('unique constraint') || err.code === '23505') {
+                this.logger.log(`[processSubscriptionSuccess] Concurrency: Transaction ${gatewayTransactionId} already created by another process.`);
+                // sub is already saved in this case because it's non-unique, but transaction failed.
+                // we return the existing sub
+                return savedSub;
+            }
+            throw err;
+        }
 
         // 5. Affiliate Integration - AUTOMATED
         try {
@@ -617,6 +642,18 @@ export class SubscriptionsService implements OnModuleInit {
         }
 
         this.logger.log(`✅ Subscription [${savedSub.id}] activated/extended for vendor [${vendor.id}] via ${gateway} until ${savedSub.endDate.toDateString()}`);
+
+        // Notify vendor via real-time socket
+        try {
+            this.notificationsGateway.sendToUser(vendor.userId, 'subscription_updated', {
+                type: 'subscription',
+                planId: planId,
+                status: 'active'
+            });
+        } catch (err) {
+            this.logger.warn(`Failed to send real-time notification to user ${vendor.userId}: ${err.message}`);
+        }
+
         return savedSub;
     }
 
@@ -647,8 +684,8 @@ export class SubscriptionsService implements OnModuleInit {
         // 1. Fetch from BOTH PricingPlan system (ActivePlan) and old Subscription system
         const [activeNewPlan, activeOldSub] = await Promise.all([
             this.activePlanRepository.findOne({
-                where: { 
-                    vendorId: vendor.id, 
+                where: {
+                    vendorId: vendor.id,
                     status: ActivePlanStatus.ACTIVE,
                     endDate: MoreThan(new Date())
                 },
@@ -656,8 +693,8 @@ export class SubscriptionsService implements OnModuleInit {
                 order: { startDate: 'DESC' }
             }),
             this.subscriptionRepository.findOne({
-                where: { 
-                    vendorId: vendor.id, 
+                where: {
+                    vendorId: vendor.id,
                     status: SubscriptionStatus.ACTIVE,
                     endDate: MoreThan(new Date())
                 },
@@ -670,7 +707,7 @@ export class SubscriptionsService implements OnModuleInit {
         if (activeNewPlan && activeOldSub) {
             const newStart = new Date(activeNewPlan.startDate).getTime();
             const oldStart = new Date(activeOldSub.startDate).getTime();
-            
+
             if (newStart >= oldStart) {
                 result = activeNewPlan;
                 isNewSystem = true;
@@ -690,7 +727,7 @@ export class SubscriptionsService implements OnModuleInit {
                 result = activeNewPlan;
                 isNewSystem = true;
             }
-            
+
             // --- FALLBACK: If no active subscription anywhere, try to assign Free Plan ---
             if (!result) {
                 // ... fallback logic continues ...
@@ -716,8 +753,8 @@ export class SubscriptionsService implements OnModuleInit {
                     isNewSystem = true;
                 } else {
                     // Fallback to old Free Plan if exists
-                    const freePlan = await this.planRepository.findOne({ 
-                        where: { id: '00000000-0000-0000-0000-000000000001' } 
+                    const freePlan = await this.planRepository.findOne({
+                        where: { id: '00000000-0000-0000-0000-000000000001' }
                     });
                     if (freePlan) {
                         const now = new Date();
@@ -759,11 +796,13 @@ export class SubscriptionsService implements OnModuleInit {
 
         const plan = result.plan ? {
             ...result.plan,
-            planType: isNewSystem 
-                ? (result.plan.name?.toLowerCase() === 'free' ? 'free' : (result.plan.type === PricingPlanType.SUBSCRIPTION ? 'premium' : result.plan.type)) 
+            planType: isNewSystem
+                ? (['free', 'basic', 'premium', 'enterprise'].includes(result.plan.name?.toLowerCase())
+                    ? result.plan.name.toLowerCase()
+                    : (result.plan.type === PricingPlanType.SUBSCRIPTION ? 'premium' : result.plan.type))
                 : result.plan.planType,
             // Harmonize features into dashboardFeatures
-            dashboardFeatures: isNewSystem 
+            dashboardFeatures: isNewSystem
                 ? {
                     showAnalytics: !!result.plan.features?.showAnalytics,
                     showLeads: !!result.plan.features?.showLeads,
@@ -777,7 +816,7 @@ export class SubscriptionsService implements OnModuleInit {
                     showFollowing: true,
                     showListings: true,
                     canAddListing: (result.plan.features?.maxListings || 0) > 0,
-                    ...result.plan.features 
+                    ...result.plan.features
                 }
                 : {
                     showAnalytics: !!result.plan.dashboardFeatures?.showAnalytics,
@@ -835,13 +874,13 @@ export class SubscriptionsService implements OnModuleInit {
 
         const frontendUrl = this.configService.get<string>('FRONTEND_URL') || '';
         const allowedUrls = frontendUrl ? frontendUrl.split(',').map(url => url.trim()) : [];
-        
+
         // Priority: 1. FRONTEND_URL config, 2. Dynamic origin from request, 3. Localhost fallback
         const baseUrl = allowedUrls[0] || origin || 'http://localhost:3000';
 
         // Ensure Stripe Price exists
         if (!plan.stripePriceId) {
-            const product = await this.stripe.products.create({ 
+            const product = await this.stripe.products.create({
                 name: plan.name,
                 metadata: { type: plan.type }
             });
@@ -849,8 +888,8 @@ export class SubscriptionsService implements OnModuleInit {
                 product: product.id,
                 unit_amount: Math.round(Number(plan.price) * 100),
                 currency: 'pkr',
-                recurring: plan.type === PricingPlanType.SUBSCRIPTION ? { 
-                    interval: plan.unit === PricingPlanUnit.YEARS ? 'year' : 'month' 
+                recurring: plan.type === PricingPlanType.SUBSCRIPTION ? {
+                    interval: plan.unit === PricingPlanUnit.YEARS ? 'year' : 'month'
                 } : undefined,
             });
             plan.stripePriceId = price.id;
@@ -900,7 +939,7 @@ export class SubscriptionsService implements OnModuleInit {
             payment_method_types: ['card'],
             customer: customerId,
             client_reference_id: vendor.id,
-            metadata: { 
+            metadata: {
                 planId: plan.id,
                 targetId: targetId || '',
                 type: plan.type
@@ -908,7 +947,7 @@ export class SubscriptionsService implements OnModuleInit {
             line_items: [{ price: plan.stripePriceId, quantity: 1 }],
             mode: plan.type === PricingPlanType.SUBSCRIPTION ? 'subscription' : 'payment',
             success_url: `${baseUrl}/vendor/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url:  `${baseUrl}/vendor/subscription?canceled=true`,
+            cancel_url: `${baseUrl}/vendor/subscription?canceled=true`,
         };
 
         const session = await this.stripe.checkout.sessions.create(sessionParams);
@@ -928,7 +967,18 @@ export class SubscriptionsService implements OnModuleInit {
         gatewayTransactionId: string,
         gateway: string,
         targetId?: string
-    ) {
+    ): Promise<ActivePlan> {
+        // Idempotency check: Don't process the same transaction twice
+        const existingPlan = await this.activePlanRepository.findOne({
+            where: { transactionId: gatewayTransactionId },
+            relations: ['plan']
+        });
+
+        if (existingPlan) {
+            this.logger.log(`[processActivePlanSuccess] Transaction ${gatewayTransactionId} already processed. Returning existing plan.`);
+            return existingPlan;
+        }
+
         const plan = await this.pricingPlanRepository.findOne({ where: { id: planId } });
         if (!plan) throw new NotFoundException('Plan not found');
 
@@ -938,8 +988,8 @@ export class SubscriptionsService implements OnModuleInit {
         // Check for existing ACTIVE plan of the same type to support "Extension/Stacking"
         // This handles the requirement: "if vendor purchase a plan plan will we active in next month"
         const existingActivePlan = await this.activePlanRepository.findOne({
-            where: { 
-                vendorId, 
+            where: {
+                vendorId,
                 status: ActivePlanStatus.ACTIVE,
                 targetId: targetId || IsNull()
             },
@@ -1007,18 +1057,30 @@ export class SubscriptionsService implements OnModuleInit {
             await this.listingRepo.update({ vendorId }, { isFeatured: true });
         }
 
-        // Record transaction
-        const transaction = this.transactionRepository.create({
-            vendorId,
-            amount: plan.price,
-            status: PaymentStatus.COMPLETED,
-            paidAt: now,
-            gatewayTransactionId,
-            paymentGateway: gateway,
-            invoiceNumber: `INV-${plan.type.toUpperCase()}-${Date.now().toString().slice(-6)}`,
-        });
-        await this.transactionRepository.save(transaction);
-        
+        // 4. Record Transaction (Invoice)
+        try {
+            const transaction = this.transactionRepository.create({
+                vendorId,
+                amount: plan.price,
+                status: PaymentStatus.COMPLETED,
+                paidAt: now,
+                gatewayTransactionId,
+                paymentGateway: gateway,
+                // Stripe invoice becomes deterministic to prevent double entry via standard DB unique constraint
+                // We use a safe slice to ensure it fits in VARCHAR(50) if DB hasn't synced yet
+                invoiceNumber: gateway === 'Stripe'
+                    ? `INV-ST-${gatewayTransactionId.slice(-30)}`
+                    : `INV-${plan.type.toUpperCase().slice(0, 5)}-${Date.now().toString().slice(-6)}`,
+            });
+            await this.transactionRepository.save(transaction);
+        } catch (err) {
+            if (err.message.includes('unique constraint') || err.code === '23505') {
+                this.logger.log(`[processActivePlanSuccess] Concurrency: Transaction ${gatewayTransactionId} already created by another process.`);
+                return saved;
+            }
+            throw err;
+        }
+
         // 5. Affiliate Integration - AUTOMATED
         if (plan.type === PricingPlanType.SUBSCRIPTION) {
             try {
@@ -1028,7 +1090,7 @@ export class SubscriptionsService implements OnModuleInit {
                     await this.affiliateService.processSuccessfulReferral(vendorUser.id, paidAmount);
                 } else {
                     // Try to get from vendor relation
-                    const vendorWithUser = await this.vendorRepository.findOne({ 
+                    const vendorWithUser = await this.vendorRepository.findOne({
                         where: { id: vendorId },
                         relations: ['user']
                     });
@@ -1039,6 +1101,20 @@ export class SubscriptionsService implements OnModuleInit {
             } catch (err) {
                 this.logger.error(`Failed to process referral for vendor ${vendorId} in active plan: ${err.message}`);
             }
+        }
+
+        // Notify vendor via real-time socket
+        try {
+            const vendor = await this.vendorRepository.findOne({ where: { id: vendorId } });
+            if (vendor) {
+                this.notificationsGateway.sendToUser(vendor.userId, 'subscription_updated', {
+                    type: plan.type,
+                    planId: planId,
+                    status: 'active'
+                });
+            }
+        } catch (err) {
+            this.logger.warn(`Failed to send real-time notification to user ${vendorId}: ${err.message}`);
         }
 
         return saved;
@@ -1055,10 +1131,10 @@ export class SubscriptionsService implements OnModuleInit {
         const limit = features[feature];
 
         if (limit === true) return true;
-        
+
         // Add other numeric limit checks (maxOffers, etc.) as needed as they arise 
         // For now, we are removing the maxListings capacity limit as per the requirement
-        
+
         return false;
 
         return false;
@@ -1126,7 +1202,7 @@ export class SubscriptionsService implements OnModuleInit {
                 name: `Feature ${o.type?.toUpperCase() || 'OFFER'}`,
                 title: o.title || 'Untitled Offer',
                 business: o.business?.title || 'Unknown Business',
-                startDate: o.startDate, 
+                startDate: o.startDate,
                 endDate: o.featuredUntil,
                 type: o.type,
                 target: o.title || 'Untitled Offer',
@@ -1258,7 +1334,7 @@ export class SubscriptionsService implements OnModuleInit {
                     if (session.subscription && vendorId) {
                         const subscription = await this.stripe.subscriptions.retrieve(session.subscription as string);
                         const priceId = subscription.items.data[0].price.id;
-                        
+
                         const plan = await this.planRepository.findOne({ where: { stripePriceId: priceId } });
                         if (plan) {
                             await this.processSubscriptionSuccess(vendorId, plan.id, session.id, 'Stripe');
@@ -1269,14 +1345,21 @@ export class SubscriptionsService implements OnModuleInit {
             }
 
             case 'invoice.paid': {
-                const invoice = event.data.object as any; // Cast to any to avoid property access errors
-                this.logger.log(`💰 Invoice paid: ${invoice.id} for customer: ${invoice.customer}`);
+                const invoice = event.data.object as any;
+                this.logger.log(` Invoice paid: ${invoice.id} for customer: ${invoice.customer} [Reason: ${invoice.billing_reason}]`);
 
-                // For recurring subscription payments
+                // 1. Skip the initial subscription creation invoice (it's handled by checkout.session.completed)
+                // This prevents the "2 Invoices / 2 Months" bug where a new sub gets processed twice.
+                if (invoice.billing_reason === 'subscription_create') {
+                    this.logger.log(`ℹ️ Skipping initial invoice ${invoice.id} - already handled via checkout session.`);
+                    return { received: true };
+                }
+
+                // For recurring subscription payments (Legacy System)
                 if (invoice.subscription) {
                     const stripeSub = await this.stripe.subscriptions.retrieve(invoice.subscription as string);
                     const vendor = await this.vendorRepository.findOne({ where: { stripeCustomerId: invoice.customer as string } });
-                    
+
                     if (vendor) {
                         const priceId = stripeSub.items.data[0].price.id;
                         const plan = await this.planRepository.findOne({ where: { stripePriceId: priceId } });
@@ -1287,7 +1370,7 @@ export class SubscriptionsService implements OnModuleInit {
 
                         if (activeSub && plan) {
                             this.logger.log(`🔄 Extending subscription for vendor: ${vendor.id}`);
-                            
+
                             // Extend end date based on plan's billing cycle (perfect calendar date)
                             const currentEnd = new Date(activeSub.endDate);
                             const referenceDate = new Date(Math.max(currentEnd.getTime(), Date.now()));
@@ -1298,7 +1381,7 @@ export class SubscriptionsService implements OnModuleInit {
                             } else {
                                 newEnd.setMonth(newEnd.getMonth() + 1);
                             }
-                            
+
                             activeSub.endDate = newEnd;
                             await this.subscriptionRepository.save(activeSub);
 
@@ -1324,7 +1407,7 @@ export class SubscriptionsService implements OnModuleInit {
             case 'customer.subscription.deleted': {
                 const subscription = event.data.object as Stripe.Subscription;
                 this.logger.log(`🚫 Subscription deleted: ${subscription.id} for customer: ${subscription.customer}`);
-                
+
                 const vendor = await this.vendorRepository.findOne({ where: { stripeCustomerId: subscription.customer as string } });
                 if (vendor) {
                     this.logger.log(`📉 Cancelling active subscription for vendor: ${vendor.id}`);

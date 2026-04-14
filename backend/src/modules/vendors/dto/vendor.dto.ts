@@ -51,6 +51,21 @@ export class CreateVendorDto {
     @Transform(trimToUndefined)
     @IsString()
     ntnNumber?: string;
+
+    @ApiPropertyOptional({ example: 'Pakistan' })
+    @IsOptional()
+    @IsString()
+    country?: string;
+
+    @ApiPropertyOptional({ example: 'Islamabad' })
+    @IsOptional()
+    @IsString()
+    city?: string;
+
+    @ApiPropertyOptional({ example: 'Federal' })
+    @IsOptional()
+    @IsString()
+    state?: string;
 }
 
 export class UpdateVendorDto {
@@ -106,6 +121,21 @@ export class UpdateVendorDto {
     @Transform(trimToUndefined)
     @IsString()
     bio?: string;
+
+    @ApiPropertyOptional({ example: 'Pakistan' })
+    @IsOptional()
+    @IsString()
+    country?: string;
+
+    @ApiPropertyOptional({ example: 'Islamabad' })
+    @IsOptional()
+    @IsString()
+    city?: string;
+
+    @ApiPropertyOptional({ example: 'Federal' })
+    @IsOptional()
+    @IsString()
+    state?: string;
 }
 
 export class SocialLinkDto {

@@ -59,6 +59,11 @@ export interface Vendor {
     businessName?: string;
     businessEmail?: string;
     businessPhone?: string;
+    businessAddress?: string;
+    bio?: string;
+    country?: string;
+    city?: string;
+    state?: string;
     user?: {
         id: string;
         fullName?: string;

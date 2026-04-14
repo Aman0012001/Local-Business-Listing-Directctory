@@ -47,38 +47,71 @@ export class UsersService {
 
         // Normalize and merge subscription data for the frontend if vendor exists
         if (user.vendor) {
+            const now = new Date();
             let activeSubscription: any = null;
             
-            // 1. Check legacy system for an active subscription
-            const oldSub = user.vendor.subscriptions?.find(s => s.status === 'active');
-            if (oldSub) {
-                activeSubscription = this.subscriptionsService.normalizeSubOrActivePlan(oldSub, false);
-            }
-            
-            // 2. Merge with any active plans from the new system
-            if (user.vendor.activePlans) {
-                user.vendor.activePlans.forEach((plan: any) => {
-                    if (plan.status === 'active') {
-                        const normalizedPlan = this.subscriptionsService.normalizeSubOrActivePlan(plan, true);
-                        if (!activeSubscription) {
-                            activeSubscription = normalizedPlan;
-                        } else {
-                            // Merge dashboard features (OR logic for booleans, Max logic for numbers)
-                            const merged = JSON.parse(JSON.stringify(activeSubscription.plan.dashboardFeatures));
-                            const additions = normalizedPlan.plan.dashboardFeatures;
-                            
-                            Object.keys(additions).forEach(key => {
-                                if (typeof additions[key] === 'boolean') {
-                                    merged[key] = merged[key] || additions[key];
-                                } else if (typeof additions[key] === 'number') {
-                                    merged[key] = Math.max(merged[key] || 0, additions[key]);
-                                }
-                            });
-                            
-                            activeSubscription.plan.dashboardFeatures = merged;
-                        }
+            // Collect ALL active subscriptions and plans from both systems
+            const allActive: any[] = [];
+
+            // 1. Check legacy system
+            if (user.vendor.subscriptions) {
+                user.vendor.subscriptions.forEach(sub => {
+                    if (sub.status === 'active' && new Date(sub.endDate) > now) {
+                        allActive.push(this.subscriptionsService.normalizeSubOrActivePlan(sub, false));
                     }
                 });
+            }
+
+            // 2. Check new system
+            if (user.vendor.activePlans) {
+                user.vendor.activePlans.forEach(plan => {
+                    if (plan.status === 'active' && new Date(plan.endDate) > now) {
+                        allActive.push(this.subscriptionsService.normalizeSubOrActivePlan(plan, true));
+                    }
+                });
+            }
+
+            if (allActive.length > 0) {
+                // Sort by: 
+                // 1. Type (Subscriptions first, then Boosts)
+                // 2. Price (Higher price = more "prime")
+                // 3. Start Date (Newest first)
+                allActive.sort((a, b) => {
+                    // Prioritize Membership Plans over one-off Boosts for the base "Current Plan" name
+                    const planTiers = ['free', 'basic', 'premium', 'enterprise'];
+                    const isAPlan = planTiers.includes(a.plan?.planType?.toLowerCase());
+                    const isBPlan = planTiers.includes(b.plan?.planType?.toLowerCase());
+                    
+                    if (isAPlan && !isBPlan) return -1;
+                    if (!isAPlan && isBPlan) return 1;
+
+                    // Then Price
+                    const priceDiff = (b.plan?.price || 0) - (a.plan?.price || 0);
+                    if (priceDiff !== 0) return priceDiff;
+
+                    // Then Date
+                    return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+                });
+
+                // Pick the Best Plan for the identity
+                activeSubscription = JSON.parse(JSON.stringify(allActive[0]));
+
+                // Merge features from ALL other active boosts/plans into this one
+                if (allActive.length > 1) {
+                    const mergedFeatures = { ...(activeSubscription.plan.dashboardFeatures || {}) };
+                    
+                    for (let i = 1; i < allActive.length; i++) {
+                        const nextFeatures = allActive[i].plan.dashboardFeatures || {};
+                        Object.keys(nextFeatures).forEach(key => {
+                            if (typeof nextFeatures[key] === 'boolean') {
+                                mergedFeatures[key] = mergedFeatures[key] || nextFeatures[key];
+                            } else if (typeof nextFeatures[key] === 'number') {
+                                mergedFeatures[key] = Math.max(mergedFeatures[key] || 0, nextFeatures[key]);
+                            }
+                        });
+                    }
+                    activeSubscription.plan.dashboardFeatures = mergedFeatures;
+                }
             }
 
             // Attaching normalized sub to vendor for frontend consumption

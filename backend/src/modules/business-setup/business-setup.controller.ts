@@ -6,6 +6,7 @@ import {
     UseGuards,
     HttpCode,
     HttpStatus,
+    Version,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { BusinessSetupService } from './business-setup.service';

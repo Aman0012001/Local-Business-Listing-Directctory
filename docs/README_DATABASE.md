@@ -154,7 +154,7 @@ You should see: `[]` (empty array, which is correct!)
 - ✅ Database is connected
 - 📝 Add more entities (products, orders, etc.)
 - 🔐 Add authentication (JWT, sessions)
-- ✨ Add validation (class-validator)
+-  Add validation (class-validator)
 - 🔄 Add migrations for production
 - 📊 Add database seeding
 - 🧪 Add unit tests
