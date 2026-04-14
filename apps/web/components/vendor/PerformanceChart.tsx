@@ -38,8 +38,8 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
     const width = 800; // Increased width for better resolution
     const height = 300;
 
-    // Helper to generate a smooth Cubic Bezier path
-    const getSmoothPath = (key: 'views' | 'leads') => {
+    // Helper to generate a sharp, data-driven path
+    const getPath = (key: 'views' | 'leads') => {
         if (chartData.length < 2) return "";
 
         const points = chartData.map((d, i) => ({
@@ -48,24 +48,15 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
         }));
 
         let path = `M ${points[0].x} ${points[0].y}`;
-
-        for (let i = 0; i < points.length - 1; i++) {
-            const p0 = points[i];
-            const p1 = points[i + 1];
-            // Controls points for smoothing
-            const cp1x = p0.x + (p1.x - p0.x) / 2;
-            const cp1y = p0.y;
-            const cp2x = p0.x + (p1.x - p0.x) / 2;
-            const cp2y = p1.y;
-
-            path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p1.x} ${p1.y}`;
+        for (let i = 1; i < points.length; i++) {
+            path += ` L ${points[i].x} ${points[i].y}`;
         }
 
         return path;
     };
 
-    const viewPath = getSmoothPath('views');
-    const leadPath = getSmoothPath('leads');
+    const viewPath = getPath('views');
+    const leadPath = getPath('leads');
 
     return (
         <div className="relative group/chart">
