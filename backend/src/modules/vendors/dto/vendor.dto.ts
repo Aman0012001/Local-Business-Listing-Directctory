@@ -139,9 +139,135 @@ export class UpdateVendorDto {
 }
 
 export class SocialLinkDto {
+    @ApiProperty({ example: 'facebook' })
     @IsString()
     platform: string;
 
+    @ApiProperty({ example: 'https://facebook.com/mybusiness' })
     @IsUrl({ require_protocol: false, require_tld: false })
     url: string;
 }
+
+export class VendorProfileDto {
+    @ApiProperty()
+    id: string;
+
+    @ApiProperty()
+    businessName: string;
+
+    @ApiPropertyOptional()
+    businessEmail?: string;
+
+    @ApiProperty()
+    businessPhone: string;
+
+    @ApiPropertyOptional()
+    businessAddress?: string;
+
+    @ApiProperty()
+    isVerified: boolean;
+
+    @ApiPropertyOptional()
+    bio?: string;
+
+    @ApiPropertyOptional({ type: [SocialLinkDto] })
+    socialLinks?: SocialLinkDto[];
+
+    @ApiPropertyOptional()
+    country?: string;
+
+    @ApiPropertyOptional()
+    city?: string;
+
+    @ApiPropertyOptional()
+    state?: string;
+}
+
+export class PublicVendorProfileDto {
+    @ApiProperty()
+    id: string;
+
+    @ApiProperty()
+    businessName: string;
+
+    @ApiProperty()
+    vendorName: string;
+
+    @ApiPropertyOptional()
+    businessEmail?: string;
+
+    @ApiPropertyOptional()
+    businessPhone?: string;
+
+    @ApiPropertyOptional()
+    businessAddress?: string;
+
+    @ApiProperty()
+    isVerified: boolean;
+
+    @ApiPropertyOptional()
+    avatarUrl?: string;
+
+    @ApiPropertyOptional()
+    bio?: string;
+
+    @ApiProperty()
+    listingCount: number;
+
+    @ApiProperty()
+    avgRating: number;
+
+    @ApiProperty()
+    totalViews: number;
+
+    @ApiProperty({ type: [String] })
+    categories: string[];
+
+    @ApiPropertyOptional()
+    createdAt?: Date;
+}
+
+
+export class AnalyticsPointDto {
+    @ApiProperty({ example: 'Jan 01' })
+    day: string;
+
+    @ApiProperty({ example: '2026-01-01' })
+    date: string;
+
+    @ApiProperty({ example: 5 })
+    leads: number;
+
+    @ApiProperty({ example: 25 })
+    views: number;
+}
+
+export class VendorDashboardStatsDto {
+    @ApiProperty({ example: 1 })
+    businessCount: number;
+
+    @ApiProperty({ example: 0 })
+    pendingCount: number;
+
+    @ApiPropertyOptional()
+    activeSubscription: any;
+
+    @ApiProperty({ example: 150 })
+    totalLeads: number;
+
+    @ApiProperty({ example: 1200 })
+    totalViews: number;
+
+    @ApiProperty({ example: 45 })
+    totalReviews: number;
+
+    @ApiProperty({ example: 85 })
+    profileCompletion: number;
+
+    @ApiProperty({ example: true })
+    isVerified: boolean;
+
+    @ApiProperty({ type: [AnalyticsPointDto] })
+    analytics: AnalyticsPointDto[];
+}
+

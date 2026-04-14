@@ -327,6 +327,45 @@ export default function GenericDashboard() {
                     )}
                 </div>
             </motion.div>
+            
+            {/* Profile Completion Alert */}
+            {isVendor && stats?.profileCompletion < 100 && (
+                <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="mb-8"
+                >
+                    <Link href="/vendor/profile" className="block p-6 bg-blue-50 border border-blue-100 rounded-2xl group hover:bg-white hover:border-blue-300 transition-all shadow-sm">
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+                            <div className="flex items-center gap-5">
+                                <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-blue-600 shadow-md transition-transform group-hover:rotate-6">
+                                    <div className="relative">
+                                        <BadgeCheck className="w-8 h-8" />
+                                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 rounded-full border-2 border-white animate-ping" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Profile Completion: {stats.profileCompletion}%</h3>
+                                    <p className="text-sm text-slate-500 font-bold">Add business details to boost your visibility and trust!</p>
+                                </div>
+                            </div>
+                            <div className="w-full sm:w-64 space-y-2">
+                                <div className="flex justify-between text-[10px] font-black text-blue-600 uppercase tracking-widest">
+                                    <span>Progress</span>
+                                    <span>{stats.profileCompletion}%</span>
+                                </div>
+                                <div className="h-3 w-full bg-blue-200/50 rounded-full overflow-hidden p-0.5 border border-blue-200">
+                                    <motion.div 
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${stats.profileCompletion}%` }}
+                                        className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full"
+                                    ></motion.div>
+                                </div>
+                            </div>
+                        </div>
+                    </Link>
+                </motion.div>
+            )}
 
             {/* Active Subscription Status Banner */}
             {(isVendor || isAdmin) && user?.vendor?.activeSubscription && (

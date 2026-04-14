@@ -5,7 +5,7 @@ import {
     ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Vendor } from '../../entities/vendor.entity';
 import { User, UserRole } from '../../entities/user.entity';
 import { Listing } from '../../entities/business.entity';
@@ -13,6 +13,8 @@ import { Subscription } from '../../entities/subscription.entity';
 import { CreateVendorDto, UpdateVendorDto } from './dto/vendor.dto';
 import { OfferEvent, OfferType, OfferStatus } from '../../entities/offer-event.entity';
 import { Lead } from '../../entities/lead.entity';
+import { SearchLog } from '../../entities/search-log.entity';
+import { Category } from '../../entities/category.entity';
 
 @Injectable()
 export class VendorsService {
@@ -78,7 +80,7 @@ export class VendorsService {
                         throw err;
                     }
                 }
-                
+
                 return this.vendorRepository.findOne({
                     where: { userId },
                     relations: ['businesses', 'subscriptions'],
@@ -152,7 +154,7 @@ export class VendorsService {
             .getRawOne();
 
         const pendingCount = await this.listingRepository.count({
-            where: { 
+            where: {
                 vendorId: vendor.id,
                 status: 'pending' as any
             },
@@ -175,54 +177,127 @@ export class VendorsService {
             .orderBy('day', 'ASC')
             .getRawMany();
 
-        console.log(`[VendorsService] Daily leads for vendor ${vendor.id}:`, JSON.stringify(dailyLeadsRaw));
+        // Get "Impressions" (How many times their categories were searched)
+        const categoryIds = vendor.businesses.map(b => b.categoryId).filter(id => !!id);
+        const categories = categoryIds.length > 0 ? await this.listingRepository.manager.find(Category, { where: { id: In(categoryIds) } }) : [];
+        const catSlugs = categories.map(c => c.slug);
+
+        let dailyImpressionsRaw = [];
+        if (catSlugs.length > 0) {
+            dailyImpressionsRaw = await this.listingRepository.manager
+                .createQueryBuilder(SearchLog, 'log')
+                .select("TO_CHAR(log.searchedAt, 'YYYY-MM-DD')", 'day')
+                .addSelect('COUNT(*)', 'count')
+                .where('log.categorySlug IN (:...catSlugs)', { catSlugs })
+                .andWhere('log.searchedAt >= :fifteenDaysAgo', { fifteenDaysAgo })
+                .groupBy("TO_CHAR(log.searchedAt, 'YYYY-MM-DD')")
+                .getRawMany();
+        }
+
+        console.log(`[VendorsService] Daily leads:`, JSON.stringify(dailyLeadsRaw));
+        console.log(`[VendorsService] Daily impressions:`, JSON.stringify(dailyImpressionsRaw));
 
         // Format analytics for the chart (last 7 data points)
         const analytics = [];
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        
+
         // Use local time for generating the last 7 days to match user expectation
+        const totalViews = parseInt(totalViewsRaw?.total || '0');
+        const avgDailyViews = Math.floor(totalViews / 30);
+
         for (let i = 6; i >= 0; i--) {
             const d = new Date();
             d.setDate(d.getDate() - i);
-            
+
             // Generate standard YYYY-MM-DD string for matching
             const year = d.getFullYear();
             const month = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            const dateStr = `${year}-${month}-${day}`;
-            
+            const dayNum = String(d.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${dayNum}`;
+
             const displayDate = `${monthNames[d.getMonth()]} ${d.getDate()}`;
-            
+
             // Find if we have real leads for this day
             const foundLead = dailyLeadsRaw.find(dl => dl.day === dateStr);
             const leads = foundLead ? parseInt(foundLead.count) : 0;
-            
-            // Views estimation logic
-            const totalViews = parseInt(totalViewsRaw?.total || '0');
-            const avgDailyViews = totalViews / 30;
-            
-            // Semi-random but lead-correlated view calculation
-            const views = leads > 0 
-                ? Math.floor(leads * (4 + Math.random() * 3) + avgDailyViews * 0.4)
-                : Math.floor(avgDailyViews * (0.7 + Math.random() * 0.6) + (Math.random() * 5));
+
+            // Find if we have real impressions for this day
+            const foundImp = dailyImpressionsRaw.find(di => di.day === dateStr);
+            const impressions = foundImp ? parseInt(foundImp.count) : 0;
+
+            // Strictly deterministic Views calculation based on real database signals
+            let views = 0;
+            if (businessCount > 0) {
+                if (leads > 0 || impressions > 0) {
+                    // Combine signals: Each lead suggests multiple views, each impression is a discovery
+                    views = (leads * 5) + impressions;
+                    // Ensure it stays reasonably aligned with the daily average
+                    if (avgDailyViews > 5) {
+                        views = Math.max(views, Math.floor(avgDailyViews * 0.7));
+                    }
+                } else if (totalViews > 100) {
+                    // For high-traffic vendors, show stable baseline even without recent search signal
+                    views = avgDailyViews;
+                }
+            }
 
             analytics.push({
                 day: displayDate,
-                date: dateStr, // Include date for easier sorting/debugging if needed
+                date: dateStr,
                 leads: leads,
                 views: Math.max(views, leads) // Views always >= leads
             });
         }
 
+        // Calculate Profile Completion
+        let completionScore = 0;
+        const fields = [
+            { val: vendor.businessName, weight: 15 },
+            { val: vendor.bio, weight: 15 },
+            { val: vendor.businessEmail, weight: 10 },
+            { val: vendor.businessPhone, weight: 10 },
+            { val: vendor.businessAddress, weight: 10 },
+            { val: vendor.city, weight: 10 },
+            { val: vendor.socialLinks?.length > 0, weight: 10 },
+            { val: vendor.isVerified, weight: 20 },
+        ];
+
+        fields.forEach(f => {
+            if (f.val) completionScore += f.weight;
+        });
+
+        const totalLeads = parseInt(totalLeadsRaw?.total || '0');
+        const totalViews = parseInt(totalViewsRaw?.total || '0');
+
+        // Check if there is any activity to report
+        const hasActivity = businessCount > 0 && (totalViews > 0 || totalLeads > 0);
+
+        // If no activity, return empty analytics array per strict requirements
+        if (!hasActivity) {
+            return {
+                businessCount,
+                pendingCount,
+                activeCount: businessCount - pendingCount,
+                activeSubscription: vendor.subscriptions?.find(s => s.status === 'active') || null,
+                totalLeads,
+                totalViews,
+                totalReviews: parseInt(totalReviewsRaw?.total || '0'),
+                isVerified: vendor.isVerified,
+                profileCompletion: Math.min(completionScore, 100),
+                analytics: [],
+            };
+        }
+
         return {
             businessCount,
             pendingCount,
+            activeCount: businessCount - pendingCount,
             activeSubscription: vendor.subscriptions?.find(s => s.status === 'active') || null,
-            totalLeads: parseInt(totalLeadsRaw?.total || '0'),
-            totalViews: parseInt(totalViewsRaw?.total || '0'),
+            totalLeads,
+            totalViews,
             totalReviews: parseInt(totalReviewsRaw?.total || '0'),
             isVerified: vendor.isVerified,
+            profileCompletion: Math.min(completionScore, 100),
             analytics,
         };
     }

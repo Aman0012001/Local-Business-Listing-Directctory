@@ -18,21 +18,6 @@ interface PerformanceChartProps {
     } | null;
 }
 
-// Generate realistic looking placeholder dates for the last 7 days
-const getPlaceholderData = (): PerformanceDataPoint[] => {
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const data: PerformanceDataPoint[] = [];
-    for (let i = 6; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        data.push({
-            day: `${monthNames[d.getMonth()]} ${d.getDate()}`,
-            views: 0,
-            leads: 0
-        });
-    }
-    return data;
-};
 
 export default function PerformanceChart({ stats }: PerformanceChartProps) {
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -40,7 +25,7 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
     const chartData = useMemo(() =>
         stats?.analytics && stats.analytics.length > 0
             ? stats.analytics
-            : getPlaceholderData()
+            : []
         , [stats?.analytics]);
 
     // Calculate max value for scaling, ensure it's at least 10
@@ -113,25 +98,43 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
                     </div>
 
                     <div className="relative h-[250px] mt-12 mb-8">
-                        {/* Grid Lines */}
-                        {[0, 0.5, 1].map((v, idx) => (
-                            <div
-                                key={idx}
-                                className="absolute left-0 right-0 border-t border-slate-50 flex items-center"
-                                style={{ top: `${v * 100}%` }}
-                            >
-                                <span className="absolute -left-10 text-[10px] text-slate-300 font-bold">
-                                    {Math.round(maxVal - v * maxVal)}
-                                </span>
+                        {chartData.length === 0 ? (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/50 rounded-[20px] border border-dashed border-slate-200 p-8 text-center">
+                                <motion.div 
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="flex flex-col items-center"
+                                >
+                                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-4 shadow-sm transform -rotate-6">
+                                        <TrendingUp className="w-8 h-8 text-slate-300" />
+                                    </div>
+                                    <h4 className="text-slate-900 font-black text-lg mb-2">No data yet</h4>
+                                    <p className="text-sm text-slate-500 font-medium max-w-[320px] leading-relaxed">
+                                        No data yet. Insights will appear once your business starts getting views.
+                                    </p>
+                                </motion.div>
                             </div>
-                        ))}
+                        ) : (
+                            <>
+                                {/* Grid Lines */}
+                                {[0, 0.5, 1].map((v, idx) => (
+                                    <div
+                                        key={idx}
+                                        className="absolute left-0 right-0 border-t border-slate-50 flex items-center"
+                                        style={{ top: `${v * 100}%` }}
+                                    >
+                                        <span className="absolute -left-10 text-[10px] text-slate-300 font-bold">
+                                            {Math.round(maxVal - v * maxVal)}
+                                        </span>
+                                    </div>
+                                ))}
 
-                        <svg
-                            viewBox={`0 0 ${width} ${height}`}
-                            className="absolute inset-0 w-full h-full overflow-visible"
-                            preserveAspectRatio="none"
-                            onMouseLeave={() => setHoveredIndex(null)}
-                        >
+                                <svg
+                                    viewBox={`0 0 ${width} ${height}`}
+                                    className="absolute inset-0 w-full h-full overflow-visible"
+                                    preserveAspectRatio="none"
+                                    onMouseLeave={() => setHoveredIndex(null)}
+                                >
                             <defs>
                                 <linearGradient id="viewsGrad" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.15" />
@@ -270,7 +273,9 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
                                 </span>
                             ))}
                         </div>
-                    </div>
+                    </>
+                )}
+            </div>
                 </div>
 
             </div>

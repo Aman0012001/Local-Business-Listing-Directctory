@@ -14,7 +14,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { VendorsService } from './vendors.service';
 import { BusinessesService } from '../businesses/businesses.service';
-import { CreateVendorDto, UpdateVendorDto } from './dto/vendor.dto';
+import { CreateVendorDto, UpdateVendorDto, VendorDashboardStatsDto, VendorProfileDto, PublicVendorProfileDto } from './dto/vendor.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -36,7 +36,7 @@ export class VendorsController {
     @Get(':id/public')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Get public vendor profile details by ID' })
-    @ApiResponse({ status: 200, description: 'Vendor profile retrieved' })
+    @ApiResponse({ status: 200, description: 'Vendor profile retrieved', type: PublicVendorProfileDto })
     getPublicProfile(@Param('id') id: string) {
         console.log(`[VendorsController] Fetching public profile for ID: ${id}`);
         return this.vendorsService.getPublicProfile(id);
@@ -46,7 +46,7 @@ export class VendorsController {
     @Get('by-city')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Get public vendor profiles in a given city (no auth required)' })
-    @ApiResponse({ status: 200, description: 'Vendor profiles retrieved' })
+    @ApiResponse({ status: 200, description: 'Vendor profiles retrieved', type: [PublicVendorProfileDto] })
     getByCity(@Query('city') city: string) {
         return this.vendorsService.getByCity(city || '');
     }
@@ -68,7 +68,7 @@ export class VendorsController {
     @Get('profile')
     @Roles(UserRole.VENDOR, UserRole.ADMIN)
     @ApiOperation({ summary: 'Get current vendor profile' })
-    @ApiResponse({ status: 200, description: 'Profile retrieved' })
+    @ApiResponse({ status: 200, description: 'Profile retrieved', type: VendorProfileDto })
     getProfile(@CurrentUser() user: User) {
         return this.vendorsService.getProfile(user.id);
     }
@@ -76,7 +76,7 @@ export class VendorsController {
     @Patch('profile')
     @Roles(UserRole.VENDOR, UserRole.ADMIN)
     @ApiOperation({ summary: 'Update current vendor profile' })
-    @ApiResponse({ status: 200, description: 'Profile updated' })
+    @ApiResponse({ status: 200, description: 'Profile updated', type: VendorProfileDto })
     updateProfile(@CurrentUser() user: User, @Body() updateVendorDto: UpdateVendorDto) {
         return this.vendorsService.updateProfile(user.id, updateVendorDto);
     }
@@ -84,9 +84,9 @@ export class VendorsController {
     @Get('dashboard-stats')
     @Roles(UserRole.VENDOR, UserRole.ADMIN)
     @ApiOperation({ summary: 'Get overview stats for the vendor dashboard' })
-    @ApiResponse({ status: 200, description: 'Stats retrieved' })
-    getStats(@CurrentUser() user: User) {
-        return this.vendorsService.getDashboardStats(user.id);
+    @ApiResponse({ status: 200, description: 'Stats retrieved', type: VendorDashboardStatsDto })
+    getStats(@CurrentUser() user: User): Promise<VendorDashboardStatsDto> {
+        return this.vendorsService.getDashboardStats(user.id) as any;
     }
 
     @Post('verify')
