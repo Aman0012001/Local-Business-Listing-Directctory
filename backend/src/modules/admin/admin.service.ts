@@ -98,11 +98,78 @@ export class AdminService {
         });
         const reviewCount = await this.reviewRepository.count();
 
+        const activeSubscriptionCount = await this.subscriptionRepository.count({
+            where: { status: SubscriptionStatus.ACTIVE },
+        });
+
         const revenue = await this.transactionRepository
             .createQueryBuilder('transaction')
             .select('SUM(transaction.amount)', 'total')
             .where('transaction.status = :status', { status: 'completed' })
             .getRawOne();
+
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const monthlyRevenue = await this.transactionRepository
+            .createQueryBuilder('transaction')
+            .select('SUM(transaction.amount)', 'total')
+            .where('transaction.status = :status', { status: 'completed' })
+            .andWhere('transaction.created_at >= :startOfMonth', { startOfMonth })
+            .getRawOne();
+
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+        sixMonthsAgo.setDate(1);
+        sixMonthsAgo.setHours(0, 0, 0, 0);
+
+        const monthlyGraphDataRaw = await this.transactionRepository
+            .createQueryBuilder('transaction')
+            .select("TO_CHAR(transaction.created_at, 'Mon')", 'month')
+            .addSelect("SUM(transaction.amount)", 'revenue')
+            .where('transaction.status = :status', { status: 'completed' })
+            .andWhere('transaction.created_at >= :sixMonthsAgo', { sixMonthsAgo })
+            .groupBy("TO_CHAR(transaction.created_at, 'Mon')")
+            .addGroupBy("EXTRACT(MONTH FROM transaction.created_at)")
+            .orderBy("EXTRACT(MONTH FROM transaction.created_at)", "ASC")
+            .getRawMany();
+
+        const monthlyGraphData = monthlyGraphDataRaw.map(item => ({
+            month: item.month ? item.month.trim() : '',
+            revenue: parseFloat(item.revenue || '0')
+        }));
+
+        const vendorsGraphDataRaw = await this.vendorRepository
+            .createQueryBuilder('vendor')
+            .select("TO_CHAR(vendor.created_at, 'Mon')", 'month')
+            .addSelect("COUNT(vendor.id)", 'count')
+            .where('vendor.created_at >= :sixMonthsAgo', { sixMonthsAgo })
+            .groupBy("TO_CHAR(vendor.created_at, 'Mon')")
+            .addGroupBy("EXTRACT(MONTH FROM vendor.created_at)")
+            .orderBy("EXTRACT(MONTH FROM vendor.created_at)", "ASC")
+            .getRawMany();
+
+        const vendorsGraphData = vendorsGraphDataRaw.map(item => ({
+            month: item.month ? item.month.trim() : '',
+            count: parseInt(item.count || '0')
+        }));
+
+        const subscriptionsGraphDataRaw = await this.subscriptionRepository
+            .createQueryBuilder('subscription')
+            .select("TO_CHAR(subscription.created_at, 'Mon')", 'month')
+            .addSelect("COUNT(subscription.id)", 'count')
+            .where('subscription.created_at >= :sixMonthsAgo', { sixMonthsAgo })
+            //.andWhere('subscription.status = :status', { status: SubscriptionStatus.ACTIVE })
+            .groupBy("TO_CHAR(subscription.created_at, 'Mon')")
+            .addGroupBy("EXTRACT(MONTH FROM subscription.created_at)")
+            .orderBy("EXTRACT(MONTH FROM subscription.created_at)", "ASC")
+            .getRawMany();
+
+        const subscriptionsGraphData = subscriptionsGraphDataRaw.map(item => ({
+            month: item.month ? item.month.trim() : '',
+            count: parseInt(item.count || '0')
+        }));
 
         return {
             totalUsers: userCount,
@@ -110,7 +177,12 @@ export class AdminService {
             totalBusinesses: businessCount,
             pendingBusinesses: pendingBusinessCount,
             totalReviews: reviewCount,
+            activeSubscriptions: activeSubscriptionCount,
             totalRevenue: parseFloat(revenue?.total || '0'),
+            monthlyRevenue: parseFloat(monthlyRevenue?.total || '0'),
+            monthlyGraphData,
+            vendorsGraphData,
+            subscriptionsGraphData,
         };
     }
 

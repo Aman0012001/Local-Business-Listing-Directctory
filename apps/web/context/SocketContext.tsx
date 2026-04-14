@@ -43,11 +43,12 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
             return;
         }
 
-        console.log('[SocketContext] Attempting connection to:', SOCKET_URL);
+        const cleanUrl = SOCKET_URL.endsWith('/') ? SOCKET_URL.slice(0, -1) : SOCKET_URL;
+        console.log('[SocketContext] Attempting connection to:', `${cleanUrl}/notifications`);
 
-        const newSocket = io(SOCKET_URL, {
+        const newSocket = io(`${cleanUrl}/notifications`, {
             auth: { token: `Bearer ${token}` },
-            transports: ['websocket'],
+            transports: ['polling', 'websocket'],
             reconnectionAttempts: 10,
             reconnectionDelay: 1000,
         });

@@ -210,9 +210,9 @@ export class SubscriptionsController {
 
     @Get('invoice/:id')
     @Roles(UserRole.VENDOR, UserRole.ADMIN, UserRole.SUPERADMIN)
-    @ApiOperation({ summary: 'Get a single invoice detail for the logged-in vendor' })
+    @ApiOperation({ summary: 'Get a single invoice detail (Vendor sees own, Admin sees all)' })
     getInvoice(@Param('id') id: string, @CurrentUser() user: User) {
-        return this.subService.getInvoiceDetail(id, user.id);
+        return this.subService.getInvoiceDetail(id, user);
     }
 
     @Post('change')

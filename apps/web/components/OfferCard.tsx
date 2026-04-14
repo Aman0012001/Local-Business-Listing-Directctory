@@ -25,14 +25,8 @@ interface OfferCardProps {
 
 const OfferCard: React.FC<OfferCardProps> = ({ offer, onEnquire }) => {
     return (
-        <div className={`group relative bg-white rounded-3xl border shadow-sm hover:shadow-xl hover:shadow-slate-200/60 transition-all duration-300 overflow-hidden flex flex-col h-full ${offer.isFeatured ? 'border-orange-200 ring-2 ring-orange-500/10' : 'border-slate-100'}`}>
+        <div className="group relative bg-white rounded-3xl border shadow-sm hover:shadow-xl hover:shadow-slate-200/60 transition-all duration-300 overflow-hidden flex flex-col h-full border-slate-100">
             <div className="h-1.5 w-full bg-gradient-to-r  to-rose-500" />
-            {offer.isFeatured && (
-                <div className="absolute top-4 left-4 z-20 px-3 py-1 bg-slate-900 border border-white/20 text-white text-[10px] font-black rounded-xl shadow-xl flex items-center gap-1.5 uppercase tracking-widest">
-                    <Megaphone className="w-3 h-3 text-orange-400" />
-                    Featured
-                </div>
-            )}
             {/* Offer Banner Image */}
             {offer.imageUrl && (
                 <div className="h-40 overflow-hidden bg-slate-100">

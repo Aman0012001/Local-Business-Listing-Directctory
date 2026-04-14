@@ -32,8 +32,8 @@ function getSocket(token: string): Socket {
         
         sharedSocket = io(`${cleanUrl}/chat`, {
             auth: { token: `Bearer ${token}` },
-            // Prefer websocket first to avoid flaky polling/CORS handshakes on some setups.
-            transports: ['websocket', 'polling'],
+            // Prefer polling first to avoid flaky websocket/CORS handshakes on some setups.
+            transports: ['polling', 'websocket'],
             reconnection: true,
             reconnectionAttempts: 5,
             reconnectionDelay: 1000,

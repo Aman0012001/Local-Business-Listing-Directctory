@@ -879,3 +879,15 @@ NotFoundException: Listing not found
 [2026-04-07T17:50:39.932Z] findBySlug: restaurants-best-pizza-mnm6c77s (User: mkuser@hey.com)
 [2026-04-07T17:50:41.211Z] findBySlug: restaurants-best-pizza-mnm6c77s - Found in DB. Status: approved
 [2026-04-07T17:50:41.525Z] findBySlug: restaurants-best-pizza-mnm6c77s - SUCCESS
+[2026-04-13T19:00:43.167Z] findBySlug: smilecare-dental-clinic-mnd2rjh5 (User: Public)
+[2026-04-13T19:00:44.649Z] findBySlug: smilecare-dental-clinic-mnd2rjh5 - Found in DB. Status: approved
+[2026-04-13T19:00:45.052Z] findBySlug: smilecare-dental-clinic-mnd2rjh5 - SUCCESS
+[2026-04-13T19:06:40.438Z] findBySlug: test-mnh4bnro (User: Public)
+[2026-04-13T19:06:41.675Z] findBySlug: test-mnh4bnro - Found in DB. Status: approved
+[2026-04-13T19:06:42.079Z] findBySlug: test-mnh4bnro - SUCCESS
+[2026-04-13T19:08:44.566Z] findBySlug: the-mk-tea-stall-mnof3q0j (User: Public)
+[2026-04-13T19:08:45.423Z] findBySlug: the-mk-tea-stall-mnof3q0j - Found in DB. Status: approved
+[2026-04-13T19:08:45.827Z] findBySlug: the-mk-tea-stall-mnof3q0j - SUCCESS
+[2026-04-13T19:37:44.744Z] findBySlug: test-mnh4bnro (User: superadmin@example.com)
+[2026-04-13T19:37:46.714Z] findBySlug: test-mnh4bnro - Found in DB. Status: approved
+[2026-04-13T19:37:47.188Z] findBySlug: test-mnh4bnro - SUCCESS

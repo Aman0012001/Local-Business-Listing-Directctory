@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Receipt, Users, CreditCard, Check, X, Search, Loader2,
     AlertTriangle, CheckCircle2, XCircle, Clock, Zap, Crown,
     Building2, RefreshCw, ChevronRight, Plus, Calendar, Eye,
-    TrendingUp, Bell
+    TrendingUp, Bell, FileText, Download
 } from 'lucide-react';
 import { api } from '../../../lib/api';
 
@@ -224,6 +224,179 @@ function AssignPlanModal({ onClose, onSuccess }: { onClose: () => void; onSucces
     );
 }
 
+/* ─── Invoice Modal ─────────────────────────────────────────────────────── */
+function InvoiceModal({ invoiceId, onClose }: { invoiceId: string; onClose: () => void }) {
+    const [data, setData] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const printRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        api.subscriptions.getInvoice(invoiceId)
+            .then(setData)
+            .catch(console.error)
+            .finally(() => setLoading(false));
+    }, [invoiceId]);
+
+    const handlePrint = () => {
+        if (!printRef.current) return;
+        const content = printRef.current.innerHTML;
+        const w = window.open('', '_blank');
+        if (!w) return;
+        w.document.write(`<html><head><title>Invoice</title>
+            <style>
+                body { font-family: system-ui, sans-serif; padding: 40px; color: #0f172a; }
+                .logo { font-size: 24px; font-weight: 900; color: #f97316; }
+                table { width: 100%; border-collapse: collapse; }
+                th, td { padding: 12px 16px; text-align: left; }
+                th { background: #f8fafc; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; }
+                .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #fff7ed; color: #f97316; }
+                .total-row { border-top: 2px solid #f1f5f9; font-weight: 900; }
+            </style>
+        </head><body>${content}</body></html>`);
+        w.document.close();
+        w.print();
+    };
+
+    const txn = data?.transaction;
+    const vendor = data?.vendor;
+    const userInfo = data?.user;
+    const plan = txn?.subscription?.plan;
+    const invDate = txn?.paidAt ? new Date(txn.paidAt) : new Date(txn?.createdAt);
+
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            onClick={onClose}
+        >
+            <motion.div
+                initial={{ scale: 0.9, y: 20, opacity: 0 }}
+                animate={{ scale: 1, y: 0, opacity: 1 }}
+                exit={{ scale: 0.9, y: 20, opacity: 0 }}
+                className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
+                onClick={e => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-orange-50 flex items-center justify-center">
+                            <FileText className="w-5 h-5 text-orange-500" />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-black text-slate-900">Invoice</h2>
+                            {txn && <p className="text-xs text-slate-400 font-bold">{txn.invoiceNumber || txn.id}</p>}
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {!loading && txn && (
+                            <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-black hover:bg-black transition-colors">
+                                <Download className="w-3.5 h-3.5" /> Print / Save PDF
+                            </button>
+                        )}
+                        <button onClick={onClose} className="w-10 h-10 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors">
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
+                </div>
+
+                <div className="overflow-y-auto max-h-[75vh]">
+                    {loading ? (
+                        <div className="flex items-center justify-center py-20">
+                            <Loader2 className="w-8 h-8 animate-spin text-slate-300" />
+                        </div>
+                    ) : !txn ? (
+                        <div className="text-center py-16 text-slate-400 font-bold">Invoice not found</div>
+                    ) : (
+                        <div ref={printRef} className="p-8">
+                            {/* Invoice Header */}
+                            <div className="flex items-start justify-between mb-10">
+                                <div>
+                                    <div className="logo text-2xl font-black text-orange-500 mb-1">naampata</div>
+                                    <p className="text-xs text-slate-400 font-bold">Business Listings Platform</p>
+                                </div>
+                                <div className="text-right">
+                                <div className="inline-block px-4 py-1.5 bg-orange-50 text-orange-700 rounded-full text-xs font-black uppercase tracking-wider mb-2">
+                                    {txn.status === 'completed' || txn.status === 'paid' ? '✓ Paid' : txn.status}
+                                </div>
+                                    <p className="text-sm font-black text-slate-900">{txn.invoiceNumber || `INV-${txn.id.slice(0, 8).toUpperCase()}`}</p>
+                                    <p className="text-xs text-slate-400 font-bold mt-0.5">
+                                        {invDate.toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Billed To */}
+                            <div className="grid grid-cols-2 gap-8 mb-10 pb-8 border-b border-slate-100">
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-300 mb-2">Billed To</p>
+                                    <p className="font-black text-slate-900">{vendor?.businessName || userInfo?.fullName}</p>
+                                    <p className="text-sm text-slate-500 font-bold mt-1">{userInfo?.email}</p>
+                                    {userInfo?.phone && <p className="text-sm text-slate-500 font-bold">{userInfo?.phone}</p>}
+                                    {vendor?.ntnNumber && <p className="text-xs text-slate-400 font-bold mt-1">NTN: {vendor.ntnNumber}</p>}
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-300 mb-2">Payment Details</p>
+                                    <p className="text-sm font-black text-slate-900">Method: {txn.paymentGateway || 'Online'}</p>
+                                    <p className="text-sm text-slate-500 font-bold mt-1">
+                                        Billing: {txn.subscription?.plan?.billingCycle || 'Monthly'}
+                                    </p>
+                                    {txn.paidAt && (
+                                        <p className="text-xs text-slate-400 font-bold mt-1">
+                                            Paid: {new Date(txn.paidAt).toLocaleDateString('en-PK')}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Items Table */}
+                            <table className="w-full mb-6">
+                                <thead>
+                                    <tr className="bg-slate-50 rounded-xl">
+                                        <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 rounded-l-xl">Description</th>
+                                        <th className="px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Period</th>
+                                        <th className="px-4 py-3 text-right text-[10px] font-black uppercase tracking-widest text-slate-400 rounded-r-xl">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr className="border-b border-slate-50">
+                                        <td className="px-4 py-4">
+                                            <p className="font-black text-slate-900">{plan?.name || 'Subscription Plan'}</p>
+                                            <p className="text-xs text-slate-400 font-bold mt-0.5">
+                                                {plan?.planType?.toUpperCase()} · Up to {plan?.maxListings || 1} listing(s)
+                                            </p>
+                                        </td>
+                                        <td className="px-4 py-4 text-center text-sm text-slate-500 font-bold">
+                                            {plan?.billingCycle || 'Monthly'}
+                                        </td>
+                                        <td className="px-4 py-4 text-right font-black text-slate-900">
+                                            PKR {Number(txn.amount).toLocaleString()}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colSpan={2} className="px-4 py-4 text-right text-sm font-black text-slate-500 uppercase tracking-wider">Total</td>
+                                        <td className="px-4 py-4 text-right text-xl font-black text-slate-900">
+                                            PKR {Number(txn.amount).toLocaleString()}
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+
+                            {/* Footer note */}
+                            <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+                                <p className="text-xs text-slate-400 font-bold">Thank you for your business! For queries, contact support@naampata.com</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </motion.div>
+        </motion.div>
+    );
+}
+
 /* ─── Main Page ─────────────────────────────────────────────────────────── */
 export default function AdminSubscriptionsPage() {
     const [tab, setTab] = useState<'subscriptions' | 'transactions'>('subscriptions');
@@ -234,6 +407,7 @@ export default function AdminSubscriptionsPage() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [assignModal, setAssignModal] = useState(false);
+    const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
     const [triggeringCron, setTriggeringCron] = useState(false);
     const [cronResult, setCronResult] = useState<{ notified: number; errors: number } | null>(null);
     const LIMIT = 15;
@@ -477,7 +651,7 @@ export default function AdminSubscriptionsPage() {
                                     <table className="w-full">
                                         <thead>
                                             <tr className="border-b border-slate-50">
-                                                {['Invoice #', 'Vendor', 'Plan', 'Amount', 'Gateway', 'Status', 'Date'].map(h => (
+                                                {['Invoice #', 'Vendor', 'Plan', 'Amount', 'Gateway', 'Status', 'Date', 'Actions'].map(h => (
                                                     <th key={h} className="px-5 py-4 text-left text-[10px] font-black uppercase tracking-widest text-slate-300">{h}</th>
                                                 ))}
                                             </tr>
@@ -504,6 +678,14 @@ export default function AdminSubscriptionsPage() {
                                                     <td className="px-5 py-4"><StatusBadge status={txn.status} /></td>
                                                     <td className="px-5 py-4 text-xs font-bold text-slate-400">
                                                         {new Date(txn.paidAt || txn.createdAt).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                    </td>
+                                                    <td className="px-5 py-4 text-right">
+                                                        <button
+                                                            onClick={() => setSelectedInvoiceId(txn.id)}
+                                                            className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl font-black text-xs transition-colors"
+                                                        >
+                                                            <Eye className="w-3.5 h-3.5" /> View
+                                                        </button>
                                                     </td>
                                                 </motion.tr>
                                             ))}
@@ -543,6 +725,16 @@ export default function AdminSubscriptionsPage() {
                     <AssignPlanModal
                         onClose={() => setAssignModal(false)}
                         onSuccess={fetchData}
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* ── Invoice Modal ── */}
+            <AnimatePresence>
+                {selectedInvoiceId && (
+                    <InvoiceModal
+                        invoiceId={selectedInvoiceId}
+                        onClose={() => setSelectedInvoiceId(null)}
                     />
                 )}
             </AnimatePresence>

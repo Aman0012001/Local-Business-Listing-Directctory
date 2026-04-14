@@ -88,11 +88,6 @@ export default function VendorProfileCard({ vendor, city }: Props) {
                         size="lg" 
                         className="shadow-lg ring-4 ring-white"
                     />
-                    {vendor.isVerified && (
-                        <span className="absolute -bottom-2 -right-2 w-7 h-7 bg-emerald-500 rounded-full flex items-center justify-center shadow-md ring-2 ring-white" title="Verified">
-                            <BadgeCheck className="w-4 h-4 text-white" />
-                        </span>
-                    )}
                 </div>
 
                 {/* Name */}

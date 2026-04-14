@@ -27,6 +27,7 @@ import { getImageUrl } from '../../lib/api';
 
 const menuItems = [
     { name: 'Overview', icon: LayoutDashboard, href: '/admin', badge: null },
+    { name: 'Reports', icon: Activity, href: '/admin/summary-reports', badge: null },
     { name: 'Users', icon: Users, href: '/admin/users', badge: null },
     { name: 'Categories', icon: LayoutGrid, href: '/admin/categories', badge: null },
     { name: 'Cities', icon: MapPin, href: '/admin/cities', badge: null },

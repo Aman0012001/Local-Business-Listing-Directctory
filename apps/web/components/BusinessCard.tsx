@@ -117,18 +117,8 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1.5s] grayscale-[0.2] group-hover:grayscale-0"
                             iconSize={32}
                         />
-                        {business.isVerified && (
-                            <div className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-md rounded-full shadow-sm text-blue-600 border border-white z-10">
-                                <ShieldCheck className="w-4 h-4 fill-blue-600/10" />
-                            </div>
-                        )}
-                        {business.isFeatured && (String(business.isFeatured) === 'true' || business.isFeatured === true) && (
-                            <div className="absolute top-4 left-4 px-3 py-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg z-10">
-                                Featured
-                            </div>
-                        )}
                         {isNewBusiness(business.createdAt) && (
-                            <div className={`absolute ${business.isFeatured ? 'top-[44px]' : 'top-4'} left-4 px-3 py-1 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg z-10`}>
+                            <div className="absolute top-4 left-4 px-3 py-1 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg z-10">
                                 New
                             </div>
                         )}
@@ -177,13 +167,8 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                             iconSize={48}
                         />
-                        {business.isFeatured && (String(business.isFeatured) === 'true' || business.isFeatured === true) && (
-                            <div className="absolute top-4 left-4 px-3 py-1 bg-blue-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-lg">
-                                Featured
-                            </div>
-                        )}
                         {isNewBusiness(business.createdAt) && (
-                            <div className={`absolute ${business.isFeatured ? 'top-[44px]' : 'top-4'} left-4 px-3 py-1 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-lg`}>
+                            <div className="absolute top-4 left-4 px-3 py-1 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-lg">
                                 New
                             </div>
                         )}
@@ -197,9 +182,6 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                                     <h3 className="text-2xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
                                         {business.title}
                                     </h3>
-                                    {business.isVerified && (
-                                        <ShieldCheck className="w-5 h-5 text-amber-500" />
-                                    )}
                                 </div>
                                 <div className="flex items-center gap-2 mb-1">
                                     <StatusBadge status={(business as any).status} />
@@ -257,18 +239,8 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                         iconSize={40}
                     />
-                    {business.isVerified && (
-                        <div className="absolute top-4 right-4 px-3 py-1 bg-amber-500 text-white text-[10px] font-bold uppercase tracking-widest rounded-full shadow-lg z-10">
-                            Verified
-                        </div>
-                    )}
-                    {business.isFeatured && (String(business.isFeatured) === 'true' || business.isFeatured === true) && (
-                        <div className="absolute top-4 left-4 px-3 py-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg z-10">
-                            Featured
-                        </div>
-                    )}
                     {isNewBusiness(business.createdAt) && (
-                        <div className={`absolute ${business.isFeatured ? 'top-[44px]' : 'top-4'} left-4 px-3 py-1 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg z-10`}>
+                        <div className="absolute top-4 left-4 px-3 py-1 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg z-10">
                             New
                         </div>
                     )}

@@ -16,7 +16,7 @@ import { PricingPlan, PricingPlanType, PricingPlanUnit } from '../../entities/pr
 import { ActivePlan, ActivePlanStatus } from '../../entities/active-plan.entity';
 import { Transaction, PaymentStatus } from '../../entities/transaction.entity';
 import { Vendor } from '../../entities/vendor.entity';
-import { User } from '../../entities/user.entity';
+import { User, UserRole } from '../../entities/user.entity';
 import { Listing } from '../../entities/business.entity';
 import { AffiliateReferral, ReferralStatus, ReferralType } from '../../entities/referral.entity';
 import { Affiliate } from '../../entities/affiliate.entity';
@@ -161,14 +161,38 @@ export class SubscriptionsService implements OnModuleInit {
     /**
      * ADMIN: Get all subscriptions (paginated)
      */
-    async getAllSubscriptionsForAdmin(page = 1, limit = 20): Promise<{ data: Subscription[]; total: number }> {
-        const [data, total] = await this.subscriptionRepository.findAndCount({
+    async getAllSubscriptionsForAdmin(page = 1, limit = 20): Promise<{ data: any[]; total: number }> {
+        const [oldData, oldTotal] = await this.subscriptionRepository.findAndCount({
             relations: ['plan', 'vendor', 'vendor.user'],
             order: { createdAt: 'DESC' },
             skip: (page - 1) * limit,
             take: limit,
         });
-        return { data, total };
+
+        const [newData, newTotal] = await this.activePlanRepository.findAndCount({
+            relations: ['plan', 'vendor', 'vendor.user'],
+            order: { createdAt: 'DESC' },
+            skip: (page - 1) * limit,
+            take: limit,
+        });
+
+        const mappedNewData = newData.map(np => ({
+            id: np.id,
+            status: np.status,
+            startDate: np.startDate,
+            endDate: np.endDate,
+            amount: np.amountPaid,
+            createdAt: np.createdAt,
+            vendor: np.vendor,
+            plan: { name: np.plan?.name || String(np.plan?.type || 'Plan'), planType: np.plan?.type },
+            isNewSystem: true
+        }));
+
+        const combined = [...oldData, ...mappedNewData]
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+            .slice(0, limit);
+
+        return { data: combined, total: oldTotal + newTotal };
     }
 
     /**
@@ -1122,34 +1146,50 @@ export class SubscriptionsService implements OnModuleInit {
     }
 
     /**
-     * Get single invoice/transaction detail for vendor
+     * Get single invoice/transaction detail (Vendor sees own, Admin sees all)
      */
-    async getInvoiceDetail(transactionId: string, userId: string) {
-        const vendor = await this.vendorRepository.findOne({
-            where: { userId },
-            relations: ['user'],
-        });
-        if (!vendor) throw new ForbiddenException('Vendor not found');
+    async getInvoiceDetail(transactionId: string, user: User) {
+        let transaction: Transaction;
+        let vendor: Vendor;
 
-        const transaction = await this.transactionRepository.findOne({
-            where: { id: transactionId, vendorId: vendor.id },
-            relations: ['subscription', 'subscription.plan'],
-        });
-        if (!transaction) throw new NotFoundException('Invoice not found');
+        if (user.role === UserRole.ADMIN || user.role === UserRole.SUPERADMIN) {
+            // Admin can see any transaction
+            transaction = await this.transactionRepository.findOne({
+                where: { id: transactionId },
+                relations: ['subscription', 'subscription.plan', 'vendor', 'vendor.user'],
+            });
+            if (!transaction) throw new NotFoundException('Invoice not found');
+            vendor = transaction.vendor;
+        } else {
+            // Vendor can only see their own
+            vendor = await this.vendorRepository.findOne({
+                where: { userId: user.id },
+                relations: ['user'],
+            });
+            if (!vendor) throw new ForbiddenException('Vendor not found');
+
+            transaction = await this.transactionRepository.findOne({
+                where: { id: transactionId, vendorId: vendor.id },
+                relations: ['subscription', 'subscription.plan'],
+            });
+            if (!transaction) throw new NotFoundException('Invoice not found');
+        }
+
+        const vendorUser = vendor?.user || transaction?.vendor?.user;
 
         return {
             transaction,
             vendor: {
-                businessName: vendor.businessName,
-                businessEmail: vendor.businessEmail,
-                businessPhone: vendor.businessPhone,
-                ntnNumber: vendor.ntnNumber,
-                gstNumber: vendor.gstNumber,
+                businessName: vendor?.businessName,
+                businessEmail: vendor?.businessEmail,
+                businessPhone: vendor?.businessPhone,
+                ntnNumber: vendor?.ntnNumber,
+                gstNumber: vendor?.gstNumber,
             },
             user: {
-                fullName: vendor.user?.fullName,
-                email: vendor.user?.email,
-                phone: vendor.user?.phone,
+                fullName: vendorUser?.fullName,
+                email: vendorUser?.email,
+                phone: vendorUser?.phone,
             },
         };
     }
