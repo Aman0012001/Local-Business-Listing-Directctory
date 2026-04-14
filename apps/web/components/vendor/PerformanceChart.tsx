@@ -9,6 +9,7 @@ interface PerformanceDataPoint {
     day: string;
     views: number;
     leads: number;
+    contacts: number;
 }
 
 interface PerformanceChartProps {
@@ -50,23 +51,28 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
             : []
         , [stats?.analytics]);
 
-    // Calculate max value for scaling, ensure it's at least 10
+    // Calculate max value for scaling, ensure it's at least 10 and not NaN
     const maxVal = useMemo(() => {
-        const maxViews = Math.max(...chartData.map(d => d.views), 0);
-        const maxLeads = Math.max(...chartData.map(d => d.leads), 0);
-        return Math.max(maxViews, maxLeads, 10) * 1.2;
+        if (!chartData || chartData.length === 0) return 10;
+        
+        const maxViews = Math.max(...chartData.map(d => Number(d.views) || 0), 0);
+        const maxLeads = Math.max(...chartData.map(d => Number(d.leads) || 0), 0);
+        const maxContacts = Math.max(...chartData.map(d => Number(d.contacts) || 0), 0);
+        
+        const calculatedMax = Math.max(maxViews, maxLeads, maxContacts, 10) * 1.2;
+        return isNaN(calculatedMax) ? 10 : calculatedMax;
     }, [chartData]);
 
     const width = 800; // Increased width for better resolution
     const height = 300;
 
     // Helper to generate a sharp, data-driven path
-    const getPath = (key: 'views' | 'leads') => {
-        if (chartData.length < 2) return "";
+    const getPath = (key: 'views' | 'leads' | 'contacts') => {
+        if (!chartData || chartData.length < 2) return "";
 
         const points = chartData.map((d, i) => ({
             x: (i / (chartData.length - 1)) * width,
-            y: height - (d[key] / maxVal) * height
+            y: height - ((Number(d[key]) || 0) / (maxVal || 10)) * height
         }));
 
         let path = `M ${points[0].x} ${points[0].y}`;
@@ -79,6 +85,7 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
 
     const viewPath = getPath('views');
     const leadPath = getPath('leads');
+    const contactPath = getPath('contacts');
 
     return (
         <div className="relative group/chart">
@@ -107,13 +114,17 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
                                     )}
                                 </AnimatePresence>
                             </div>
-                            <p className="text-xs text-slate-400 font-medium">Daily views and lead conversion metrics</p>
+                            <p className="text-xs text-slate-400 font-medium">Daily views, contacts and lead conversion metrics</p>
                         </div>
                         <div className="flex items-center gap-4">
                             <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest">
                                 <div className="flex items-center gap-1.5">
                                     <span className="w-2 h-2 rounded-full bg-blue-500" />
                                     <span className="text-slate-500">Views</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="w-2 h-2 rounded-full bg-[#10B981]" />
+                                    <span className="text-slate-500">Contacts</span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
                                     <span className="w-2 h-2 rounded-full bg-[#FF7A30]" />
@@ -150,7 +161,7 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
                                         style={{ top: `${v * 100}%` }}
                                     >
                                         <span className="absolute -left-10 text-[10px] text-slate-300 font-bold">
-                                            {Math.round(maxVal - v * maxVal)}
+                                            {String(Math.round(maxVal - v * maxVal) || 0)}
                                         </span>
                                     </div>
                                 ))}
@@ -166,6 +177,10 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
                                     <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.15" />
                                     <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.01" />
                                 </linearGradient>
+                                <linearGradient id="contactsGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#10B981" stopOpacity="0.15" />
+                                    <stop offset="100%" stopColor="#10B981" stopOpacity="0.01" />
+                                </linearGradient>
                                 <linearGradient id="leadsGrad" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="0%" stopColor="#FF7A30" stopOpacity="0.15" />
                                     <stop offset="100%" stopColor="#FF7A30" stopOpacity="0.01" />
@@ -179,6 +194,13 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ duration: 1 }}
+                            />
+                            <motion.path
+                                d={`${contactPath} L ${width} ${height} L 0 ${height} Z`}
+                                fill="url(#contactsGrad)"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 1, delay: 0.1 }}
                             />
                             <motion.path
                                 d={`${leadPath} L ${width} ${height} L 0 ${height} Z`}
@@ -201,6 +223,17 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
                                 transition={{ duration: 1.5, ease: "easeInOut" }}
                             />
                             <motion.path
+                                d={contactPath}
+                                fill="none"
+                                stroke="#10B981"
+                                strokeWidth="3"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                initial={{ pathLength: 0, opacity: 0 }}
+                                animate={{ pathLength: 1, opacity: 1 }}
+                                transition={{ duration: 1.5, ease: "easeInOut", delay: 0.15 }}
+                            />
+                            <motion.path
                                 d={leadPath}
                                 fill="none"
                                 stroke="#FF7A30"
@@ -218,9 +251,9 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
                                 return (
                                     <rect
                                         key={i}
-                                        x={x - (width / (chartData.length - 1)) / 2}
+                                        x={isNaN(x) ? 0 : x - (width / (chartData.length - 1)) / 2}
                                         y={0}
-                                        width={width / (chartData.length - 1)}
+                                        width={isNaN(width / (chartData.length - 1)) ? 0 : width / (chartData.length - 1)}
                                         height={height}
                                         fill="transparent"
                                         onMouseEnter={() => setHoveredIndex(i)}
@@ -243,7 +276,7 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
                                     />
                                     <circle
                                         cx={(hoveredIndex / (chartData.length - 1)) * width}
-                                        cy={height - (chartData[hoveredIndex].views / maxVal) * height}
+                                        cy={height - ((Number(chartData[hoveredIndex].views) || 0) / (maxVal || 10)) * height}
                                         r="6"
                                         fill="white"
                                         stroke="#3B82F6"
@@ -251,7 +284,15 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
                                     />
                                     <circle
                                         cx={(hoveredIndex / (chartData.length - 1)) * width}
-                                        cy={height - (chartData[hoveredIndex].leads / maxVal) * height}
+                                        cy={height - ((Number(chartData[hoveredIndex].contacts) || 0) / (maxVal || 10)) * height}
+                                        r="6"
+                                        fill="white"
+                                        stroke="#10B981"
+                                        strokeWidth="3"
+                                    />
+                                    <circle
+                                        cx={(hoveredIndex / (chartData.length - 1)) * width}
+                                        cy={height - ((Number(chartData[hoveredIndex].leads) || 0) / (maxVal || 10)) * height}
                                         r="6"
                                         fill="white"
                                         stroke="#FF7A30"
@@ -280,6 +321,10 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
                                         <div className="flex items-center justify-between gap-4">
                                             <span className="text-[11px] font-bold text-slate-200">Views</span>
                                             <span className="text-xs font-black text-blue-400">{chartData[hoveredIndex].views}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between gap-4">
+                                            <span className="text-[11px] font-bold text-slate-200">Contacts</span>
+                                            <span className="text-xs font-black text-green-400">{chartData[hoveredIndex].contacts}</span>
                                         </div>
                                         <div className="flex items-center justify-between gap-4">
                                             <span className="text-[11px] font-bold text-slate-200">Leads</span>
