@@ -40,7 +40,8 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         const cleanUrl = SOCKET_URL.endsWith('/') ? SOCKET_URL.slice(0, -1) : SOCKET_URL;
         const newSocket = io(`${cleanUrl}/notifications`, {
             auth: { token: `Bearer ${token}` },
-            transports: ['polling', 'websocket'],
+            transports: ['websocket'],
+            upgrade: false,
             reconnectionAttempts: 10,
             reconnectionDelay: 1000,
         });

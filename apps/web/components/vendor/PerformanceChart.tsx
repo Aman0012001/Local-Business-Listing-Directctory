@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Info, MousePointer2, TrendingUp } from 'lucide-react';
+import { Info, MousePointer2, TrendingUp, Zap } from 'lucide-react';
+import { useSocket } from '../../context/SocketContext';
 
 interface PerformanceDataPoint {
     day: string;
@@ -20,7 +21,28 @@ interface PerformanceChartProps {
 
 
 export default function PerformanceChart({ stats }: PerformanceChartProps) {
+    const { socket } = useSocket();
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+    const [liveHits, setLiveHits] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleHit = (data: any) => {
+            console.log('[PerformanceChart] Real-time hit received:', data);
+            setLiveHits(prev => [data, ...prev].slice(0, 3));
+            
+            // Clear hit after 5 seconds
+            setTimeout(() => {
+                setLiveHits(prev => prev.filter(h => h.timestamp !== data.timestamp));
+            }, 5000);
+        };
+
+        socket.on('visibility_hit', handleHit);
+        return () => {
+            socket.off('visibility_hit', handleHit);
+        };
+    }, [socket]);
 
     const chartData = useMemo(() =>
         stats?.analytics && stats.analytics.length > 0
@@ -65,12 +87,25 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
                 <div className="flex-grow bg-white rounded-[24px] p-8 border border-slate-100 shadow-sm relative overflow-visible">
                     <div className="flex items-center justify-between mb-8">
                         <div>
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex items-center gap-3 mb-1">
                                 <h3 className="text-xl font-bold text-slate-800">Visibility Insights</h3>
                                 <div className="flex items-center px-2 py-0.5 bg-green-50 rounded-full border border-green-100 gap-1.5">
                                     <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
                                     <span className="text-[10px] font-bold text-green-600 uppercase tracking-wider">Live Tracking</span>
                                 </div>
+                                <AnimatePresence mode="popLayout">
+                                    {liveHits.length > 0 && (
+                                        <motion.div
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: 10 }}
+                                            className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-500 rounded-full border border-blue-400"
+                                        >
+                                            <Zap className="w-3 h-3 text-white fill-current" />
+                                            <span className="text-[10px] font-black text-white uppercase italic">Search Hit!</span>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                             <p className="text-xs text-slate-400 font-medium">Daily views and lead conversion metrics</p>
                         </div>

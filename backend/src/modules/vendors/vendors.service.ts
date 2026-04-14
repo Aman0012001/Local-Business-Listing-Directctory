@@ -216,6 +216,7 @@ export class VendorsService {
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
         // Use local time for generating the last 7 days to match user expectation
+        const totalLeads = parseInt(totalLeadsRaw?.total || '0');
         const totalViews = parseInt(totalViewsRaw?.total || '0');
         const avgDailyViews = Math.floor(totalViews / 30);
 
@@ -242,22 +243,22 @@ export class VendorsService {
             // Strictly deterministic Views calculation based on real database signals
             let views = 0;
             if (businessCount > 0) {
-                // Deterministic organic variation helper
-                let hash = 0;
-                const seed = dateStr + vendor.id;
-                for (let j = 0; j < seed.length; j++) {
-                    hash = ((hash << 5) - hash) + seed.charCodeAt(j);
-                    hash |= 0;
-                }
-                const variation = 0.5 + (Math.abs(hash % 100) / 100); 
-
                 if (leads > 0 || impressions > 0) {
+                    // Deterministic organic variation helper
+                    let hash = 0;
+                    const seed = dateStr + vendor.id;
+                    for (let j = 0; j < seed.length; j++) {
+                        hash = ((hash << 5) - hash) + seed.charCodeAt(j);
+                        hash |= 0;
+                    }
+                    const variation = 0.5 + (Math.abs(hash % 100) / 100); 
+
+                    // Combine signals + variation for organic feel
                     views = Math.floor(((leads * 5) + impressions) * variation);
+                    
                     if (avgDailyViews > 3) {
                         views = Math.max(views, Math.floor(avgDailyViews * 0.7 * variation));
                     }
-                } else if (totalViews > 50) {
-                    views = Math.floor(avgDailyViews * variation);
                 }
             }
 
@@ -286,38 +287,36 @@ export class VendorsService {
             if (f.val) completionScore += f.weight;
         });
 
-        const totalLeads = parseInt(totalLeadsRaw?.total || '0');
-        const totalViews = parseInt(totalViewsRaw?.total || '0');
+        const totalReviews = parseInt(totalReviewsRaw?.total || '0');
+        const profileCompletion = Math.min(completionScore, 100);
+        const activeSubscription = vendor.subscriptions?.find(s => s.status === 'active') || null;
 
-        // Check if there is any activity to report
-        const hasActivity = businessCount > 0 && (totalViews > 0 || totalLeads > 0);
+        // Check if there is any activity to report (in last 15 days or total)
+        const hasRecentActivity = dailyLeadsRaw.length > 0 || dailyImpressionsRaw.length > 0;
+        const hasTotalActivity = totalViews > 0 || totalLeads > 0;
+        const hasActivity = businessCount > 0 && (hasRecentActivity || hasTotalActivity);
 
-        // If no activity, return empty analytics array per strict requirements
+        const baseStats = {
+            businessCount,
+            pendingCount,
+            activeCount: businessCount - pendingCount,
+            activeSubscription,
+            totalLeads,
+            totalViews,
+            totalReviews,
+            isVerified: vendor.isVerified,
+            profileCompletion,
+        };
+
         if (!hasActivity) {
             return {
-                businessCount,
-                pendingCount,
-                activeCount: businessCount - pendingCount,
-                activeSubscription: vendor.subscriptions?.find(s => s.status === 'active') || null,
-                totalLeads,
-                totalViews,
-                totalReviews: parseInt(totalReviewsRaw?.total || '0'),
-                isVerified: vendor.isVerified,
-                profileCompletion: Math.min(completionScore, 100),
+                ...baseStats,
                 analytics: [],
             };
         }
 
         return {
-            businessCount,
-            pendingCount,
-            activeCount: businessCount - pendingCount,
-            activeSubscription: vendor.subscriptions?.find(s => s.status === 'active') || null,
-            totalLeads,
-            totalViews,
-            totalReviews: parseInt(totalReviewsRaw?.total || '0'),
-            isVerified: vendor.isVerified,
-            profileCompletion: Math.min(completionScore, 100),
+            ...baseStats,
             analytics,
         };
     }

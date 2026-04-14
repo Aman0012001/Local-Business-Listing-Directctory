@@ -1,10 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThanOrEqual, Between, MoreThan } from 'typeorm';
-import { SearchLog, NotificationLog, Listing, City, Vendor } from '../../entities';
+import { Repository, MoreThanOrEqual, Between, MoreThan, In, Brackets } from 'typeorm';
+import { SearchLog, NotificationLog, Listing, City, Vendor, Category } from '../../entities';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { ConfigService } from '@nestjs/config';
 import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 
 export interface DemandInsight {
     keyword: string;
@@ -32,6 +33,7 @@ export class DemandService {
         private cityRepository: Repository<City>,
         private configService: ConfigService,
         private notificationsService: NotificationsService,
+        private notificationsGateway: NotificationsGateway,
     ) { }
 
     async logSearch(data: {
@@ -69,7 +71,42 @@ export class DemandService {
             longitude,
             normalizedKeyword: data.keyword?.toLowerCase().trim() || 'all',
         });
-        return this.searchLogRepository.save(log);
+        const savedLog = await this.searchLogRepository.save(log);
+
+        // Real-time notification for vendors: find who was "hit" by this search
+        // Avoid blocking the search response with notification logic
+        setImmediate(async () => {
+            try {
+                const qb = this.listingRepository.createQueryBuilder('listing')
+                    .leftJoinAndSelect('listing.vendor', 'vendor')
+                    .leftJoinAndSelect('listing.category', 'category')
+                    .where('listing.status = :status', { status: 'approved' });
+
+                if (data.categorySlug) {
+                    qb.andWhere('category.slug = :categorySlug', { categorySlug: data.categorySlug });
+                } else if (data.keyword) {
+                    qb.andWhere(new Brackets(inner => {
+                        inner.where('category.name ILIKE :kw', { kw: `%${data.keyword}%` })
+                             .orWhere('listing.title ILIKE :kw', { kw: `%${data.keyword}%` });
+                    }));
+                }
+
+                const matchedListings = await qb.getMany();
+                const uniqueVendorUserIds = [...new Set(matchedListings.map(l => l.vendor?.userId).filter(id => !!id))];
+
+                uniqueVendorUserIds.forEach(userId => {
+                    this.notificationsGateway.sendToUser(userId, 'visibility_hit', {
+                        type: 'view',
+                        timestamp: new Date(),
+                        keyword: data.keyword
+                    });
+                });
+            } catch (err) {
+                this.logger.error(`Failed to broadcast visibility hit: ${err.message}`);
+            }
+        });
+
+        return savedLog;
     }
 
     /**
