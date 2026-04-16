@@ -140,11 +140,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (isSignup) {
                 router.push('/business-setup');
             } else {
-                router.push('/vendor/dashboard');
+                router.push('/dashboard');
             }
         } else {
-            // Regular users go to home page
-            router.push('/');
+            // Both vendors and regular users land on the unified dashboard
+            router.push('/dashboard');
         }
     };
 

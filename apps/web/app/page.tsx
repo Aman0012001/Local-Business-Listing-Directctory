@@ -450,7 +450,7 @@ export default function HomePage() {
             </Link>
 
             {/* Broadcast */}
-            <Link href="/broadcasts">
+            <Link href="/broadcast-request">
               <div className="group p-6 rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100 hover:shadow-xl transition-all cursor-pointer">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-indigo-500">

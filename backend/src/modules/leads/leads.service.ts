@@ -109,7 +109,7 @@ export class LeadsService {
                     type: savedLead.type,
                     createdAt: savedLead.createdAt,
                 },
-                link: '/vendor/leads',
+                link: '/leads',
             }).catch(err => console.error('[LeadsService] Push notification failed:', err.message));
         }
 

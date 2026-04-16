@@ -72,7 +72,7 @@ export default function VendorLeadsInbox() {
                 </div>
                 <h3 className="text-lg font-black text-slate-900 mb-1">No Leads Found</h3>
                 <p className="text-slate-400 text-sm font-medium mb-6">Start growing your business to see leads here.</p>
-                <Link href="/vendor/leads" className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-black text-slate-600 hover:text-blue-600 hover:border-blue-200 transition-all active:scale-95 shadow-sm">
+                <Link href="/leads" className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-black text-slate-600 hover:text-blue-600 hover:border-blue-200 transition-all active:scale-95 shadow-sm">
                     View Lead Center
                     <ChevronRight className="w-4 h-4" />
                 </Link>
@@ -109,7 +109,7 @@ export default function VendorLeadsInbox() {
                     return (
                         <Link
                             key={lead.id}
-                            href="/vendor/leads"
+                            href="/leads"
                             className="group flex items-center gap-4 p-4 bg-slate-50/50 hover:bg-white rounded-[24px] border-2 border-transparent hover:border-slate-100 transition-all active:scale-[0.99] hover:shadow-xl hover:shadow-slate-200/50"
                         >
                             <div className={`w-12 h-12 ${Config.bg} ${Config.color} rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110`}>
@@ -137,7 +137,7 @@ export default function VendorLeadsInbox() {
                 })}
 
                 <Link
-                    href="/vendor/leads"
+                    href="/leads"
                     className="flex items-center justify-center gap-2 p-4 text-xs font-black text-slate-400 hover:text-blue-600 uppercase tracking-[.2em] transition-all group pt-2"
                 >
                     See All Leads

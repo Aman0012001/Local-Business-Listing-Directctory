@@ -119,7 +119,7 @@ export default function BusinessSetupWizard() {
                 }
 
                 if (status?.isCompleted) {
-                    router.push('/vendor/dashboard');
+                    router.push('/dashboard');
                     return;
                 }
 
@@ -285,15 +285,15 @@ export default function BusinessSetupWizard() {
             await syncProfile();
             setCompleted(true);
             setTimeout(() => {
-                router.push('/vendor/dashboard');
+                router.push('/dashboard');
             }, 2000);
         } catch (err: any) {
             if (err.message?.includes('404') || err.message?.includes('Cannot POST')) {
                 console.warn('Final save failed because the API is missing on production. Proceeding locally.');
                 setCompleted(true);
                 setTimeout(() => {
-                    router.push('/vendor/dashboard');
-                }, 2000);
+                        router.push('/dashboard');
+                    }, 2000);
                 return;
             }
             console.error('Failed to save answers:', err);

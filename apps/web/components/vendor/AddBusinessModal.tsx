@@ -766,7 +766,7 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                                                     Please upgrade your plan to increase this limit.
                                                 </p>
                                                 <Link
-                                                    href="/vendor/subscription"
+                                                    href="/subscription"
                                                     className="w-full py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black text-sm transition-all shadow-lg shadow-orange-500/20 active:scale-[0.98]"
                                                 >
                                                     Upgrade Plan Now

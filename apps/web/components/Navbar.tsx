@@ -262,7 +262,7 @@ export default function Navbar() {
                                                             <span className="text-[10px] text-slate-400 font-medium italic">Best deals & local events</span>
                                                         </div>
                                                     </Link>
-                                                    <Link href="/broadcasts" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
+                                                    <Link href="/broadcast-request" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
                                                         <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-500">
                                                             <Megaphone className="w-4 h-4" />
                                                         </div>
@@ -340,7 +340,7 @@ export default function Navbar() {
                     <div className="flex items-center justify-end gap-3 w-48 lg:w-auto">
                         {user ? (
                             <div className="flex items-center gap-3">
-                                <Link href={user.role === 'admin' || user.role === 'superadmin' ? '/admin' : '/vendor/dashboard'} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer group">
+                                <Link href={user.role === 'admin' || user.role === 'superadmin' ? '/admin' : '/dashboard'} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer group">
                                     <VendorAvatar
                                         src={user.avatarUrl}
                                         alt={user.fullName || user.email}
@@ -370,7 +370,7 @@ export default function Navbar() {
 
                                 {user && (user.role === 'admin' || user.role === 'superadmin' || (activeSub?.plan?.dashboardFeatures?.showChat !== false)) && (
                                     <Link
-                                        href="/vendor/chat"
+                                        href="/chat"
                                         className={`relative p-2.5 rounded-xl text-slate-500 hover:text-[#FF7A30] hover:bg-orange-50 transition-all ${loadingSub && user.role === 'vendor' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
                                         title="Messages"
                                     >
@@ -456,7 +456,7 @@ export default function Navbar() {
                                             {/* Footer */}
                                             <div className="border-t border-slate-100 px-4 py-2.5">
                                                 <Link
-                                                    href="/vendor/notifications"
+                                                    href="/notifications"
                                                     onClick={() => setShowBell(false)}
                                                     className="text-[11px] font-bold text-[#FF7A30] hover:text-[#E86920] transition-colors"
                                                 >

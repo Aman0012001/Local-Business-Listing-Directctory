@@ -99,7 +99,7 @@ export default function MyInquiries() {
                         </div>
                     ))}
                     {inquiries.length > 5 && (
-                        <Link href="/vendor/messages" className="text-center py-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-violet-600 transition-all">
+                        <Link href="/messages" className="text-center py-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-violet-600 transition-all">
                             View All Inquiries
                         </Link>
                     )}

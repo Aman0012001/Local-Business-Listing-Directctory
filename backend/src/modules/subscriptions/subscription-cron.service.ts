@@ -240,7 +240,7 @@ export class SubscriptionCronService {
                     title,
                     message,
                     type: 'subscription_expiry',
-                    link: '/vendor/subscription',
+                    link: '/subscription',
                     data: {
                         subscriptionId: sub.id,
                         daysLeft,
@@ -254,7 +254,7 @@ export class SubscriptionCronService {
                     title,
                     message,
                     type: 'subscription_expiry',
-                    url: '/vendor/subscription',
+                    url: '/subscription',
                 });
 
                 this.logger.log(`[Cron] Expiry reminder sent to user ${user.id} (${user.email}) - ${daysLeft} day(s) left`);

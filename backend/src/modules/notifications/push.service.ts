@@ -96,7 +96,7 @@ export class PushService {
             icon: '/logo.png',
             badge: '/logo.png',
             tag: payload.type || 'notification',
-            data: { url: payload.url || '/vendor/notifications' },
+            data: { url: payload.url || '/notifications' },
         });
 
         const invalidEndpoints: string[] = [];

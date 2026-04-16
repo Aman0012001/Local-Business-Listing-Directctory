@@ -55,7 +55,7 @@ export default function MyJobLeads() {
                     </div>
                     <h3 className="text-xl font-black text-slate-900 mb-2">No active broadcasts</h3>
                     <p className="text-slate-400 font-medium max-w-sm mx-auto mb-8">Need a pro? Send a broadcast and get responses from nearby experts instantly.</p>
-                    <a href="/broadcasts" className="inline-flex items-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition-all active:scale-95 shadow-lg shadow-blue-500/20">
+                    <a href="/broadcast-request" className="inline-flex items-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition-all active:scale-95 shadow-lg shadow-blue-500/20">
                         Start New Broadcast <ArrowRight className="w-4 h-4" />
                     </a>
                 </div>

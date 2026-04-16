@@ -64,7 +64,7 @@ export default function MessageCenter({ leads = [] }: MessageCenterProps) {
                 )}
             </div>
 
-            <Link href="/vendor/messages" className="mt-8">
+            <Link href="/messages" className="mt-8">
                 <button className="w-full py-4 bg-slate-50 text-slate-400 text-xs font-black uppercase tracking-widest rounded-[16px] hover:bg-slate-100 hover:text-slate-600 transition-all">
                     View All Inquiries
                 </button>

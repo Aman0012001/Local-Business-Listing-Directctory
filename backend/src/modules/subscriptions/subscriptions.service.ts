@@ -433,8 +433,8 @@ export class SubscriptionsService implements OnModuleInit {
             locale: 'en',
             line_items: [{ price: plan.stripePriceId, quantity: 1 }],
             mode: 'subscription',
-            success_url: `${baseUrl}/vendor/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${baseUrl}/vendor/subscription?canceled=true`,
+            success_url: `${baseUrl}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${baseUrl}/subscription?canceled=true`,
         });
 
         this.logger.log(`Stripe checkout session created: ${session.id} for vendor ${vendor.id}`);
@@ -946,8 +946,8 @@ export class SubscriptionsService implements OnModuleInit {
             },
             line_items: [{ price: plan.stripePriceId, quantity: 1 }],
             mode: plan.type === PricingPlanType.SUBSCRIPTION ? 'subscription' : 'payment',
-            success_url: `${baseUrl}/vendor/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${baseUrl}/vendor/subscription?canceled=true`,
+            success_url: `${baseUrl}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${baseUrl}/subscription?canceled=true`,
         };
 
         const session = await this.stripe.checkout.sessions.create(sessionParams);

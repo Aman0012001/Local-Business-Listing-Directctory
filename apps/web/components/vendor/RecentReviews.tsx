@@ -44,7 +44,7 @@ export default function RecentReviews({ reviews = [], loading = false, title = "
         <div className="bg-white rounded-[16px] border border-black p-8 shadow-sm">
             <div className="flex items-center justify-between mb-8">
                 <h3 className="text-xl font-black text-slate-800">{title}</h3>
-                <Link href="/vendor/reviews" className="flex items-center gap-1 text-xs font-black uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920] transition-colors">
+                <Link href="/reviews" className="flex items-center gap-1 text-xs font-black uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920] transition-colors">
                     View All <ChevronRight className="w-4 h-4" />
                 </Link>
             </div>

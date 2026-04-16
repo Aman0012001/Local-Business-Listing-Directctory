@@ -121,10 +121,10 @@ export default function PricingPage() {
     const getCtaHref = (plan: Plan) => {
         if (!user) return `/register?role=vendor&plan=${plan.planType}`;
         if (user.role === "vendor") {
-            if (plan.planType === "free") return "/vendor/dashboard";
-            return `/vendor/dashboard?upgrade=${plan.id}`;
+            if (plan.planType === "free") return "/dashboard";
+            return `/dashboard?upgrade=${plan.id}`;
         }
-        return "/vendor/dashboard";
+        return "/dashboard";
     };
 
     const getCtaLabel = (plan: Plan) => {

@@ -208,8 +208,8 @@ export class PromotionsService implements OnModuleInit {
                 bookingId: booking.id,
                 type: 'promotion_booking'
             },
-            success_url: `${baseUrl}/vendor/offers/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${booking.id}`,
-            cancel_url:  `${baseUrl}/vendor/offers?canceled=true`,
+            success_url: `${baseUrl}/offers/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${booking.id}`,
+            cancel_url:  `${baseUrl}/offers?canceled=true`,
         });
 
         booking.stripeSessionId = session.id;

@@ -65,7 +65,7 @@ export class NotificationsService {
             title: saved.title,
             message: saved.message,
             type: saved.type,
-            url: dto.link || '/vendor/notifications',
+            url: dto.link || '/notifications',
         }).catch(() => { /* non-critical */ });
 
         return saved;

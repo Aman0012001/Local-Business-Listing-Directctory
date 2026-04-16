@@ -15,7 +15,13 @@ import { SendMessageDto } from './dto/chat.dto';
 
 @WebSocketGateway({
     cors: {
-        origin: true,
+        origin: (origin: string, callback: any) => {
+            // In dev allow all local origins
+            if (!origin || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+                return callback(null, true);
+            }
+            callback(null, true); // Fallback for production or other environments
+        },
         credentials: true,
     },
     namespace: 'chat',
