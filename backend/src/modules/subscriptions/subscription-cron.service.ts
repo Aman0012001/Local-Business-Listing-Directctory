@@ -54,32 +54,33 @@ export class SubscriptionCronService {
     /**
      * Runs every hour - deactivates expired plans and clears listing flags
      */
+    /**
+     * Runs every hour - deactivates expired plans and handles auto-upgrade/downgrade to Free plan
+     */
     @Cron(CronExpression.EVERY_HOUR)
     async handlePlanExpirations() {
         try {
-            this.logger.log('[Cron] Checking for expired plans...');
+            this.logger.log('[Cron] Checking for expired plans (New system)...');
             const now = new Date();
 
-            const allExpired = await this.activePlanRepo.find({
+            // 1. Handle New System (ActivePlan) Expirations
+            const allExpiredNew = await this.activePlanRepo.find({
                 where: {
                     status: ActivePlanStatus.ACTIVE,
                     endDate: LessThanOrEqual(now),
                 },
-                relations: ['plan'],
+                relations: ['plan', 'vendor'],
             });
 
-            // SKIP expiration for plans with price 0 (Basic/Free plans are perpetual)
-            const expiredPlans = allExpired.filter(p => Number(p.plan?.price || 0) > 0);
+            // Filter out Free plans (they shouldn't expire, but double safety)
+            const expiredNewPaid = allExpiredNew.filter(p => Number(p.plan?.price || 0) > 0);
 
-            if (expiredPlans.length === 0) return;
-
-            for (const plan of expiredPlans) {
+            for (const plan of expiredNewPaid) {
                 try {
-                    // 1. Mark as expired
                     plan.status = ActivePlanStatus.EXPIRED;
                     await this.activePlanRepo.save(plan);
 
-                    // 2. Clear listing flags if it was a boost
+                    // Clear listing flags if it was a boost
                     if (plan.targetId) {
                         const planType = (plan.plan as any)?.type;
                         if (planType === PricingPlanType.HOMEPAGE_FEATURED || planType === PricingPlanType.CATEGORY_FEATURED) {
@@ -89,35 +90,97 @@ export class SubscriptionCronService {
                         }
                     }
 
-                    // 3. Deletion of promotions is now handled by offersService and promotionsService respectively in steps 4 and 5 below.
-
-                    this.logger.log(`[Cron] Deactivated expired plan ${plan.id} for vendor ${plan.vendorId}`);
+                    this.logger.log(`[Cron] Deactivated expired ActivePlan ${plan.id} for vendor ${plan.vendorId}`);
+                    
+                    // Trigger auto-move to Free plan if no other plan is coming up
+                    await this.ensureVendorHasPlan(plan.vendorId);
                 } catch (err: any) {
-                    this.logger.error(`[Cron] Error handling plan ${plan.id} expiry: ${err.message}`);
+                    this.logger.error(`[Cron] Error handling ActivePlan ${plan.id} expiry: ${err.message}`);
                 }
             }
 
-            // 4. Also run the general cleanup for non-boosted items (free ones) that have expired
+            // 2. Handle Legacy System (Subscription) Expirations
+            this.logger.log('[Cron] Checking for expired legacy subscriptions...');
+            const allExpiredOld = await this.subscriptionRepo.find({
+                where: {
+                    status: SubscriptionStatus.ACTIVE,
+                    endDate: LessThanOrEqual(now),
+                },
+                relations: ['plan', 'vendor'],
+            });
+
+            for (const sub of allExpiredOld) {
+                try {
+                    sub.status = SubscriptionStatus.EXPIRED;
+                    await this.subscriptionRepo.save(sub);
+                    this.logger.log(`[Cron] Deactivated expired Legacy Subscription ${sub.id} for vendor ${sub.vendorId}`);
+                    
+                    // Trigger auto-move to Free plan
+                    await this.ensureVendorHasPlan(sub.vendorId);
+                } catch (err: any) {
+                    this.logger.error(`[Cron] Error handling Legacy Subscription ${sub.id} expiry: ${err.message}`);
+                }
+            }
+
+            // 3. General cleanup for stale offers/promotions
             try {
                 const staleAffected = await this.offersService.expireStaleOffers();
-                if (staleAffected > 0) {
-                    this.logger.log(`[Cron] Cleaned up ${staleAffected} stale/un-featured items from database`);
-                }
+                if (staleAffected > 0) this.logger.log(`[Cron] Cleaned up ${staleAffected} stale items`);
+                
+                const promoAffected = await this.promotionsService.handleExpirations();
+                if (promoAffected > 0) this.logger.log(`[Cron] Expired ${promoAffected} custom promotion bookings`);
             } catch (err: any) {
-                this.logger.error(`[Cron] Error cleaning up stale offers: ${err.message}`);
+                this.logger.error(`[Cron] Error in cleanup tasks: ${err.message}`);
             }
 
-            // 5. Run promotion bookings expiration
-            try {
-                const promoAffected = await this.promotionsService.handleExpirations();
-                if (promoAffected > 0) {
-                    this.logger.log(`[Cron] Expired ${promoAffected} custom promotion bookings`);
-                }
-            } catch (err: any) {
-                this.logger.error(`[Cron] Error cleaning up expired promotion bookings: ${err.message}`);
-            }
         } catch (error) {
             this.logger.error(`[Cron] Failed to process plan expirations: ${error.message}`);
+        }
+    }
+
+    /**
+     * Ensures a vendor always has an active plan (Auto-upgrade/transition to Free)
+     */
+    private async ensureVendorHasPlan(vendorId: string) {
+        try {
+            const now = new Date();
+            
+            // Check if they already have a "future" or "next" plan that is ACTIVE
+            const nextPlan = await this.activePlanRepo.findOne({
+                where: {
+                    vendorId,
+                    status: ActivePlanStatus.ACTIVE,
+                    endDate: MoreThan(now)
+                }
+            });
+
+            if (nextPlan) {
+                this.logger.log(`[Cron] Vendor ${vendorId} already has a subsequent plan ${nextPlan.id}.`);
+                return;
+            }
+
+            // No active plan found, auto-assign Free plan
+            const freePlan = await this.activePlanRepo.manager.getRepository('pricing_plans').findOne({
+                where: { name: 'Free', type: PricingPlanType.SUBSCRIPTION }
+            });
+
+            if (freePlan) {
+                const infiniteDate = new Date();
+                infiniteDate.setFullYear(infiniteDate.getFullYear() + 10); // 10 years for Free plan
+
+                const newActiveFree = this.activePlanRepo.create({
+                    vendorId,
+                    planId: (freePlan as any).id,
+                    status: ActivePlanStatus.ACTIVE,
+                    startDate: now,
+                    endDate: infiniteDate,
+                    amountPaid: 0,
+                });
+                await this.activePlanRepo.save(newActiveFree);
+                this.logger.log(`[Cron] Auto-upgraded/moved vendor ${vendorId} to Free plan after expiration.`);
+            }
+        } catch (err: any) {
+            this.logger.error(`[Cron] Failed to ensure plan for vendor ${vendorId}: ${err.message}`);
         }
     }
 

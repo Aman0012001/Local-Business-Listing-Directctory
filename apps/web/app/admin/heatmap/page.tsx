@@ -25,7 +25,8 @@ export default function SearchHeatmapPage() {
         setLoading(true);
         setError(null);
         try {
-            const data = await api.admin.getHeatmapData(startDate || undefined, endDate || undefined);
+            const response = await api.admin.getHeatmapData(startDate || undefined, endDate || undefined);
+            const data = response?.data || response; // Unwrap TransformInterceptor { data } wrapper
             setHeatmapData(Array.isArray(data) ? data : []);
         } catch (err: any) {
             console.error('Failed to fetch heatmap data:', err);

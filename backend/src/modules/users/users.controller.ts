@@ -127,4 +127,19 @@ export class UsersController {
     ) {
         return this.usersService.markNotificationRead(user.id, id);
     }
+
+    @Delete('profile')
+    @ApiOperation({ summary: 'Request account deletion (scheduled for 30 days)' })
+    @ApiResponse({ status: 200, description: 'Deletion scheduled successfully' })
+    requestDeletion(@CurrentUser() user: User) {
+        return this.usersService.requestDeletion(user.id);
+    }
+
+    @Post('profile/cancel-deletion')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Cancel scheduled account deletion' })
+    @ApiResponse({ status: 200, description: 'Deletion cancelled successfully' })
+    cancelDeletion(@CurrentUser() user: User) {
+        return this.usersService.cancelDeletion(user.id);
+    }
 }

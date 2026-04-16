@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Settings, User, Phone, MapPin, Globe, Save, Loader2, CheckCircle2, AlertCircle, Upload, KeyRound, Camera, ChevronDown, Clock, Facebook, Instagram, Linkedin, Twitter, Youtube, ExternalLink, Trash2, Plus, Share2 } from 'lucide-react';
+import { Settings, User, Phone, MapPin, Globe, Save, Loader2, CheckCircle2, AlertCircle, Upload, KeyRound, Camera, ChevronDown, Clock, Facebook, Instagram, Linkedin, Twitter, Youtube, ExternalLink, Trash2, Plus, Share2, AlertTriangle, RefreshCcw } from 'lucide-react';
 import { api, getImageUrl } from '../../../lib/api';
 import VendorAvatar from '../../../components/VendorAvatar';
 import { useAuth } from '../../../context/AuthContext';
@@ -50,6 +50,10 @@ export default function AccountSettings() {
         newPassword: '',
         confirmPassword: ''
     });
+
+    // Deletion State
+    const [deletionLoading, setDeletionLoading] = useState(false);
+    const [deletionStatus, setDeletionStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -341,6 +345,56 @@ export default function AccountSettings() {
         }
     };
 
+    const handleRequestDeletion = async () => {
+        if (!confirm('Are you sure you want to delete your account? This action will schedule your account for permanent deletion in 30 days.')) {
+            return;
+        }
+
+        setDeletionLoading(true);
+        setDeletionStatus(null);
+        try {
+            await api.users.requestDeletion();
+            setDeletionStatus({ type: 'success', message: 'Account deletion scheduled. You have 30 days to cancel this request.' });
+            // Re-sync profile to show deletion info
+            const updatedProfile = await api.users.getProfile();
+            if (updateUser) updateUser(updatedProfile);
+        } catch (err: any) {
+            setDeletionStatus({ type: 'error', message: err.message || 'Failed to request account deletion' });
+        } finally {
+            setDeletionLoading(false);
+        }
+    };
+
+    const handleCancelDeletion = async () => {
+        setDeletionLoading(true);
+        setDeletionStatus(null);
+        try {
+            await api.users.cancelDeletion();
+            setDeletionStatus({ type: 'success', message: 'Account deletion cancelled.' });
+            // Re-sync profile
+            const updatedProfile = await api.users.getProfile();
+            if (updateUser) updateUser(updatedProfile);
+        } catch (err: any) {
+            setDeletionStatus({ type: 'error', message: err.message || 'Failed to cancel account deletion' });
+        } finally {
+            setDeletionLoading(false);
+        }
+    };
+
+    const getDaysLeft = (scheduledAt: string) => {
+        const deleteDate = new Date(scheduledAt);
+        deleteDate.setDate(deleteDate.getDate() + 30);
+        const remaining = deleteDate.getTime() - new Date().getTime();
+        const days = Math.ceil(remaining / (1000 * 60 * 60 * 24));
+        return days > 0 ? days : 0;
+    };
+
+    const getScheduledDeleteDate = (scheduledAt: string) => {
+        const deleteDate = new Date(scheduledAt);
+        deleteDate.setDate(deleteDate.getDate() + 30);
+        return deleteDate;
+    };
+
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
@@ -383,10 +437,10 @@ export default function AccountSettings() {
                     {/* Avatar Upload */}
                     <div className="flex flex-col sm:flex-row items-start gap-8 border-b border-slate-100 pb-8">
                         <div className="relative group">
-                            <VendorAvatar 
-                                src={avatarFile ? previewImage : formData.avatarUrl} 
-                                alt={formData.fullName || 'User'} 
-                                size="lg" 
+                            <VendorAvatar
+                                src={avatarFile ? previewImage : formData.avatarUrl}
+                                alt={formData.fullName || 'User'}
+                                size="lg"
                                 className="border-4 border-white shadow-lg"
                                 isPreview={!!avatarFile}
                             />
@@ -962,6 +1016,73 @@ export default function AccountSettings() {
                         </button>
                     </div>
                 </form>
+            </div>
+
+            {/* Danger Zone: Account Deletion */}
+            <div className="bg-white rounded-[20px] border border-rose-100 shadow-sm overflow-hidden">
+                {/* <div className="p-8 lg:p-12 border-b border-rose-50 bg-rose-50/30 flex items-start gap-4">
+                    <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center shrink-0">
+                        <AlertTriangle className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-black text-rose-900 mb-2">Danger Zone</h3>
+                        <p className="text-sm text-rose-600 font-medium">Irreversible actions. Be careful with these settings.</p>
+                    </div>
+                </div> */}
+
+                <div className="p-8 lg:p-12 space-y-6">
+                    {deletionStatus && (
+                        <div className={`flex items-center gap-3 p-4 rounded-2xl animate-in fade-in slide-in-from-top-2 ${deletionStatus.type === 'success' ? 'bg-emerald-50 border border-emerald-100 text-emerald-600' : 'bg-rose-50 border border-rose-100 text-rose-600'
+                            }`}>
+                            {deletionStatus.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+                            <span className="font-bold text-sm">{deletionStatus.message}</span>
+                        </div>
+                    )}
+
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                        <div className="space-y-1">
+                            {user?.deletionScheduledAt ? (
+                                <>
+                                    <h4 className="font-black text-rose-600 uppercase tracking-widest text-xs flex items-center gap-2">
+                                        <Trash2 className="w-3.5 h-3.5" /> Delete Permanently
+                                    </h4>
+                                    <p className="text-slate-900 font-bold">Your account will be permanently deleted in {getDaysLeft(user.deletionScheduledAt)} days.</p>
+                                    <p className="text-slate-500 text-sm font-medium">Scheduled for removal on: {getScheduledDeleteDate(user.deletionScheduledAt).toLocaleDateString()}</p>
+                                </>
+                            ) : (
+                                <>
+                                    <h4 className="font-black text-slate-900 uppercase tracking-widest text-xs">Delete Account</h4>
+                                    <p className="text-slate-500 text-sm font-medium">Permanently remove your account and all associated data.</p>
+                                    <p className="text-slate-400 text-xs font-bold leading-relaxed">Account will be scheduled for deletion and cleared in 30 days.</p>
+                                </>
+                            )}
+                        </div>
+
+                        {user?.deletionScheduledAt ? (
+                            <button
+                                onClick={handleCancelDeletion}
+                                disabled={deletionLoading}
+                                className="flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-slate-200 text-slate-700 rounded-xl text-sm font-black hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-50"
+                            >
+                                {deletionLoading ? (
+                                    <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+                                ) : (
+                                    <RefreshCcw className="w-4 h-4" />
+                                )}
+                                Cancel Deletion
+                            </button>
+                        ) : (
+                            <button
+                                onClick={handleRequestDeletion}
+                                disabled={deletionLoading}
+                                className="flex items-center justify-center gap-2 px-6 py-3 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl text-sm font-black hover:bg-rose-100 transition-all active:scale-95 disabled:opacity-50"
+                            >
+                                {deletionLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                                Delete Account
+                            </button>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     );

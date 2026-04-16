@@ -190,6 +190,7 @@ export class AdminService {
      * Get Search Heatmap Data
      */
     async getHeatmapData(startDate?: string, endDate?: string) {
+        console.log(`[getHeatmapData] Input dates: ${startDate} to ${endDate}`);
         const query = this.searchLogRepository.createQueryBuilder('log')
             .select('log.latitude', 'latitude')
             .addSelect('log.longitude', 'longitude')
@@ -200,19 +201,29 @@ export class AdminService {
             .addGroupBy('log.longitude');
 
         if (startDate) {
-            query.andWhere('log.searchedAt >= :startDate', { startDate: new Date(startDate) });
+            const start = new Date(startDate);
+            start.setUTCHours(0, 0, 0, 0);
+            query.andWhere('log.searched_at >= :startDate', { startDate: start });
         }
         if (endDate) {
-            query.andWhere('log.searchedAt <= :endDate', { endDate: new Date(endDate) });
+            const end = new Date(endDate);
+            end.setUTCHours(23, 59, 59, 999);
+            query.andWhere('log.searched_at <= :endDate', { endDate: end });
         }
 
-        const rawData = await query.getRawMany();
+        try {
+            const rawData = await query.getRawMany();
+            console.log(`[getHeatmapData] Found ${rawData.length} distinct location groups.`);
 
-        return rawData.map(item => ({
-            latitude: parseFloat(item.latitude),
-            longitude: parseFloat(item.longitude),
-            weight: parseInt(item.count, 10) || 1,
-        }));
+            return rawData.map(item => ({
+                latitude: parseFloat(item.latitude),
+                longitude: parseFloat(item.longitude),
+                weight: parseInt(item.count, 10) || 1,
+            }));
+        } catch (error) {
+            console.error(`[getHeatmapData] Error executing query:`, error);
+            throw error;
+        }
     }
 
     /**
@@ -326,6 +337,45 @@ export class AdminService {
         });
 
         return createPaginatedResponse(users, page, limit, total);
+    }
+
+    /**
+     * Get complete user details for admin
+     */
+    async getUserDetails(userId: string) {
+        const user = await this.userRepository.findOne({
+            where: { id: userId },
+            relations: [
+                'vendor',
+                'vendor.businesses',
+                'vendor.businesses.category',
+                'vendor.subscriptions',
+                'vendor.subscriptions.plan',
+                'reviews',
+                'reviews.business',
+                'leads',
+                'savedListings',
+                'savedListings.business',
+                'comments',
+                'affiliate'
+            ],
+        });
+
+        if (!user) throw new NotFoundException('User not found');
+
+        // Add some aggregates
+        const totalSpent = user.vendor?.subscriptions?.reduce((sum, s) => sum + (Number(s.amount) || 0), 0) || 0;
+        
+        return {
+            ...user,
+            stats: {
+                totalSpent,
+                businessCount: user.vendor?.businesses?.length || 0,
+                reviewCount: user.reviews?.length || 0,
+                leadCount: user.leads?.length || 0,
+                favoriteCount: user.savedListings?.length || 0
+            }
+        };
     }
 
     /**
@@ -613,5 +663,38 @@ export class AdminService {
         // Update in Elasticsearch
         this.searchService.indexBusiness(updated).catch(err => console.error('ES Keyword Index Error:', err));
         return updated;
+    }
+
+    /**
+     * Schedule a user for deletion in 30 days
+     */
+    async scheduleUserDeletion(userId: string) {
+        const user = await this.userRepository.findOne({ where: { id: userId } });
+        if (!user) throw new NotFoundException('User not found');
+
+        const scheduledDate = new Date();
+        scheduledDate.setDate(scheduledDate.getDate() + 30); // 30 days grace period
+
+        user.deletionScheduledAt = scheduledDate;
+        await this.userRepository.save(user);
+
+        return { message: 'User scheduled for deletion', deletionScheduledAt: scheduledDate };
+    }
+
+    /**
+     * Cancel a scheduled user deletion
+     */
+    async cancelUserDeletion(userId: string) {
+        const user = await this.userRepository.findOne({ where: { id: userId } });
+        if (!user) throw new NotFoundException('User not found');
+
+        if (!user.deletionScheduledAt) {
+            throw new BadRequestException('Deletion not scheduled for this user');
+        }
+
+        user.deletionScheduledAt = null;
+        await this.userRepository.save(user);
+
+        return { message: 'Account deletion cancelled successfully' };
     }
 }

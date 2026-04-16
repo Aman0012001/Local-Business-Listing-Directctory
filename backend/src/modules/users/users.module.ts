@@ -8,10 +8,13 @@ import { SavedListing } from '../../entities/favorite.entity';
 import { Notification } from '../../entities/notification.entity';
 import { Listing } from '../../entities/business.entity';
 
+import { AdminModule } from '../admin/admin.module';
+
 @Module({
     imports: [
         TypeOrmModule.forFeature([User, SavedListing, Notification, Listing]),
         SubscriptionsModule,
+        AdminModule,
     ],
     controllers: [UsersController],
     providers: [UsersService],

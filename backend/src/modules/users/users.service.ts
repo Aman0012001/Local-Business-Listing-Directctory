@@ -2,9 +2,11 @@ import {
     Injectable,
     NotFoundException,
     ConflictException,
+    InternalServerErrorException,
 } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, LessThanOrEqual } from 'typeorm';
 import { User, UserRole } from '../../entities/user.entity';
 import { SavedListing } from '../../entities/favorite.entity';
 import { Notification } from '../../entities/notification.entity';
@@ -17,6 +19,7 @@ import {
 import { ChangePasswordDto } from './dto/change-password.dto';
 import * as bcrypt from 'bcrypt';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
+import { AdminService } from '../admin/admin.service';
 
 @Injectable()
 export class UsersService {
@@ -30,6 +33,7 @@ export class UsersService {
         @InjectRepository(Listing)
         private businessRepository: Repository<Listing>,
         private subscriptionsService: SubscriptionsService,
+        private adminService: AdminService,
     ) { }
 
     /**
@@ -264,5 +268,51 @@ export class UsersService {
      */
     async findByEmail(email: string): Promise<User | null> {
         return this.userRepository.findOne({ where: { email } });
+    }
+
+    /**
+     * Request account deletion (scheduled for 30 days from now)
+     */
+    async requestDeletion(id: string): Promise<User> {
+        const user = await this.getProfile(id);
+        user.deletionScheduledAt = new Date();
+        return this.userRepository.save(user);
+    }
+
+    /**
+     * Cancel scheduled account deletion
+     */
+    async cancelDeletion(id: string): Promise<User> {
+        const user = await this.getProfile(id);
+        user.deletionScheduledAt = null;
+        return this.userRepository.save(user);
+    }
+
+    /**
+     * Permanent deletion of accounts that have passed their 30-day grace period
+     */
+    @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+    async handlePermanentDeletion() {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const usersToDelete = await this.userRepository.find({
+            where: {
+                deletionScheduledAt: LessThanOrEqual(thirtyDaysAgo),
+            },
+        });
+
+        if (usersToDelete.length > 0) {
+            console.log(`[UsersService] Found ${usersToDelete.length} accounts for permanent deletion`);
+            for (const user of usersToDelete) {
+                try {
+                    // Use AdminService for thorough cleanup of all related data
+                    await this.adminService.deleteUser(user.id);
+                    console.log(`[UsersService] Permanently deleted user ${user.id} (${user.email})`);
+                } catch (error) {
+                    console.error(`[UsersService] Failed to permanently delete user ${user.id}:`, error.message);
+                }
+            }
+        }
     }
 }

@@ -291,7 +291,8 @@ export class BusinessesService implements OnModuleInit {
             .leftJoinAndSelect('listing.businessHours', 'businessHours')
             .leftJoinAndSelect('listing.businessAmenities', 'businessAmenities')
             .leftJoinAndSelect('businessAmenities.amenity', 'amenity')
-            .where('listing.status IN (:...statuses)', { statuses: [BusinessStatus.PENDING, BusinessStatus.APPROVED] });
+            .where('listing.status IN (:...statuses)', { statuses: [BusinessStatus.PENDING, BusinessStatus.APPROVED] })
+            .andWhere('user.deletion_scheduled_at IS NULL');
 
         // Apply Search Results from Elasticsearch or fallback to ILIKE
         if (esIds && esIds.length > 0) {

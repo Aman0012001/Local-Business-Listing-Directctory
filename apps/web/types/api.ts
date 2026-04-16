@@ -74,6 +74,8 @@ export interface Vendor {
         lastActiveAt?: string;
         lastLogoutAt?: string;
         avatarUrl?: string;
+        deleteAt?: string;
+        deletionScheduledAt?: string;
         createdAt?: string;
     };
     businessHours?: Record<string, { isOpen: boolean; openTime: string; closeTime: string }>;

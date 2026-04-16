@@ -72,6 +72,14 @@ export class AdminController {
         return this.adminService.getAllUsers(page, limit);
     }
 
+    @Get('users/:id')
+    @Roles(UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Get complete user details for superadmin' })
+    @ApiResponse({ status: 200, description: 'User details retrieved' })
+    getUserDetails(@Param('id', ParseUuidPipe) id: string) {
+        return this.adminService.getUserDetails(id);
+    }
+
     @Patch('users/:id/role')
     @Roles(UserRole.SUPERADMIN)
     @ApiOperation({ summary: 'Update a user role' })
@@ -100,6 +108,22 @@ export class AdminController {
     @ApiResponse({ status: 200, description: 'User deleted' })
     deleteUser(@Param('id', ParseUuidPipe) id: string) {
         return this.adminService.deleteUser(id);
+    }
+
+    @Post('users/:id/schedule-deletion')
+    @Roles(UserRole.ADMIN)
+    @ApiOperation({ summary: 'Schedule a user for deletion in 30 days' })
+    @ApiResponse({ status: 200, description: 'Deletion scheduled' })
+    scheduleUserDeletion(@Param('id', ParseUuidPipe) id: string) {
+        return this.adminService.scheduleUserDeletion(id);
+    }
+
+    @Post('users/:id/cancel-deletion')
+    @Roles(UserRole.ADMIN)
+    @ApiOperation({ summary: 'Cancel a scheduled user deletion' })
+    @ApiResponse({ status: 200, description: 'Deletion cancelled' })
+    cancelUserDeletion(@Param('id', ParseUuidPipe) id: string) {
+        return this.adminService.cancelUserDeletion(id);
     }
 
     @Get('businesses')

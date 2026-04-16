@@ -5,7 +5,9 @@ import {
     Users, Search, RefreshCw, Loader2, Shield, ShieldAlert,
     ShieldCheck, ShieldOff, UserCheck, UserX, ChevronLeft,
     ChevronRight, Mail, Calendar, Chrome, KeyRound, MoreVertical,
-    Briefcase, User as UserIcon, Crown, Trash2, Eye, X
+    Briefcase, User as UserIcon, Crown, Trash2, Eye, X,
+    DollarSign, MapPin, Building2, Phone, Star, MessageSquare,
+    Link as LinkIcon, BadgeCheck, Zap
 } from 'lucide-react';
 import { api, getImageUrl } from '../../../lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -81,7 +83,9 @@ export default function AdminUsersPage() {
     const [meta, setMeta] = useState<any>({ total: 0, totalPages: 1 });
     const [openMenu, setOpenMenu] = useState<string | null>(null);
     const [selectedUser, setSelectedUser] = useState<any>(null);
+    const [selectedUserDetails, setSelectedUserDetails] = useState<any>(null);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [isLoadingDetails, setIsLoadingDetails] = useState(false);
     const LIMIT = 15;
 
     const fetchUsers = useCallback(async (p = page) => {
@@ -97,7 +101,24 @@ export default function AdminUsersPage() {
         }
     }, [page]);
 
-    useEffect(() => { fetchUsers(page); }, [page]);
+    useEffect(() => { fetchUsers(page); }, [page, fetchUsers]);
+
+    const fetchUserDetails = async (user: any) => {
+        setSelectedUser(user);
+        setIsDetailsModalOpen(true);
+        setIsLoadingDetails(true);
+        setSelectedUserDetails(null);
+        try {
+            if (currentUser?.role === 'superadmin') {
+                const res = await api.admin.getUserDetails(user.id);
+                setSelectedUserDetails(res);
+            }
+        } catch (err) {
+            console.error('Failed to fetch user details', err);
+        } finally {
+            setIsLoadingDetails(false);
+        }
+    };
 
     const changeRole = async (userId: string, role: Role) => {
         setActionLoading(userId + '-role');
@@ -125,8 +146,40 @@ export default function AdminUsersPage() {
         }
     };
 
-    const handleDelete = async (userId: string) => {
-        if (!window.confirm('Are you sure you want to PERMANENTLY delete this user? This will also remove their business listings and all related data. This action cannot be undone.')) {
+    const handleScheduleDeletion = async (userId: string) => {
+        if (!window.confirm('Are you sure you want to schedule this account for deletion? The user will have 30 days to cancel before their businesses and all related data are permanently removed.')) {
+            return;
+        }
+
+        setActionLoading(userId + '-schedule');
+        try {
+            await api.admin.scheduleUserDeletion(userId);
+            setUsers(prev => prev.map(u => u.id === userId ? { ...u, deletionScheduledAt: new Date().toISOString() } : u));
+            alert('User scheduled for deletion (30 days)');
+        } catch (err: any) {
+            alert(err.message || 'Failed to schedule deletion');
+        } finally {
+            setActionLoading(null);
+            setOpenMenu(null);
+        }
+    };
+
+    const handleCancelDeletion = async (userId: string) => {
+        setActionLoading(userId + '-cancel');
+        try {
+            await api.admin.cancelUserDeletion(userId);
+            setUsers(prev => prev.map(u => u.id === userId ? { ...u, deletionScheduledAt: null } : u));
+            alert('Scheduled deletion cancelled');
+        } catch (err: any) {
+            alert(err.message || 'Failed to cancel deletion');
+        } finally {
+            setActionLoading(null);
+            setOpenMenu(null);
+        }
+    };
+
+    const handleHardDelete = async (userId: string) => {
+        if (!window.confirm('CRITICAL WARNING: This will PERMANENTLY and IMMEDIATELY delete this user and all their data. This bypasses the 30-day grace period. Continue?')) {
             return;
         }
 
@@ -134,7 +187,7 @@ export default function AdminUsersPage() {
         try {
             await api.admin.deleteUser(userId);
             setUsers(prev => prev.filter(u => u.id !== userId));
-            alert('User deleted successfully');
+            alert('User PERMANENTLY deleted');
         } catch (err: any) {
             alert(err.message || 'Failed to delete user');
         } finally {
@@ -295,52 +348,79 @@ export default function AdminUsersPage() {
                                 </div>
 
                                 {/* Status */}
-                                <div>
+                                <div className="flex flex-col gap-1">
                                     <StatusBadge active={user.isActive} />
+                                    {user.deletionScheduledAt && (
+                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border bg-rose-50 text-rose-700 border-rose-200">
+                                            <AlertTriangle className="w-2.5 h-2.5" /> Pending Deletion
+                                        </span>
+                                    )}
                                 </div>
 
                                 {/* Actions */}
                                 {user.role !== 'superadmin' && (
                                     <div className="flex items-center justify-end gap-2" onClick={e => e.stopPropagation()}>
-                                        <button
-                                            onClick={() => { setSelectedUser(user); setIsDetailsModalOpen(true); }}
-                                            className="w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-slate-900 transition-all shadow-sm"
-                                            title="View Details"
-                                        >
-                                            <Eye className="w-4 h-4" />
-                                        </button>
-
                                         <div className="relative flex-shrink-0">
                                             <button
                                                 onClick={() => setOpenMenu(openMenu === user.id ? null : user.id)}
                                                 className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-900"
                                             >
-                                                {actionLoading?.startsWith(user.id) ? (
-                                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                                ) : (
-                                                    <MoreVertical className="w-4 h-4" />
-                                                )}
+                                                <MoreVertical className="w-5 h-5" />
                                             </button>
 
-                                        <AnimatePresence>
-                                            {openMenu === user.id && (
-                                                <motion.div
-                                                    initial={{ opacity: 0, scale: 0.9, y: -4 }}
-                                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                                    exit={{ opacity: 0, scale: 0.9, y: -4 }}
-                                                    className="absolute right-0 top-11 z-50 bg-white rounded-2xl shadow-2xl shadow-slate-900/10 border border-slate-100 py-2 w-52 overflow-hidden"
-                                                >
-                                                    <button
-                                                        onClick={() => toggleStatus(user.id, user.isActive)}
-                                                        className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-bold transition-colors ${user.isActive ? 'text-red-600 hover:bg-red-50' : 'text-emerald-600 hover:bg-emerald-50'
-                                                            }`}
+                                            <AnimatePresence>
+                                                {openMenu === user.id && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                        exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                                                        className="absolute right-0 top-11 z-50 bg-white rounded-2xl shadow-2xl shadow-slate-900/10 border border-slate-100 py-2 w-52 overflow-hidden"
                                                     >
-                                                        {user.isActive ? <ShieldOff className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
-                                                        {user.isActive ? 'Block User' : 'Unblock User'}
-                                                    </button>
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
+                                                        <button
+                                                            onClick={() => { fetchUserDetails(user); setOpenMenu(null); }}
+                                                            className="flex items-center gap-3 w-full px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors border-b border-slate-50"
+                                                        >
+                                                            <Eye className="w-4 h-4 text-slate-400" />
+                                                            View Full Details
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() => { toggleStatus(user.id, user.isActive); setOpenMenu(null); }}
+                                                            className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-bold transition-colors border-b border-slate-50 ${user.isActive ? 'text-red-600 hover:bg-red-50' : 'text-emerald-600 hover:bg-emerald-50'
+                                                                }`}
+                                                        >
+                                                            {user.isActive ? <ShieldOff className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
+                                                            {user.isActive ? 'Block User' : 'Unblock User'}
+                                                        </button>
+
+                                                        {user.deletionScheduledAt ? (
+                                                            <button
+                                                                onClick={() => { handleCancelDeletion(user.id); setOpenMenu(null); }}
+                                                                className="flex items-center gap-3 w-full px-4 py-3 text-sm font-bold text-emerald-600 hover:bg-emerald-50 transition-colors border-b border-slate-50"
+                                                            >
+                                                                <RefreshCw className="w-4 h-4" />
+                                                                Cancel Deletion
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => { handleScheduleDeletion(user.id); setOpenMenu(null); }}
+                                                                className="flex items-center gap-3 w-full px-4 py-3 text-sm font-bold text-rose-600 hover:bg-rose-50 transition-colors border-b border-slate-50"
+                                                            >
+                                                                <AlertTriangle className="w-4 h-4" />
+                                                                Schedule Deletion
+                                                            </button>
+                                                        )}
+
+                                                        <button
+                                                            onClick={() => { handleHardDelete(user.id); setOpenMenu(null); }}
+                                                            className="flex items-center gap-3 w-full px-4 py-3 text-sm font-bold text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                            Hard Delete (Immediate)
+                                                        </button>
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
                                         </div>
                                     </div>
                                 )}
@@ -404,10 +484,10 @@ export default function AdminUsersPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100"
+                            className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100"
                         >
                             {/* Modal Header */}
-                            <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between">
+                            <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-10">
                                 <div>
                                     <h2 className="text-xl font-black text-slate-900">User Profile</h2>
                                     <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-0.5">Account Identification: {selectedUser.id.slice(0, 8)}...</p>
@@ -422,81 +502,144 @@ export default function AdminUsersPage() {
 
                             {/* Modal Content */}
                             <div className="px-8 py-8 space-y-8 max-h-[70vh] overflow-y-auto">
-                                <div className="flex items-center gap-6">
-                                    <div className={`w-24 h-24 rounded-3xl bg-gradient-to-br ${ROLE_COLORS[selectedUser.role] || ROLE_COLORS.user} flex items-center justify-center shadow-xl overflow-hidden`}>
+                                <div className="flex items-center gap-8">
+                                    <div className={`w-28 h-28 rounded-[2rem] bg-gradient-to-br ${ROLE_COLORS[selectedUser.role] || ROLE_COLORS.user} flex items-center justify-center shadow-xl overflow-hidden ring-4 ring-slate-50`}>
                                         {selectedUser.avatarUrl ? (
                                             <img src={getImageUrl(selectedUser.avatarUrl) || ''} alt={selectedUser.fullName} className="w-full h-full object-cover" />
                                         ) : (
-                                            <span className="text-white font-black text-3xl">{getInitials(selectedUser.fullName)}</span>
+                                            <span className="text-white font-black text-4xl">{getInitials(selectedUser.fullName)}</span>
                                         )}
                                     </div>
-                                    <div className="space-y-2">
-                                        <h3 className="text-2xl font-black text-slate-900">{selectedUser.fullName || '—'}</h3>
+                                    <div className="space-y-3">
+                                        <h3 className="text-3xl font-black text-slate-900 tracking-tight">{selectedUser.fullName || '—'}</h3>
                                         <div className="flex flex-wrap gap-2">
                                             <RolePill role={selectedUser.role} />
                                             <StatusBadge active={selectedUser.isActive} />
+                                            {selectedUserDetails?.vendor?.isVerified && (
+                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                                    <BadgeCheck className="w-3.5 h-3.5" /> Verified Vendor
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="space-y-1.5 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                        <div className="flex items-center gap-2 text-slate-400 mb-1">
-                                            <Mail className="w-4 h-4" />
-                                            <span className="text-[10px] font-black uppercase tracking-widest">Email Address</span>
-                                        </div>
-                                        <p className="text-sm font-bold text-slate-700">{selectedUser.email}</p>
+                                {isLoadingDetails ? (
+                                    <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                                        <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
+                                        <p className="text-sm font-bold text-slate-400 animate-pulse">Fetching complete data vault...</p>
                                     </div>
-                                    <div className="space-y-1.5 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                        <div className="flex items-center gap-2 text-slate-400 mb-1">
-                                            <Calendar className="w-4 h-4" />
-                                            <span className="text-[10px] font-black uppercase tracking-widest">Joined On</span>
-                                        </div>
-                                        <p className="text-sm font-bold text-slate-700">{formatDate(selectedUser.createdAt)}</p>
-                                    </div>
-                                    <div className="space-y-1.5 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                        <div className="flex items-center gap-2 text-slate-400 mb-1">
-                                            <KeyRound className="w-4 h-4" />
-                                            <span className="text-[10px] font-black uppercase tracking-widest">Auth Provider</span>
-                                        </div>
-                                        <div className="pt-1">
-                                            <ProviderBadge provider={selectedUser.provider} />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-1.5 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                        <div className="flex items-center gap-2 text-slate-400 mb-1">
-                                            <Shield className="w-4 h-4" />
-                                            <span className="text-[10px] font-black uppercase tracking-widest">Security Status</span>
-                                        </div>
-                                        <p className={`text-sm font-black ${selectedUser.isActive ? 'text-emerald-600' : 'text-red-500'}`}>
-                                            {selectedUser.isActive ? 'PASSED / VERIFIED' : 'SUSPENDED / BLOCKED'}
-                                        </p>
-                                    </div>
-                                </div>
+                                ) : (
+                                    <div className="space-y-8">
+                                        {/* Core Stats if Superadmin */}
+                                        {selectedUserDetails?.stats && (
+                                            <div className="grid grid-cols-4 gap-4">
+                                                {[
+                                                    { label: 'Revenue', val: `$${selectedUserDetails.stats.totalSpent}`, icon: DollarSign, color: 'text-emerald-600' },
+                                                    { label: 'Businesses', val: selectedUserDetails.stats.businessCount, icon: Building2, color: 'text-blue-600' },
+                                                    { label: 'Reviews', val: selectedUserDetails.stats.reviewCount, icon: Star, color: 'text-amber-500' },
+                                                    { label: 'Leads', val: selectedUserDetails.stats.leadCount, icon: Zap, color: 'text-indigo-600' }
+                                                ].map((s, i) => (
+                                                    <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-center">
+                                                        <s.icon className={`w-5 h-5 mx-auto mb-2 ${s.color}`} />
+                                                        <div className="text-lg font-black text-slate-900">{s.val}</div>
+                                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{s.label}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
 
-                                {(selectedUser.city || selectedUser.country) && (
-                                    <div className="p-5 bg-indigo-50/50 rounded-2xl border border-indigo-100">
-                                        <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-3">Location Details</h4>
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600">
-                                                <Users className="w-5 h-5" />
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <div className="space-y-1.5 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                                <div className="flex items-center gap-2 text-slate-400 mb-1">
+                                                    <Mail className="w-4 h-4" />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">Email Address</span>
+                                                </div>
+                                                <p className="text-sm font-bold text-slate-700 break-all">{selectedUser.email}</p>
                                             </div>
-                                            <div>
-                                                <p className="text-sm font-black text-slate-900">{selectedUser.city || '—'}</p>
-                                                <p className="text-xs font-bold text-slate-400">{selectedUser.country || 'Not Specified'}</p>
+                                            <div className="space-y-1.5 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                                <div className="flex items-center gap-2 text-slate-400 mb-1">
+                                                    <Phone className="w-4 h-4" />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">Phone Number</span>
+                                                </div>
+                                                <p className="text-sm font-bold text-slate-700">{selectedUser.phone || 'Not Provided'}</p>
+                                            </div>
+                                            <div className="space-y-1.5 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                                <div className="flex items-center gap-2 text-slate-400 mb-1">
+                                                    <Calendar className="w-4 h-4" />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">Joined On</span>
+                                                </div>
+                                                <p className="text-sm font-bold text-slate-700">{formatDate(selectedUser.createdAt)}</p>
+                                            </div>
+                                            <div className="space-y-1.5 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                                <div className="flex items-center gap-2 text-slate-400 mb-1">
+                                                    <KeyRound className="w-4 h-4" />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">Auth Provider</span>
+                                                </div>
+                                                <div className="pt-1">
+                                                    <ProviderBadge provider={selectedUser.provider} />
+                                                </div>
                                             </div>
                                         </div>
+
+                                        {/* Vendor Profile Section */}
+                                        {selectedUserDetails?.vendor && (
+                                            <div className="space-y-4">
+                                                <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest border-l-4 border-blue-500 pl-3">Vendor Business Profile</h4>
+                                                <div className="grid grid-cols-2 gap-6 p-6 bg-blue-50/50 rounded-3xl border border-blue-100">
+                                                    <div className="space-y-1">
+                                                        <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Business Name</span>
+                                                        <p className="text-sm font-black text-slate-900">{selectedUserDetails.vendor.businessName || '—'}</p>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Stripe Customer ID</span>
+                                                        <p className="text-xs font-mono font-bold text-slate-600">{selectedUserDetails.vendor.stripeCustomerId || '—'}</p>
+                                                    </div>
+                                                    <div className="col-span-2 space-y-1 border-t border-blue-100/50 pt-4">
+                                                        <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Bio / Description</span>
+                                                        <p className="text-xs font-medium text-slate-600 leading-relaxed italic">
+                                                            "{selectedUserDetails.vendor.bio || 'No business description provided yet.'}"
+                                                        </p>
+                                                    </div>
+                                                    {selectedUserDetails.vendor.gstNumber && (
+                                                        <div className="space-y-1 pt-2">
+                                                            <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">GST Number</span>
+                                                            <p className="text-sm font-black text-slate-900">{selectedUserDetails.vendor.gstNumber}</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Location */}
+                                        {(selectedUser.city || selectedUser.country || selectedUserDetails?.vendor?.businessAddress) && (
+                                            <div className="p-6 bg-slate-900 rounded-[2rem] text-white shadow-xl">
+                                                <div className="flex items-start gap-4">
+                                                    <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-white shrink-0">
+                                                        <MapPin className="w-6 h-6" />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <h4 className="text-[10px] font-black text-white/50 uppercase tracking-[0.2em]">Contact & Location</h4>
+                                                        <p className="text-sm font-bold leading-relaxed">{selectedUserDetails?.vendor?.businessAddress || 'No official business address'}</p>
+                                                        <p className="text-xs font-black text-indigo-400 flex items-center gap-2">
+                                                            {selectedUser.city && <>{selectedUser.city},</>} {selectedUser.state && <>{selectedUser.state},</>} {selectedUser.country || 'Not Specified'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
 
                             {/* Modal Footer */}
-                            <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex justify-end">
+                            <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Security Clearance: {currentUser?.role}</p>
                                 <button
                                     onClick={() => setIsDetailsModalOpen(false)}
-                                    className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-black text-sm rounded-2xl transition-all shadow-lg active:scale-95"
+                                    className="px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white font-black text-sm rounded-2xl transition-all shadow-lg active:scale-95"
                                 >
-                                    Close Details
+                                    Dismiss Detailed View
                                 </button>
                             </div>
                         </motion.div>

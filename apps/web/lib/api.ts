@@ -367,6 +367,12 @@ export const api = {
         markNotificationRead: (id: string) => fetcher<void>(`/users/notifications/${id}/read`, {
             method: 'PATCH',
         }),
+        requestDeletion: () => fetcher<any>('/users/profile', {
+            method: 'DELETE',
+        }),
+        cancelDeletion: () => fetcher<any>('/users/profile/cancel-deletion', {
+            method: 'POST',
+        }),
     },
     vendors: {
         getStats: () => fetcher<any>('/vendors/dashboard-stats'),
@@ -428,6 +434,7 @@ export const api = {
     admin: {
         getStats: () => fetcher<any>('/admin/stats'),
         getUsers: (page = 1, limit = 10) => fetcher<any>(`/admin/users?page=${page}&limit=${limit}`),
+        getUserDetails: (id: string) => fetcher<any>(`/admin/users/${id}`),
         updateUserRole: (id: string, role: string) => fetcher<any>(`/admin/users/${id}/role`, {
             method: 'PATCH',
             body: JSON.stringify({ role }),
@@ -438,6 +445,12 @@ export const api = {
         }),
         deleteUser: (id: string) => fetcher<any>(`/admin/users/${id}`, {
             method: 'DELETE',
+        }),
+        scheduleUserDeletion: (id: string) => fetcher<any>(`/admin/users/${id}/schedule-deletion`, {
+            method: 'POST',
+        }),
+        cancelUserDeletion: (id: string) => fetcher<any>(`/admin/users/${id}/cancel-deletion`, {
+            method: 'POST',
         }),
         getBusinesses: (page = 1, limit = 20, status?: string, search?: string) => {
             const params = new URLSearchParams({

@@ -9,7 +9,7 @@ import {
     forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan, IsNull } from 'typeorm';
+import { Repository, MoreThan, LessThanOrEqual, IsNull } from 'typeorm';
 import { Subscription, SubscriptionStatus } from '../../entities/subscription.entity';
 import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
 import { PricingPlan, PricingPlanType, PricingPlanUnit } from '../../entities/pricing-plan.entity';
@@ -681,13 +681,17 @@ export class SubscriptionsService implements OnModuleInit {
         let result: any = null;
         let isNewSystem = false;
 
+        const now = new Date();
+
         // 1. Fetch from BOTH PricingPlan system (ActivePlan) and old Subscription system
+        // We look for plans that are CURRENTLY active (now is between start and end)
         const [activeNewPlan, activeOldSub] = await Promise.all([
             this.activePlanRepository.findOne({
                 where: {
                     vendorId: vendor.id,
                     status: ActivePlanStatus.ACTIVE,
-                    endDate: MoreThan(new Date())
+                    startDate: LessThanOrEqual(now),
+                    endDate: MoreThan(now)
                 },
                 relations: ['plan'],
                 order: { startDate: 'DESC' }
@@ -696,18 +700,34 @@ export class SubscriptionsService implements OnModuleInit {
                 where: {
                     vendorId: vendor.id,
                     status: SubscriptionStatus.ACTIVE,
-                    endDate: MoreThan(new Date())
+                    startDate: LessThanOrEqual(now),
+                    endDate: MoreThan(now)
                 },
                 relations: ['plan'],
                 order: { startDate: 'DESC' }
             })
         ]);
 
-        // 2. Prioritize by most recent startDate if both exist
+        // 2. If no currently active plan, find the "Next" upcoming plan
+        // BUT, we only use this if we don't want to fallback to Free yet.
+        // Actually, it's better to show 'Free' if you are currently in a gap.
+        let upcomingPlan: any = null;
+        if (!activeNewPlan && !activeOldSub) {
+             upcomingPlan = await this.activePlanRepository.findOne({
+                where: {
+                    vendorId: vendor.id,
+                    status: ActivePlanStatus.ACTIVE,
+                    startDate: MoreThan(now)
+                },
+                relations: ['plan'],
+                order: { startDate: 'ASC' }
+            });
+        }
+
+        // 2. Decide which one is definitively the "current" active plan
         if (activeNewPlan && activeOldSub) {
             const newStart = new Date(activeNewPlan.startDate).getTime();
             const oldStart = new Date(activeOldSub.startDate).getTime();
-
             if (newStart >= oldStart) {
                 result = activeNewPlan;
                 isNewSystem = true;
@@ -715,71 +735,51 @@ export class SubscriptionsService implements OnModuleInit {
                 result = activeOldSub;
                 isNewSystem = false;
             }
-        } else if (activeNewPlan && activeNewPlan.plan?.type === PricingPlanType.SUBSCRIPTION) {
+        } else if (activeNewPlan) {
             result = activeNewPlan;
             isNewSystem = true;
         } else if (activeOldSub) {
             result = activeOldSub;
             isNewSystem = false;
-        } else {
-            // Check for Offer plans if no main subscription found
-            if (activeNewPlan) {
-                result = activeNewPlan;
-                isNewSystem = true;
+        }
+
+        // 3. FALLBACK: If no CURRENT active subscription, check for Upcoming or assign Free
+        if (!result) {
+            // Check upcoming first
+            const upcomingPlan = await this.activePlanRepository.findOne({
+                where: {
+                    vendorId: vendor.id,
+                    status: ActivePlanStatus.ACTIVE,
+                    startDate: MoreThan(now)
+                },
+                relations: ['plan'],
+                order: { startDate: 'ASC' }
+            });
+
+            if (upcomingPlan) {
+                // If there's an upcoming plan, we STILL need a Free plan for the gap
+                // But we'll return the Free plan as 'result' and maybe info about upcoming
+                this.logger.log(`[getActiveSubscription] Vendor ${vendor.id} has upcoming plan ${upcomingPlan.id}. Assigning Free plan for the gap.`);
             }
 
-            // --- FALLBACK: If no active subscription anywhere, try to assign Free Plan ---
-            if (!result) {
-                // ... fallback logic continues ...
-                // Check for new Free Plan first
-                const newFreePlan = await this.pricingPlanRepository.findOne({
-                    where: { name: 'Free', type: PricingPlanType.SUBSCRIPTION }
-                });
+            // Fallback to Free Plan
+            const newFreePlan = await this.pricingPlanRepository.findOne({
+                where: { name: 'Free', type: PricingPlanType.SUBSCRIPTION }
+            });
 
-                if (newFreePlan) {
-                    const now = new Date();
-                    const endDate = new Date(now.getTime() + 3650 * 24 * 60 * 60 * 1000);
-                    const activePlan = this.activePlanRepository.create({
-                        vendorId: vendor.id,
-                        planId: newFreePlan.id,
-                        status: ActivePlanStatus.ACTIVE,
-                        startDate: now,
-                        endDate: endDate,
-                        amountPaid: 0,
-                    });
-                    const saved = await this.activePlanRepository.save(activePlan);
-                    saved.plan = newFreePlan;
-                    result = saved;
-                    isNewSystem = true;
-                } else {
-                    // Fallback to old Free Plan if exists
-                    const freePlan = await this.planRepository.findOne({
-                        where: { id: '00000000-0000-0000-0000-000000000001' }
-                    });
-                    if (freePlan) {
-                        const now = new Date();
-                        const endDate = new Date(now.getTime() + 3650 * 24 * 60 * 60 * 1000);
-                        const newSub = this.subscriptionRepository.create({
-                            vendorId: vendor.id,
-                            planId: freePlan.id,
-                            status: SubscriptionStatus.ACTIVE,
-                            startDate: now,
-                            endDate: endDate,
-                            amount: 0,
-                            autoRenew: false,
-                        });
-                        const savedSub = await this.subscriptionRepository.save(newSub);
-                        savedSub.plan = freePlan;
-                        result = savedSub;
-                        isNewSystem = false;
-                    }
-                }
-            } else {
-                // Determine which one to show. 
-                // If there's an active Subscription-type new plan, it won't reach here.
-                // If there's an active Offer plan and an active old Subscription, prioritize the Subscription.
-                result = activeOldSub || activeNewPlan;
-                isNewSystem = result === activeNewPlan;
+            if (newFreePlan) {
+                // Create/Update absolute Free Plan
+                const endDate = new Date(now.getTime() + 3650 * 24 * 60 * 60 * 1000);
+                const activePlan = this.activePlanRepository.create({
+                    vendorId: vendor.id,
+                    planId: newFreePlan.id,
+                    status: ActivePlanStatus.ACTIVE,
+                    startDate: now,
+                    endDate: endDate,
+                    amountPaid: 0,
+                });
+                result = await this.activePlanRepository.save(activePlan);
+                isNewSystem = true;
             }
         }
 
@@ -998,11 +998,14 @@ export class SubscriptionsService implements OnModuleInit {
         });
 
         // If an active plan exists of the SAME TYPE, extend it
-        if (existingActivePlan && existingActivePlan.plan?.type === plan.type) {
+        // CRITICAL: We only extend PAID plans. If the current plan is FREE, start the new plan NOW.
+        const isFreePlan = existingActivePlan?.plan?.price <= 0 || existingActivePlan?.plan?.name?.toLowerCase() === 'free';
+        
+        if (existingActivePlan && existingActivePlan.plan?.type === plan.type && !isFreePlan) {
             // Only extend if it's not already expired
             if (new Date(existingActivePlan.endDate) > now) {
                 startDate = new Date(existingActivePlan.endDate);
-                this.logger.log(`🔄 Extending existing plan. New StartDate: ${startDate}`);
+                this.logger.log(`🔄 Extending existing paid plan. New StartDate: ${startDate}`);
             }
         }
 

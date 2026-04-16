@@ -7,6 +7,7 @@ import {
     OneToOne,
     OneToMany,
     Index,
+    DeleteDateColumn,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { Vendor } from './vendor.entity';
@@ -130,6 +131,13 @@ export class User {
 
     @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
+
+    @DeleteDateColumn({ name: 'delete_at', nullable: true })
+    deleteAt: Date;
+
+    @Column({ name: 'deletion_scheduled_at', nullable: true, type: 'timestamp' })
+    deletionScheduledAt: Date;
+
 
     // ── Relations ─────────────────────────────────────────────────────────────
 
