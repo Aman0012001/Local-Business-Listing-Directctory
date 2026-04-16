@@ -66,6 +66,10 @@ export class Category {
     @Index()
     source: CategorySource;
 
+    @Column({ name: 'is_featured', default: false })
+    @Index()
+    isFeatured: boolean;
+
     @Column({ name: 'meta_title', nullable: true })
     metaTitle: string;
 
