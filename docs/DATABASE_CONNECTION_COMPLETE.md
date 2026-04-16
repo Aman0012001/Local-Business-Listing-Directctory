@@ -260,7 +260,7 @@ psql -h localhost -p 5432 -U postgres -d webapp < backup.sql
 
 ---
 
-## ✨ What's Been Accomplished
+##  What's Been Accomplished
 
 1. ✅ **PostgreSQL Password Reset** - Set to `5432`
 2. ✅ **Database Connection Verified** - Both APIs can connect

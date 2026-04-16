@@ -188,7 +188,7 @@ export default function VendorReviews() {
     }, [reviews, ratingFilter, listingFilter, search]);
 
     const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-    const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * PAGE_SIZE);
+    const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
     const handleReply = async () => {
         if (!respondingTo || !responseText.trim()) return;

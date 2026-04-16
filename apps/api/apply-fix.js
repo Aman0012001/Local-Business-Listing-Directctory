@@ -25,7 +25,7 @@ async function applyFix() {
         // We can't easily modify enums if they already exist without a lot of logic,
         // but since vendor is there, it's fine.
 
-        console.log('\n✨ Database fix applied successfully!');
+        console.log('\n Database fix applied successfully!');
 
     } catch (err) {
         console.error('❌ Error applying fix:', err.message);

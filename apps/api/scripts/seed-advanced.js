@@ -43,7 +43,7 @@ async function seed() {
         await client.query('TRUNCATE reviews, leads, business_amenities, business_hours, businesses, categories, amenities, vendors, users CASCADE');
 
         // 2. Seed Amenities
-        console.log('✨ Seeding amenities...');
+        console.log(' Seeding amenities...');
         const amenityIds = [];
         for (const name of AMENITIES) {
             const id = uuidv4();

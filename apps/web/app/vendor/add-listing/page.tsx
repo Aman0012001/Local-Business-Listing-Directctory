@@ -1763,7 +1763,7 @@ export default function AddListingPage() {
                                     />
                                 </div>
                                 <p className="text-[11px] text-slate-400 font-medium">
-                                    ✨ Keywords boost your listing to the <strong>top of search results</strong> when customers search for those terms.
+                                     Keywords boost your listing to the <strong>top of search results</strong> when customers search for those terms.
                                 </p>
                                 <p className="text-[11px] text-slate-400">
                                     e.g. <span className="italic">home delivery · open 24 hours · best biryani · bridal makeup · free wifi</span>

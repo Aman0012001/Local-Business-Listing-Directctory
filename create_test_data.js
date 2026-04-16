@@ -80,7 +80,7 @@ async function run() {
 
         // 6. Create Test Event
         const eventValues = [
-            '✨ Exclusive Vendor Networking',
+            ' Exclusive Vendor Networking',
             'Join the elite vendors for an evening of networking and growth.',
             'event',
             'active',

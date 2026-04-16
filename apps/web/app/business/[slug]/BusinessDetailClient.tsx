@@ -1698,8 +1698,7 @@ export default function BusinessDetailClient({
                 <div className="flex flex-col items-center text-center">
                   <Link
                     href={(business.vendorId || business.vendor?.id) ? `/vendors/${business.vendorId || business.vendor?.id}` : "#"}
-                    target="_self"
-                    className={`flex flex-col items-center text-center group/vendor ${!(business.vendorId || business.vendor?.id) ? 'pointer-events-none' : 'cursor-pointer'}`}
+                    className={`flex flex-col items-center text-center group/vendor ${!(business.vendorId || business.vendor?.id) ? "pointer-events-none" : "cursor-pointer"}`}
                   >
                     <div className="w-24 h-24 bg-blue-50 rounded-3xl flex items-center justify-center text-blue-600 font-bold overflow-hidden shadow-inner mb-4 relative group">
                       {business.vendor?.user?.avatarUrl ? (
@@ -1813,13 +1812,17 @@ export default function BusinessDetailClient({
 
 
                     {(business.vendorId || business.vendor?.id) && (
-                      <Link
-                        id="view-vendor-profile-btn"
-                        href={`/vendors/${business.vendorId || business.vendor?.id}`}
-                        className="block w-full py-4 bg-slate-50 text-slate-900 rounded-2xl font-black text-sm text-center hover:bg-slate-900 hover:text-white transition-all border border-slate-100 shadow-sm"
+                      <button
+                        type="button"
+                        onClick={() => {
+                          window.location.href = `/vendors/${business.vendorId || business.vendor?.id}`;
+                        }}
+                        className="group/btn relative w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-sm flex items-center justify-center gap-2 overflow-hidden hover:bg-blue-600 transition-all duration-300 shadow-lg shadow-slate-900/10 active:scale-[0.98] mt-6 cursor-pointer z-20"
                       >
-                        View Profile
-                      </Link>
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300" />
+                        <User className="relative z-10 w-4.5 h-4.5 group-hover/btn:scale-110 transition-transform" />
+                        <span className="relative z-10 text-center uppercase tracking-wide">View Profile</span>
+                      </button>
                     )}
                   </div>
                 </div>
