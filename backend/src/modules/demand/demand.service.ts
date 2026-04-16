@@ -123,10 +123,10 @@ export class DemandService {
         const query = this.searchLogRepository.createQueryBuilder('log')
             .select('log.normalizedKeyword', 'normalizedKeyword')
             .addSelect('MAX(log.keyword)', 'keyword')
-            .addSelect(`COUNT(CASE WHEN "log"."searched_at" >= :oneHour THEN 1 END)`, 'count1h')
-            .addSelect(`COUNT(CASE WHEN "log"."searched_at" >= :sixHours THEN 1 END)`, 'count6h')
-            .addSelect(`COUNT(CASE WHEN "log"."searched_at" >= :twentyFourHours THEN 1 END)`, 'count24h')
-            .addSelect(`COUNT(CASE WHEN "log"."searched_at" >= :prevStart AND "log"."searched_at" < :oneHour THEN 1 END)`, 'countPrevHour')
+            .addSelect('COUNT(CASE WHEN log.searched_at >= :oneHour THEN 1 END)', 'count1h')
+            .addSelect('COUNT(CASE WHEN log.searched_at >= :sixHours THEN 1 END)', 'count6h')
+            .addSelect('COUNT(CASE WHEN log.searched_at >= :twentyFourHours THEN 1 END)', 'count24h')
+            .addSelect('COUNT(CASE WHEN log.searched_at >= :prevStart AND log.searched_at < :oneHour THEN 1 END)', 'countPrevHour')
             .setParameters({
                 oneHour: oneHourAgo,
                 sixHours: sixHoursAgo,
@@ -134,11 +134,14 @@ export class DemandService {
                 prevStart: prevWindowStart
             });
 
-        if (city) {
-            query.andWhere('LOWER(log.city) = LOWER(:city)', { city });
+        if (city && city.trim()) {
+            query.andWhere('LOWER(log.city) = LOWER(:city)', { city: city.trim() });
         }
 
-        const stats = await query.groupBy('log.normalizedKeyword').getRawMany();
+        const stats = await query
+            .groupBy('log.normalizedKeyword')
+            .having('COUNT(CASE WHEN log.searched_at >= :twentyFourHours THEN 1 END) > 0')
+            .getRawMany();
 
         return stats.map(res => {
             const c1h = parseInt(res.count1h) || 0;
@@ -146,15 +149,15 @@ export class DemandService {
             const c24h = parseInt(res.count24h) || 0;
             const cPrev = parseInt(res.countPrevHour) || 0;
 
-            // Score = (1h * 3) + (6h * 2) + (24h)
-            const score = (c1h * 3) + (c6h * 2) + c24h;
+            // Score = (1h * 5) + (6h * 2) + (24h) - Weight recency more heavily
+            const score = (c1h * 5) + (c6h * 2) + c24h;
 
             // Growth calculation (compare last hour vs previous hour)
             const growth = cPrev === 0 ? (c1h > 0 ? 100 : 0) : Math.round(((c1h - cPrev) / cPrev) * 100);
-            const isTrending = growth >= 30 && c1h >= 1;
+            const isTrending = growth >= 20 && c1h >= 1; // Slightly lower threshold for trending
 
             return {
-                keyword: res.keyword,
+                keyword: res.keyword || res.normalizedKeyword,
                 normalizedKeyword: res.normalizedKeyword,
                 score,
                 count1h: c1h,
@@ -163,7 +166,7 @@ export class DemandService {
                 isTrending,
                 growth
             };
-        }).sort((a, b) => b.score - a.score).slice(0, 10);
+        }).sort((a, b) => b.score - a.score).slice(0, 50); // Increased limit for better breakdown
     }
 
     /**

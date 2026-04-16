@@ -6,8 +6,8 @@ import {
     ShieldCheck, ShieldOff, UserCheck, UserX, ChevronLeft,
     ChevronRight, Mail, Calendar, Chrome, KeyRound, MoreVertical,
     Briefcase, User as UserIcon, Crown, Trash2, Eye, X,
-    DollarSign, MapPin, Building2, Phone, Star, MessageSquare,
-    Link as LinkIcon, BadgeCheck, Zap
+    Banknote, MapPin, Building2, Phone, Star, MessageSquare,
+    Link as LinkIcon, BadgeCheck, Zap, AlertTriangle
 } from 'lucide-react';
 import { api, getImageUrl } from '../../../lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -392,32 +392,6 @@ export default function AdminUsersPage() {
                                                             {user.isActive ? <ShieldOff className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
                                                             {user.isActive ? 'Block User' : 'Unblock User'}
                                                         </button>
-
-                                                        {user.deletionScheduledAt ? (
-                                                            <button
-                                                                onClick={() => { handleCancelDeletion(user.id); setOpenMenu(null); }}
-                                                                className="flex items-center gap-3 w-full px-4 py-3 text-sm font-bold text-emerald-600 hover:bg-emerald-50 transition-colors border-b border-slate-50"
-                                                            >
-                                                                <RefreshCw className="w-4 h-4" />
-                                                                Cancel Deletion
-                                                            </button>
-                                                        ) : (
-                                                            <button
-                                                                onClick={() => { handleScheduleDeletion(user.id); setOpenMenu(null); }}
-                                                                className="flex items-center gap-3 w-full px-4 py-3 text-sm font-bold text-rose-600 hover:bg-rose-50 transition-colors border-b border-slate-50"
-                                                            >
-                                                                <AlertTriangle className="w-4 h-4" />
-                                                                Schedule Deletion
-                                                            </button>
-                                                        )}
-
-                                                        <button
-                                                            onClick={() => { handleHardDelete(user.id); setOpenMenu(null); }}
-                                                            className="flex items-center gap-3 w-full px-4 py-3 text-sm font-bold text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                            Hard Delete (Immediate)
-                                                        </button>
                                                     </motion.div>
                                                 )}
                                             </AnimatePresence>
@@ -535,7 +509,7 @@ export default function AdminUsersPage() {
                                         {selectedUserDetails?.stats && (
                                             <div className="grid grid-cols-4 gap-4">
                                                 {[
-                                                    { label: 'Revenue', val: `$${selectedUserDetails.stats.totalSpent}`, icon: DollarSign, color: 'text-emerald-600' },
+                                                    { label: 'Revenue', val: `Rs ${selectedUserDetails.stats.totalSpent}`, icon: Banknote, color: 'text-emerald-600' },
                                                     { label: 'Businesses', val: selectedUserDetails.stats.businessCount, icon: Building2, color: 'text-blue-600' },
                                                     { label: 'Reviews', val: selectedUserDetails.stats.reviewCount, icon: Star, color: 'text-amber-500' },
                                                     { label: 'Leads', val: selectedUserDetails.stats.leadCount, icon: Zap, color: 'text-indigo-600' }
