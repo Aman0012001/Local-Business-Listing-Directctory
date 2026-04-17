@@ -66,8 +66,9 @@ export default function AddListingPage() {
     const [myListingsCount, setMyListingsCount] = useState<number | null>(null);
 
     // Use centralized feature gating
-    const { getFeatureValue, planName } = usePlanFeature();
+    const { getFeatureValue, planName, isFree } = usePlanFeature();
     const maxListings = getFeatureValue('maxListings') || 1;
+    const maxImages = isFree ? 3 : 999;
     const isVendor = user?.role === 'vendor';
     const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
     
@@ -619,7 +620,7 @@ export default function AddListingPage() {
         const files = Array.from(e.target.files || []);
         if (!files.length) return;
 
-        const remaining = 24 - galleryPreviews.length;
+        const remaining = maxImages - galleryPreviews.length;
         const toUpload = files.slice(0, remaining);
 
         if (toUpload.length === 0) return;
@@ -1199,10 +1200,10 @@ export default function AddListingPage() {
                                     </div>
                                     <div>
                                         <h3 className="font-black text-slate-900">Media Gallery</h3>
-                                        <p className="text-[11px] text-slate-400 font-medium">Up to 24 photos · PNG, JPG</p>
+                                        <p className="text-[11px] text-slate-400 font-medium">{isFree ? 'Up to 3 photos' : 'Unlimited photos'} · PNG, JPG</p>
                                     </div>
                                 </div>
-                                <span className="text-xs font-black text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full">{galleryPreviews.length}/24</span>
+                                <span className="text-xs font-black text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full">{galleryPreviews.length}/{isFree ? '3' : '∞'}</span>
                             </div>
                             <div className="p-6">
                                 {/* Preview Grid */}
@@ -1235,7 +1236,7 @@ export default function AddListingPage() {
                                             </div>
                                         ))}
                                         {/* Add More slot */}
-                                        {galleryPreviews.length < 24 && (
+                                        {galleryPreviews.length < maxImages && (
                                             <label className="cursor-pointer rounded-xl border-2 border-dashed border-slate-200 hover:border-purple-300 hover:bg-purple-50/30 transition-all flex flex-col items-center justify-center aspect-square gap-1">
                                                 <input type="file" accept="image/*" multiple onChange={handleGalleryUpload} className="hidden" />
                                                 <ImagePlus className="w-5 h-5 text-slate-300" />
@@ -1259,7 +1260,7 @@ export default function AddListingPage() {
                                                 </div>
                                                 <div className="text-center">
                                                     <p className="font-black text-sm">Click to upload gallery photos</p>
-                                                    <p className="text-xs mt-1 text-slate-400">Select multiple images at once · Max 24</p>
+                                                    <p className="text-xs mt-1 text-slate-400">Select multiple images at once {isFree ? '· Max 3' : ''}</p>
                                                 </div>
                                             </div>
                                         </div>

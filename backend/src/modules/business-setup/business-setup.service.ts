@@ -30,7 +30,7 @@ export class BusinessSetupService {
             // Fallback questions to ensure the 4-step wizard works even without seeding
             return [
                 {
-                    id: 'fallback-1',
+                    id: 'srv-1',
                     category: 'Service Mode',
                     question: 'How do you provide your services?',
                     options: ['Home Service', 'In-store / Studio', 'Online / Virtual', 'Emergency Services'],
@@ -40,7 +40,7 @@ export class BusinessSetupService {
                     updatedAt: new Date(),
                 },
                 {
-                    id: 'fallback-2',
+                    id: 'pay-1',
                     category: 'Payment Methods',
                     question: 'Which payment methods do you accept?',
                     options: ['Cash', 'UPI / QR Code', 'Credit/Debit Card', 'Net Banking', 'Digital Wallets'],
@@ -50,7 +50,7 @@ export class BusinessSetupService {
                     updatedAt: new Date(),
                 },
                 {
-                    id: 'fallback-3',
+                    id: 'feat-1',
                     category: 'Business Features',
                     question: 'What amenities or features does your business offer?',
                     options: ['WiFi Available', 'Parking Space', 'Air Conditioned', 'Wheelchair Accessible', 'Waiting Area', 'Contactless Delivery'],

@@ -46,6 +46,14 @@ export class DemandController {
         return this.demandService.getInsights(city);
     }
 
+    @Get('overview')
+    @Roles(UserRole.SUPERADMIN)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Get comprehensive site demand overview (SuperAdmin only)' })
+    async getOverview(@Query('city') city?: string) {
+        return this.demandService.getOverview(city);
+    }
+
     @Get('nearby')
     @Roles(UserRole.VENDOR)
     @ApiBearerAuth()

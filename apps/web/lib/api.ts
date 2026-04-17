@@ -665,6 +665,7 @@ export const api = {
     },
     demand: {
         getInsights: (city?: string) => fetcher<any[]>(`/demand/insights${city ? `?city=${city}` : ''}`, { silent: true }),
+        getOverview: (city?: string) => fetcher<any>(`/demand/overview${city ? `?city=${city}` : ''}`, { silent: true }),
         getAISummary: (city?: string) => fetcher<{ summary: string }>(`/demand/summary-ai${city ? `?city=${city}` : ''}`, { silent: true }),
         getNearby: (lat?: number, lng?: number) => fetcher<any[]>(`/demand/nearby${lat !== undefined && lng !== undefined ? `?lat=${lat}&lng=${lng}` : ''}`, { silent: true }),
         getHeatmap: (keyword?: string) => fetcher<any[]>(`/demand/heatmap${keyword ? `?keyword=${keyword}` : ''}`, { silent: true }),
@@ -703,6 +704,18 @@ export const api = {
         getStatus: () => fetcher<{ isCompleted: boolean; answers: Record<string, string[]> }>('/business-setup/status', { silent: true }),
         saveAnswers: (answers: Record<string, string | string[]>) => 
             api.post<{ success: boolean }>('/business-setup/answers', { answers }),
+    },
+    qa: {
+        getForBusiness: (businessId: string) => fetcher<any[]>(`/qa/business/${businessId}`, { silent: true }),
+        askQuestion: (data: { businessId: string; content: string }) => 
+            fetcher<any>('/qa/questions', { method: 'POST', body: JSON.stringify(data) }),
+        postAnswer: (data: { questionId: string; content: string }) => 
+            fetcher<any>('/qa/answers', { method: 'POST', body: JSON.stringify(data) }),
+        getPending: () => fetcher<{ questions: any[]; answers: any[] }>('/qa/admin/pending'),
+        moderateQuestion: (id: string, data: { status: string; reason?: string }) => 
+            fetcher<any>(`/qa/admin/questions/${id}/moderate`, { method: 'PATCH', body: JSON.stringify(data) }),
+        moderateAnswer: (id: string, data: { status: string; reason?: string }) => 
+            fetcher<any>(`/qa/admin/answers/${id}/moderate`, { method: 'PATCH', body: JSON.stringify(data) }),
     },
 };
 

@@ -164,6 +164,16 @@ export default function BusinessDetailClient({
   // Offers & Events
   const [offers, setOffers] = useState<any[]>([]);
 
+  // Q&A State
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [questionContent, setQuestionContent] = useState("");
+  const [submittingQuestion, setSubmittingQuestion] = useState(false);
+  const [answeringQuestionId, setAnsweringQuestionId] = useState<string | null>(null);
+  const [answerContent, setAnswerContent] = useState("");
+  const [submittingAnswer, setSubmittingAnswer] = useState(false);
+  const [qaLoading, setQaLoading] = useState(false);
+
+
   // Map State & Refs
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapError, setMapError] = useState(false);
@@ -406,8 +416,27 @@ export default function BusinessDetailClient({
         setLoading(false);
       }
     };
-    if (slug) loadBusiness();
-  }, [slug]);
+        if (slug) loadBusiness();
+    }, [slug]);
+
+    // Load Q&As
+    useEffect(() => {
+        const loadQA = async () => {
+            if (!business?.id) return;
+            setQaLoading(true);
+            try {
+                const data = await api.qa.getForBusiness(business.id);
+                setQuestions(data || []);
+            } catch (err) {
+                console.error("[BusinessDetail] Failed to load Q&A:", err);
+            } finally {
+                setQaLoading(false);
+            }
+        };
+        if (activeTab === "Q&A") {
+            loadQA();
+        }
+    }, [business?.id, activeTab]);
 
   // Separate effect for user-specific state (e.g. favorite status)
   useEffect(() => {
@@ -655,6 +684,58 @@ export default function BusinessDetailClient({
     }
   };
 
+  const handleQuestionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
+    if (!business || !questionContent.trim()) return;
+
+    if (questionContent.trim().length < 10) {
+      alert("Question must be at least 10 characters long.");
+      return;
+    }
+
+    setSubmittingQuestion(true);
+    try {
+      await api.qa.askQuestion({
+        businessId: business.id,
+        content: questionContent.trim(),
+      });
+      alert("Your question has been submitted and is pending moderation.");
+      setQuestionContent("");
+    } catch (err: any) {
+      alert(err.message || "Failed to submit question");
+    } finally {
+      setSubmittingQuestion(false);
+    }
+  };
+
+  const handleAnswerSubmit = async (e: React.FormEvent, questionId: string) => {
+    e.preventDefault();
+    if (!user) {
+      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
+    if (!answerContent.trim()) return;
+
+    setSubmittingAnswer(true);
+    try {
+      await api.qa.postAnswer({
+        questionId,
+        content: answerContent.trim(),
+      });
+      alert("Your answer has been submitted and is pending moderation.");
+      setAnswerContent("");
+      setAnsweringQuestionId(null);
+    } catch (err: any) {
+      alert(err.message || "Failed to submit answer");
+    } finally {
+      setSubmittingAnswer(false);
+    }
+  };
+
   if (loading)
     return (
       <div className="min-h-screen bg-white">
@@ -818,8 +899,19 @@ export default function BusinessDetailClient({
                       <ShieldCheck className="w-3.5 h-3.5" /> Verified Listing
                     </div>
                   )}
-                  <div className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                    {business.category?.name || "Business"}
+                  <div className="flex items-center gap-2">
+                    <div className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                      {business.category?.name || "Business"}
+                    </div>
+                    {business.status === "approved" ? (
+                      <div className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 border border-emerald-100">
+                        <ShieldCheck className="w-3.5 h-3.5" /> Verified
+                      </div>
+                    ) : (
+                      <div className="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 border border-amber-100">
+                        <Clock className="w-3.5 h-3.5" /> Pending Approval
+                      </div>
+                    )}
                   </div>
                   <VendorOnlineBadge
                     isOnline={business.vendor?.user?.isOnline}
@@ -970,6 +1062,7 @@ export default function BusinessDetailClient({
                       "Overview",
                       "Reviews",
                       "Amenities",
+                      "Q&A",
                       ...(business.hasOffer ? ["Offer / Deal"] : []),
                       ...(validFaqs.length > 0 ? ["FAQs"] : []),
                     ].map((tab) => (
@@ -1338,6 +1431,252 @@ export default function BusinessDetailClient({
                     </div>
 
                     <div
+                      className={activeTab === "Q&A" ? "block" : "hidden"}
+                    >
+                      <div className="animate-in fade-in duration-500">
+                        <div className="flex items-center justify-between mb-8">
+                          <h3 className="text-2xl font-bold text-slate-900">
+                            Questions & Answers
+                          </h3>
+                          {!isOwner && (
+                            <button
+                              onClick={() => {
+                                const el = document.getElementById(
+                                  "ask-question-form",
+                                );
+                                el?.scrollIntoView({ behavior: "smooth" });
+                              }}
+                              className="text-sm font-bold text-blue-600 hover:text-blue-700"
+                            >
+                              Ask a Question
+                            </button>
+                          )}
+                        </div>
+
+                        {qaLoading ? (
+                          <div className="flex flex-col items-center justify-center py-12">
+                            <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+                            <p className="text-slate-500 font-medium">
+                              Loading questions...
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-8">
+                            {questions.length > 0 ? (
+                              questions.map((q) => (
+                                <div
+                                  key={q.id}
+                                  className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden"
+                                >
+                                  <div className="p-6 border-b border-slate-50 bg-slate-50/30">
+                                    <div className="flex items-start gap-4">
+                                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0 font-bold">
+                                        Q
+                                      </div>
+                                      <div className="flex-1">
+                                        <p className="text-lg font-bold text-slate-900 mb-1">
+                                          {q.content}
+                                        </p>
+                                        <div className="flex items-center gap-3 text-xs text-slate-400 font-medium">
+                                          <span>
+                                            Asked by{" "}
+                                            {q.user?.fullName || "Anonymous"}
+                                          </span>
+                                          <span>•</span>
+                                          <span>
+                                            {new Date(
+                                              q.createdAt,
+                                            ).toLocaleDateString()}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="p-6 space-y-6">
+                                    {/* Answers List */}
+                                    <div className="space-y-4">
+                                      {(q.answers || [])
+                                        .sort(
+                                          (a: any, b: any) =>
+                                            (b.isOfficial ? 1 : 0) -
+                                            (a.isOfficial ? 1 : 0),
+                                        )
+                                        .map((a: any) => (
+                                          <div
+                                            key={a.id}
+                                            className={`p-4 rounded-xl ${a.isOfficial ? "bg-blue-50/50 border border-blue-100" : "bg-slate-50/50"}`}
+                                          >
+                                            <div className="flex items-start gap-3">
+                                              <div
+                                                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-white font-bold text-xs ${a.isOfficial ? "bg-blue-600" : "bg-slate-400"}`}
+                                              >
+                                                {a.isOfficial ? "V" : "A"}
+                                              </div>
+                                              <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                  <span
+                                                    className={`text-sm font-bold ${a.isOfficial ? "text-blue-700" : "text-slate-700"}`}
+                                                  >
+                                                    {a.isOfficial
+                                                      ? "Official Answer"
+                                                      : a.user?.fullName ||
+                                                        "User Answer"}
+                                                  </span>
+                                                  {a.isOfficial && (
+                                                    <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+                                                  )}
+                                                </div>
+                                                <p className="text-sm text-slate-600 leading-relaxed">
+                                                  {a.content}
+                                                </p>
+                                                <p className="text-[10px] text-slate-400 mt-2">
+                                                  {new Date(
+                                                    a.createdAt,
+                                                  ).toLocaleDateString()}
+                                                </p>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        ))}
+
+                                      {(!q.answers ||
+                                        q.answers.length === 0) && (
+                                        <p className="text-sm text-slate-400 italic">
+                                          No answers yet.
+                                        </p>
+                                      )}
+                                    </div>
+
+                                    {/* Reply Form Trigger */}
+                                    {!answeringQuestionId && (
+                                      <button
+                                        onClick={() =>
+                                          setAnsweringQuestionId(q.id)
+                                        }
+                                        className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1.5"
+                                      >
+                                        <MessageSquare className="w-3.5 h-3.5" />{" "}
+                                        Reply to this question
+                                      </button>
+                                    )}
+
+                                    {/* Reply Form */}
+                                    {answeringQuestionId === q.id && (
+                                      <form
+                                        onSubmit={(e) =>
+                                          handleAnswerSubmit(e, q.id)
+                                        }
+                                        className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300"
+                                      >
+                                        <textarea
+                                          required
+                                          value={answerContent}
+                                          onChange={(e) =>
+                                            setAnswerContent(e.target.value)
+                                          }
+                                          placeholder="Write your answer..."
+                                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none min-h-[100px] resize-none"
+                                        />
+                                        <div className="flex justify-end gap-2">
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setAnsweringQuestionId(null);
+                                              setAnswerContent("");
+                                            }}
+                                            className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700"
+                                          >
+                                            Cancel
+                                          </button>
+                                          <button
+                                            type="submit"
+                                            disabled={
+                                              submittingAnswer ||
+                                              !answerContent.trim()
+                                            }
+                                            className="px-6 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 disabled:bg-blue-300 transition-all flex items-center gap-2"
+                                          >
+                                            {submittingAnswer ? (
+                                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            ) : (
+                                              <Send className="w-3.5 h-3.5" />
+                                            )}
+                                            Post Answer
+                                          </button>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 italic">
+                                          Your answer will be visible after
+                                          admin approval.
+                                        </p>
+                                      </form>
+                                    )}
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="text-center py-20 bg-slate-50 rounded-[32px] border-2 border-dashed border-slate-200">
+                                <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                                <h4 className="text-lg font-bold text-slate-900 mb-2">
+                                  No questions yet
+                                </h4>
+                                <p className="text-slate-500 max-w-xs mx-auto text-sm">
+                                  Be the first to ask a question to this
+                                  business!
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Ask Question Form */}
+                            {!isOwner && (
+                              <div
+                                id="ask-question-form"
+                                className="mt-12 p-8 bg-blue-50/50 rounded-[32px] border border-blue-100"
+                              >
+                                <h4 className="text-xl font-bold text-slate-900 mb-6">
+                                  Ask a Question
+                                </h4>
+                                <form
+                                  onSubmit={handleQuestionSubmit}
+                                  className="space-y-4"
+                                >
+                                  <textarea
+                                    required
+                                    value={questionContent}
+                                    onChange={(e) =>
+                                      setQuestionContent(e.target.value)
+                                    }
+                                    placeholder="What would you like to know? (e.g. Do you have parking available?)"
+                                    className="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl text-slate-900 font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none min-h-[120px] resize-none"
+                                  />
+                                  <button
+                                    type="submit"
+                                    disabled={
+                                      submittingQuestion ||
+                                      !questionContent.trim()
+                                    }
+                                    className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 disabled:bg-blue-300 transition-all flex items-center justify-center gap-3 shadow-lg shadow-blue-500/20"
+                                  >
+                                    {submittingQuestion ? (
+                                      <Loader2 className="w-5 h-5 animate-spin" />
+                                    ) : (
+                                      <Send className="w-5 h-5" />
+                                    )}
+                                    Submit Question
+                                  </button>
+                                  <p className="text-xs text-slate-500 text-center font-medium italic">
+                                    Questions are moderated and will appear
+                                    after admin approval.
+                                  </p>
+                                </form>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div
                       className={
                         activeTab === "Offer / Deal" ? "block" : "hidden"
                       }
@@ -1398,9 +1737,7 @@ export default function BusinessDetailClient({
                               )}
                               {(business.whatsapp || business.phone) && (
                                 <button
-                                  onClick={() =>
-                                    handleContactIntent("whatsapp")
-                                  }
+                                  onClick={() => handleContactIntent("whatsapp")}
                                   className="inline-flex items-center gap-2 px-6 py-3.5 bg-[#25D366] text-white rounded-2xl font-bold text-sm hover:bg-[#128C7E] transition-all shadow-lg shadow-green-500/20"
                                 >
                                   <WhatsAppIcon className="w-5 h-5" /> WhatsApp

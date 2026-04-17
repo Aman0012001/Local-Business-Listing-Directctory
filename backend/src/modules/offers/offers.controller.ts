@@ -35,10 +35,11 @@ export class OffersController {
     /** Public search for offers and events */
     @Public()
     @Get('public/search')
+    @ApiOperation({ summary: 'Search all public offers and events' })
+    @ApiResponse({ status: 200, description: 'Search results' })
     async findAllPublic(@Query() dto: SearchOfferDto) {
         return this.offersService.findAllPublic(dto);
     }
-
 
     @Post()
     @UseGuards(JwtAuthGuard, RolesGuard)
@@ -52,7 +53,7 @@ export class OffersController {
     ) {
         return this.offersService.create(user.id, dto);
     }
-
+ 
     @Get('vendor')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.VENDOR, UserRole.ADMIN)
@@ -66,7 +67,7 @@ export class OffersController {
     ) {
         return this.offersService.findByVendor(user.id, page, limit);
     }
-
+ 
     @Patch(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.VENDOR, UserRole.ADMIN)
@@ -81,7 +82,7 @@ export class OffersController {
     ) {
         return this.offersService.update(id, user.id, dto);
     }
-
+ 
     @Delete(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.VENDOR, UserRole.ADMIN)
@@ -96,11 +97,9 @@ export class OffersController {
     ) {
         return this.offersService.remove(id, user.id);
     }
-
-
-
+ 
     // ─── Public Endpoint ─────────────────────────────────────────────────────
-
+ 
     @Public()
     @Get('business/:businessId/offers')
     @ApiOperation({ summary: 'Get active/scheduled offers for a business (Public)' })
@@ -108,7 +107,7 @@ export class OffersController {
     findByBusiness(@Param('businessId') businessId: string) {
         return this.offersService.findPublicByBusiness(businessId);
     }
-
+ 
     @Public()
     @Get('public/:id')
     @ApiOperation({ summary: 'Get a single offer or event by ID (Public)' })
@@ -117,22 +116,26 @@ export class OffersController {
     findOnePublic(@Param('id') id: string) {
         return this.offersService.findOnePublic(id);
     }
-
+ 
     // ─── Admin Endpoints ─────────────────────────────────────────────────────
-
+ 
     @Get('admin/all')
-    @Roles(UserRole.ADMIN)
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Get all offers for admin management' })
+    @ApiResponse({ status: 200, description: 'All offers retrieved' })
     findAllAdmin(
         @Query('page') page?: number,
         @Query('limit') limit?: number,
     ) {
         return this.offersService.findAllForAdmin(page, limit);
     }
-
+ 
     @Patch('admin/:id/feature')
-    @Roles(UserRole.ADMIN)
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Toggle featured status of an offer' })
+    @ApiResponse({ status: 200, description: 'Featured status updated' })
     toggleFeatured(
         @Param('id') id: string,
         @Body('isFeatured') isFeatured: boolean,

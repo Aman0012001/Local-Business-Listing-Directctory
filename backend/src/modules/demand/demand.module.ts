@@ -3,12 +3,20 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DemandController } from './demand.controller';
 import { DemandService } from './demand.service';
 import { DemandTasks } from './demand.tasks';
-import { SearchLog, NotificationLog, Listing, City } from '../../entities';
+import { SearchLog, NotificationLog, Listing, City, Category, Vendor, User } from '../../entities';
 import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([SearchLog, NotificationLog, Listing, City]),
+        TypeOrmModule.forFeature([
+            SearchLog,
+            NotificationLog,
+            Listing,
+            City,
+            Category,
+            Vendor,
+            User
+        ]),
         NotificationsModule
     ],
     controllers: [DemandController],

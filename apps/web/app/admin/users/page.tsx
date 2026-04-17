@@ -7,7 +7,8 @@ import {
     ChevronRight, Mail, Calendar, Chrome, KeyRound, MoreVertical,
     Briefcase, User as UserIcon, Crown, Trash2, Eye, X,
     Banknote, MapPin, Building2, Phone, Star, MessageSquare,
-    Link as LinkIcon, BadgeCheck, Zap, AlertTriangle
+    Link as LinkIcon, BadgeCheck, Zap, AlertTriangle, CreditCard,
+    Store, CheckCircle2, LayoutGrid
 } from 'lucide-react';
 import { api, getImageUrl } from '../../../lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -605,6 +606,68 @@ export default function AdminUsersPage() {
                                     </div>
                                 )}
                             </div>
+
+                            {/* Business Setup Intelligence */}
+                            {(selectedUserDetails as any)?.setupData && (
+                                <div className="px-8 pb-8 space-y-6">
+                                    <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest border-l-4 border-emerald-500 pl-3">Business Setup Intelligence</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        {/* Service Mode */}
+                                        <div className="p-5 bg-emerald-50/50 rounded-3xl border border-emerald-100/50">
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <div className="w-8 h-8 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600">
+                                                    <Store className="w-4 h-4" />
+                                                </div>
+                                                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-wider">Service Mode</span>
+                                            </div>
+                                            <div className="space-y-2">
+                                                {((selectedUserDetails as any).setupData['Service Mode'] || (selectedUserDetails as any).setupData['srv-1'])?.map((val: string) => (
+                                                    <div key={val} className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                                                        <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                                                        {val}
+                                                    </div>
+                                                )) || <p className="text-[10px] font-bold text-slate-400 italic">Not set</p>}
+                                            </div>
+                                        </div>
+
+                                        {/* Payment Methods */}
+                                        <div className="p-5 bg-blue-50/50 rounded-3xl border border-blue-100/50">
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <div className="w-8 h-8 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600">
+                                                    <CreditCard className="w-4 h-4" />
+                                                </div>
+                                                <span className="text-[10px] font-black text-blue-600 uppercase tracking-wider">Payments</span>
+                                            </div>
+                                            <div className="space-y-2">
+                                                {((selectedUserDetails as any).setupData['Payment Methods'] || (selectedUserDetails as any).setupData['pay-1'])?.map((val: string) => (
+                                                    <div key={val} className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                                                        <CheckCircle2 className="w-3 h-3 text-blue-500" />
+                                                        {val}
+                                                    </div>
+                                                )) || <p className="text-[10px] font-bold text-slate-400 italic">Not set</p>}
+                                            </div>
+                                        </div>
+
+                                        {/* Amenities */}
+                                        <div className="p-5 bg-indigo-50/50 rounded-3xl border border-indigo-100/50">
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <div className="w-8 h-8 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600">
+                                                    <Zap className="w-4 h-4" />
+                                                </div>
+                                                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-wider">Features</span>
+                                            </div>
+                                            <div className="space-y-2">
+                                                {((selectedUserDetails as any).setupData['Business Features'] || (selectedUserDetails as any).setupData['feat-1'])?.map((val: string) => (
+                                                    <div key={val} className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                                                        <CheckCircle2 className="w-3 h-3 text-indigo-500" />
+                                                        {val}
+                                                    </div>
+                                                )) || <p className="text-[10px] font-bold text-slate-400 italic">Not set</p>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Modal Footer */}
                             <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">

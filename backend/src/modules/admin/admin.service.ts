@@ -20,6 +20,8 @@ import { createPaginatedResponse, calculateSkip } from '../../common/utils/pagin
 import { SearchLog } from '../../entities/search-log.entity';
 import { SearchService } from '../search/search.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { VendorAttribute } from '../../entities/vendor-attribute.entity';
+import { BusinessQuestion } from '../../entities/business-question.entity';
 
 @Injectable()
 export class AdminService {
@@ -54,6 +56,10 @@ export class AdminService {
         private commentReplyRepository: Repository<CommentReply>,
         @InjectRepository(SearchLog)
         private searchLogRepository: Repository<SearchLog>,
+        @InjectRepository(VendorAttribute)
+        private attributeRepository: Repository<VendorAttribute>,
+        @InjectRepository(BusinessQuestion)
+        private questionRepository: Repository<BusinessQuestion>,
         private searchService: SearchService,
         private notificationsService: NotificationsService,
     ) { }
@@ -236,9 +242,11 @@ export class AdminService {
         business.status = dto.status;
         if (dto.status === BusinessStatus.APPROVED) {
             business.approvedAt = new Date();
+            business.isVerified = true;
         } else if (dto.status === BusinessStatus.REJECTED) {
             business.rejectedAt = new Date();
             business.rejectionReason = dto.reason;
+            business.isVerified = false;
         }
 
         const moderated = await this.businessRepository.save(business);
@@ -365,7 +373,29 @@ export class AdminService {
 
         // Add some aggregates
         const totalSpent = user.vendor?.subscriptions?.reduce((sum, s) => sum + (Number(s.amount) || 0), 0) || 0;
-        
+
+        // Fetch vendor attributes (setup details like features, payment methods, service mode)
+        let setupData: Record<string, string[]> = null;
+        if (user.vendor) {
+            const [attributes, questions] = await Promise.all([
+                this.attributeRepository.find({ where: { vendorId: user.vendor.id } }),
+                this.questionRepository.find()
+            ]);
+
+            const answers: Record<string, string[]> = {};
+            attributes.forEach(attr => {
+                // Find matching question to get its category
+                const question = questions.find(q => q.id === attr.attributeKey);
+                const key = question ? question.category : attr.attributeKey;
+
+                if (!answers[key]) {
+                    answers[key] = [];
+                }
+                answers[key].push(attr.attributeValue);
+            });
+            setupData = answers;
+        }
+
         return {
             ...user,
             stats: {
@@ -374,7 +404,8 @@ export class AdminService {
                 reviewCount: user.reviews?.length || 0,
                 leadCount: user.leads?.length || 0,
                 favoriteCount: user.savedListings?.length || 0
-            }
+            },
+            setupData
         };
     }
 

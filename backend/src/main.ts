@@ -167,7 +167,12 @@ async function bootstrap() {
             .addTag('subscriptions')
             .addTag('search')
             .addTag('admin')
-            .addServer('http://process.env.NEXT_PUBLIC_API_URL', 'Local development server')
+            .addTag('qa')
+            .addTag('business-setup')
+            .addTag('cities')
+            .addTag('demand')
+            .addTag('analytics')
+            .addServer('http://localhost:3001', 'Local development server')
             .addServer(
                 'https://local-business-listing-directctory-production.up.railway.app',
                 'Production server',

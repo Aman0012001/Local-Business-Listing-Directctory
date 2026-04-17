@@ -22,6 +22,8 @@ import { SearchLog } from '../../entities/search-log.entity';
 import { AdminSearchController } from './admin-search.controller';
 import { Category } from '../../entities/category.entity';
 import { City } from '../../entities/city.entity';
+import { VendorAttribute } from '../../entities/vendor-attribute.entity';
+import { BusinessQuestion } from '../../entities/business-question.entity';
 
 @Module({
     imports: [
@@ -43,6 +45,8 @@ import { City } from '../../entities/city.entity';
             SearchLog,
             Category,
             City,
+            VendorAttribute,
+            BusinessQuestion,
         ]),
         SearchModule,
     ],

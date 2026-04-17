@@ -57,3 +57,7 @@ export * from './promotion-booking.entity';
 // Business Setup
 export * from './business-question.entity';
 export * from './vendor-attribute.entity';
+
+// Q&A
+export * from './qa-question.entity';
+export * from './qa-answer.entity';

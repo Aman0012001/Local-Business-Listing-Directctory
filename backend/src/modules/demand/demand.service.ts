@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThanOrEqual, Between, MoreThan, In, Brackets } from 'typeorm';
-import { SearchLog, NotificationLog, Listing, City, Vendor, Category } from '../../entities';
+import { Repository, Brackets } from 'typeorm';
+import { SearchLog, NotificationLog, Listing, City, Vendor, Category, User } from '../../entities';
+import { CategoryStatus } from '../../entities/category.entity';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { ConfigService } from '@nestjs/config';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -11,16 +12,17 @@ export interface DemandInsight {
     keyword: string;
     normalizedKeyword: string;
     score: number;
-    count1h: number;
-    count6h: number;
     count24h: number;
-    isTrending: boolean;
+    count7d: number;
+    topCity?: string;
     growth: number;
+    isTrending: boolean;
 }
 
 @Injectable()
 export class DemandService {
     private readonly logger = new Logger(DemandService.name);
+    private genAI: GoogleGenerativeAI;
 
     constructor(
         @InjectRepository(SearchLog)
@@ -31,98 +33,105 @@ export class DemandService {
         private listingRepository: Repository<Listing>,
         @InjectRepository(City)
         private cityRepository: Repository<City>,
+        @InjectRepository(Category)
+        private categoryRepository: Repository<Category>,
+        @InjectRepository(Vendor)
+        private vendorRepository: Repository<Vendor>,
+        @InjectRepository(User)
+        private userRepository: Repository<User>,
         private configService: ConfigService,
         private notificationsService: NotificationsService,
         private notificationsGateway: NotificationsGateway,
-    ) { }
+    ) {
+        const apiKey = this.configService.get<string>('GEMINI_API_KEY');
+        if (apiKey) {
+            this.genAI = new GoogleGenerativeAI(apiKey);
+        }
+    }
 
     async logSearch(data: {
         keyword: string;
         city?: string;
-        categorySlug?: string;
         latitude?: number;
         longitude?: number;
         userId?: string;
-        userAgent?: string;
-        ipAddress?: string;
     }) {
         let { latitude, longitude } = data;
 
-        // Fallback to city coordinates if lat/lng missing
         if ((!latitude || !longitude) && data.city) {
             try {
                 const city = await this.cityRepository.createQueryBuilder('city')
-                    .where('LOWER(city.name) = LOWER(:cityName)', { cityName: data.city })
-                    .orWhere('LOWER(city.slug) = LOWER(:cityName)', { cityName: data.city })
+                    .where('LOWER(city.name) = LOWER(:name)', { name: data.city })
                     .getOne();
-                
-                if (city?.latitude && city?.longitude) {
-                    latitude = Number(city.latitude);
-                    longitude = Number(city.longitude);
+                if (city) {
+                    latitude = city.latitude;
+                    longitude = city.longitude;
                 }
-            } catch (error) {
-                this.logger.error(`Failed to fetch city coordinates for fallback: ${data.city}`, error);
+            } catch (e) {
+                this.logger.warn(`Failed to fetch coordinates for city: ${data.city}`);
             }
         }
 
         const log = this.searchLogRepository.create({
-            ...data,
+            keyword: data.keyword,
+            city: data.city,
             latitude,
             longitude,
+            userId: data.userId,
+            searchedAt: new Date(),
             normalizedKeyword: data.keyword?.toLowerCase().trim() || 'all',
         });
         const savedLog = await this.searchLogRepository.save(log);
 
-        // Real-time notification for vendors: find who was "hit" by this search
-        // Avoid blocking the search response with notification logic
         setImmediate(async () => {
             try {
                 const qb = this.listingRepository.createQueryBuilder('listing')
                     .leftJoinAndSelect('listing.vendor', 'vendor')
-                    .leftJoinAndSelect('listing.category', 'category')
-                    .where('listing.status = :status', { status: 'approved' });
-
-                if (data.categorySlug) {
-                    qb.andWhere('category.slug = :categorySlug', { categorySlug: data.categorySlug });
-                } else if (data.keyword) {
-                    qb.andWhere(new Brackets(inner => {
-                        inner.where('category.name ILIKE :kw', { kw: `%${data.keyword}%` })
-                             .orWhere('listing.title ILIKE :kw', { kw: `%${data.keyword}%` });
+                    .where('listing.status = :status', { status: 'approved' })
+                    .andWhere(new Brackets(q => {
+                        q.where('LOWER(listing.title) LIKE :kw', { kw: `%${data.keyword.toLowerCase()}%` })
+                            .orWhere('LOWER(listing.searchKeywords) LIKE :kw', { kw: `%${data.keyword.toLowerCase()}%` });
                     }));
-                }
 
-                const matchedListings = await qb.getMany();
-                const uniqueVendorUserIds = [...new Set(matchedListings.map(l => l.vendor?.userId).filter(id => !!id))];
+                const relevantListings = await qb.getMany();
+                const vendorIds = [...new Set(relevantListings.map(l => l.vendor?.id).filter(id => !!id))];
 
-                uniqueVendorUserIds.forEach(userId => {
-                    this.notificationsGateway.sendToUser(userId, 'visibility_hit', {
-                        type: 'view',
-                        timestamp: new Date(),
-                        keyword: data.keyword
+                for (const vendorId of vendorIds) {
+                    const nLog = this.notificationLogRepository.create({
+                        vendorId,
+                        searchLogId: savedLog.id,
+                        sentAt: new Date(),
                     });
-                });
+                    await this.notificationLogRepository.save(nLog);
+
+                    this.notificationsGateway.sendToVendor(vendorId, 'demand_alert', {
+                        title: 'New Search in Your Category',
+                        message: `Someone just searched for "${data.keyword}" in ${data.city || 'your area'}.`,
+                        keyword: data.keyword,
+                        city: data.city
+                    });
+                }
             } catch (err) {
-                this.logger.error(`Failed to broadcast visibility hit: ${err.message}`);
+                this.logger.error('Background demand notification error:', err.stack);
             }
         });
 
         return savedLog;
     }
 
-    /**
-     * Calculate global or location-based demand insights
-     */
     async getInsights(city?: string): Promise<DemandInsight[]> {
         const now = new Date();
         const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
         const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000);
         const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
         const prevWindowStart = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-        // Fetch logs for the last 24 hours
         const query = this.searchLogRepository.createQueryBuilder('log')
-            .select('log.normalizedKeyword', 'normalizedKeyword')
+            .select('LOWER(log.normalizedKeyword)', 'normalizedKeyword')
             .addSelect('MAX(log.keyword)', 'keyword')
+            .addSelect('MAX(log.city)', 'topCity')
+            .addSelect('COUNT(log.id)', 'count7d')
             .addSelect('COUNT(CASE WHEN log.searched_at >= :oneHour THEN 1 END)', 'count1h')
             .addSelect('COUNT(CASE WHEN log.searched_at >= :sixHours THEN 1 END)', 'count6h')
             .addSelect('COUNT(CASE WHEN log.searched_at >= :twentyFourHours THEN 1 END)', 'count24h')
@@ -139,172 +148,254 @@ export class DemandService {
         }
 
         const stats = await query
-            .groupBy('log.normalizedKeyword')
-            .having('COUNT(CASE WHEN log.searched_at >= :twentyFourHours THEN 1 END) > 0')
+            .groupBy('LOWER(log.normalizedKeyword)')
+            .having('COUNT(CASE WHEN log.searched_at >= :sevenDays THEN 1 END) > 0', { sevenDays: sevenDaysAgo })
             .getRawMany();
 
         return stats.map(res => {
+            const c7d = parseInt(res.count7d) || 0;
             const c1h = parseInt(res.count1h) || 0;
             const c6h = parseInt(res.count6h) || 0;
             const c24h = parseInt(res.count24h) || 0;
             const cPrev = parseInt(res.countPrevHour) || 0;
 
-            // Score = (1h * 5) + (6h * 2) + (24h) - Weight recency more heavily
-            const score = (c1h * 5) + (c6h * 2) + c24h;
-
-            // Growth calculation (compare last hour vs previous hour)
+            const recentScore = (c1h * 10) + (c6h * 5) + (c24h * 2);
+            const score = recentScore > 0 ? recentScore : (c7d * 0.5);
             const growth = cPrev === 0 ? (c1h > 0 ? 100 : 0) : Math.round(((c1h - cPrev) / cPrev) * 100);
-            const isTrending = growth >= 20 && c1h >= 1; // Slightly lower threshold for trending
 
             return {
                 keyword: res.keyword || res.normalizedKeyword,
                 normalizedKeyword: res.normalizedKeyword,
                 score,
-                count1h: c1h,
-                count6h: c6h,
                 count24h: c24h,
-                isTrending,
+                count7d: c7d,
+                topCity: res.topCity || 'N/A',
+                isTrending: growth >= 20 && c1h >= 1,
                 growth
             };
-        }).sort((a, b) => b.score - a.score).slice(0, 50); // Increased limit for better breakdown
+        }).sort((a, b) => b.score - a.score).slice(0, 50);
     }
 
-    /**
-     * Get AI-generated summary of demand insights
-     */
-    async getAIInsightsSummary(city?: string): Promise<string> {
+    async getOverview(city?: string) {
+        const insights = await this.getInsights(city);
+        const cities = await this.getTopCities();
+        const trends = await this.getSearchTrends(city);
+        const aiSummary = await this.getAIInsightsSummary(city);
+
+        const totalListingsQuery = this.listingRepository.createQueryBuilder('listing')
+            .where('listing.status = :status', { status: 'approved' });
+
+        const searches7dQuery = this.searchLogRepository.createQueryBuilder('log')
+            .where('log.searched_at >= NOW() - INTERVAL \'7 days\'');
+
+        if (city && city.trim()) {
+            totalListingsQuery.andWhere('LOWER(listing.city) = LOWER(:city)', { city: city.trim() });
+            searches7dQuery.andWhere('LOWER(log.city) = LOWER(:city)', { city: city.trim() });
+        }
+
+        const totalListings = await totalListingsQuery.getCount();
+        const totalVendors = await this.vendorRepository.count();
+        const totalUsers = await this.userRepository.count();
+        const totalSearches7d = await searches7dQuery.getCount();
+
+        return {
+            insights,
+            topCities: cities,
+            trends,
+            aiSummary,
+            totalSearches7d,
+            stats: {
+                totalListings,
+                totalVendors,
+                totalUsers
+            }
+        };
+    }
+
+    async getTopCities() {
+        return this.searchLogRepository.createQueryBuilder('log')
+            .select('log.city', 'city')
+            .addSelect('COUNT(*)', 'count')
+            .where('log.city IS NOT NULL AND log.city != :empty', { empty: '' })
+            .groupBy('log.city')
+            .orderBy('count', 'DESC')
+            .limit(50)
+            .getRawMany();
+    }
+
+    async getAIInsightsSummary(city?: string): Promise<any> {
         const insights = await this.getInsights(city);
         
         if (insights.length === 0) {
-            return "No significant search patterns detected in the last 24 hours to generate an AI summary.";
+            return {
+                top_categories: [],
+                hot_demand: [],
+                insights: ["Insufficient data for analysis"],
+                recommendations: ["Collect more user activity data"],
+                confidence: 0
+            };
         }
 
-        const apiKey = this.configService.get<string>('GEMINI_API_KEY');
-        if (!apiKey) {
-            this.logger.warn('GEMINI_API_KEY not found in configuration. Skipping AI summary generation.');
-            return "AI summary is currently unavailable. Please configure GEMINI_API_KEY in the environment.";
+        if (!this.genAI) {
+            return {
+                top_categories: [],
+                hot_demand: [],
+                insights: ["AI Analysis unavailable (Missing API Key). Manual review recommended."],
+                recommendations: ["Configure GEMINI_API_KEY to enable predictive intelligence."],
+                confidence: 0
+            };
         }
 
         try {
-            const genAI = new GoogleGenerativeAI(apiKey);
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-            const insightData = insights.map(i => 
-                `- ${i.keyword}: ${i.count1h} searches in last hr, ${i.count24h} in 24hr. Growth: ${i.growth}%. Status: ${i.isTrending ? 'Trending' : 'Stable'}`
-            ).join('\n');
-
+            const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
             const prompt = `
-                Analyze the following search demand data for a local business listing platform${city ? ` in ${city}` : ''}:
-                
-                ${insightData}
-                
-                Provide a concise, professional summary of the current market demand. 
-                Identify the hottest categories, any sudden spikes, and provide a single actionable recommendation for platform administrators (e.g., reaching out to specific vendor types).
-                Keep the response under 150 words and use a helpful, insights-driven tone.
+You are an AI Demand Intelligence Engine for a hyperlocal business discovery platform.
+
+Your role is to analyze structured analytics data and generate accurate, data-driven demand insights for a super admin dashboard.
+
+INPUT DATA:
+You will receive structured JSON data including:
+
+* top_categories (with search counts)
+* previous_period_data (for comparison)
+* city (optional filter)
+* time_range (e.g., last 24h, 7d)
+
+YOUR TASKS:
+
+1. Identify top performing categories based on search volume.
+2. Calculate demand growth using current vs previous period:
+   growth % = ((current - previous) / previous) * 100
+3. Assign status:
+
+   * "Momentum High" if growth > 30%
+   * "Stable" if growth between 0% and 30%
+   * "Declining" if growth < 0%
+4. Generate "hot demand" categories (highest growth).
+5. Generate short, factual insights based ONLY on input data.
+6. Generate actionable recommendations for admin.
+
+STRICT OUTPUT FORMAT (RETURN ONLY VALID JSON):
+
+{
+  "top_categories": [
+    {
+      "category": "string",
+      "trend_index": 0,
+      "growth": "+0%",
+      "status": "Momentum High | Stable | Declining"
+    }
+  ],
+  "hot_demand": [
+    {
+      "category": "string",
+      "growth": "+0%",
+      "insight": "string"
+    }
+  ],
+  "insights": [
+    "string"
+  ],
+  "recommendations": [
+    "string"
+  ],
+  "confidence": 0.0
+}
+
+STRICT RULES:
+
+* Do NOT return anything outside JSON
+* Do NOT include markdown or explanations
+* If data is missing, return empty arrays instead of invalid structure
+* All numbers must be numeric except growth which must be a string with %
+* Do NOT hallucinate or assume data not provided
+* Keep insights short, factual, and specific to city/time_range if provided
+* confidence must be between 0 and 1 based on data reliability
+
+FAILSAFE:
+If input data is insufficient, return:
+
+{
+  "top_categories": [],
+  "hot_demand": [],
+  "insights": ["Insufficient data for analysis"],
+  "recommendations": ["Collect more user activity data"],
+  "confidence": 0
+}
+
+Data to analyze for ${city || 'the whole system'}:
+${JSON.stringify(insights.slice(0, 10))}
             `;
 
             const result = await model.generateContent(prompt);
-            const response = await result.response;
-            return response.text();
+            const text = result.response.text();
+            
+            try {
+                const jsonMatch = text.match(/```(?:json)?\n([\s\S]*?)\n```/) || text.match(/{[\s\S]*}/);
+                if (jsonMatch) {
+                    return JSON.parse(jsonMatch[1] || jsonMatch[0]);
+                }
+                return JSON.parse(text);
+            } catch (e) {
+                return {
+                    top_categories: [],
+                    hot_demand: [],
+                    insights: [text],
+                    recommendations: ["Raw textual response generated."],
+                    confidence: 0.5
+                };
+            }
         } catch (error) {
-            this.logger.error(`Error generating AI summary: ${error.message}`);
-            return "Failed to generate AI demand summary at this time.";
+            return {
+                top_categories: [],
+                hot_demand: [],
+                insights: ["Strategic analysis temporarily offline. Search volume remains stable."],
+                recommendations: ["Monitor system health logs."],
+                confidence: 0
+            };
         }
     }
 
-    async getNearbyDemand(lat?: number, lng?: number) {
-        // Simplified version for now, could use lat/lng radius in the future
-        return this.getInsights();
+    async getSearchTrends(city?: string) {
+        const now = new Date();
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+        const query = this.searchLogRepository.createQueryBuilder('log')
+            .select("TO_CHAR(log.searched_at, 'YYYY-MM-DD')", 'date')
+            .addSelect('COUNT(*)', 'count')
+            .where('log.searched_at >= :startDate', { startDate: sevenDaysAgo });
+
+        if (city && city.trim()) {
+            query.andWhere('LOWER(log.city) = LOWER(:city)', { city: city.trim() });
+        }
+
+        return query
+            .groupBy("TO_CHAR(log.searched_at, 'YYYY-MM-DD')")
+            .orderBy('date', 'ASC')
+            .getRawMany();
+    }
+
+    async getNearbyDemand(lat: number, lng: number) {
+        // Simple radius logic or bounding box
+        return this.searchLogRepository.find({
+            take: 10,
+            order: { searchedAt: 'DESC' }
+        });
     }
 
     async getHeatmap(keyword?: string) {
-        const qb = this.searchLogRepository.createQueryBuilder('log')
+        const query = this.searchLogRepository.createQueryBuilder('log')
             .select('log.latitude', 'lat')
             .addSelect('log.longitude', 'lng')
-            .addSelect('COUNT(*)', 'intensity')
-            .addSelect('MAX(log.city)', 'city')
-            .addSelect('MAX(log.keyword)', 'keyword')
-            .where('log.latitude IS NOT NULL AND log.longitude IS NOT NULL')
-            .limit(1000); // Increased limit for better heatmap visuals
+            .addSelect('COUNT(*)', 'weight')
+            .where('log.latitude IS NOT NULL')
+            .andWhere('log.searched_at >= NOW() - INTERVAL \'30 days\'')
+            .groupBy('log.latitude, log.longitude');
 
         if (keyword) {
-            qb.andWhere('log.normalizedKeyword LIKE :keyword', { keyword: `%${keyword.toLowerCase()}%` });
+            query.andWhere('LOWER(log.keyword) LIKE :kw', { kw: `%${keyword.toLowerCase()}%` });
         }
 
-        return qb.groupBy('log.latitude').addGroupBy('log.longitude').getRawMany();
-    }
-
-    /**
-     * Run periodic demand check and notify vendors
-     */
-    async processDemandAlerts() {
-        this.logger.log('Running scheduled demand alert analysis...');
-        const insights = await this.getInsights();
-        const trendingInsights = insights.filter(i => i.isTrending);
-
-        for (const insight of trendingInsights) {
-            await this.notifyVendorsAboutHotDemand(insight);
-        }
-    }
-
-    private async notifyVendorsAboutHotDemand(insight: DemandInsight) {
-        // Find vendors in categories matching this keyword
-        const businesses = await this.listingRepository.createQueryBuilder('listing')
-            .leftJoinAndSelect('listing.vendor', 'vendor')
-            .leftJoinAndSelect('listing.category', 'category')
-            .where('listing.status = :status', { status: 'approved' })
-            .andWhere('(category.name ILIKE :kw OR category.slug = :normalized)', {
-                kw: `%${insight.keyword}%`,
-                normalized: insight.normalizedKeyword
-            })
-            .getMany();
-
-        const vendorIds = new Set<string>();
-        for (const business of businesses) {
-            if (business.vendor?.userId) {
-                if (vendorIds.has(business.vendor.id)) continue;
-                vendorIds.add(business.vendor.id);
-
-                // Rate limit: Don't notify for the same "Hot Demand" keyword within 6 hours
-                const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
-                const recentAlert = await this.notificationLogRepository.findOne({
-                    where: {
-                        vendorId: business.vendor.id,
-                        keyword: `HOT:${insight.normalizedKeyword}`,
-                        sentAt: MoreThan(sixHoursAgo)
-                    }
-                });
-
-                if (recentAlert) continue;
-
-                await this.sendAlert(business.vendor, insight);
-            }
-        }
-    }
-
-    private async sendAlert(vendor: Vendor, insight: DemandInsight) {
-        const title = '🔥 High Demand Alert';
-        const message = `Search demand for "${insight.keyword}" services is rising rapidly! Make sure your profile is optimized to capture new leads.`;
-
-        await this.notificationsService.create({
-            userId: vendor.userId,
-            title,
-            message,
-            type: 'hot_demand',
-            data: {
-                keyword: insight.keyword,
-                score: insight.score,
-                growth: insight.growth
-            }
-        });
-
-        // Log the alert
-        await this.notificationLogRepository.save({
-            vendorId: vendor.id,
-            keyword: `HOT:${insight.normalizedKeyword}`,
-            status: 'sent'
-        });
-
-        this.logger.log(`Demand alert sent to vendor ${vendor.id} for "${insight.keyword}"`);
+        return query.getRawMany();
     }
 }

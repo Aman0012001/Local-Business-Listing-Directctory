@@ -964,3 +964,6 @@ QueryFailedError: column Listing__Listing_vendor__Listing__Listing_vendor_user.d
 [2026-04-16T14:25:36.932Z] findBySlug: the-mk-tea-stall-mnof3q0j (User: deepak@gmail.com)
 [2026-04-16T14:25:39.615Z] findBySlug: the-mk-tea-stall-mnof3q0j - Found in DB. Status: approved
 [2026-04-16T14:25:40.106Z] findBySlug: the-mk-tea-stall-mnof3q0j - SUCCESS
+[2026-04-16T23:03:35.777Z] findBySlug: test-mnh580gx (User: ddddd@gmail.com)
+[2026-04-16T23:03:36.831Z] findBySlug: test-mnh580gx - Found in DB. Status: approved
+[2026-04-16T23:03:37.247Z] findBySlug: test-mnh580gx - SUCCESS

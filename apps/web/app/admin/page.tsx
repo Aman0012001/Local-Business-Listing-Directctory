@@ -30,7 +30,7 @@ export default function AdminDashboard() {
         try {
             const [statsData, businessesData] = await Promise.all([
                 api.admin.getStats(),
-                api.admin.getBusinesses(1, 10, 'pending') // Focus on pending vendor requests
+                api.admin.getBusinesses(1, 10, 'pending') // Focus on pending listing approvals
             ]);
             setStats(statsData);
             setRecentBusinesses(businessesData.data || []);
@@ -107,11 +107,11 @@ export default function AdminDashboard() {
             <StatsGrid stats={mappedStats} />
 
             <div className="grid lg:grid-cols-2 gap-8">
-                {/* Recent Businesses / Vendor Requests */}
+                {/* Recent Businesses / Listing Approvals */}
                 <div className="bg-white rounded-[16px] p-8 border border-slate-100 shadow-sm">
                     <div className="flex items-center justify-between mb-8">
                         <div>
-                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">Vendor Requests</h3>
+                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">Listing Approvals</h3>
                             <p className="text-xs text-slate-400 font-bold">Awaiting your approval</p>
                         </div>
                         <Link href="/admin/businesses?status=pending" className="text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-red-600 transition-colors flex items-center gap-2">
@@ -170,7 +170,7 @@ export default function AdminDashboard() {
                                     <Check className="w-8 h-8 text-slate-200" />
                                 </div>
                                 <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Inbox Zero</p>
-                                <p className="text-slate-300 text-xs mt-1">No pending vendor requests at the moment.</p>
+                                <p className="text-slate-300 text-xs mt-1">No pending listing approvals at the moment.</p>
                             </div>
                         )}
                     </div>
@@ -189,13 +189,13 @@ export default function AdminDashboard() {
                                 <p className="text-xs text-slate-400">Manage community reports</p>
                             </div>
                         </Link>
-                        <Link href="/admin/listings?status=pending" className="w-full p-6 bg-white/5 rounded-3xl flex items-center gap-4 hover:bg-white/10 transition-all text-left block">
-                            <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center">
-                                <Users className="w-6 h-6 text-blue-500" />
+                        <Link href="/admin/qa" className="w-full p-6 bg-white/5 rounded-3xl flex items-center gap-4 hover:bg-white/10 transition-all text-left block">
+                            <div className="w-12 h-12 bg-amber-500/20 rounded-2xl flex items-center justify-center">
+                                <MessageSquare className="w-6 h-6 text-amber-500" />
                             </div>
                             <div>
-                                <p className="font-bold">Verify New Vendors</p>
-                                <p className="text-xs text-slate-400">{stats?.pendingBusinesses || 0} business(es) awaiting review</p>
+                                <p className="font-bold">Q&A Moderation</p>
+                                <p className="text-xs text-slate-400">Review pending community questions</p>
                             </div>
                         </Link>
                     </div>

@@ -21,6 +21,7 @@ import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { SearchBusinessDto, SearchSortBy } from './dto/search-business.dto';
+import { SubscriptionPlanType } from '../../entities/subscription-plan.entity';
 import {
     createPaginatedResponse,
     calculateSkip,
@@ -164,24 +165,32 @@ export class BusinessesService implements OnModuleInit {
         if (existingCount >= maxListings && ![UserRole.ADMIN, UserRole.SUPERADMIN].includes(user.role as UserRole)) {
             throw new BadRequestException(`Business listing limit reached (${maxListings}). Please upgrade your plan to add more businesses.`);
         }
+        
+        // --- Image Limit Enforcement ---
+        const isFreePlan = (!activeNewPlan && !activeSub) || 
+                          (activeNewPlan?.plan?.planType === SubscriptionPlanType.FREE) || 
+                          (activeSub?.plan?.planType === SubscriptionPlanType.FREE);
+        const maxImages = isFreePlan ? 3 : 999;
+
+        if (createBusinessDto.images && createBusinessDto.images.length > maxImages) {
+            throw new BadRequestException(`Image limit reached. The free plan allows only ${maxImages} images. Please upgrade to basic plan for more.`);
+        }
         // -------------------------
 
         const hasFeaturedSub = (activeSub?.plan?.isFeatured) || ((activeNewPlan?.plan?.features as any)?.isFeatured);
         const hasBoostedSub = !!referralPlan || ((activeNewPlan?.plan?.features as any)?.top_ranking);
 
-        const shouldAutoApprove = vendor.isVerified || !!referralPlan || hasFeaturedSub;
-
-        // Create listing
+        // Always set new listings to PENDING for admin approval workflow
         const listing = this.listingRepository.create({
             ...createBusinessDto,
             offerExpiresAt: sanitizedExpiresAt,
             vendorId: vendor.id,
             slug,
-            status: shouldAutoApprove ? BusinessStatus.APPROVED : BusinessStatus.PENDING,
-            isVerified: vendor.isVerified || !!referralPlan,
+            status: BusinessStatus.PENDING,
+            isVerified: false,
             isFeatured: hasFeaturedSub || !!referralPlan,
             isSponsored: hasBoostedSub,
-            approvedAt: shouldAutoApprove ? new Date() : null,
+            approvedAt: null,
             recentUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Default 7 days
         });
 
@@ -291,7 +300,7 @@ export class BusinessesService implements OnModuleInit {
             .leftJoinAndSelect('listing.businessHours', 'businessHours')
             .leftJoinAndSelect('listing.businessAmenities', 'businessAmenities')
             .leftJoinAndSelect('businessAmenities.amenity', 'amenity')
-            .where('listing.status IN (:...statuses)', { statuses: [BusinessStatus.PENDING, BusinessStatus.APPROVED] })
+            .where('listing.status = :status', { status: BusinessStatus.APPROVED })
             .andWhere('user.deletion_scheduled_at IS NULL');
 
         // Apply Search Results from Elasticsearch or fallback to ILIKE
@@ -538,7 +547,7 @@ export class BusinessesService implements OnModuleInit {
 
             log(`findBySlug: ${slug} - Found in DB. Status: ${listing.status}`);
 
-            const isPubliclyVisible = [BusinessStatus.APPROVED, BusinessStatus.PENDING].includes(listing.status);
+            const isPubliclyVisible = listing.status === BusinessStatus.APPROVED;
             if (!isPubliclyVisible) {
                 const isOwner = user && listing.vendor && listing.vendor.userId === user.id;
                 const isAdmin = user && (user.role === UserRole.ADMIN || user.role === UserRole.SUPERADMIN);
@@ -595,10 +604,33 @@ export class BusinessesService implements OnModuleInit {
             throw new ForbiddenException('You do not have permission to update this listing');
         }
 
-        log(`Received payload keys: ${Object.keys(updateBusinessDto).join(', ')}`);
         if (updateBusinessDto.amenityIds) {
             log(`Amenity IDs count: ${updateBusinessDto.amenityIds.length}`);
         }
+
+        // --- Image Limit Enforcement for Update ---
+        if (updateBusinessDto.images) {
+            const [activeSub, activeNewPlan] = await Promise.all([
+                this.subscriptionRepository.findOne({
+                    where: { vendorId: listing.vendorId, status: SubscriptionStatus.ACTIVE, endDate: MoreThan(new Date()) },
+                    relations: ['plan']
+                }),
+                this.activePlanRepository.findOne({
+                    where: { vendorId: listing.vendorId, status: ActivePlanStatus.ACTIVE, endDate: MoreThan(new Date()) },
+                    relations: ['plan']
+                })
+            ]);
+
+            const isFreePlan = (!activeNewPlan && !activeSub) || 
+                              (activeNewPlan?.plan?.planType === SubscriptionPlanType.FREE) || 
+                              (activeSub?.plan?.planType === SubscriptionPlanType.FREE);
+            const maxImages = isFreePlan ? 3 : 999;
+
+            if (updateBusinessDto.images.length > maxImages) {
+                throw new BadRequestException(`Image limit reached. The free plan allows only ${maxImages} images. Please upgrade to basic plan for more.`);
+            }
+        }
+        // -------------------------
 
         const oldSlug = listing.slug;
 

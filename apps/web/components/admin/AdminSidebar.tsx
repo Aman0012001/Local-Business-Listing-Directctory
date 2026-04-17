@@ -20,6 +20,7 @@ import {
     MapPin,
     Gift,
     Zap,
+    MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getImageUrl } from '../../lib/api';
@@ -40,6 +41,7 @@ const menuItems = [
     { name: 'Search Analytics', icon: Activity, href: '/admin/analytics', badge: null },
     { name: 'Search Heatmap', icon: ShieldCheck, href: '/admin/heatmap', badge: null },
     { name: 'Review Moderation', icon: ShieldAlert, href: '/admin/reviews', badge: null },
+    { name: 'Q&A Moderation', icon: MessageSquare, href: '/admin/qa', badge: null },
     { name: 'Promotion Rules', icon: Zap, href: '/admin/promotion-rules', badge: null },
     // { name: 'Boost Plans', icon: Gift, href: '/admin/offer-event-plans', badge: null },
     { name: 'Referrals', icon: Users, href: '/admin/referrals', badge: null },

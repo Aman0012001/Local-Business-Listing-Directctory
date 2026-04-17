@@ -69,9 +69,10 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
     });
 
     const activeSub = user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active');
-    const { getFeatureValue, planName } = usePlanFeature();
+    const { getFeatureValue, planName, isFree } = usePlanFeature();
     const maxKeywords = getFeatureValue('maxKeywords') || 0;
     const maxListings = getFeatureValue('maxListings') || 1;
+    const maxImages = isFree ? 3 : 999;
     
     const [myListingsCount, setMyListingsCount] = useState<number | null>(null);
     const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
@@ -570,7 +571,7 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
         const files = Array.from(e.target.files || []);
         if (!files.length) return;
 
-        const remaining = 24 - galleryPreviews.length;
+        const remaining = maxImages - galleryPreviews.length;
         const toUpload = files.slice(0, remaining);
 
         if (toUpload.length === 0) return;
@@ -931,7 +932,10 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                                         {activeTab === 'media' && (
                                             <motion.div key="media" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-8">
                                                 <div className="space-y-3">
-                                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 flex items-center justify-between">Gallery Images<span className="text-[9px] text-slate-300 normal-case tracking-normal">Showcase your business</span></label>
+                                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 flex items-center justify-between">
+                                                        Gallery Images ({galleryPreviews.length}/{isFree ? '3' : '∞'})
+                                                        <span className="text-[9px] text-slate-300 normal-case tracking-normal">{isFree ? 'Up to 3 photos' : 'Unlimited photos'}</span>
+                                                    </label>
                                                     <div className="grid grid-cols-4 gap-3">
                                                         {galleryPreviews.map((url, idx) => (
                                                             <div key={idx} className="relative group aspect-square rounded-2xl overflow-hidden border-2 border-slate-100">
@@ -939,11 +943,13 @@ export default function AddBusinessModal({ isOpen, onClose, onSuccess, business 
                                                                 <button type="button" onClick={() => removeGalleryImage(idx)} className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:scale-110"><X className="w-3.5 h-3.5" /></button>
                                                             </div>
                                                         ))}
-                                                        <label className="aspect-square border-2 border-dashed bg-orange-50/30 border-orange-200 hover:bg-orange-50/50 rounded-2xl transition-all cursor-pointer flex flex-col items-center justify-center gap-2 text-slate-400 group">
-                                                            <input type="file" multiple accept="image/*" onChange={handleGalleryUpload} className="hidden" />
-                                                            <div className="p-2 rounded-xl bg-white border border-slate-100 text-orange-500 shadow-sm group-hover:scale-110 transition-transform"><Plus className="w-4 h-4" /></div>
-                                                            <span className="text-[9px] font-black uppercase text-slate-500">Add Photos</span>
-                                                        </label>
+                                                        {galleryPreviews.length < maxImages && (
+                                                            <label className="aspect-square border-2 border-dashed bg-orange-50/30 border-orange-200 hover:bg-orange-50/50 rounded-2xl transition-all cursor-pointer flex flex-col items-center justify-center gap-2 text-slate-400 group">
+                                                                <input type="file" multiple accept="image/*" onChange={handleGalleryUpload} className="hidden" />
+                                                                <div className="p-2 rounded-xl bg-white border border-slate-100 text-orange-500 shadow-sm group-hover:scale-110 transition-transform"><Plus className="w-4 h-4" /></div>
+                                                                <span className="text-[9px] font-black uppercase text-slate-500">Add Photos</span>
+                                                            </label>
+                                                        )}
                                                     </div>
                                                 </div>
 
