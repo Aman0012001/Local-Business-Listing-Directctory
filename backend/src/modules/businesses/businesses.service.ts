@@ -168,7 +168,6 @@ export class BusinessesService implements OnModuleInit {
         
         // --- Image Limit Enforcement ---
         const isFreePlan = (!activeNewPlan && !activeSub) || 
-                          (activeNewPlan?.plan?.planType === SubscriptionPlanType.FREE) || 
                           (activeSub?.plan?.planType === SubscriptionPlanType.FREE);
         const maxImages = isFreePlan ? 3 : 999;
 
@@ -622,7 +621,6 @@ export class BusinessesService implements OnModuleInit {
             ]);
 
             const isFreePlan = (!activeNewPlan && !activeSub) || 
-                              (activeNewPlan?.plan?.planType === SubscriptionPlanType.FREE) || 
                               (activeSub?.plan?.planType === SubscriptionPlanType.FREE);
             const maxImages = isFreePlan ? 3 : 999;
 

@@ -18,7 +18,10 @@ export class NotificationLog {
     @Index()
     vendorId: string;
 
-    @Column()
+    @Column({ name: 'search_log_id', type: 'uuid', nullable: true })
+    searchLogId: string;
+
+    @Column({ nullable: true })
     @Index()
     keyword: string;
 

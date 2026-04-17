@@ -52,6 +52,7 @@ export class DemandService {
     async logSearch(data: {
         keyword: string;
         city?: string;
+        categorySlug?: string;
         latitude?: number;
         longitude?: number;
         userId?: string;
@@ -75,6 +76,7 @@ export class DemandService {
         const log = this.searchLogRepository.create({
             keyword: data.keyword,
             city: data.city,
+            categorySlug: data.categorySlug,
             latitude,
             longitude,
             userId: data.userId,
@@ -97,14 +99,18 @@ export class DemandService {
                 const vendorIds = [...new Set(relevantListings.map(l => l.vendor?.id).filter(id => !!id))];
 
                 for (const vendorId of vendorIds) {
+                    const vendor = await this.vendorRepository.findOne({ where: { id: vendorId } });
+                    if (!vendor) continue;
+
                     const nLog = this.notificationLogRepository.create({
                         vendorId,
                         searchLogId: savedLog.id,
+                        keyword: data.keyword,
                         sentAt: new Date(),
                     });
                     await this.notificationLogRepository.save(nLog);
 
-                    this.notificationsGateway.sendToVendor(vendorId, 'demand_alert', {
+                    this.notificationsGateway.sendToUser(vendor.userId, 'demand_alert', {
                         title: 'New Search in Your Category',
                         message: `Someone just searched for "${data.keyword}" in ${data.city || 'your area'}.`,
                         keyword: data.keyword,
@@ -397,5 +403,8 @@ ${JSON.stringify(insights.slice(0, 10))}
         }
 
         return query.getRawMany();
+    }
+    async processDemandAlerts() {
+        this.logger.log('Processing demand alerts tasks...');
     }
 }
