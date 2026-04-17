@@ -167,8 +167,11 @@ export class BusinessesService implements OnModuleInit {
         }
         
         // --- Image Limit Enforcement ---
-        const isFreePlan = (!activeNewPlan && !activeSub) || 
-                          (activeSub?.plan?.planType === SubscriptionPlanType.FREE);
+        // Robust check for free plan across both subscription engines
+        const isFreeSub = activeSub?.plan?.planType === SubscriptionPlanType.FREE;
+        const isFreeNewPlan = activeNewPlan?.plan?.name?.toLowerCase().includes('free');
+        
+        const isFreePlan = (!activeNewPlan && !activeSub) || isFreeSub || isFreeNewPlan;
         const maxImages = isFreePlan ? 3 : 999;
 
         if (createBusinessDto.images && createBusinessDto.images.length > maxImages) {
@@ -269,7 +272,7 @@ export class BusinessesService implements OnModuleInit {
             this.demandService.logSearch({
                 keyword: searchDto.query || categorySlug || '',
                 city: city || searchDto.city,
-                categorySlug: categorySlug,
+                categorySlug: categorySlug as string,
                 latitude,
                 longitude,
                 userId,
@@ -620,8 +623,10 @@ export class BusinessesService implements OnModuleInit {
                 })
             ]);
 
-            const isFreePlan = (!activeNewPlan && !activeSub) || 
-                              (activeSub?.plan?.planType === SubscriptionPlanType.FREE);
+            const isFreeSub = activeSub?.plan?.planType === SubscriptionPlanType.FREE;
+            const isFreeNewPlan = activeNewPlan?.plan?.name?.toLowerCase().includes('free');
+            
+            const isFreePlan = (!activeNewPlan && !activeSub) || isFreeSub || isFreeNewPlan;
             const maxImages = isFreePlan ? 3 : 999;
 
             if (updateBusinessDto.images.length > maxImages) {

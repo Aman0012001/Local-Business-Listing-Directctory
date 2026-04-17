@@ -61,16 +61,11 @@ async function bootstrap() {
                 return callback(null, true);
             }
 
-            // 1b. During development, allow all localhost and 127.0.0.1 variants automatically
-            if (nodeEnv !== 'production') {
-                const isLocal = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
-                if (isLocal) return callback(null, true);
-            }
-
             // 2. Allow dynamic subdomains via Regex
             const allowedPatterns = [
                 /^https:\/\/.*\.netlify\.app$/,      // All Netlify dynamic domains
                 /^https:\/\/.*\.railway\.app$/,      // All Railway dynamic domains
+                /https:\/\/singular-melomakarona-8c3388\.netlify\.app/, // Specific Netlify domain from screenshot
                 /^http:\/\/localhost(:\d+)?$/,        // localhost with any port
                 /^http:\/\/127\.0.0\.1(:\d+)?$/,    // 127.0.0.1 with any port
             ];
@@ -78,6 +73,11 @@ async function bootstrap() {
             const isMatchingPattern = allowedPatterns.some(pattern => pattern.test(origin));
 
             if (isMatchingPattern) {
+                return callback(null, true);
+            }
+
+            // 1b. During development or if domain contains common aliases, allow (Fallback)
+            if (nodeEnv !== 'production' || origin.includes('localhost') || origin.includes('127.0.0.1')) {
                 return callback(null, true);
             }
 
@@ -93,6 +93,7 @@ async function bootstrap() {
             'X-Requested-With',
             'Origin',
             'X-CSRF-Token',
+            'Apollo-Require-Preflight',
         ],
         exposedHeaders: ['Content-Range', 'X-Content-Range', 'X-Total-Count'],
     });
@@ -140,12 +141,17 @@ async function bootstrap() {
         nodeEnv !== 'production';
 
     if (nodeEnv === 'production') {
-        app.use(helmet());
+        app.use(helmet({
+            crossOriginResourcePolicy: { policy: "cross-origin" },
+            // ContentSecurityPolicy can still be enabled if needed, but let's disable it for debugging connectivity
+            contentSecurityPolicy: false,
+        }));
     } else {
-        // Basic helmet for dev without restrictive HSTS or CSP that might block local sockets
+        // Basic helmet for dev
         app.use(helmet({
             hsts: false,
             contentSecurityPolicy: false,
+            crossOriginResourcePolicy: { policy: "cross-origin" },
         }));
     }
 
