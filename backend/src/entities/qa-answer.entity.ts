@@ -10,7 +10,8 @@ import {
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from './user.entity';
-import { QAQuestion, QAStatus } from './qa-question.entity';
+import { QAQuestion } from './qa-question.entity';
+import { QAStatus } from './qa.enums';
 
 @Entity('qa_answers')
 export class QAAnswer {

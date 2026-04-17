@@ -13,12 +13,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Listing } from './business.entity';
 import { User } from './user.entity';
 import { QAAnswer } from './qa-answer.entity';
-
-export enum QAStatus {
-    PENDING = 'pending',
-    APPROVED = 'approved',
-    REJECTED = 'rejected',
-}
+import { QAStatus } from './qa.enums';
 
 @Entity('qa_questions')
 export class QAQuestion {

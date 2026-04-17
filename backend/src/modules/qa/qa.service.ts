@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { QAQuestion, QAStatus } from '../../entities/qa-question.entity';
+import { QAQuestion } from '../../entities/qa-question.entity';
+import { QAStatus } from '../../entities/qa.enums';
 import { QAAnswer } from '../../entities/qa-answer.entity';
 import { Listing } from '../../entities/business.entity';
 import { User, UserRole } from '../../entities/user.entity';
