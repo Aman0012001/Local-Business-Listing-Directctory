@@ -92,7 +92,7 @@ export class DemandService {
                     .where('listing.status = :status', { status: 'approved' })
                     .andWhere(new Brackets(q => {
                         q.where('LOWER(listing.title) LIKE :kw', { kw: `%${data.keyword.toLowerCase()}%` })
-                            .orWhere('LOWER(listing.searchKeywords) LIKE :kw', { kw: `%${data.keyword.toLowerCase()}%` });
+                    .orWhere('LOWER(listing.searchKeywords::text) LIKE :kw', { kw: `%${data.keyword.toLowerCase()}%` });
                     }));
 
                 const relevantListings = await qb.getMany();
