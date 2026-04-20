@@ -390,27 +390,21 @@ export class BusinessesService implements OnModuleInit {
 
         // Advanced Filters
         if (searchDto.onlineNow) {
-            queryBuilder
-                .leftJoin('listing.vendor', 'v_online')
-                .leftJoin('v_online.user', 'u_online')
-                .andWhere('u_online.is_online = :isOnline', { isOnline: true });
+            // Using existing 'user' join from line 301
+            queryBuilder.andWhere('user.isOnline = :isOnline', { isOnline: true });
         }
 
         if (searchDto.fastResponse) {
-            // Heuristic: Businesses with more than 5 leads are considered established/responsive
-            // In a real app, you'd have a response_rate column
             queryBuilder.andWhere('listing.totalLeads >= :minLeads', { minLeads: 5 });
         }
 
         if (searchDto.experience) {
-            // "Experienced" listings are those that have been on the platform for at least 1 year
             const oneYearAgo = new Date();
             oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
             queryBuilder.andWhere('listing.createdAt <= :oneYearAgo', { oneYearAgo });
         }
 
         if (searchDto.mostContacted) {
-            // This is primarily a sort, but we filter to showing only those with some engagement
             queryBuilder.andWhere('listing.totalViews > 0');
             queryBuilder.addOrderBy('listing.totalLeads', 'DESC');
             queryBuilder.addOrderBy('listing.totalViews', 'DESC');
@@ -428,11 +422,11 @@ export class BusinessesService implements OnModuleInit {
                 minute: '2-digit',
             });
 
+            // Using existing 'businessHours' join from line 302
             queryBuilder
-                .leftJoin('listing.businessHours', 'bh')
-                .andWhere('bh.dayOfWeek = :day', { day })
-                .andWhere('bh.isOpen = :isOpen', { isOpen: true })
-                .andWhere(':time BETWEEN bh.openTime AND bh.closeTime', {
+                .andWhere('businessHours.dayOfWeek = :day', { day })
+                .andWhere('businessHours.isOpen = :isOpen', { isOpen: true })
+                .andWhere(':time BETWEEN businessHours.openTime AND businessHours.closeTime', {
                     time,
                 });
         }
