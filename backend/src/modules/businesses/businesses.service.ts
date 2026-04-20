@@ -390,13 +390,19 @@ export class BusinessesService implements OnModuleInit {
 
         // Advanced Filters
         if (searchDto.onlineNow) {
-            // Using existing 'user' join from line 301
             queryBuilder.andWhere('user.isOnline = :isOnline', { isOnline: true });
         }
 
         if (searchDto.fastResponse) {
-            // Include businesses with at least 1 lead to ensure results show up
-            queryBuilder.andWhere('listing.totalLeads >= :minLeads', { minLeads: 1 });
+            // "Fast Response" = Vendors who have replied to broadcast job leads
+            queryBuilder.andWhere(qb => {
+                const subQuery = qb.subQuery()
+                    .select('1')
+                    .from('job_lead_responses', 'jlr')
+                    .where('jlr.vendor_id = vendor.id')
+                    .getQuery();
+                return `EXISTS ${subQuery}`;
+            });
         }
 
         if (searchDto.experience) {
@@ -407,7 +413,16 @@ export class BusinessesService implements OnModuleInit {
         }
 
         if (searchDto.mostContacted) {
-            // Sort by engagement without filtering out zero-view businesses
+            // "Most Contacted" = Businesses with active work chats (conversations)
+            queryBuilder.andWhere(qb => {
+                const subQuery = qb.subQuery()
+                    .select('1')
+                    .from('chat_conversations', 'cc')
+                    .where('cc.business_id = listing.id')
+                    .getQuery();
+                return `EXISTS ${subQuery}`;
+            });
+            // Also sort by leads and views
             queryBuilder.addOrderBy('listing.totalLeads', 'DESC');
             queryBuilder.addOrderBy('listing.totalViews', 'DESC');
         }
