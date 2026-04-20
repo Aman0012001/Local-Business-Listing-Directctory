@@ -66,7 +66,7 @@ async function bootstrap() {
                 const allowedPatterns = [
                     /^https:\/\/.*\.netlify\.app$/,      // All Netlify dynamic domains
                     /^https:\/\/.*\.railway\.app$/,      // All Railway dynamic domains
-                    /https:\/\/singular-melomakarona-8c3388\.netlify\.app/, // Specific Netlify domain from screenshot
+                    /https:\/\/singular-melomakarona-8c3308\.netlify\.app/, // Correct domain from user
                     /^http:\/\/localhost(:\d+)?$/,        // localhost with any port
                     /^http:\/\/127\.0.0\.1(:\d+)?$/,    // 127.0.0.1 with any port
                 ];
