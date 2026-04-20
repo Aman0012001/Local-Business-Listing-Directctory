@@ -100,6 +100,30 @@ export class SearchBusinessDto extends PaginationDto {
     @IsString()
     filter?: string;
 
+    @ApiPropertyOptional({ default: false })
+    @IsOptional()
+    @Type(() => Boolean)
+    @IsBoolean()
+    fastResponse?: boolean = false;
+
+    @ApiPropertyOptional({ default: false })
+    @IsOptional()
+    @Type(() => Boolean)
+    @IsBoolean()
+    onlineNow?: boolean = false;
+
+    @ApiPropertyOptional({ default: false })
+    @IsOptional()
+    @Type(() => Boolean)
+    @IsBoolean()
+    experience?: boolean = false;
+
+    @ApiPropertyOptional({ default: false })
+    @IsOptional()
+    @Type(() => Boolean)
+    @IsBoolean()
+    mostContacted?: boolean = false;
+
     @ApiPropertyOptional({ enum: SearchSortBy, default: SearchSortBy.RELEVANCE })
     @IsOptional()
     @IsEnum(SearchSortBy)

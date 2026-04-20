@@ -388,6 +388,33 @@ export class BusinessesService implements OnModuleInit {
             queryBuilder.andWhere('listing.isVerified = :verified', { verified: true });
         }
 
+        // Advanced Filters
+        if (searchDto.onlineNow) {
+            queryBuilder
+                .leftJoin('listing.vendor', 'v_online')
+                .leftJoin('v_online.user', 'u_online')
+                .andWhere('u_online.is_online = :isOnline', { isOnline: true });
+        }
+
+        if (searchDto.fastResponse) {
+            // Heuristic: Businesses with more than 5 leads are considered established/responsive
+            // In a real app, you'd have a response_rate column
+            queryBuilder.andWhere('listing.totalLeads >= :minLeads', { minLeads: 5 });
+        }
+
+        if (searchDto.experience) {
+            // Heuristic: Established more than 3 years ago
+            const currentYear = new Date().getFullYear();
+            queryBuilder.andWhere('listing.yearEstablished <= :expYear', { expYear: currentYear - 3 });
+        }
+
+        if (searchDto.mostContacted) {
+            // This is primarily a sort, but we filter to showing only those with some engagement
+            queryBuilder.andWhere('listing.totalViews > 0');
+            queryBuilder.addOrderBy('listing.totalLeads', 'DESC');
+            queryBuilder.addOrderBy('listing.totalViews', 'DESC');
+        }
+
         // Open Now filter
         if (openNow) {
             const now = new Date();

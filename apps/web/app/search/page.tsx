@@ -23,6 +23,10 @@ function SearchResults() {
     const longitude = searchParams.get('longitude') || '';
     const openNow = searchParams.get('openNow') === 'true';
     const verifiedOnly = searchParams.get('verifiedOnly') === 'true';
+    const fastResponse = searchParams.get('fastResponse') === 'true';
+    const onlineNow = searchParams.get('onlineNow') === 'true';
+    const experience = searchParams.get('experience') === 'true';
+    const mostContacted = searchParams.get('mostContacted') === 'true';
     const filter = searchParams.get('filter') || '';
     const featuredOnly = filter === 'featured';
 
@@ -47,7 +51,10 @@ function SearchResults() {
                         longitude: longitude ? Number(longitude) : undefined,
                         openNow: openNow || undefined,
                         verifiedOnly: verifiedOnly || undefined,
-                        featuredOnly: featuredOnly || undefined,
+                        fastResponse: fastResponse || undefined,
+                        onlineNow: onlineNow || undefined,
+                        experience: experience || undefined,
+                        mostContacted: mostContacted || undefined,
                         filter: filter || undefined,
                         limit: 20
                     }),
@@ -72,7 +79,7 @@ function SearchResults() {
             }
         };
         loadData();
-    }, [query, city, categorySlug, minRating, radius, latitude, longitude, openNow, verifiedOnly, featuredOnly, filter]);
+    }, [query, city, categorySlug, minRating, radius, latitude, longitude, openNow, verifiedOnly, fastResponse, onlineNow, experience, mostContacted, featuredOnly, filter]);
 
     const handleNearMe = () => {
         if (!navigator.geolocation) {
@@ -286,6 +293,54 @@ function SearchResults() {
                                         className="w-4 h-4 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500/10"
                                     />
                                 </label>
+
+                                <div className="pt-4 border-t border-slate-50">
+                                    <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mb-6">Advanced</h4>
+                                    <div className="space-y-4">
+                                        <label className="flex items-center justify-between cursor-pointer group">
+                                            <span className="text-xs font-bold text-slate-400 group-hover:text-slate-900 transition-colors">Fast Response</span>
+                                            <input 
+                                                type="checkbox" 
+                                                checked={fastResponse} 
+                                                onChange={(e) => updateFilter('fastResponse', e.target.checked)}
+                                                className="w-4 h-4 rounded-lg border-slate-200 text-emerald-600 focus:ring-emerald-500/10"
+                                            />
+                                        </label>
+
+                                        <label className="flex items-center justify-between cursor-pointer group">
+                                            <span className="text-xs font-bold text-slate-400 group-hover:text-slate-900 transition-colors">Online Now</span>
+                                            <div className="flex items-center gap-3">
+                                                {onlineNow && <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />}
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={onlineNow} 
+                                                    onChange={(e) => updateFilter('onlineNow', e.target.checked)}
+                                                    className="w-4 h-4 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500/10"
+                                                />
+                                            </div>
+                                        </label>
+
+                                        <label className="flex items-center justify-between cursor-pointer group">
+                                            <span className="text-xs font-bold text-slate-400 group-hover:text-slate-900 transition-colors">Experience (3+ Yrs)</span>
+                                            <input 
+                                                type="checkbox" 
+                                                checked={experience} 
+                                                onChange={(e) => updateFilter('experience', e.target.checked)}
+                                                className="w-4 h-4 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500/10"
+                                            />
+                                        </label>
+
+                                        <label className="flex items-center justify-between cursor-pointer group">
+                                            <span className="text-xs font-bold text-slate-400 group-hover:text-slate-900 transition-colors">Most Contacted</span>
+                                            <input 
+                                                type="checkbox" 
+                                                checked={mostContacted} 
+                                                onChange={(e) => updateFilter('mostContacted', e.target.checked)}
+                                                className="w-4 h-4 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500/10"
+                                            />
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
                             
                             <button 
