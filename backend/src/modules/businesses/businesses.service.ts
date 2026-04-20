@@ -395,34 +395,42 @@ export class BusinessesService implements OnModuleInit {
 
         if (searchDto.fastResponse) {
             // "Fast Response" = Vendors who have replied to broadcast job leads
-            queryBuilder.andWhere(qb => {
-                const subQuery = qb.subQuery()
-                    .select('1')
-                    .from('job_lead_responses', 'jlr')
-                    .where('jlr.vendor_id = vendor.id')
-                    .getQuery();
-                return `EXISTS ${subQuery}`;
-            });
+            // If No response yet, we fallback to businesses with totalLeads > 0 as a loose indicator
+            queryBuilder.andWhere(new Brackets(qb => {
+                qb.where(sq => {
+                    const subQuery = sq.subQuery()
+                        .select('1')
+                        .from('job_lead_responses', 'jlr')
+                        .where('jlr.vendor_id = vendor.id')
+                        .getQuery();
+                    return `EXISTS ${subQuery}`;
+                })
+                .orWhere('listing.totalLeads > 0');
+            }));
         }
 
         if (searchDto.experience) {
-            // "Experienced" listings are those that have been on the platform for at least 1 month
-            const oneMonthAgo = new Date();
-            oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-            queryBuilder.andWhere('listing.createdAt <= :oneMonthAgo', { oneMonthAgo });
+            // "Experienced" listings are those that have been on the platform for at least 1 week
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            queryBuilder.andWhere('listing.createdAt <= :oneWeekAgo', { oneWeekAgo });
         }
 
         if (searchDto.mostContacted) {
-            // "Most Contacted" = Businesses with active work chats (conversations)
-            queryBuilder.andWhere(qb => {
-                const subQuery = qb.subQuery()
-                    .select('1')
-                    .from('chat_conversations', 'cc')
-                    .where('cc.business_id = listing.id')
-                    .getQuery();
-                return `EXISTS ${subQuery}`;
-            });
-            // Also sort by leads and views
+            // "Most Contacted" = Businesses with active work chats (conversations) 
+            // Fallback to high totalViews if no conversation data exists in Railway yet
+            queryBuilder.andWhere(new Brackets(qb => {
+                qb.where(sq => {
+                    const subQuery = sq.subQuery()
+                        .select('1')
+                        .from('chat_conversations', 'cc')
+                        .where('cc.business_id = listing.id')
+                        .getQuery();
+                    return `EXISTS ${subQuery}`;
+                })
+                .orWhere('listing.totalViews > 5'); // Relaxed threshold for visibility
+            }));
+            // Sort by leads and views
             queryBuilder.addOrderBy('listing.totalLeads', 'DESC');
             queryBuilder.addOrderBy('listing.totalViews', 'DESC');
         }

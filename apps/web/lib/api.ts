@@ -117,16 +117,19 @@ async function fetcher<T>(endpoint: string, options?: FetcherOptions): Promise<T
             error.message.includes('NetworkError') ||
             error.message.includes('Network Request Failed') ||
             error.message.includes('Failed to fetch')
-        ));
+        )) || error.name === 'AbortError' || error.message?.includes('timed out');
 
         if (isNetworkError) {
-            console.error('[api.ts] Network Error Details:', {
+            console.error('[api.ts] Network Connectivity Issue:', {
                 message: error.message,
                 name: error.name,
-                url: `${API_BASE_URL}${endpoint}`,
-                apiUrlSet: API_BASE_URL,
+                requestedUrl: url,
+                apiUrlConfig: API_BASE_URL,
+                origin: typeof window !== 'undefined' ? window.location.origin : 'server-side',
             });
-            throw new Error(`Connection Failed: Unable to reach the backend. Please check your internet or the server status.`);
+            
+            const hint = url.includes('localhost') ? ' (Hint: Ensure your local backend is running on port 3001)' : '';
+            throw new Error(`Connection Failed: Unable to reach the backend at ${url}${hint}. Please check your internet, server status, or CORS settings.`);
         }
 
         if (error.name === 'AbortError') {

@@ -967,3 +967,6 @@ QueryFailedError: column Listing__Listing_vendor__Listing__Listing_vendor_user.d
 [2026-04-16T23:03:35.777Z] findBySlug: test-mnh580gx (User: ddddd@gmail.com)
 [2026-04-16T23:03:36.831Z] findBySlug: test-mnh580gx - Found in DB. Status: approved
 [2026-04-16T23:03:37.247Z] findBySlug: test-mnh580gx - SUCCESS
+[2026-04-20T06:55:31.338Z] findBySlug: smilecare-dental-clinic-mnd2rjh5 (User: Public)
+[2026-04-20T06:55:31.854Z] findBySlug: smilecare-dental-clinic-mnd2rjh5 - Found in DB. Status: approved
+[2026-04-20T06:55:31.980Z] findBySlug: smilecare-dental-clinic-mnd2rjh5 - SUCCESS

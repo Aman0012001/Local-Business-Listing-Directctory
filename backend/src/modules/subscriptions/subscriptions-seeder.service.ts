@@ -18,7 +18,11 @@ export class SubscriptionsSeederService implements OnModuleInit {
         const val = this.configService.get('SEED_DATABASE');
         const shouldSeed = String(val) === 'true';
         if (shouldSeed) {
-            await this.seedPlans();
+            try {
+                await this.seedPlans();
+            } catch (err) {
+                this.logger.error('❌ Failed to seed subscription plans on startup. Backend will continue to run.', err.stack);
+            }
         }
     }
 
