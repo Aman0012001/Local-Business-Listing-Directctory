@@ -272,74 +272,73 @@ function SearchResults() {
                                 )}
                             </div>
 
-                            {/* Status Filters */}
-                            <div className="space-y-6 pt-4">
-                                <label className="flex items-center justify-between cursor-pointer group">
-                                    <span className="text-xs font-bold text-slate-400 group-hover:text-slate-900 transition-colors">Open Now</span>
-                                    <input 
-                                        type="checkbox" 
-                                        checked={openNow} 
-                                        onChange={(e) => updateFilter('openNow', e.target.checked)}
-                                        className="w-4 h-4 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500/10"
-                                    />
-                                </label>
+                             {/* Advanced Filters Section */}
+                            <div className="pt-12 border-t border-slate-50 space-y-8">
+                                <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mb-6">Advanced Filters</h4>
+                                
+                                <div className="space-y-6">
+                                    <label className="flex items-center justify-between cursor-pointer group">
+                                        <span className="text-xs font-bold text-slate-400 group-hover:text-slate-900 transition-colors">Open Now</span>
+                                        <input 
+                                            type="checkbox" 
+                                            checked={openNow} 
+                                            onChange={(e) => updateFilter('openNow', e.target.checked)}
+                                            className="w-4 h-4 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500/10"
+                                        />
+                                    </label>
 
-                                <label className="flex items-center justify-between cursor-pointer group">
-                                    <span className="text-xs font-bold text-slate-400 group-hover:text-slate-900 transition-colors">Verified Only</span>
-                                    <input 
-                                        type="checkbox" 
-                                        checked={verifiedOnly} 
-                                        onChange={(e) => updateFilter('verifiedOnly', e.target.checked)}
-                                        className="w-4 h-4 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500/10"
-                                    />
-                                </label>
+                                    <label className="flex items-center justify-between cursor-pointer group">
+                                        <span className="text-xs font-bold text-slate-400 group-hover:text-slate-900 transition-colors">Verified Only</span>
+                                        <input 
+                                            type="checkbox" 
+                                            checked={verifiedOnly} 
+                                            onChange={(e) => updateFilter('verifiedOnly', e.target.checked)}
+                                            className="w-4 h-4 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500/10"
+                                        />
+                                    </label>
 
-                                <div className="pt-4 border-t border-slate-50">
-                                    <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mb-6">Advanced</h4>
-                                    <div className="space-y-4">
-                                        <label className="flex items-center justify-between cursor-pointer group">
-                                            <span className="text-xs font-bold text-slate-400 group-hover:text-slate-900 transition-colors">Fast Response</span>
+                                    <label className="flex items-center justify-between cursor-pointer group">
+                                        <span className="text-xs font-bold text-slate-400 group-hover:text-slate-900 transition-colors">Fast Response</span>
+                                        <input 
+                                            type="checkbox" 
+                                            checked={fastResponse} 
+                                            onChange={(e) => updateFilter('fastResponse', e.target.checked)}
+                                            className="w-4 h-4 rounded-lg border-slate-200 text-emerald-600 focus:ring-emerald-500/10"
+                                        />
+                                    </label>
+
+                                    <label className="flex items-center justify-between cursor-pointer group">
+                                        <span className="text-xs font-bold text-slate-400 group-hover:text-slate-900 transition-colors">Online Now</span>
+                                        <div className="flex items-center gap-3">
+                                            {onlineNow && <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />}
                                             <input 
                                                 type="checkbox" 
-                                                checked={fastResponse} 
-                                                onChange={(e) => updateFilter('fastResponse', e.target.checked)}
-                                                className="w-4 h-4 rounded-lg border-slate-200 text-emerald-600 focus:ring-emerald-500/10"
-                                            />
-                                        </label>
-
-                                        <label className="flex items-center justify-between cursor-pointer group">
-                                            <span className="text-xs font-bold text-slate-400 group-hover:text-slate-900 transition-colors">Online Now</span>
-                                            <div className="flex items-center gap-3">
-                                                {onlineNow && <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />}
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={onlineNow} 
-                                                    onChange={(e) => updateFilter('onlineNow', e.target.checked)}
-                                                    className="w-4 h-4 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500/10"
-                                                />
-                                            </div>
-                                        </label>
-
-                                        <label className="flex items-center justify-between cursor-pointer group">
-                                            <span className="text-xs font-bold text-slate-400 group-hover:text-slate-900 transition-colors">Experienced Listing</span>
-                                            <input 
-                                                type="checkbox" 
-                                                checked={experience} 
-                                                onChange={(e) => updateFilter('experience', e.target.checked)}
+                                                checked={onlineNow} 
+                                                onChange={(e) => updateFilter('onlineNow', e.target.checked)}
                                                 className="w-4 h-4 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500/10"
                                             />
-                                        </label>
+                                        </div>
+                                    </label>
 
-                                        <label className="flex items-center justify-between cursor-pointer group">
-                                            <span className="text-xs font-bold text-slate-400 group-hover:text-slate-900 transition-colors">Most Contacted</span>
-                                            <input 
-                                                type="checkbox" 
-                                                checked={mostContacted} 
-                                                onChange={(e) => updateFilter('mostContacted', e.target.checked)}
-                                                className="w-4 h-4 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500/10"
-                                            />
-                                        </label>
-                                    </div>
+                                    <label className="flex items-center justify-between cursor-pointer group">
+                                        <span className="text-xs font-bold text-slate-400 group-hover:text-slate-900 transition-colors">Experienced Listing</span>
+                                        <input 
+                                            type="checkbox" 
+                                            checked={experience} 
+                                            onChange={(e) => updateFilter('experience', e.target.checked)}
+                                            className="w-4 h-4 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500/10"
+                                        />
+                                    </label>
+
+                                    <label className="flex items-center justify-between cursor-pointer group">
+                                        <span className="text-xs font-bold text-slate-400 group-hover:text-slate-900 transition-colors">Most Contacted</span>
+                                        <input 
+                                            type="checkbox" 
+                                            checked={mostContacted} 
+                                            onChange={(e) => updateFilter('mostContacted', e.target.checked)}
+                                            className="w-4 h-4 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500/10"
+                                        />
+                                    </label>
                                 </div>
                             </div>
                             

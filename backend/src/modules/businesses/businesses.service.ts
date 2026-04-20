@@ -395,17 +395,19 @@ export class BusinessesService implements OnModuleInit {
         }
 
         if (searchDto.fastResponse) {
-            queryBuilder.andWhere('listing.totalLeads >= :minLeads', { minLeads: 5 });
+            // Include businesses with at least 1 lead to ensure results show up
+            queryBuilder.andWhere('listing.totalLeads >= :minLeads', { minLeads: 1 });
         }
 
         if (searchDto.experience) {
-            const oneYearAgo = new Date();
-            oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-            queryBuilder.andWhere('listing.createdAt <= :oneYearAgo', { oneYearAgo });
+            // "Experienced" listings are those that have been on the platform for at least 1 month
+            const oneMonthAgo = new Date();
+            oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+            queryBuilder.andWhere('listing.createdAt <= :oneMonthAgo', { oneMonthAgo });
         }
 
         if (searchDto.mostContacted) {
-            queryBuilder.andWhere('listing.totalViews > 0');
+            // Sort by engagement without filtering out zero-view businesses
             queryBuilder.addOrderBy('listing.totalLeads', 'DESC');
             queryBuilder.addOrderBy('listing.totalViews', 'DESC');
         }
