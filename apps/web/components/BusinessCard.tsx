@@ -120,11 +120,7 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1.5s] grayscale-[0.2] group-hover:grayscale-0"
                             iconSize={32}
                         />
-                        {isNewBusiness(business.createdAt, business.recentUntil) && (
-                            <div className="absolute top-4 left-4 px-3 py-1 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg z-10">
-                                Recent
-                            </div>
-                        )}
+
                     </div>
 
                     {/* Minimalist Content */}
@@ -170,11 +166,7 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                             iconSize={48}
                         />
-                        {isNewBusiness(business.createdAt, business.recentUntil) && (
-                            <div className="absolute top-4 left-4 px-3 py-1 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-lg">
-                                Recent
-                            </div>
-                        )}
+
                     </div>
 
                     {/* Content */}
@@ -242,11 +234,7 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                         iconSize={40}
                     />
-                    {isNewBusiness(business.createdAt, business.recentUntil) && (
-                        <div className="absolute top-4 left-4 px-3 py-1 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg z-10">
-                            Recent
-                        </div>
-                    )}
+
                 </div>
 
                 {/* Content */}
