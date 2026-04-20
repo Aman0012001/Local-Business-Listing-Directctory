@@ -403,9 +403,10 @@ export class BusinessesService implements OnModuleInit {
         }
 
         if (searchDto.experience) {
-            // Heuristic: Established more than 3 years ago
-            const currentYear = new Date().getFullYear();
-            queryBuilder.andWhere('listing.yearEstablished <= :expYear', { expYear: currentYear - 3 });
+            // "Experienced" listings are those that have been on the platform for at least 1 year
+            const oneYearAgo = new Date();
+            oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+            queryBuilder.andWhere('listing.createdAt <= :oneYearAgo', { oneYearAgo });
         }
 
         if (searchDto.mostContacted) {

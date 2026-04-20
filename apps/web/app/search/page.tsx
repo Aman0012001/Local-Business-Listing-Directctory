@@ -321,7 +321,7 @@ function SearchResults() {
                                         </label>
 
                                         <label className="flex items-center justify-between cursor-pointer group">
-                                            <span className="text-xs font-bold text-slate-400 group-hover:text-slate-900 transition-colors">Experience (3+ Yrs)</span>
+                                            <span className="text-xs font-bold text-slate-400 group-hover:text-slate-900 transition-colors">Experienced Listing</span>
                                             <input 
                                                 type="checkbox" 
                                                 checked={experience} 
