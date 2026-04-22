@@ -67,6 +67,7 @@ export default function HomePage() {
   } | null>(null);
 
   const [loading, setLoading] = useState(true);
+  const [businessesLoading, setBusinessesLoading] = useState(false);
   const [statsComments, setStatsComments] = useState<any[]>([]);
   // heroImages slider removed in favor of clean design
   const badgeText = "Your Local. Your Choice.";
@@ -123,16 +124,14 @@ export default function HomePage() {
     arrows: false,
     pauseOnHover: false,
   };
+  // Initial data load — runs once on mount for all static page data
   useEffect(() => {
     const loadInitialData = async () => {
       try {
         setLoading(true);
-        console.log(
-          `Fetching homepage data for page ${paginationMetadata.page}...`,
-        );
         const results = await Promise.allSettled([
           api.categories.getPopular(8),
-          api.listings.getFeatured(paginationMetadata.page, 12),
+          api.listings.getFeatured(1, 12),
           api.cities.getPopular(),
           api.categories.getAll(),
           api.cities.getAll(),
@@ -168,9 +167,34 @@ export default function HomePage() {
         setLoading(false);
       }
     };
-    loadInitialData();
+    loadInitialData().then(() => {
+      // Mark initial mount as done so the page-change effect can run freely
+      isInitialMount.current = false;
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch only businesses when pagination page changes
+  // Skip the very first mount since initial data is already loaded above
+  useEffect(() => {
+    if (isInitialMount.current) return;
+    const fetchBusinessesPage = async () => {
+      try {
+        setBusinessesLoading(true);
+        const featured = await api.listings.getFeatured(paginationMetadata.page, 12);
+        setFeaturedBusinesses(featured?.data || []);
+        if (featured?.meta) {
+          setPaginationMetadata((prev) => ({ ...prev, ...featured.meta }));
+        }
+      } catch (err) {
+        console.error("Error fetching businesses page:", err);
+      } finally {
+        setBusinessesLoading(false);
+      }
+    };
+    fetchBusinessesPage();
   }, [paginationMetadata.page]);
 
+  const isInitialMount = useRef(true);
   const searchRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -546,38 +570,48 @@ export default function HomePage() {
             <div className="h-[1px] bg-slate-200 w-24 md:w-48" />
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {featuredBusinesses.length > 0 ? (
-              featuredBusinesses.map((biz, idx) => (
-                <motion.div
-                  key={biz.id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: (idx % 4) * 0.1 }}
-                >
-                  <BusinessCard
-                    business={biz}
-                    variant={
-                      idx % 4 === 0
-                        ? "green"
-                        : idx % 4 === 1
-                          ? "blue"
-                          : idx % 4 === 2
-                            ? "white"
-                            : "dark"
-                    }
-                    showChat={false}
-                  />
-                </motion.div>
-              ))
-            ) : (
-              <div className="col-span-full py-12 text-center bg-white rounded-3xl border border-slate-100">
-                <p className="text-slate-500 font-bold">
-                  No featured businesses available at the moment.
-                </p>
+          <div className="relative min-h-[200px]">
+            {/* Section-level loading overlay — only covers this grid, not the whole page */}
+            {businessesLoading && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-50/70 rounded-3xl">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-[#FF7A30]" />
+                  <p className="text-slate-500 font-bold text-sm animate-pulse">Loading businesses...</p>
+                </div>
               </div>
             )}
+            <div className={`grid md:grid-cols-2 lg:grid-cols-4 gap-8 transition-opacity duration-300 ${businessesLoading ? "opacity-30 pointer-events-none" : "opacity-100"}`}>
+              {featuredBusinesses.length > 0 ? (
+                featuredBusinesses.map((biz, idx) => (
+                  <motion.div
+                    key={biz.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: (idx % 4) * 0.08 }}
+                  >
+                    <BusinessCard
+                      business={biz}
+                      variant={
+                        idx % 4 === 0
+                          ? "green"
+                          : idx % 4 === 1
+                            ? "blue"
+                            : idx % 4 === 2
+                              ? "white"
+                              : "dark"
+                      }
+                      showChat={false}
+                    />
+                  </motion.div>
+                ))
+              ) : (
+                <div className="col-span-full py-12 text-center bg-white rounded-3xl border border-slate-100">
+                  <p className="text-slate-500 font-bold">
+                    No featured businesses available at the moment.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Pagination Bar */}

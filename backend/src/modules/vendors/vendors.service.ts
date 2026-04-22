@@ -347,6 +347,8 @@ export class VendorsService {
                 title: l.title,
                 slug: l.slug,
                 images: l.images,
+                coverImageUrl: l.coverImageUrl || null,
+                logoUrl: l.logoUrl || null,
                 averageRating: l.averageRating,
                 totalReviews: l.totalReviews,
                 city: l.city,
