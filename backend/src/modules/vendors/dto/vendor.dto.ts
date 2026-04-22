@@ -183,6 +183,38 @@ export class VendorProfileDto {
     state?: string;
 }
 
+export class ListingSummaryDto {
+    @ApiProperty()
+    id: string;
+
+    @ApiProperty()
+    title: string;
+
+    @ApiProperty()
+    slug: string;
+
+    @ApiProperty({ type: [String] })
+    images: string[];
+
+    @ApiPropertyOptional()
+    coverImageUrl?: string;
+
+    @ApiPropertyOptional()
+    logoUrl?: string;
+
+    @ApiProperty()
+    averageRating: number;
+
+    @ApiProperty()
+    totalReviews: number;
+
+    @ApiProperty()
+    city: string;
+
+    @ApiPropertyOptional()
+    categoryName?: string;
+}
+
 export class PublicVendorProfileDto {
     @ApiProperty()
     id: string;
@@ -225,6 +257,10 @@ export class PublicVendorProfileDto {
 
     @ApiPropertyOptional()
     createdAt?: Date;
+
+    @ApiProperty({ type: [ListingSummaryDto] })
+    @Type(() => ListingSummaryDto)
+    listings: ListingSummaryDto[];
 }
 
 
