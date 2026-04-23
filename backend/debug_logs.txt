@@ -994,3 +994,9 @@ QueryFailedError: column Listing__Listing_vendor__Listing__Listing_vendor_user.d
 [2026-04-23T16:45:05.786Z] findBySlug: test-mnh580gx (User: Public)
 [2026-04-23T16:45:06.914Z] findBySlug: test-mnh580gx - Found in DB. Status: approved
 [2026-04-23T16:45:07.022Z] findBySlug: test-mnh580gx - SUCCESS
+[2026-04-23T16:54:10.031Z] findBySlug: test-mnh580gx (User: Public)
+[2026-04-23T16:54:10.516Z] findBySlug: test-mnh580gx - Found in DB. Status: approved
+[2026-04-23T16:54:10.642Z] findBySlug: test-mnh580gx - SUCCESS
+[2026-04-23T16:54:24.870Z] findBySlug: bike-sell-mnw2g11t (User: Public)
+[2026-04-23T16:54:25.301Z] findBySlug: bike-sell-mnw2g11t - Found in DB. Status: approved
+[2026-04-23T16:54:25.462Z] findBySlug: bike-sell-mnw2g11t - SUCCESS

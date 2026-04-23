@@ -54,19 +54,22 @@ const defaultStats = [
 
 export default function StatsGrid({ stats = defaultStats }: StatsGridProps) {
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6 mb-12">
             {stats.map((stat) => (
                 <div
                     key={stat.label}
                     onClick={stat.onClick}
-                    className={`${stat.color} rounded-[16px] p-6 text-white ${stat.shadow} flex items-center gap-5 group hover:scale-[1.02] transition-all duration-300 ${stat.onClick ? 'cursor-pointer active:scale-95' : 'cursor-default'}`}
+                    className={`${stat.color} rounded-[24px] p-6 text-white ${stat.shadow} flex flex-col items-start gap-5 group hover:scale-[1.02] hover:-translate-y-1 transition-all duration-300 ${stat.onClick ? 'cursor-pointer active:scale-95' : 'cursor-default'} relative overflow-hidden`}
                 >
-                    <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center transition-transform group-hover:rotate-6">
+                    {/* Decorative Background Icon */}
+                    <stat.icon className="absolute -right-4 -bottom-4 w-24 h-24 text-white/10 rotate-12 group-hover:rotate-6 transition-transform duration-500" />
+                    
+                    <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center transition-transform group-hover:rotate-6 relative z-10">
                         <stat.icon className="w-6 h-6 text-white" />
                     </div>
-                    <div>
-                        <p className="text-white/80 text-[10px] font-black uppercase tracking-widest leading-none mb-1.5">{stat.label}</p>
-                        <h4 className="text-3xl font-black leading-none">{stat.value}</h4>
+                    <div className="relative z-10">
+                        <p className="text-white/70 text-[10px] font-black uppercase tracking-widest leading-none mb-2">{stat.label}</p>
+                        <h4 className="text-3xl font-black leading-none tracking-tight">{stat.value}</h4>
                     </div>
                 </div>
             ))}

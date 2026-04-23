@@ -52,53 +52,55 @@ export default function MyInquiries() {
                     <p className="text-slate-400 font-bold italic text-sm">No recent inquiries or claims.</p>
                 </div>
             ) : (
-                <div className="grid gap-4">
-                    {inquiries.slice(0, 5).map(inq => (
-                        <div key={inq.id} className="bg-white p-5 rounded-[20px] border border-slate-100 hover:border-violet-200 transition-all group">
-                            <div className="flex justify-between items-start mb-3">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-slate-50 overflow-hidden flex-shrink-0">
-                                        <img 
-                                            src={getImageUrl(inq.business?.logoUrl || inq.business?.images?.[0]) || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'} 
-                                            alt={inq.business?.title}
-                                            className="w-full h-full object-cover"
-                                        />
+                <div className="flex flex-col gap-4">
+                    <div className="grid gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                        {inquiries.slice(0, 15).map(inq => (
+                            <div key={inq.id} className="bg-white p-5 rounded-[20px] border border-slate-100 hover:border-violet-200 transition-all group">
+                                <div className="flex justify-between items-start mb-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-slate-50 overflow-hidden flex-shrink-0">
+                                            <img 
+                                                src={getImageUrl(inq.business?.logoUrl || inq.business?.images?.[0]) || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'} 
+                                                alt={inq.business?.title}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-black text-slate-900 leading-none group-hover:text-violet-600 transition-colors">{inq.business?.title || 'Local Business'}</h3>
+                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 inline-block">
+                                                {inq.type === 'whatsapp' ? 'Offer Claim' : 'General Inquiry'}
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h3 className="font-black text-slate-900 leading-none group-hover:text-violet-600 transition-colors">{inq.business?.title || 'Local Business'}</h3>
-                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 inline-block">
-                                            {inq.type === 'whatsapp' ? 'Offer Claim' : 'General Inquiry'}
-                                        </span>
+                                    <div className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${
+                                        inq.status === 'new' ? 'bg-violet-50 text-violet-600' : 'bg-slate-100 text-slate-400'
+                                    }`}>
+                                        {inq.status}
                                     </div>
                                 </div>
-                                <div className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${
-                                    inq.status === 'new' ? 'bg-violet-50 text-violet-600' : 'bg-slate-100 text-slate-400'
-                                }`}>
-                                    {inq.status}
+
+                                <p className="text-xs text-slate-600 line-clamp-2 mb-4 pl-1">
+                                    {inq.message}
+                                </p>
+
+                                <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+                                    <div className="flex items-center gap-3 text-[10px] text-slate-400 font-bold">
+                                        <div className="flex items-center gap-1">
+                                            <Clock className="w-3 h-3" />
+                                            {formatDistanceToNow(new Date(inq.createdAt), { addSuffix: true })}
+                                        </div>
+                                    </div>
+                                    <Link 
+                                        href={`/business/${inq.business?.slug}`}
+                                        className="text-[9px] font-black uppercase tracking-widest text-violet-600 flex items-center gap-1 hover:gap-2 transition-all"
+                                    >
+                                        Visit Listing <ArrowRight className="w-3 h-3" />
+                                    </Link>
                                 </div>
                             </div>
-
-                            <p className="text-xs text-slate-600 line-clamp-2 mb-4 pl-1">
-                                {inq.message}
-                            </p>
-
-                            <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-                                <div className="flex items-center gap-3 text-[10px] text-slate-400 font-bold">
-                                    <div className="flex items-center gap-1">
-                                        <Clock className="w-3 h-3" />
-                                        {formatDistanceToNow(new Date(inq.createdAt), { addSuffix: true })}
-                                    </div>
-                                </div>
-                                <Link 
-                                    href={`/business/${inq.business?.slug}`}
-                                    className="text-[9px] font-black uppercase tracking-widest text-violet-600 flex items-center gap-1 hover:gap-2 transition-all"
-                                >
-                                    Visit Listing <ArrowRight className="w-3 h-3" />
-                                </Link>
-                            </div>
-                        </div>
-                    ))}
-                    {inquiries.length > 5 && (
+                        ))}
+                    </div>
+                    {inquiries.length > 15 && (
                         <Link href="/messages" className="text-center py-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-violet-600 transition-all">
                             View All Inquiries
                         </Link>

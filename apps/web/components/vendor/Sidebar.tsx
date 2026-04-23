@@ -15,18 +15,22 @@ import VendorAvatar from '../VendorAvatar';
 import { chatApi } from '../../services/chat.service';
 import { usePlanFeature, DashboardFeatures } from '../../hooks/usePlanFeature';
 
-export default function Sidebar() {
+interface SidebarProps {
+    isOpen: boolean;
+    onClose: () => void;
+}
+
+export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     const { user, logout } = useAuth();
     const pathname = usePathname();
     const [newEnquiryCount, setNewEnquiryCount] = useState(0);
     const [unreadChatCount, setUnreadChatCount] = useState(0);
     const [newBroadcastCount, setNewBroadcastCount] = useState(0);
-    const [isMobileOpen, setIsMobileOpen] = useState(false);
     const { hasFeature, planName } = usePlanFeature();
 
     // Close mobile sidebar on route change
     useEffect(() => {
-        setIsMobileOpen(false);
+        onClose();
     }, [pathname]);
 
     // Fetch badge counts & subscription
@@ -49,7 +53,6 @@ export default function Sidebar() {
         };
 
         refreshStats();
-        // Removed fetchSub as usePlanFeature handles it via AuthContext sync
         const interval = setInterval(refreshStats, 30000);
         return () => clearInterval(interval);
     }, [user]);
@@ -76,13 +79,10 @@ export default function Sidebar() {
     ];
 
     const filteredItems = menuItems.filter(item => {
-        const isVendorOrAdmin = user?.role === 'vendor' || user?.role === 'admin' || user?.role === 'superadmin';
-
         // Show all items to admins
         if (user?.role === 'admin' || user?.role === 'superadmin') return true;
 
         if (user?.role === 'vendor') {
-            // Show all items to vendors, restricting access on the page level
             return true;
         }
 
@@ -91,40 +91,48 @@ export default function Sidebar() {
     });
 
     const SidebarInner = () => (
-        <>
-            <div className="flex flex-col items-center mb-10 pt-4">
-                <div className="relative mb-4 group cursor-pointer">
+        <div className="flex flex-col h-full">
+            {/* Brand Logo or User Profile Section */}
+            <div className="flex flex-col items-center mb-10 pt-4 px-4">
+                <div className="relative mb-5 group cursor-pointer">
+                    <div className="absolute inset-0 bg-indigo-500 rounded-[32px] blur-xl opacity-0 group-hover:opacity-20 transition-opacity duration-500" />
                     <VendorAvatar
-                        src={user?.avatarUrl}
+                        src={getImageUrl(user?.avatarUrl)}
                         alt={user?.fullName || 'Vendor'}
                         size="lg"
-                        className="shadow-2xl transition-transform duration-500 group-hover:scale-105 border-4 border-white"
+                        className="relative z-10 shadow-2xl shadow-indigo-100 transition-all duration-500 group-hover:scale-[1.02] ring-4 ring-white"
                     />
-                    <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-600 rounded-xl border-4 border-[#F8FAFC] flex items-center justify-center text-white shadow-lg">
+                    <div className="absolute -bottom-1 -right-1 w-9 h-9 bg-indigo-600 rounded-2xl border-4 border-white flex items-center justify-center text-white shadow-xl z-20 group-hover:rotate-12 transition-transform">
                         <Shield className="w-4 h-4" />
                     </div>
                 </div>
+                
                 <div className="text-center w-full">
-                    <button className="flex items-center justify-center gap-1 mx-auto mb-1 group">
-                        <span className="text-xl font-black text-slate-900 group-hover:text-blue-600 transition-colors">
-                            {user?.fullName || 'Vendor'}
-                        </span>
-                        <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-transform group-hover:translate-y-0.5" />
-                    </button>
-                    <div className="flex flex-col items-center gap-1">
-                        <div className="flex items-center justify-center gap-1.5 px-3 py-1 bg-blue-50/50 rounded-full w-fit mx-auto border border-blue-100/50">
-                            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
-                            <span className="text-[9px] text-blue-600 font-black uppercase tracking-widest">{user?.role || 'vendor account'}</span>
+                    <div className="flex items-center justify-center gap-1.5 mb-1">
+                        <h2 className="text-lg font-black text-slate-900 truncate max-w-[180px] tracking-tight">
+                            {user?.fullName?.split(' ')[0] || 'Member'}
+                        </h2>
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                    </div>
+                    
+                    <div className="flex flex-col items-center gap-1.5">
+                        <div className="px-3 py-1 bg-slate-50 border border-slate-100 rounded-xl">
+                            <span className="text-[10px] text-slate-500 font-black uppercase tracking-[0.15em] block">
+                                {user?.role || 'User'} Account
+                            </span>
                         </div>
                         {user?.role === 'vendor' && (
-                            <span className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">{planName} Plan</span>
+                            <div className="flex items-center gap-1.5 px-2.5 py-0.5 bg-indigo-50 rounded-lg border border-indigo-100/50">
+                                <TrendingUp className="w-3 h-3 text-indigo-600" />
+                                <span className="text-[9px] text-indigo-700 font-bold uppercase tracking-wider">{planName}</span>
+                            </div>
                         )}
                     </div>
                 </div>
             </div>
 
             {/* Nav */}
-            <nav className="flex-grow space-y-2">
+            <nav className="flex-grow space-y-1 overflow-y-auto px-4 custom-scrollbar">
                 {filteredItems.map(item => {
                     const isActive = pathname === item.href;
                     const isEnquiries = item.name === 'Queries';
@@ -132,22 +140,37 @@ export default function Sidebar() {
                         <Link
                             key={item.name}
                             href={item.href}
-                            className={`flex items-center justify-between px-5 py-4 rounded-[3px] group transition-all duration-300 ${isActive
-                                ? 'bg-white text-slate-900 shadow-slate-200/40 translate-x-1'
-                                : 'text-slate-500 hover:text-slate-900 hover:bg-white/60'
+                            className={`flex items-center justify-between px-4 py-3.5 rounded-2xl group transition-all duration-300 relative overflow-hidden ${isActive
+                                ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-100 translate-x-1'
+                                : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 hover:translate-x-1'
                                 }`}
                         >
-                            <div className="flex items-center gap-4">
-                                <item.icon className={`w-5 h-5 transition-all duration-300 ${isActive
-                                    ? isEnquiries ? 'text-violet-600 scale-110' : 'text-blue-600 scale-110'
-                                    : (item as any).iconColor && !isActive ? `${(item as any).iconColor} group-hover:scale-110` : 'text-slate-400 group-hover:text-slate-900 group-hover:scale-110'
+                            <div className="flex items-center gap-3.5 relative z-10">
+                                <item.icon className={`w-5 h-5 transition-all duration-500 ${isActive
+                                    ? 'text-white'
+                                    : (item as any).iconColor && !isActive 
+                                        ? `${(item as any).iconColor} group-hover:scale-110` 
+                                        : 'text-slate-400 group-hover:text-indigo-500 group-hover:scale-110'
                                     }`} />
-                                <span className={`text-[15px] tracking-tight transition-all ${isActive ? 'font-black' : 'font-bold'}`}>{item.name}</span>
+                                <span className={`text-[13px] tracking-tight transition-all ${isActive ? 'font-black' : 'font-bold'}`}>
+                                    {item.name}
+                                </span>
                             </div>
+                            
                             {item.badge && (
-                                <span className={`flex items-center justify-center px-2 min-w-[20px] h-5 rounded-lg text-white text-[10px] font-black shadow-lg ${isEnquiries ? 'bg-violet-600 shadow-violet-500/20' : 'bg-[#FF7A30] shadow-orange-500/20'}`}>
+                                <span className={`flex items-center justify-center px-2.5 min-w-[22px] h-5.5 rounded-lg text-[9px] font-black shadow-sm relative z-10 ${
+                                    isActive 
+                                        ? 'bg-white/20 text-white backdrop-blur-md' 
+                                        : isEnquiries 
+                                            ? 'bg-indigo-600 text-white' 
+                                            : 'bg-[#FF7A30] text-white'
+                                }`}>
                                     {item.badge}
                                 </span>
+                            )}
+                            
+                            {isActive && (
+                                <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-indigo-500 opacity-100" />
                             )}
                         </Link>
                     );
@@ -155,52 +178,49 @@ export default function Sidebar() {
             </nav>
 
             {/* Logout */}
-            <div className="mt-10 pt-6 border-t border-slate-200/60">
+            <div className="mt-auto pt-6 px-4 pb-6">
                 <button
                     onClick={logout}
-                    className="flex items-center gap-4 px-5 py-4 w-full rounded-[3px] text-slate-500 hover:text-red-500 hover:bg-red-50/50 transition-all group active:scale-95"
+                    className="flex items-center gap-3.5 px-5 py-4 w-full rounded-2xl text-slate-500 hover:text-red-600 hover:bg-red-50/50 transition-all group active:scale-[0.98] border border-transparent hover:border-red-100"
                 >
-                    <LogOut className="w-5 h-5 text-slate-400 group-hover:text-red-500 group-hover:-translate-x-1 transition-all" />
-                    <span className="font-bold text-[15px] tracking-tight">Log Out</span>
+                    <div className="p-2 bg-slate-50 group-hover:bg-red-100/50 rounded-xl transition-colors">
+                        <LogOut className="w-4 h-4 text-slate-400 group-hover:text-red-600 transition-all" />
+                    </div>
+                    <span className="font-extrabold text-[13px] tracking-tight">Sign Out</span>
                 </button>
             </div>
-        </>
+        </div>
     );
 
     return (
         <>
-            {/* ── Mobile hamburger button (bottom-left FAB) ── */}
-            <button
-                onClick={() => setIsMobileOpen(true)}
-                aria-label="Open menu"
-                className="fixed bottom-6 left-6 z-50 lg:hidden w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-slate-900/30 active:scale-95 transition-transform"
-            >
-                <Menu className="w-6 h-6" />
-            </button>
-
             {/* ── Mobile backdrop overlay ── */}
-            {isMobileOpen && (
+            {isOpen && (
                 <div
-                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
-                    onClick={() => setIsMobileOpen(false)}
+                    className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[40] lg:hidden animate-in fade-in duration-500"
+                    onClick={onClose}
                 />
             )}
 
-            {/* ── Desktop sidebar (sticky, always visible) ── */}
-            <aside className="w-72 bg-[#F8FAFC] border-r border-slate-200 h-[calc(100vh-80px)] sticky top-20 flex-col p-6 overflow-y-auto hidden lg:flex shrink-0">
-                <SidebarInner />
-            </aside>
+            {/* ── Sidebar (Combined Desktop & Mobile Logic) ── */}
+            <aside 
+                className={`
+                    fixed inset-y-0 left-0 z-[50] w-[300px] bg-white border-r border-slate-100
+                    transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) lg:relative lg:translate-x-0
+                    ${isOpen ? 'translate-x-0 shadow-[20px_0_60px_-15px_rgba(0,0,0,0.1)]' : '-translate-x-full lg:translate-x-0'}
+                `}
+            >
+                <div className="h-full flex flex-col">
+                    {/* Close button (Mobile only) */}
+                    <button
+                        onClick={onClose}
+                        className="absolute top-6 right-[-18px] w-9 h-9 flex lg:hidden items-center justify-center rounded-2xl bg-white border border-slate-100 text-slate-500 shadow-xl z-[60] hover:text-indigo-600 transition-all active:scale-90"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
 
-            {/* ── Mobile sidebar (slide-in drawer) ── */}
-            <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#F8FAFC] border-r border-slate-200 flex flex-col p-6 overflow-y-auto transition-transform duration-300 ease-in-out lg:hidden ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                {/* Close button */}
-                <button
-                    onClick={() => setIsMobileOpen(false)}
-                    className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors"
-                >
-                    <X className="w-5 h-5" />
-                </button>
-                <SidebarInner />
+                    <SidebarInner />
+                </div>
             </aside>
         </>
     );

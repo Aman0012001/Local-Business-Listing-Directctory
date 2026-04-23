@@ -41,20 +41,23 @@ export default function RecentReviews({ reviews = [], loading = false, title = "
     }
 
     return (
-        <div className="bg-white rounded-[16px] border border-black p-8 shadow-sm">
+        <div className="bg-white rounded-[24px] border border-slate-100 p-8 shadow-sm">
             <div className="flex items-center justify-between mb-8">
-                <h3 className="text-xl font-black text-slate-800">{title}</h3>
-                <Link href="/reviews" className="flex items-center gap-1 text-xs font-black uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920] transition-colors">
+                <div>
+                    <h3 className="text-xl font-black text-slate-800">{title}</h3>
+                    <p className="text-xs text-slate-400 font-bold mt-1">Latest feedback from your customers</p>
+                </div>
+                <Link href="/reviews" className="flex items-center gap-1.5 px-4 py-2 bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-900 hover:text-white rounded-xl transition-all active:scale-95">
                     View All <ChevronRight className="w-4 h-4" />
                 </Link>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                 {reviews.length > 0 ? (
                     reviews.map((review, i) => (
                         <div key={review.id} className={`flex gap-5 group ${i !== reviews.length - 1 ? 'pb-8 border-b border-slate-50' : ''}`}>
                             <div className="relative flex-shrink-0">
-                                <div className="w-14 h-14 rounded-[20px] overflow-hidden shadow-lg group-hover:scale-105 transition-transform duration-500">
+                                <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-lg group-hover:scale-105 transition-transform duration-500 ring-2 ring-white ring-offset-2 ring-offset-slate-100">
                                     <img src={getImageUrl(review.avatar) || `https://ui-avatars.com/api/?name=${review.user}&background=random`} alt={review.user} className="w-full h-full object-cover" />
                                 </div>
                             </div>
@@ -64,18 +67,21 @@ export default function RecentReviews({ reviews = [], loading = false, title = "
                                         <span className="font-black text-slate-900 leading-none mb-1 group-hover:text-blue-600 transition-colors">{review.user}</span>
                                         <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{review.location}</span>
                                     </div>
-                                    <div className="flex items-center gap-1.5 px-2 py-1 bg-amber-50 rounded-lg border border-amber-100/50">
+                                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-50 rounded-xl border border-amber-100/50">
                                         <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                                        <span className="text-[11px] font-black text-amber-600">{review.rating}</span>
+                                        <span className="text-xs font-black text-amber-600">{review.rating}</span>
                                     </div>
                                 </div>
-                                <p className="text-[13px] text-slate-500 leading-relaxed font-medium italic">"{review.comment}"</p>
+                                <div className="relative">
+                                    <p className="text-[13px] text-slate-500 leading-relaxed font-medium italic group-hover:text-slate-600 transition-colors">"{review.comment}"</p>
+                                </div>
                             </div>
                         </div>
                     ))
                 ) : (
-                    <div className="text-center py-10">
+                    <div className="text-center py-12 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-100">
                         <p className="text-slate-400 font-bold">No reviews yet.</p>
+                        <p className="text-xs text-slate-300 mt-1">Feedback will appear here once customers rate your business.</p>
                     </div>
                 )}
             </div>

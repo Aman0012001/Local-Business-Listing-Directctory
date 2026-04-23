@@ -120,62 +120,94 @@ function LeadDetailModal({ lead, onClose, onStatusChange }: {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg p-8 z-10">
-                <div className="flex items-start justify-between mb-6">
-                    <div>
-                        <h2 className="text-2xl font-black text-slate-900">{lead.name || 'Unknown'}</h2>
-                        <div className="flex items-center gap-2 mt-2">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={onClose} />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+                className="relative bg-white rounded-[40px] shadow-2xl w-full max-w-xl overflow-hidden z-10 border border-white/20">
+                
+                {/* Header with Background Gradient */}
+                <div className="h-32 bg-gradient-to-br from-blue-600 to-indigo-700 p-8 relative">
+                    <button onClick={onClose} className="absolute top-6 right-6 w-10 h-10 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all active:scale-90">
+                        <XCircle className="w-6 h-6" />
+                    </button>
+                    <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-white shadow-xl">
+                            <User className="w-8 h-8" />
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-black text-white">{lead.name || 'Anonymous User'}</h2>
+                            <p className="text-white/70 text-xs font-bold uppercase tracking-widest mt-1">Lead Details</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="p-10 -mt-6 bg-white rounded-t-[32px] relative z-20">
+                    <div className="grid grid-cols-2 gap-4 mb-8">
+                        <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100 flex flex-col gap-2">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Inquiry Type</span>
                             <TypeBadge type={lead.type} />
+                        </div>
+                        <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100 flex flex-col gap-2">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Current Status</span>
                             <StatusBadge status={lead.status} />
                         </div>
                     </div>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-700 transition-colors p-1">
-                        <XCircle className="w-6 h-6" />
-                    </button>
-                </div>
 
-                <div className="space-y-4 mb-6">
-                    {lead.email && (
-                        <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-                            <Mail className="w-4 h-4 text-slate-400" />
-                            <a href={`mailto:${lead.email}`} className="text-sm font-bold text-blue-600 hover:underline">{lead.email}</a>
+                    <div className="space-y-6 mb-10">
+                        <div className="flex items-center gap-5 p-5 bg-blue-50 rounded-3xl border border-blue-100 group">
+                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-blue-600 group-hover:scale-110 transition-transform">
+                                <Mail className="w-5 h-5" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Email Address</span>
+                                <a href={`mailto:${lead.email}`} className="text-sm font-black text-slate-900 hover:text-blue-600 transition-colors">{lead.email || '—'}</a>
+                            </div>
                         </div>
-                    )}
-                    {lead.phone && (
-                        <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-                            <Phone className="w-4 h-4 text-slate-400" />
-                            <a href={`tel:${lead.phone}`} className="text-sm font-bold text-slate-700">{lead.phone}</a>
-                        </div>
-                    )}
-                    {lead.message && (
-                        <div className="p-4 bg-slate-50 rounded-xl">
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Message</p>
-                            <p className="text-sm text-slate-700 leading-relaxed">{lead.message}</p>
-                        </div>
-                    )}
-                    <p className="text-xs text-slate-400 font-medium">
-                        Received: {new Date(lead.createdAt).toLocaleString()}
-                    </p>
-                </div>
 
-                <div>
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Update Status</p>
-                    <div className="relative">
-                        <select
-                            value={lead.status}
-                            onChange={(e) => handleStatus(e.target.value as LeadStatus)}
-                            disabled={updating}
-                            className="w-full pl-4 pr-10 py-3 rounded-xl text-sm font-bold border border-slate-200 bg-white text-slate-700 focus:border-blue-400 focus:ring-4 focus:ring-blue-50 outline-none transition-all appearance-none cursor-pointer disabled:opacity-50"
-                        >
-                            {(Object.keys(STATUS_CONFIG) as LeadStatus[]).map(s => (
-                                <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
-                            ))}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                            {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronDown className="w-4 h-4" />}
+                        <div className="flex items-center gap-5 p-5 bg-orange-50 rounded-3xl border border-orange-100 group">
+                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-orange-600 group-hover:scale-110 transition-transform">
+                                <Phone className="w-5 h-5" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Phone Number</span>
+                                <a href={`tel:${lead.phone}`} className="text-sm font-black text-slate-900 hover:text-orange-600 transition-colors">{lead.phone || '—'}</a>
+                            </div>
+                        </div>
+
+                        {lead.message && (
+                            <div className="p-8 bg-slate-50 rounded-[32px] border border-slate-100 italic relative overflow-hidden group">
+                                <MessageSquare className="absolute -right-4 -bottom-4 w-24 h-24 text-slate-200/50 -rotate-12 transition-transform group-hover:rotate-0" />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-4 relative z-10">Message from User</span>
+                                <p className="text-sm text-slate-600 leading-relaxed font-medium relative z-10">"{lead.message}"</p>
+                            </div>
+                        )}
+                        
+                        <div className="flex items-center justify-between px-2">
+                             <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">Received on {new Date(lead.createdAt).toLocaleDateString()} at {new Date(lead.createdAt).toLocaleTimeString()}</p>
+                        </div>
+                    </div>
+
+                    <div className="pt-8 border-t border-slate-100">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 text-center">Action Center</p>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="relative">
+                                <select
+                                    value={lead.status}
+                                    onChange={(e) => handleStatus(e.target.value as LeadStatus)}
+                                    disabled={updating}
+                                    className="w-full pl-6 pr-12 py-4 rounded-[20px] text-xs font-black uppercase tracking-widest border-2 border-slate-100 bg-white text-slate-900 focus:border-blue-400 outline-none transition-all appearance-none cursor-pointer disabled:opacity-50 shadow-sm"
+                                >
+                                    {(Object.keys(STATUS_CONFIG) as LeadStatus[]).map(s => (
+                                        <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
+                                    ))}
+                                </select>
+                                <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                    {updating ? <Loader2 className="w-4 h-4 animate-spin text-blue-500" /> : <ChevronDown className="w-5 h-5" />}
+                                </div>
+                            </div>
+                            <a href={`mailto:${lead.email}`} className="flex items-center justify-center gap-2 py-4 bg-slate-900 text-white rounded-[20px] font-black text-xs uppercase tracking-widest hover:bg-blue-600 transition-all active:scale-95 shadow-xl shadow-slate-900/10">
+                                <Mail className="w-4 h-4" /> Reply
+                            </a>
                         </div>
                     </div>
                 </div>

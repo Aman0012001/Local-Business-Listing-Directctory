@@ -213,7 +213,7 @@ export default function VendorListings() {
                 </div>
 
                 {/* Listings Grid */}
-                <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                     {loading ? (
                         <div className="col-span-full flex flex-col items-center justify-center py-20">
                             <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
@@ -221,42 +221,42 @@ export default function VendorListings() {
                         </div>
                     ) : paginatedListings.length > 0 ? (
                         paginatedListings.map((biz: any) => (
-                            <div key={biz.id} className="group bg-white rounded-[20px] overflow-hidden border border-black shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500 flex flex-col">
-                                <div className="relative h-56 overflow-hidden">
+                            <div key={biz.id} className="group bg-white rounded-[32px] overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500 flex flex-col relative">
+                                <div className="relative h-64 overflow-hidden">
                                     <ListingImage
                                         src={biz.coverImageUrl || biz.images?.[0]}
                                         alt={biz.title}
                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                     />
-                                    <div className="absolute top-4 left-4">
-                                        <span className={`px-4 py-1.5 bg-white/90 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${biz.status === 'approved' ? 'text-green-600' :
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
+                                    
+                                    <div className="absolute top-6 left-6">
+                                        <span className={`px-4 py-2 bg-white/90 backdrop-blur-md rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg ${biz.status === 'approved' ? 'text-green-600' :
                                             biz.status === 'rejected' ? 'text-red-500' : 'text-amber-600'
                                             }`}>{biz.status}</span>
                                     </div>
-                                    <div className="absolute top-4 right-4">
-                                        {/* <button className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-xl flex items-center justify-center text-slate-700 hover:bg-white transition-all shadow-sm">
-                                            <MoreVertical className="w-5 h-5" />
-                                        </button> */}
+                                    
+                                    <div className="absolute bottom-6 left-6 right-6">
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/80 mb-2 block">{biz.category?.name || 'Business'}</span>
+                                        <h3 className="text-2xl font-black text-white group-hover:text-blue-400 transition-colors leading-tight line-clamp-1">{biz.title}</h3>
                                     </div>
                                 </div>
 
                                 <div className="p-8 flex-grow flex flex-col">
-                                    <div className="flex items-start justify-between mb-2">
-                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 mb-2 block">{biz.category?.name || 'Business'}</span>
-                                        <div className="flex items-center gap-1.5 px-2 py-1 bg-amber-50 rounded-lg">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <div className="flex items-center gap-2 text-slate-400 font-bold text-sm">
+                                            <MapPin className="w-4 h-4 text-blue-500" />
+                                            <span className="truncate">{biz.city || biz.location || 'Location'}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 rounded-xl border border-amber-100/50">
                                             <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
                                             <span className="text-xs font-black text-amber-600">{biz.averageRating || 0}</span>
                                         </div>
                                     </div>
-                                    <h3 className="text-2xl font-black text-slate-900 mb-3 group-hover:text-blue-600 transition-colors leading-tight">{biz.title}</h3>
-                                    <div className="flex items-center gap-2 text-slate-400 font-bold text-sm mb-6">
-                                        <MapPin className="w-4 h-4" />
-                                        <span>{biz.city || biz.location || 'Location'}</span>
-                                    </div>
 
-                                    <div className="grid grid-cols-2 gap-4 mt-auto">
-                                        <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-3">
-                                            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-3 group/stat hover:bg-blue-50 transition-colors">
+                                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover/stat:scale-110 transition-transform">
                                                 <Eye className="w-4 h-4 text-blue-500" />
                                             </div>
                                             <div>
@@ -264,8 +264,8 @@ export default function VendorListings() {
                                                 <p className="text-sm font-black text-slate-900">{biz.totalViews || 0}</p>
                                             </div>
                                         </div>
-                                        <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-3">
-                                            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                                        <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-3 group/stat hover:bg-orange-50 transition-colors">
+                                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover/stat:scale-110 transition-transform">
                                                 <MessageSquare className="w-4 h-4 text-orange-500" />
                                             </div>
                                             <div>
@@ -277,17 +277,16 @@ export default function VendorListings() {
 
                                     <div className="space-y-3 mt-8">
                                         <div className="grid grid-cols-2 gap-3">
-                                            <button onClick={() => handleEdit(biz)} className="py-3.5 px-4 bg-slate-900 text-white rounded-xl font-black text-xs hover:bg-slate-800 transition-all active:scale-95">
-                                                Edit Listing
+                                            <button onClick={() => handleEdit(biz)} className="py-4 px-4 bg-slate-900 text-white rounded-2xl font-black text-xs hover:bg-blue-600 transition-all active:scale-95 shadow-lg shadow-slate-900/10">
+                                                Edit Details
                                             </button>
-                                            <Link href={`/business/${biz.slug}`} className="py-3.5 px-4 bg-white text-slate-900 border border-black rounded-xl font-black text-xs hover:bg-slate-50 transition-all active:scale-95 text-center">
+                                            <Link href={`/business/${biz.slug}`} className="py-4 px-4 bg-white text-slate-900 border border-slate-200 rounded-2xl font-black text-xs hover:bg-slate-50 transition-all active:scale-95 text-center">
                                                 View Page
                                             </Link>
                                         </div>
                                         <button
                                             onClick={() => {
                                                 const limit = activeSub?.plan?.dashboardFeatures?.maxKeywords || 15;
-                                                // Convert metaKeywords string to array if searchKeywords is missing
                                                 const currentKeywords = biz.searchKeywords ||
                                                     (biz.metaKeywords ? biz.metaKeywords.split(',').map((k: string) => k.trim()).filter(Boolean) : []);
 
@@ -298,9 +297,9 @@ export default function VendorListings() {
                                                     limit
                                                 });
                                             }}
-                                            className="w-full flex items-center justify-center gap-2 py-3.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl font-black text-xs hover:bg-blue-100 transition-all active:scale-95"
+                                            className="w-full flex items-center justify-center gap-2 py-4 bg-blue-50 text-blue-600 border border-blue-100 rounded-2xl font-black text-xs hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all active:scale-95"
                                         >
-                                            <Hash className="w-4 h-4" /> Manage Keywords
+                                            <Hash className="w-4 h-4" /> Manage Search Keywords
                                         </button>
                                     </div>
                                 </div>
