@@ -356,13 +356,22 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
                             className="group flex flex-col gap-6 bg-white rounded-3xl border border-slate-100 p-3 hover:border-slate-200 transition-all duration-500 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.06)]"
                         >
                             <div className="relative h-64 rounded-2xl overflow-hidden bg-slate-50">
-                                {item.images?.[0] ? (
-                                    <img src={getImageUrl(item.images[0]) as string} alt={item.title} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center">
-                                        <Building2 className="w-12 h-12 text-slate-200" />
-                                    </div>
-                                )}
+                                {(() => {
+                                    const imgSrc = item.images?.[0]
+                                        ? getImageUrl(item.images[0]) as string
+                                        : item.coverImageUrl
+                                            ? getImageUrl(item.coverImageUrl) as string
+                                            : item.logoUrl
+                                                ? getImageUrl(item.logoUrl) as string
+                                                : null;
+                                    return imgSrc ? (
+                                        <img src={imgSrc} alt={item.title} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center">
+                                            <Building2 className="w-12 h-12 text-slate-200" />
+                                        </div>
+                                    );
+                                })()}
                                 <div className="absolute top-4 left-4">
                                     <div className="inline-flex items-center gap-2 px-3.5 py-2 bg-white/95 backdrop-blur-md rounded-xl shadow-lg border border-white/50">
                                         <Tag className="w-3.5 h-3.5 text-indigo-500" />

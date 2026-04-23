@@ -120,7 +120,7 @@ export default function VendorDemandPage() {
 
                         <div className="divide-y divide-slate-100">
                             {insights.map((insight, idx) => (
-                                <div key={insight.keyword} className="p-6 md:p-8 flex flex-col md:flex-row gap-6 items-start md:items-center hover:bg-blue-50/30 transition-colors">
+                                <div key={`${insight.keyword}-${idx}`} className="p-6 md:p-8 flex flex-col md:flex-row gap-6 items-start md:items-center hover:bg-blue-50/30 transition-colors">
                                     <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 font-black text-lg shrink-0">
                                         #{idx + 1}
                                     </div>

@@ -967,6 +967,21 @@ QueryFailedError: column Listing__Listing_vendor__Listing__Listing_vendor_user.d
 [2026-04-16T23:03:35.777Z] findBySlug: test-mnh580gx (User: ddddd@gmail.com)
 [2026-04-16T23:03:36.831Z] findBySlug: test-mnh580gx - Found in DB. Status: approved
 [2026-04-16T23:03:37.247Z] findBySlug: test-mnh580gx - SUCCESS
-[2026-04-20T06:55:31.338Z] findBySlug: smilecare-dental-clinic-mnd2rjh5 (User: Public)
-[2026-04-20T06:55:31.854Z] findBySlug: smilecare-dental-clinic-mnd2rjh5 - Found in DB. Status: approved
-[2026-04-20T06:55:31.980Z] findBySlug: smilecare-dental-clinic-mnd2rjh5 - SUCCESS
+[2026-04-21T12:20:45.768Z] findBySlug: dev-vendor-listing3-mnvuffaq (User: Public)
+[2026-04-21T12:20:47.521Z] findBySlug: dev-vendor-listing3-mnvuffaq (User: dev@mail.com)
+[2026-04-21T12:20:47.863Z] findBySlug: dev-vendor-listing3-mnvuffaq - Found in DB. Status: approved
+[2026-04-21T12:20:47.864Z] findBySlug: dev-vendor-listing3-mnvuffaq - SUCCESS
+[2026-04-21T12:20:49.051Z] findBySlug: dev-vendor-listing3-mnvuffaq - Found in DB. Status: approved
+[2026-04-21T12:20:49.351Z] findBySlug: dev-vendor-listing3-mnvuffaq - SUCCESS
+[2026-04-21T15:55:20.915Z] findBySlug: dev-vendor-listing3-mnvuffaq (User: Public)
+[2026-04-21T15:55:21.425Z] findBySlug: dev-vendor-listing3-mnvuffaq - Found in DB. Status: approved
+[2026-04-21T15:55:21.765Z] findBySlug: dev-vendor-listing3-mnvuffaq - SUCCESS
+[2026-04-21T16:40:47.006Z] findBySlug: sdf-mnz2tiga (User: Public)
+[2026-04-21T16:40:47.013Z] findBySlug: dev-vendor-listing3-mnvuffaq (User: Public)
+[2026-04-21T16:40:48.172Z] findBySlug: dev-vendor-listing3-mnvuffaq - Found in DB. Status: approved
+[2026-04-21T16:40:48.289Z] findBySlug: sdf-mnz2tiga - Found in DB. Status: approved
+[2026-04-21T16:40:48.598Z] findBySlug: sdf-mnz2tiga - SUCCESS
+[2026-04-21T16:40:48.724Z] findBySlug: dev-vendor-listing3-mnvuffaq - SUCCESS
+[2026-04-21T16:43:14.556Z] findBySlug: dev-vendor-listing-mnvoe07u (User: dev@mail.com)
+[2026-04-21T16:43:14.940Z] findBySlug: dev-vendor-listing-mnvoe07u - Found in DB. Status: approved
+[2026-04-21T16:43:14.944Z] findBySlug: dev-vendor-listing-mnvoe07u - SUCCESS
