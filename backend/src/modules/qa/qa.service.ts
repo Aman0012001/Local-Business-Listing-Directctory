@@ -87,37 +87,31 @@ export class QaService {
         return this.answerRepository.save(answer);
     }
 
-    async getBusinessQA(businessId: string, isAdmin: boolean = false) {
-        const query = this.questionRepository.createQueryBuilder('q')
-            .leftJoinAndSelect('q.user', 'qu')
-            .leftJoinAndSelect('q.answers', 'a')
-            .leftJoinAndSelect('a.user', 'au')
-            .where('q.business_id = :businessId', { businessId });
+    async getBusinessQA(businessId: string, isAdmin = false) {
+        const questions = await this.questionRepository.find({
+            where: {
+                businessId,
+                ...(isAdmin ? {} : { status: QAStatus.APPROVED })
+            },
+            relations: ['user', 'answers', 'answers.user'],
+            order: { createdAt: 'DESC' }
+        });
 
-        if (!isAdmin) {
-            query.andWhere('q.status = :qStatus', { qStatus: QAStatus.APPROVED });
-            // For answers, we manually filter or use a controlled join
-        }
-
-        const questions = await query.getMany();
-
-        // Filter and sort answers manually to handle visibility and official priority
-        return questions.map(q => {
-            let filteredAnswers = q.answers;
+        return questions.map((q) => {
+            let filteredAnswers = q.answers || [];
             if (!isAdmin) {
                 filteredAnswers = filteredAnswers.filter(a => a.status === QAStatus.APPROVED);
             }
 
-            // Sort: Official first, then by date
             filteredAnswers.sort((a, b) => {
                 if (a.isOfficial && !b.isOfficial) return -1;
                 if (!a.isOfficial && b.isOfficial) return 1;
-                return b.createdAt.getTime() - a.createdAt.getTime();
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
             });
 
             return {
                 ...q,
-                answers: filteredAnswers
+                answers: filteredAnswers,
             };
         });
     }

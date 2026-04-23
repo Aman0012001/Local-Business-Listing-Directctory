@@ -988,3 +988,9 @@ QueryFailedError: column Listing__Listing_vendor__Listing__Listing_vendor_user.d
 [2026-04-23T16:37:28.341Z] findBySlug: sdf-mnz2tiga (User: Public)
 [2026-04-23T16:37:29.306Z] findBySlug: sdf-mnz2tiga - Found in DB. Status: approved
 [2026-04-23T16:37:29.611Z] findBySlug: sdf-mnz2tiga - SUCCESS
+[2026-04-23T16:43:48.200Z] findBySlug: test-mnh580gx (User: Public)
+[2026-04-23T16:43:48.828Z] findBySlug: test-mnh580gx - Found in DB. Status: approved
+[2026-04-23T16:43:49.170Z] findBySlug: test-mnh580gx - SUCCESS
+[2026-04-23T16:45:05.786Z] findBySlug: test-mnh580gx (User: Public)
+[2026-04-23T16:45:06.914Z] findBySlug: test-mnh580gx - Found in DB. Status: approved
+[2026-04-23T16:45:07.022Z] findBySlug: test-mnh580gx - SUCCESS

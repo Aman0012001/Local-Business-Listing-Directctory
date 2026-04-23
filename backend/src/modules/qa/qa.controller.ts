@@ -47,9 +47,9 @@ export class QaController {
 
     @Public()
     @Get('business/:businessId')
-    @ApiOperation({ summary: 'Get all approved Q&A for a business' })
-    @ApiResponse({ status: 200, description: 'List of approved Q&A' })
-    getBusinessQA(@Param('businessId', ParseUuidPipe) businessId: string) {
+    @ApiOperation({ summary: 'Get Q&A for a business listing' })
+    @ApiResponse({ status: 200, description: 'List of questions and answers' })
+    async getBusinessQA(@Param('businessId', ParseUuidPipe) businessId: string) {
         return this.qaService.getBusinessQA(businessId);
     }
 

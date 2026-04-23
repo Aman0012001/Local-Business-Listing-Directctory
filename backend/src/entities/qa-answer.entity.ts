@@ -9,6 +9,7 @@ import {
     Index,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
+import { Exclude } from 'class-transformer';
 import { User } from './user.entity';
 import { QAQuestion } from './qa-question.entity';
 import { QAStatus } from './qa.enums';
@@ -24,6 +25,7 @@ export class QAAnswer {
     @Index()
     questionId: string;
 
+    @Exclude()
     @ManyToOne(() => QAQuestion, (question) => question.answers)
     @JoinColumn({ name: 'question_id' })
     question: QAQuestion;
