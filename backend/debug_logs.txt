@@ -985,3 +985,6 @@ QueryFailedError: column Listing__Listing_vendor__Listing__Listing_vendor_user.d
 [2026-04-21T16:43:14.556Z] findBySlug: dev-vendor-listing-mnvoe07u (User: dev@mail.com)
 [2026-04-21T16:43:14.940Z] findBySlug: dev-vendor-listing-mnvoe07u - Found in DB. Status: approved
 [2026-04-21T16:43:14.944Z] findBySlug: dev-vendor-listing-mnvoe07u - SUCCESS
+[2026-04-23T16:37:28.341Z] findBySlug: sdf-mnz2tiga (User: Public)
+[2026-04-23T16:37:29.306Z] findBySlug: sdf-mnz2tiga - Found in DB. Status: approved
+[2026-04-23T16:37:29.611Z] findBySlug: sdf-mnz2tiga - SUCCESS
