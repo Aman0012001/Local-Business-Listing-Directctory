@@ -52,17 +52,6 @@ async function bootstrap() {
         const allowedOrigins = corsOrigin ? corsOrigin.split(',').map(o => o.trim()) : [];
         const nodeEnv = configService.get('NODE_ENV');
 
-        app.enableCors({
-            origin: (origin, callback) => {
-                // Allow if no origin (Postman, mobile apps, server-to-server)
-                if (!origin) return callback(null, true);
-
-                // 1. Check explicit allowed origins from ENV
-                if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
-                    return callback(null, true);
-                }
-
-                // 2. Allow dynamic subdomains via Regex
         const allowedPatterns = [
             /^https:\/\/.*\.netlify\.app$/,      // All Netlify dynamic domains
             /^https:\/\/.*\.railway\.app$/,      // All Railway dynamic domains
