@@ -63,21 +63,37 @@ async function bootstrap() {
                 }
 
                 // 2. Allow dynamic subdomains via Regex
-                const allowedPatterns = [
-                    /^https:\/\/.*\.netlify\.app$/,      // All Netlify dynamic domains
-                    /^https:\/\/.*\.railway\.app$/,      // All Railway dynamic domains
-                    /https:\/\/singular-melomakarona-8c3308\.netlify\.app/, // Correct domain from user
-                    /^http:\/\/localhost(:\d+)?$/,        // localhost with any port
-                    /^http:\/\/127\.0.0\.1(:\d+)?$/,    // 127.0.0.1 with any port
-                ];
+        const allowedPatterns = [
+            /^https:\/\/.*\.netlify\.app$/,      // All Netlify dynamic domains
+            /^https:\/\/.*\.railway\.app$/,      // All Railway dynamic domains
+            /https:\/\/endearing-taffy-91a2c6\.netlify\.app/, // User's specific Netlify domain
+            /https:\/\/singular-melomakarona-8c3308\.netlify\.app/, // Legacy Netlify domain
+            /^http:\/\/localhost(:\d+)?$/,        // localhost with any port
+            /^http:\/\/127\.0.0\.1(:\d+)?$/,    // 127.0.0.1 with any port
+        ];
 
-                const isMatchingPattern = allowedPatterns.some(pattern => pattern.test(origin));
+        app.enableCors({
+            origin: (origin, callback) => {
+                // Allow if no origin (Postman, mobile apps, server-to-server)
+                if (!origin) return callback(null, true);
+
+                // 1. Check explicit allowed origins from ENV
+                if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+                    return callback(null, true);
+                }
+
+                const isMatchingPattern = allowedPatterns.some(pattern => {
+                    if (pattern instanceof RegExp) {
+                        return pattern.test(origin);
+                    }
+                    return pattern === origin;
+                });
 
                 if (isMatchingPattern) {
                     return callback(null, true);
                 }
 
-                // 1b. During development or if domain contains common aliases, allow (Fallback)
+                // Fallback for development
                 if (nodeEnv !== 'production' || origin.includes('localhost') || origin.includes('127.0.0.1')) {
                     return callback(null, true);
                 }

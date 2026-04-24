@@ -15,11 +15,19 @@ import { User } from '../../entities/user.entity';
 @WebSocketGateway({
     cors: {
         origin: (origin: string, callback: any) => {
-            // In dev allow all local origins
-            if (!origin || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+            const allowedOrigins = [
+                'https://endearing-taffy-91a2c6.netlify.app',
+                'https://singular-melomakarona-8c3308.netlify.app',
+                'http://localhost:3000',
+                'http://localhost:3001',
+                'http://127.0.0.1:3000',
+                'http://127.0.0.1:3001',
+            ];
+            
+            if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.netlify.app') || origin.endsWith('.railway.app')) {
                 return callback(null, true);
             }
-            callback(null, true);
+            callback(new Error('Not allowed by CORS'));
         },
         credentials: true,
     },
