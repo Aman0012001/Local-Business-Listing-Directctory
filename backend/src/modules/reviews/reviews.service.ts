@@ -138,49 +138,58 @@ export class ReviewsService {
      * Get reviews with filters
      */
     async findAll(getReviewsDto: GetReviewsDto) {
-        const { page = 1, limit = 20, businessId, userId, rating } = getReviewsDto;
-        const skip = calculateSkip(page, limit);
+        try {
+            const { businessId, userId, vendorId } = getReviewsDto;
+            
+            // Explicitly convert types to avoid TypeORM/Postgres issues with strings
+            const page = Number(getReviewsDto.page) || 1;
+            const limit = Number(getReviewsDto.limit) || 20;
+            const rating = getReviewsDto.rating ? Number(getReviewsDto.rating) : undefined;
+            
+            const skip = calculateSkip(page, limit);
 
-        const queryBuilder = this.reviewRepository
-            .createQueryBuilder('review')
-            .leftJoinAndSelect('review.user', 'user')
-            .leftJoinAndSelect('review.business', 'business')
-            .leftJoinAndSelect('review.replies', 'replies', 'replies.isApproved = :replyApproved', { replyApproved: true })
-            .leftJoinAndSelect('replies.user', 'replyUser')
-            .where('review.isApproved = :isApproved', { isApproved: true });
+            const queryBuilder = this.reviewRepository
+                .createQueryBuilder('review')
+                .leftJoinAndSelect('review.user', 'user')
+                .leftJoinAndSelect('review.business', 'business')
+                .leftJoinAndSelect('review.replies', 'replies', 'replies.isApproved = :replyApproved', { replyApproved: true })
+                .leftJoinAndSelect('replies.user', 'replyUser')
+                .where('review.isApproved = :isApproved', { isApproved: true });
 
-        // Filter by business
-        if (businessId) {
-            queryBuilder.andWhere('review.businessId = :businessId', { businessId });
+            // Filter by business
+            if (businessId) {
+                queryBuilder.andWhere('review.businessId = :businessId', { businessId });
+            }
+
+            // Filter by user
+            if (userId) {
+                queryBuilder.andWhere('review.userId = :userId', { userId });
+            }
+
+            // Filter by rating
+            if (rating !== undefined && !isNaN(rating)) {
+                queryBuilder.andWhere('review.rating = :rating', { rating });
+            }
+
+            // Filter by vendor
+            if (vendorId) {
+                queryBuilder.andWhere('business.vendorId = :vendorId', { vendorId });
+            }
+
+            // Order by newest first
+            queryBuilder.orderBy('review.createdAt', 'DESC');
+
+            // Get total count and paginated results
+            const [reviews, total] = await Promise.all([
+                queryBuilder.skip(skip).take(limit).getMany(),
+                queryBuilder.getCount()
+            ]);
+
+            return createPaginatedResponse(reviews, page, limit, total);
+        } catch (error) {
+            console.error('Error in ReviewsService.findAll:', error);
+            throw new BadRequestException('Could not retrieve reviews. Please check your filter parameters.');
         }
-
-        // Filter by user
-        if (userId) {
-            queryBuilder.andWhere('review.userId = :userId', { userId });
-        }
-
-        // Filter by rating
-        if (rating) {
-            queryBuilder.andWhere('review.rating = :rating', { rating });
-        }
-
-        // Filter by vendor
-        if (getReviewsDto.vendorId) {
-            queryBuilder.andWhere('business.vendorId = :vendorId', {
-                vendorId: getReviewsDto.vendorId,
-            });
-        }
-
-        // Order by newest first
-        queryBuilder.orderBy('review.createdAt', 'DESC');
-
-        // Get total count
-        const total = await queryBuilder.getCount();
-
-        // Get paginated results
-        const reviews = await queryBuilder.skip(skip).take(limit).getMany();
-
-        return createPaginatedResponse(reviews, page, limit, total);
     }
 
     /**
@@ -464,38 +473,47 @@ export class ReviewsService {
      * Get all reviews for admin with suspicion filter
      */
     async findAllForAdmin(query: any) {
-        const { page = 1, limit = 20, isSuspicious, isApproved, businessId } = query;
-        const skip = calculateSkip(page, limit);
+        try {
+            const { isSuspicious, isApproved, businessId } = query;
+            const page = Number(query.page) || 1;
+            const limit = Number(query.limit) || 20;
+            const skip = calculateSkip(page, limit);
 
-        const queryBuilder = this.reviewRepository
-            .createQueryBuilder('review')
-            .leftJoinAndSelect('review.user', 'user')
-            .leftJoinAndSelect('review.business', 'business')
-            .leftJoinAndSelect('business.vendor', 'vendor')
-            .leftJoinAndSelect('vendor.user', 'vendor_user');
+            const queryBuilder = this.reviewRepository
+                .createQueryBuilder('review')
+                .leftJoinAndSelect('review.user', 'user')
+                .leftJoinAndSelect('review.business', 'business')
+                .leftJoinAndSelect('business.vendor', 'vendor')
+                .leftJoinAndSelect('vendor.user', 'vendor_user');
 
-        if (isSuspicious !== undefined) {
-            queryBuilder.andWhere('review.isSuspicious = :isSuspicious', { 
-                isSuspicious: isSuspicious === 'true' || isSuspicious === true 
-            });
+            if (isSuspicious !== undefined) {
+                queryBuilder.andWhere('review.isSuspicious = :isSuspicious', { 
+                    isSuspicious: isSuspicious === 'true' || isSuspicious === true 
+                });
+            }
+
+            if (isApproved !== undefined) {
+                queryBuilder.andWhere('review.isApproved = :isApproved', { 
+                    isApproved: isApproved === 'true' || isApproved === true 
+                });
+            }
+
+            if (businessId) {
+                queryBuilder.andWhere('review.businessId = :businessId', { businessId });
+            }
+
+            queryBuilder.orderBy('review.createdAt', 'DESC');
+
+            const [reviews, total] = await Promise.all([
+                queryBuilder.skip(skip).take(limit).getMany(),
+                queryBuilder.getCount()
+            ]);
+
+            return createPaginatedResponse(reviews, page, limit, total);
+        } catch (error) {
+            console.error('Error in ReviewsService.findAllForAdmin:', error);
+            throw new BadRequestException('Could not retrieve admin reviews.');
         }
-
-        if (isApproved !== undefined) {
-            queryBuilder.andWhere('review.isApproved = :isApproved', { 
-                isApproved: isApproved === 'true' || isApproved === true 
-            });
-        }
-
-        if (businessId) {
-            queryBuilder.andWhere('review.businessId = :businessId', { businessId });
-        }
-
-        queryBuilder.orderBy('review.createdAt', 'DESC');
-
-        const total = await queryBuilder.getCount();
-        const reviews = await queryBuilder.skip(skip).take(limit).getMany();
-
-        return createPaginatedResponse(reviews, page, limit, total);
     }
 
     /**
@@ -527,26 +545,34 @@ export class ReviewsService {
      * Find all reviews for businesses owned by a vendor
      */
     async findVendorReviews(userId: string, query: GetReviewsDto) {
-        const vendor = await this.vendorRepository.findOne({ where: { userId } });
-        if (!vendor) {
-            throw new ForbiddenException('Only vendors can access this');
+        try {
+            const vendor = await this.vendorRepository.findOne({ where: { userId } });
+            if (!vendor) {
+                throw new ForbiddenException('Only vendors can access this');
+            }
+
+            const page = Number(query.page) || 1;
+            const limit = Number(query.limit) || 20;
+            const skip = calculateSkip(page, limit);
+
+            const queryBuilder = this.reviewRepository
+                .createQueryBuilder('review')
+                .leftJoinAndSelect('review.user', 'user')
+                .leftJoinAndSelect('review.business', 'business')
+                .leftJoinAndSelect('review.replies', 'replies')
+                .leftJoinAndSelect('replies.user', 'replyUser')
+                .where('business.vendorId = :vendorId', { vendorId: vendor.id })
+                .orderBy('review.createdAt', 'DESC');
+
+            const [reviews, total] = await Promise.all([
+                queryBuilder.skip(skip).take(limit).getMany(),
+                queryBuilder.getCount()
+            ]);
+
+            return createPaginatedResponse(reviews, page, limit, total);
+        } catch (error) {
+            console.error('Error in ReviewsService.findVendorReviews:', error);
+            throw new BadRequestException('Could not retrieve vendor reviews.');
         }
-
-        const { page = 1, limit = 20 } = query;
-        const skip = calculateSkip(page, limit);
-
-        const queryBuilder = this.reviewRepository
-            .createQueryBuilder('review')
-            .leftJoinAndSelect('review.user', 'user')
-            .leftJoinAndSelect('review.business', 'business')
-            .leftJoinAndSelect('review.replies', 'replies')
-            .leftJoinAndSelect('replies.user', 'replyUser')
-            .where('business.vendorId = :vendorId', { vendorId: vendor.id })
-            .orderBy('review.createdAt', 'DESC');
-
-        const total = await queryBuilder.getCount();
-        const reviews = await queryBuilder.skip(skip).take(limit).getMany();
-
-        return createPaginatedResponse(reviews, page, limit, total);
     }
 }

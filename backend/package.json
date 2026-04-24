@@ -20,9 +20,9 @@
         "test:cov": "jest --coverage",
         "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
         "test:e2e": "jest --config ./test/jest-e2e.json",
-        "migration:generate": "typeorm migration:generate -d src/config/typeorm.config.ts",
-        "migration:run": "typeorm migration:run -d src/config/typeorm.config.ts",
-        "migration:revert": "typeorm migration:revert -d src/config/typeorm.config.ts",
+        "migration:generate": "npx ts-node --transpile-only -r tsconfig-paths/register ../node_modules/typeorm/cli.js migration:generate -d src/data-source.ts",
+        "migration:run": "npx ts-node --transpile-only -r tsconfig-paths/register ../node_modules/typeorm/cli.js migration:run -d src/data-source.ts",
+        "migration:revert": "npx ts-node --transpile-only -r tsconfig-paths/register ../node_modules/typeorm/cli.js migration:revert -d src/data-source.ts",
         "seed": "ts-node src/database/seeds/run-seeds.ts",
         "search:sync": "curl -X POST http://process.env.NEXT_PUBLIC_API_URL/api/v1/search/sync"
     },

@@ -141,34 +141,9 @@ export class User {
     @Column({
         name: 'notification_settings',
         type: 'jsonb',
-        default: {
-            inApp: {
-                inquiry: true,
-                lead: true,
-                review: true,
-                message: true,
-                offers: true,
-                system: true,
-            },
-            push: {
-                inquiry: true,
-                lead: true,
-                review: true,
-                message: true,
-                offers: false,
-                system: true,
-            },
-            email: {
-                inquiry: true,
-                lead: false,
-                review: false,
-                message: false,
-                offers: false,
-                system: true,
-            },
-        },
+        default: () => "'{}'",
     })
-    notificationSettings: any;
+    notificationSettings: Record<string, any> = {};
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;

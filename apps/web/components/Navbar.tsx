@@ -14,6 +14,23 @@ import { chatApi } from '../services/chat.service';
 export default function Navbar() {
     const { user, logout } = useAuth();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    // Lock body scroll when mobile menu is open
+    useEffect(() => {
+        if (isMobileMenuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isMobileMenuOpen]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [cities, setCities] = useState<City[]>([]);
     const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -84,6 +101,7 @@ export default function Navbar() {
     };
 
     const timeAgo = (date: string) => {
+        if (!isMounted) return '...'; // Prevent mismatch
         const diff = Date.now() - new Date(date).getTime();
         const m = Math.floor(diff / 60000);
         if (m < 1) return 'just now';
@@ -154,52 +172,33 @@ export default function Navbar() {
                                 </button>
 
                                 {activeDropdown === 'categories' && (
-                                    <div className="absolute top-full left-0  w-64 animate-in fade-in slide-in-from-top-2 duration-200 " style={{ zIndex: "1000" }}>
-
-                                        <div className="grid grid-cols-4 gap-6 p-4">
-                                            {activeDropdown === 'categories' && (
-                                                <div className="absolute top-full left-1/2 -translate-x-1/2 pt-3 w-[700px] animate-in fade-in slide-in-from-top-2 duration-200">
-
-                                                    <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-6">
-
-                                                        <div className="grid grid-cols-4 gap-6">
-
-                                                            {categories.map((cat) => (
-                                                                <Link
-                                                                    key={cat.id}
-                                                                    href={`/categories/${cat.slug}`}
-                                                                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group"
-                                                                >
-                                                                    <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500">
-                                                                        <Search className="w-4 h-4" />
-                                                                    </div>
-
-                                                                    <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900">
-                                                                        {cat.name}
-                                                                    </span>
-                                                                </Link>
-                                                            ))}
-
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 pt-3 w-[700px] animate-in fade-in slide-in-from-top-2 duration-200" style={{ zIndex: "1000" }}>
+                                        <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-6">
+                                            <div className="grid grid-cols-4 gap-6">
+                                                {categories.map((cat) => (
+                                                    <Link
+                                                        key={cat.id}
+                                                        href={`/categories/${cat.slug}`}
+                                                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group"
+                                                    >
+                                                        <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500">
+                                                            <Search className="w-4 h-4" />
                                                         </div>
-
-                                                        <div className="border-t border-slate-100 mt-4 pt-3 text-center">
-                                                            <Link
-                                                                href="/categories"
-                                                                className="text-xs font-bold uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920]"
-                                                            >
-                                                                View All Categories
-                                                            </Link>
-                                                        </div>
-
-                                                    </div>
-
-                                                </div>
-                                            )}
-                                            {/* <Link href="/categories" className="mt-2 text-center py-2 text-xs font-bold uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920] border-t border-slate-50 pt-3">
+                                                        <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900">
+                                                            {cat.name}
+                                                        </span>
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                            <div className="border-t border-slate-100 mt-4 pt-3 text-center">
+                                                <Link
+                                                    href="/categories"
+                                                    className="text-xs font-bold uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920]"
+                                                >
                                                     View All Categories
-                                                </Link> */}
+                                                </Link>
+                                            </div>
                                         </div>
-
                                     </div>
                                 )}
                             </div>
@@ -213,57 +212,53 @@ export default function Navbar() {
                                 <button className="flex items-center gap-1 text-[#2D3E50]/70 font-bold text-[15px] px-4 py-2 rounded-xl hover:bg-slate-50 hover:text-[#2D3E50] transition-all group">
                                     Businesses <ChevronDown className={`w-4 h-4 opacity-40 group-hover:opacity-100 transition-all ${activeDropdown === 'businesses' ? 'rotate-180' : ''}`} />
                                 </button>
-                                <div className="absolute top-full left-0  w-64 animate-in fade-in slide-in-from-top-2 duration-200 " style={{ zIndex: "1000" }}>
-
-                                    <div className="grid grid-cols-4 gap-6 p-4"></div>
-                                    {activeDropdown === 'businesses' && (
-                                        <div className="absolute  top-full left-1/2 -translate-x-1/2 pt-2 w-64 animate-in fade-in slide-in-from-top-2 duration-200" >
-                                            <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-2">
-                                                <div className="grid grid-cols-1 gap-6 ">
-                                                    <Link href="/search?filter=featured" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
-                                                        <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-[#FF7A30]">
-                                                            <Building2 className="w-4 h-4" />
-                                                        </div>
-                                                        <div className="flex flex-col">
-                                                            <span className="text-sm font-bold text-slate-900">Featured</span>
-                                                            <span className="text-[10px] text-slate-400 font-medium italic">Hand-picked best locals</span>
-                                                        </div>
-                                                    </Link>
-                                                    <Link href="/search?filter=new" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
-                                                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
-                                                            <Search className="w-4 h-4" />
-                                                        </div>
-                                                        <div className="flex flex-col">
-                                                            <span className="text-sm font-bold text-slate-900">New Listings</span>
-                                                            <span className="text-[10px] text-slate-400 font-medium italic">Fresh arrivals this week</span>
-                                                        </div>
-                                                    </Link>
-                                                    <Link href="/offers-events" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
-                                                        <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-500">
-                                                            <Megaphone className="w-4 h-4" />
-                                                        </div>
-                                                        <div className="flex flex-col">
-                                                            <span className="text-sm font-bold text-slate-900">Offer & Events</span>
-                                                            <span className="text-[10px] text-slate-400 font-medium italic">Best deals & local events</span>
-                                                        </div>
-                                                    </Link>
-                                                    <Link href="/broadcast-request" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
-                                                        <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-500">
-                                                            <Megaphone className="w-4 h-4" />
-                                                        </div>
-                                                        <div className="flex flex-col">
-                                                            <span className="text-sm font-bold text-slate-900">Broadcast Request</span>
-                                                            <span className="text-[10px] text-slate-400 font-medium italic">Get quotes from experts</span>
-                                                        </div>
-                                                    </Link>
-                                                    <Link href="/search" className="mt-2 text-center py-2 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-900 border-t border-slate-50 pt-3">
-                                                        Advanced Search
-                                                    </Link>
-                                                </div>
+                                {activeDropdown === 'businesses' && (
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-64 animate-in fade-in slide-in-from-top-2 duration-200" style={{ zIndex: "1000" }}>
+                                        <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-2">
+                                            <div className="grid grid-cols-1 gap-1">
+                                                <Link href="/search?filter=featured" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
+                                                    <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-[#FF7A30]">
+                                                        <Building2 className="w-4 h-4" />
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-bold text-slate-900">Featured</span>
+                                                        <span className="text-[10px] text-slate-400 font-medium italic">Hand-picked best locals</span>
+                                                    </div>
+                                                </Link>
+                                                <Link href="/search?filter=new" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
+                                                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
+                                                        <Search className="w-4 h-4" />
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-bold text-slate-900">New Listings</span>
+                                                        <span className="text-[10px] text-slate-400 font-medium italic">Fresh arrivals this week</span>
+                                                    </div>
+                                                </Link>
+                                                <Link href="/offers-events" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
+                                                    <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-500">
+                                                        <Megaphone className="w-4 h-4" />
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-bold text-slate-900">Offer & Events</span>
+                                                        <span className="text-[10px] text-slate-400 font-medium italic">Best deals & local events</span>
+                                                    </div>
+                                                </Link>
+                                                <Link href="/broadcast-request" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
+                                                    <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-500">
+                                                        <Megaphone className="w-4 h-4" />
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-bold text-slate-900">Broadcast Request</span>
+                                                        <span className="text-[10px] text-slate-400 font-medium italic">Get quotes from experts</span>
+                                                    </div>
+                                                </Link>
+                                                <Link href="/search" className="mt-2 text-center py-2 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-900 border-t border-slate-50 pt-3">
+                                                    Advanced Search
+                                                </Link>
                                             </div>
                                         </div>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Cities Dropdown */}
@@ -275,48 +270,36 @@ export default function Navbar() {
                                 <button className="flex items-center gap-1 text-[#2D3E50]/70 font-bold text-[15px] px-4 py-2 rounded-xl hover:bg-slate-50 hover:text-[#2D3E50] transition-all group">
                                     Cities <ChevronDown className={`w-4 h-4 opacity-40 group-hover:opacity-100 transition-all ${activeDropdown === 'cities' ? 'rotate-180' : ''}`} />
                                 </button>
-                                <div className="absolute top-full left-0  w-64 animate-in fade-in slide-in-from-top-2 duration-200 " style={{ zIndex: "1000" }}>
-
-                                    <div className="grid grid-cols-4 gap-6 p-4"></div>
-                                    {activeDropdown === 'cities' && (
-                                        <div className="absolute top-full left-1/2 -translate-x-1/2 pt-3 w-[700px] animate-in fade-in slide-in-from-top-2 duration-200">
-
-                                            <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-6">
-
-                                                <div className="grid grid-cols-4 gap-8">
-
-                                                    {cities.map((city) => (
-                                                        <Link
-                                                            key={city.id}
-                                                            href={`/cities/${encodeURIComponent(city.name.toLowerCase())}`}
-                                                            className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group"
-                                                        >
-                                                            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500">
-                                                                <Globe className="w-4 h-4" />
-                                                            </div>
-
-                                                            <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900">
-                                                                {city.name}
-                                                            </span>
-                                                        </Link>
-                                                    ))}
-
-                                                </div>
-
-                                                <div className="border-t border-slate-100 mt-4 pt-3 text-center">
+                                {activeDropdown === 'cities' && (
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 pt-3 w-[700px] animate-in fade-in slide-in-from-top-2 duration-200" style={{ zIndex: "1000" }}>
+                                        <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-6">
+                                            <div className="grid grid-cols-4 gap-8">
+                                                {cities.map((city) => (
                                                     <Link
-                                                        href="/cities"
-                                                        className="text-xs font-bold uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920]"
+                                                        key={city.id}
+                                                        href={`/cities/${encodeURIComponent(city.name.toLowerCase())}`}
+                                                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group"
                                                     >
-                                                        Browse All Cities
+                                                        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500">
+                                                            <Globe className="w-4 h-4" />
+                                                        </div>
+                                                        <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900">
+                                                            {city.name}
+                                                        </span>
                                                     </Link>
-                                                </div>
-
+                                                ))}
                                             </div>
-
+                                            <div className="border-t border-slate-100 mt-4 pt-3 text-center">
+                                                <Link
+                                                    href="/cities"
+                                                    className="text-xs font-bold uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920]"
+                                                >
+                                                    Browse All Cities
+                                                </Link>
+                                            </div>
                                         </div>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -340,7 +323,7 @@ export default function Navbar() {
                                     </div>
                                 </Link>
 
-                                {/* 🔕 Enable Push Notifications button – only shown if not yet granted */}
+                                {/* Push Notifications Button */}
                                 {pushSupported && !pushSubscribed && pushPermission === 'default' && (
                                     <button
                                         onClick={enablePush}
@@ -353,6 +336,7 @@ export default function Navbar() {
                                     </button>
                                 )}
 
+                                {/* Chat Icon */}
                                 {user && (user.role === 'admin' || user.role === 'superadmin' || (activeSub?.plan?.dashboardFeatures?.showChat !== false)) && (
                                     <Link
                                         href="/chat"
@@ -368,7 +352,7 @@ export default function Navbar() {
                                     </Link>
                                 )}
 
-                                {/* 🔔 Notification Bell */}
+                                {/* Notification Bell */}
                                 <div ref={bellRef} className="relative">
                                     <button
                                         onClick={() => setShowBell(v => !v)}
@@ -385,20 +369,14 @@ export default function Navbar() {
 
                                     {showBell && (
                                         <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden">
-                                            {/* Header */}
                                             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
                                                 <span className="font-bold text-slate-900 text-sm">Notifications</span>
                                                 {unreadCount > 0 && (
-                                                    <button
-                                                        onClick={markAllAsRead}
-                                                        className="text-[11px] font-bold text-[#FF7A30] hover:text-[#E86920] flex items-center gap-1 transition-colors"
-                                                    >
+                                                    <button onClick={markAllAsRead} className="text-[11px] font-bold text-[#FF7A30] hover:text-[#E86920] flex items-center gap-1 transition-colors">
                                                         <Check className="w-3 h-3" /> Mark all read
                                                     </button>
                                                 )}
                                             </div>
-
-                                            {/* List */}
                                             <div className="max-h-80 overflow-y-auto divide-y divide-slate-50">
                                                 {notifications.length === 0 ? (
                                                     <div className="py-10 text-center">
@@ -407,19 +385,11 @@ export default function Navbar() {
                                                     </div>
                                                 ) : (
                                                     notifications.slice(0, 10).map(n => (
-                                                        <div
-                                                            key={n.id}
-                                                            onClick={() => { if (!n.isRead) markAsRead(n.id); }}
-                                                            className={`flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 transition-colors group ${n.isRead ? 'opacity-60' : 'bg-orange-50/30'
-                                                                }`}
-                                                        >
-                                                            {/* Dot */}
-                                                            <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${n.isRead ? 'bg-slate-200' : 'bg-[#FF7A30]'
-                                                                }`} />
+                                                        <div key={n.id} onClick={() => { if (!n.isRead) markAsRead(n.id); }} className={`flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 transition-colors group ${n.isRead ? 'opacity-60' : 'bg-orange-50/30'}`}>
+                                                            <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${n.isRead ? 'bg-slate-200' : 'bg-[#FF7A30]'}`} />
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="flex items-center gap-2 mb-0.5">
-                                                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${typeColor[n.type] || typeColor.info
-                                                                        }`}>
+                                                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${typeColor[n.type] || typeColor.info}`}>
                                                                         {n.type?.replace(/_/g, ' ')}
                                                                     </span>
                                                                     <span className="text-[10px] text-slate-400 font-medium ml-auto">{timeAgo(n.createdAt)}</span>
@@ -427,24 +397,15 @@ export default function Navbar() {
                                                                 <p className="text-xs font-bold text-slate-900 leading-snug">{n.title}</p>
                                                                 <p className="text-[11px] text-slate-500 font-medium mt-0.5 line-clamp-2">{n.message}</p>
                                                             </div>
-                                                            <button
-                                                                onClick={e => handleDelete(e, n.id)}
-                                                                className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-red-50 hover:text-red-500 transition-all text-slate-300 flex-shrink-0"
-                                                            >
+                                                            <button onClick={e => handleDelete(e, n.id)} className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-red-50 hover:text-red-500 transition-all text-slate-300 flex-shrink-0">
                                                                 <Trash2 className="w-3.5 h-3.5" />
                                                             </button>
                                                         </div>
                                                     ))
                                                 )}
                                             </div>
-
-                                            {/* Footer */}
                                             <div className="border-t border-slate-100 px-4 py-2.5">
-                                                <Link
-                                                    href="/notifications"
-                                                    onClick={() => setShowBell(false)}
-                                                    className="text-[11px] font-bold text-[#FF7A30] hover:text-[#E86920] transition-colors"
-                                                >
+                                                <Link href="/notifications" onClick={() => setShowBell(false)} className="text-[11px] font-bold text-[#FF7A30] hover:text-[#E86920] transition-colors">
                                                     View all notifications →
                                                 </Link>
                                             </div>
@@ -452,34 +413,21 @@ export default function Navbar() {
                                     )}
                                 </div>
 
-                                <button
-                                    onClick={logout}
-                                    className="p-2.5 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
-                                    title="Logout"
-                                >
+                                <button onClick={logout} className="p-2.5 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all" title="Logout">
                                     <LogOut className="w-5 h-5" />
                                 </button>
                             </div>
                         ) : (
                             <div className="hidden sm:flex items-center gap-2">
-                                <Link
-                                    href="/login"
-                                    className="px-5 py-2.5 rounded-xl text-[#2D3E50] font-bold text-sm hover:bg-slate-50 transition-all"
-                                >
-                                    Login
-                                </Link>
-                                <Link
-                                    href="/register?role=vendor"
-                                    className="px-5 py-2.5 rounded-xl bg-[#FF7A30] text-white font-bold text-sm hover:bg-[#E86920] shadow-lg shadow-orange-500/20 transition-all active:scale-95 whitespace-nowrap"
-                                >
-                                    Add Business
-                                </Link>
+                                <Link href="/login" className="px-5 py-2.5 rounded-xl text-[#2D3E50] font-bold text-sm hover:bg-slate-50 transition-all">Login</Link>
+                                <Link href="/register?role=vendor" className="px-5 py-2.5 rounded-xl bg-[#FF7A30] text-white font-bold text-sm hover:bg-[#E86920] shadow-lg shadow-orange-500/20 transition-all active:scale-95 whitespace-nowrap">Add Business</Link>
                             </div>
                         )}
 
                         <button
                             onClick={toggleMobileMenu}
-                            className="lg:hidden p-2.5 bg-slate-50 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors"
+                            className="lg:hidden p-2.5 bg-slate-50 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors relative z-[70]"
+                            aria-label="Toggle menu"
                         >
                             {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                         </button>
@@ -488,38 +436,51 @@ export default function Navbar() {
                 </div>
             </div>
 
-            {/* Mobile Menu Drawer */}
-            <div className={`lg:hidden fixed inset-0 z-50 transition-all duration-300 pointer-events-none ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0'}`}>
-                <div className={`absolute top-20 left-0 right-0 bg-white border-b border-slate-100 shadow-2xl transition-all duration-300 pointer-events-auto ${isMobileMenuOpen ? 'translate-y-0' : '-translate-y-full'}`}>
-                    <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(100vh-5rem)]">
-                        <div className="grid grid-cols-1 gap-4">
-                            <Link href="/" className="p-4 rounded-2xl bg-slate-50 text-center font-bold text-slate-900 border border-transparent active:border-slate-200">Home</Link>
-                        </div>
+            {/* Mobile Menu Backdrop */}
+            {isMounted && (
+                <div 
+                    className={`lg:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[55] transition-all duration-300 ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                />
+            )}
 
-                        <div className="space-y-4">
-                            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 px-2">Browse Deeply</h3>
-                            <div className="space-y-2">
-                                <Link href="/categories" className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold text-slate-700">
-                                    Categories <ChevronDown className="w-4 h-4 opacity-40" />
-                                </Link>
-                                <Link href="/search" className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold text-slate-700">
-                                    Businesses <ChevronDown className="w-4 h-4 opacity-40" />
-                                </Link>
-                                <Link href="/cities" className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold text-slate-700">
-                                    Cities <ChevronDown className="w-4 h-4 opacity-40" />
-                                </Link>
+            {/* Mobile Menu Drawer */}
+            {isMounted && (
+                <div className={`lg:hidden fixed top-20 left-0 right-0 z-[60] bg-white border-b border-slate-100 shadow-2xl transition-all duration-300 ${isMobileMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}`}>
+                    <div className="p-6 space-y-8 overflow-y-auto max-h-[calc(100vh-5rem)]">
+                        {/* User Profile in Mobile Menu */}
+                        {user ? (
+                            <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                <VendorAvatar src={user.avatarUrl} alt={user.fullName} size="md" />
+                                <div className="flex flex-col">
+                                    <span className="font-bold text-slate-900">{user.fullName || user.email}</span>
+                                    <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-[#FF7A30] uppercase tracking-wider">View Dashboard</Link>
+                                </div>
                             </div>
-                        </div>
+                        ) : null}
+
+                        <nav className="space-y-2">
+                            <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 font-bold text-slate-900">Home</Link>
+                            <Link href="/categories" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold text-slate-700">Categories <ChevronDown className="w-4 h-4 opacity-40 -rotate-90" /></Link>
+                            <Link href="/search" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold text-slate-700">Businesses <ChevronDown className="w-4 h-4 opacity-40 -rotate-90" /></Link>
+                            <Link href="/cities" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold text-slate-700">Cities <ChevronDown className="w-4 h-4 opacity-40 -rotate-90" /></Link>
+                        </nav>
 
                         {!user && (
-                            <div className="space-y-3 pt-4 border-t border-slate-100">
-                                <Link href="/login" className="block w-full py-4 text-center rounded-2xl font-bold bg-slate-100 text-[#2D3E50]">Log In</Link>
-                                <Link href="/register?role=vendor" className="block w-full py-4 text-center rounded-2xl font-bold bg-[#FF7A30] text-white shadow-lg shadow-orange-500/20">Add Your Business</Link>
+                            <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
+                                <Link href="/login" onClick={() => setIsMobileMenuOpen(false)} className="py-4 text-center rounded-2xl font-bold bg-slate-100 text-[#2D3E50]">Log In</Link>
+                                <Link href="/register?role=vendor" onClick={() => setIsMobileMenuOpen(false)} className="py-4 text-center rounded-2xl font-bold bg-[#FF7A30] text-white">Join Us</Link>
                             </div>
+                        )}
+
+                        {user && (
+                            <button onClick={() => { logout(); setIsMobileMenuOpen(false); }} className="w-full py-4 rounded-2xl font-bold text-red-600 bg-red-50 flex items-center justify-center gap-2">
+                                <LogOut className="w-4 h-4" /> Sign Out
+                            </button>
                         )}
                     </div>
                 </div>
-            </div>
+            )}
         </nav>
     );
 }
