@@ -70,8 +70,8 @@ npm run start:dev
 ```
 
 ### 3. Access API
-- **Web Interface:** https://local-business-listing-directctory-production.up.railway.app
-- **Users Endpoint:** https://local-business-listing-directctory-production.up.railway.app/api/v1/users
+- **Web Interface:** https://local-business-listing-directory-production.up.railway.app
+- **Users Endpoint:** https://local-business-listing-directory-production.up.railway.app/api/v1/users
 
 ---
 
@@ -89,7 +89,7 @@ npm run start:dev
 - **Status:** Running
 - **Framework:** NestJS
 - **Database:** TypeORM + PostgreSQL
-- **Production URL:** https://local-business-listing-directctory-production.up.railway.app
+- **Production URL:** https://local-business-listing-directory-production.up.railway.app
 
 ---
 
@@ -107,9 +107,9 @@ npm run start:dev
 
 ## 🔗 Useful Links
 
-- **Production API Root:** https://local-business-listing-directctory-production.up.railway.app/api/v1
+- **Production API Root:** https://local-business-listing-directory-production.up.railway.app/api/v1
 - **Local API Root:** http://process.env.NEXT_PUBLIC_API_URL/api/v1
-- **Swagger Docs:** https://local-business-listing-directctory-production.up.railway.app/api/docs
+- **Swagger Docs:** https://local-business-listing-directory-production.up.railway.app/api/docs
 
 ---
 

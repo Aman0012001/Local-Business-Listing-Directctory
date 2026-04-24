@@ -205,7 +205,7 @@ async function bootstrap() {
                 .addTag('analytics')
                 .addServer('http://localhost:3001', 'Local development server')
                 .addServer(
-                    'https://local-business-listing-directctory-production.up.railway.app',
+                    'https://local-business-listing-directory-production.up.railway.app',
                     'Production server',
                 )
                 .build();
