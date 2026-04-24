@@ -15,6 +15,7 @@ import { OfferEvent, OfferType, OfferStatus } from '../../entities/offer-event.e
 import { Lead } from '../../entities/lead.entity';
 import { SearchLog } from '../../entities/search-log.entity';
 import { Category } from '../../entities/category.entity';
+import { generateSlug, generateUniqueSlug } from '../../common/utils/slug.util';
 
 @Injectable()
 export class VendorsService {
@@ -28,6 +29,21 @@ export class VendorsService {
         @InjectRepository(OfferEvent)
         private offerEventRepository: Repository<OfferEvent>,
     ) { }
+
+    private async ensureUniqueSlug(name: string, currentId?: string): Promise<string> {
+        const baseSlug = generateSlug(name);
+        let slug = baseSlug;
+        let counter = 1;
+
+        while (true) {
+            const existing = await this.vendorRepository.findOne({ where: { slug } });
+            if (!existing || existing.id === currentId) {
+                return slug;
+            }
+            slug = `${baseSlug}-${counter}`;
+            counter++;
+        }
+    }
 
     /**
      * Register a user as a vendor
@@ -44,6 +60,7 @@ export class VendorsService {
             ...createVendorDto,
             userId,
             isVerified: false,
+            slug: await this.ensureUniqueSlug(createVendorDto.businessName),
         });
 
         const savedVendor = await this.vendorRepository.save(vendor);
@@ -70,6 +87,7 @@ export class VendorsService {
                 vendor = this.vendorRepository.create({
                     userId,
                     isVerified: false,
+                    slug: await this.ensureUniqueSlug(user.fullName || 'vendor'),
                 });
                 try {
                     await this.vendorRepository.save(vendor);
@@ -111,7 +129,14 @@ export class VendorsService {
             vendor = this.vendorRepository.create({
                 userId,
                 isVerified: false,
+                slug: await this.ensureUniqueSlug('vendor'),
             });
+        }
+
+        if (updateVendorDto.businessName && updateVendorDto.businessName !== vendor.businessName) {
+            vendor.slug = await this.ensureUniqueSlug(updateVendorDto.businessName, vendor.id);
+        } else if (!vendor.slug) {
+            vendor.slug = await this.ensureUniqueSlug(vendor.businessName || 'vendor', vendor.id);
         }
 
         Object.assign(vendor, updateVendorDto);
@@ -289,9 +314,11 @@ export class VendorsService {
     /**
      * Get a public vendor profile by ID
      */
-    async getPublicProfile(vendorId: string) {
+    async getPublicProfile(idOrSlug: string) {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+        
         const vendor = await this.vendorRepository.findOne({
-            where: { id: vendorId },
+            where: isUuid ? { id: idOrSlug } : { slug: idOrSlug },
             relations: ['user'],
         });
 
@@ -328,6 +355,7 @@ export class VendorsService {
 
         return {
             id: vendor.id,
+            slug: vendor.slug,
             businessName: vendor.businessName || vendor.user?.fullName || 'Unnamed Business',
             vendorName: vendor.user?.fullName || 'Vendor',
             businessEmail: vendor.businessEmail || vendor.user?.email,

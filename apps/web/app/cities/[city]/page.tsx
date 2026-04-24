@@ -3,23 +3,9 @@ import CityVendorsClient from './CityVendorsClient';
 
 
 // For static export
-export async function generateStaticParams() {
-    try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-        const res = await fetch(`${apiUrl}/cities`);
-        const cities = await res.json();
-        const params = (Array.isArray(cities) ? cities : [])
-            .filter((city: any) => city && (city.name || city.city || city))
-            .map((city: any) => ({
-                city: (city.slug || city.name || city.city || city).toString().toLowerCase(),
-            }));
-        // Include 'template' for SPA fallback and ensure at least one param exists
-        return [...params, { city: 'template' }];
-    } catch (error) {
-        console.error('Failed to fetch cities for static params:', error);
-        return [{ city: 'template' }];
-    }
-}
+// Dynamic page for SSR
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function CityVendorsPage({ params }: { params: Promise<{ city: string }> }) {
     const { city } = await params;

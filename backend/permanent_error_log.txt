@@ -1473,3 +1473,40 @@ Details: {"query":"SELECT DISTINCT \"distinctAlias\".\"listing_id\" AS \"ids_lis
 [2026-04-24T08:54:09.601Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
 [2026-04-24T08:55:19.933Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
 [2026-04-24T08:55:20.841Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T09:02:02.980Z] NotificationsService Constructor Called
+[2026-04-24T09:07:08.639Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T09:07:12.119Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T09:07:25.011Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T09:07:25.713Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T09:07:32.578Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T09:07:32.942Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T09:08:25.716Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T09:08:29.838Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T09:16:17.530Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T09:16:20.953Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T09:22:16.650Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T09:22:19.048Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T09:23:21.632Z] NotificationsService Constructor Called
+[2026-04-24T09:23:43.134Z] NotificationsService Constructor Called
+[2026-04-24T09:23:59.603Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T09:24:02.430Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T09:28:12.609Z] NotificationsService Constructor Called
+[2026-04-24T09:42:17.519Z] NotificationsService Constructor Called
+[2026-04-24T09:47:40.061Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T09:47:45.472Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T09:54:36.612Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T09:54:37.813Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T10:01:20.509Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T10:01:23.062Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T10:06:51.002Z] NotificationsService Constructor Called
+[2026-04-24T10:07:03.053Z] NotificationsService Constructor Called
+[2026-04-24T10:07:14.550Z] NotificationsService Constructor Called
+[2026-04-24T10:07:46.532Z] NotificationsService Constructor Called
+[2026-04-24T10:08:49.753Z] NotificationsService Constructor Called
+[2026-04-24T10:17:00.083Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T11:06:15.473Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T11:06:16.433Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T11:35:56.339Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T11:35:59.275Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T11:43:52.426Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T11:43:53.414Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist

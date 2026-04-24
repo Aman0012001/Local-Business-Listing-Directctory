@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
     BadgeCheck, Star, Mail, Phone, MapPin,
     Calendar, Building2, Globe, ArrowLeft,
@@ -15,6 +16,7 @@ import ChatTrigger from '../../../components/chat/ChatTrigger';
 
 interface VendorProfile {
     id: string;
+    slug: string;
     businessName: string;
     vendorName: string;
     businessEmail?: string;
@@ -34,7 +36,8 @@ interface VendorProfile {
     events?: any[];
 }
 
-export default function VendorProfileClient({ vendorId }: { vendorId: string }) {
+export default function VendorProfileClient({ slugOrId }: { slugOrId: string }) {
+    const router = useRouter();
     const [vendor, setVendor] = useState<VendorProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -44,7 +47,16 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const data = await api.vendors.getPublicProfile(vendorId);
+                const data = await api.vendors.getPublicProfile(slugOrId);
+                
+                // Redirection Logic for SEO (301-like client-side redirect)
+                const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
+                if (isUuid && data.slug && data.slug !== slugOrId) {
+                    console.log(`[VendorProfile] Legacy ID detected. Redirecting to SEO slug: ${data.slug}`);
+                    router.replace(`/vendors/${data.slug}`);
+                    return;
+                }
+
                 setVendor(data);
             } catch (err: any) {
                 console.error('[VendorProfile] Failed to load profile:', err);
@@ -54,7 +66,7 @@ export default function VendorProfileClient({ vendorId }: { vendorId: string }) 
             }
         };
         fetchProfile();
-    }, [vendorId]);
+    }, [slugOrId, router]);
 
     const filteredListings = React.useMemo(() => {
         if (!vendor) return [];

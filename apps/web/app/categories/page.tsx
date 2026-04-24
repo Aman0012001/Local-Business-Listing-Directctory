@@ -115,7 +115,7 @@ export default function CategoriesPage() {
 
                                         <div className="flex items-center gap-3 mt-auto">
                                             <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-300">
-                                                {cat.businessCount || 100}+ Curated Listings
+                                                {/* {cat.businessCount || 100}+ Curated Listings */}
                                             </span>
                                             <div className="flex-1 h-px bg-slate-50" />
                                         </div>

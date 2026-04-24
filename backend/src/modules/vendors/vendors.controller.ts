@@ -10,7 +10,9 @@ import {
     HttpCode,
     HttpStatus,
     Version,
+    Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { VendorsService } from './vendors.service';
 import { BusinessesService } from '../businesses/businesses.service';
@@ -35,11 +37,19 @@ export class VendorsController {
     @Public()
     @Get(':id/public')
     @HttpCode(HttpStatus.OK)
-    @ApiOperation({ summary: 'Get public vendor profile details by ID' })
+    @ApiOperation({ summary: 'Get public vendor profile details by ID or Slug' })
     @ApiResponse({ status: 200, description: 'Vendor profile retrieved', type: PublicVendorProfileDto })
-    getPublicProfile(@Param('id') id: string) {
-        console.log(`[VendorsController] Fetching public profile for ID: ${id}`);
-        return this.vendorsService.getPublicProfile(id);
+    async getPublicProfile(@Param('id') idOrSlug: string, @Res() res: Response) {
+        console.log(`[VendorsController] Fetching public profile for: ${idOrSlug}`);
+        const profile = await this.vendorsService.getPublicProfile(idOrSlug);
+        
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+        if (isUuid && profile.slug && profile.slug !== idOrSlug) {
+            console.log(`[VendorsController] Redirecting legacy UUID ${idOrSlug} to slug ${profile.slug}`);
+            return res.redirect(301, `/api/v1/vendors/${profile.slug}/public`);
+        }
+        
+        return res.json(profile);
     }
 
     @Public()

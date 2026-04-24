@@ -156,6 +156,9 @@ export class VendorProfileDto {
     businessName: string;
 
     @ApiPropertyOptional()
+    slug?: string;
+
+    @ApiPropertyOptional()
     businessEmail?: string;
 
     @ApiProperty()
@@ -221,6 +224,9 @@ export class PublicVendorProfileDto {
 
     @ApiProperty()
     businessName: string;
+
+    @ApiProperty()
+    slug: string;
 
     @ApiProperty()
     vendorName: string;

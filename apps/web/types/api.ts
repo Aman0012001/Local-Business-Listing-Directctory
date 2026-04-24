@@ -55,6 +55,7 @@ export interface BusinessAmenity {
 
 export interface Vendor {
     id: string;
+    slug: string;
     userId?: string;
     businessName?: string;
     businessEmail?: string;

@@ -9,3 +9,4 @@
 [build.environment]
   NODE_VERSION = "20"
   NPM_FLAGS    = "--legacy-peer-deps"
+  NEXT_USE_NETLIFY_EDGE = "true" # Optional: use edge functions for faster SSR

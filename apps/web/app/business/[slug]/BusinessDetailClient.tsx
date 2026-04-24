@@ -944,11 +944,7 @@ export default function BusinessDetailClient({
                     <div className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-bold uppercase tracking-wider">
                       {business.category?.name || "Business"}
                     </div>
-                    {business.status === "approved" ? (
-                      <div className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 border border-emerald-100">
-                        <ShieldCheck className="w-3.5 h-3.5" /> Verified
-                      </div>
-                    ) : (
+                    {business.status === "pending" && (
                       <div className="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 border border-amber-100">
                         <Clock className="w-3.5 h-3.5" /> Pending Approval
                       </div>
@@ -1247,6 +1243,9 @@ export default function BusinessDetailClient({
                                           }
                                           alt={comment.user.fullName || "User"}
                                           className="w-full h-full object-cover"
+                                          onError={(e) => {
+                                            (e.currentTarget as HTMLImageElement).src = "/default-avatar.png";
+                                          }}
                                         />
                                       ) : (
                                         (
@@ -1331,6 +1330,9 @@ export default function BusinessDetailClient({
                                                     "User"
                                                   }
                                                   className="w-full h-full object-cover rounded-lg"
+                                                  onError={(e) => {
+                                                    (e.currentTarget as HTMLImageElement).src = "/default-avatar.png";
+                                                  }}
                                                 />
                                               ) : (
                                                 (
@@ -1458,7 +1460,6 @@ export default function BusinessDetailClient({
                                 </div>
                                 <div className="min-w-0">
                                   <h4 className="font-bold text-slate-900 leading-tight text-sm md:text-base truncate">{item.amenity?.name}</h4>
-                                  <p className="text-[10px] md:text-xs text-slate-400 font-medium">Verified</p>
                                 </div>
                               </motion.div>
                             ))}
@@ -1901,7 +1902,7 @@ export default function BusinessDetailClient({
                 {/* View Vendor Profile Link */}
                 {/* {business.vendor?.id && (
                   <Link
-                    href={`/vendors/${business.vendor.id}`}
+                    href={`/vendors/${business.vendor.slug || business.vendor.id}`}
                     className={`w-full py-3 border border-slate-700/30 text-slate-300 hover:bg-slate-800 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all ${!isOwner ? 'mt-4' : 'mb-4'}`}
                   >
                     <User className="w-5 h-5" /> View Vendor Profile
@@ -2079,24 +2080,27 @@ export default function BusinessDetailClient({
 
                 <div className="flex flex-col items-center text-center">
                   <Link
-                    href={(business.vendorId || business.vendor?.id) ? `/vendors/${business.vendorId || business.vendor?.id}` : "#"}
-                    className={`flex flex-col items-center text-center group/vendor ${!(business.vendorId || business.vendor?.id) ? "pointer-events-none" : "cursor-pointer"}`}
+                    href={business.vendor?.slug ? `/vendors/${business.vendor.slug}` : (business.vendorId || business.vendor?.id) ? `/vendors/${business.vendorId || business.vendor?.id}` : "#"}
+                    className={`flex flex-col items-center text-center group/vendor ${!(business.vendor?.slug || business.vendorId || business.vendor?.id) ? "pointer-events-none" : "cursor-pointer"}`}
                   >
                     <div className="w-24 h-24 bg-blue-50 rounded-3xl flex items-center justify-center text-blue-600 font-bold overflow-hidden shadow-inner mb-4 relative group">
-                      {business.vendor?.user?.avatarUrl ? (
+                      {(business.logoUrl || business.vendor?.user?.avatarUrl) ? (
                         <img
                           src={
                             getImageUrl(
-                              business.vendor.user.avatarUrl,
+                              business.logoUrl || business.vendor?.user?.avatarUrl,
                             ) as string
                           }
-                          alt={business.vendor.user.fullName || "Vendor"}
+                          alt={business.title || business.vendor?.user?.fullName || "Vendor"}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = "/default-avatar.png";
+                          }}
                         />
                       ) : (
                         <span className="text-2xl">
                           {(
-                            business.vendor?.user?.fullName?.[0] || "V"
+                            business.title?.[0] || business.vendor?.user?.fullName?.[0] || "V"
                           ).toUpperCase()}
                         </span>
                       )}
@@ -2111,11 +2115,7 @@ export default function BusinessDetailClient({
                     </h5>
                   </Link>
 
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-emerald-100">
-                      <ShieldCheck className="w-3 h-3" /> Verified Vendor
-                    </span>
-                  </div>
+
 
                   {/* Status & Followers Section */}
                   <div className="w-full grid grid-cols-2 gap-3 mb-6">
@@ -2197,7 +2197,7 @@ export default function BusinessDetailClient({
                       <button
                         type="button"
                         onClick={() => {
-                          window.location.href = `/vendors/${business.vendorId || business.vendor?.id}`;
+                          window.location.href = `/vendors/${business.vendor?.slug || business.vendorId || business.vendor?.id}`;
                         }}
                         className="group/btn relative w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-sm flex items-center justify-center gap-2 overflow-hidden hover:bg-blue-600 transition-all duration-300 shadow-lg shadow-slate-900/10 active:scale-[0.98] mt-6 cursor-pointer z-20"
                       >

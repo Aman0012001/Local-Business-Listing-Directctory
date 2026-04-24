@@ -72,6 +72,10 @@ export class Vendor {
     @Column({ length: 100, nullable: true })
     state: string;
 
+    @Column({ unique: true, nullable: true })
+    @Index()
+    slug: string;
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
