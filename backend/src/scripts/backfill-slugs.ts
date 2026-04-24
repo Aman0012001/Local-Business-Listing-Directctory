@@ -13,13 +13,13 @@ async function backfillSlugs() {
         await queryRunner.query('CREATE UNIQUE INDEX IF NOT EXISTS "IDX_VENDOR_SLUG" ON "vendors" ("slug")');
         
         const vendorRepo = AppDataSource.getRepository(Vendor);
-        const vendors = await vendorRepo.find();
+        const vendors = await vendorRepo.find({ relations: ['user'] });
 
         console.log(`Found ${vendors.length} vendors to process.`);
 
         for (const vendor of vendors) {
             if (!vendor.slug) {
-                const baseSlug = generateSlug(vendor.businessName || vendor.vendorName || 'vendor');
+                const baseSlug = generateSlug(vendor.businessName || vendor.user?.fullName || 'vendor');
                 let slug = baseSlug;
                 let counter = 1;
                 

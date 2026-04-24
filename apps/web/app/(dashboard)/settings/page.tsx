@@ -216,20 +216,6 @@ export default function AccountSettings() {
             return { ...prev, socialLinks: newLinks };
         });
     };
-    
-    const handleNotificationToggle = (category: 'email' | 'push', setting: string) => {
-        setFormData(prev => ({
-            ...prev,
-            notificationSettings: {
-                ...prev.notificationSettings,
-                [category]: {
-                    ...prev.notificationSettings[category as keyof typeof prev.notificationSettings],
-                    [setting]: !((prev.notificationSettings[category as keyof typeof prev.notificationSettings] as any)[setting])
-                }
-            }
-        }));
-    };
-
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
