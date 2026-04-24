@@ -19,7 +19,7 @@ import {
 } from '../../common/utils/pagination.util';
 
 import { NotificationsGateway } from '../notifications/notifications.gateway';
-import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationsService, NotificationType } from '../notifications/notifications.service';
 
 @Injectable()
 export class LeadsService {
@@ -101,7 +101,7 @@ export class LeadsService {
                 userId: vendor.userId,
                 title: '🆕 New Lead Received!',
                 message: `You have a new ${savedLead.type} lead for "${listing.title}" from ${savedLead.name}.`,
-                type: 'new_lead',
+                type: NotificationType.LEAD_RECEIVED,
                 data: {
                     leadId: savedLead.id,
                     businessName: listing.title,
@@ -340,7 +340,7 @@ export class LeadsService {
                 userId: lead.userId,
                 title: '💬 Vendor Replied to Your Enquiry',
                 message: `${lead.business.title} has replied to your enquiry: "${replyMessage.slice(0, 80)}${replyMessage.length > 80 ? '...' : ''}"`,
-                type: 'enquiry_reply',
+                type: NotificationType.INQUIRY_REPLIED,
                 data: { leadId: lead.id, businessId: lead.businessId, slug: lead.business.slug },
             });
         }

@@ -5,7 +5,7 @@ import CityVendorsClient from './CityVendorsClient';
 // For static export
 export async function generateStaticParams() {
     try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://local-business-listing-directory-production.up.railway.app/api/v1';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
         const res = await fetch(`${apiUrl}/cities`);
         const cities = await res.json();
         const params = (Array.isArray(cities) ? cities : [])

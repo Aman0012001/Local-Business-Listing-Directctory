@@ -2,7 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan, ILike } from 'typeorm';
 import { Listing, Category, Vendor, User, SearchLog, NotificationLog } from '../../entities';
-import { NotificationsService } from './notifications.service';
+import { NotificationsService, NotificationType } from './notifications.service';
+import { NotificationPriority } from '../../entities/notification.entity';
 
 @Injectable()
 export class BroadcastService {
@@ -113,20 +114,16 @@ export class BroadcastService {
         const title = 'Customer Searching for Your Service';
         const message = `A user searched for "${keyword}". Your business may appear in search results. Check your leads for updates.`;
 
-        // Channel 1: In-App & WebSocket
+        // Dispatch via central NotificationsService which handles preferences and channel filtering
         await this.notificationsService.create({
             userId: vendor.userId,
             title,
             message,
-            type: 'search_alert',
+            type: NotificationType.DEMAND_ALERT,
+            priority: NotificationPriority.MEDIUM,
+            link: '/dashboard/leads',
             data: { keyword }
         });
-
-        // Channel 2: Push Notification (Mock FCM)
-        if (vendor.user?.deviceToken) {
-            this.logger.log(`[PUSH] Sending FCM to token ${vendor.user.deviceToken}: ${title}`);
-            // In a real app: await this.fcmService.send(vendor.user.deviceToken, { title, body: message });
-        }
 
         // Channel 3: Email Notification (Mock)
         if (vendor.businessEmail || vendor.user?.email) {

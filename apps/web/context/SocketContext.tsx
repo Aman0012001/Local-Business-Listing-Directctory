@@ -3,15 +3,26 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
+import { api } from '@/lib/api';
 
 interface SocketContextType {
     socket: Socket | null;
     connected: boolean;
+    notifications: any[];
+    unreadCount: number;
+    markAsRead: (id: string) => Promise<void>;
+    markAllAsRead: () => Promise<void>;
+    deleteNotification: (id: string) => Promise<void>;
 }
 
 const SocketContext = createContext<SocketContextType>({
     socket: null,
-    connected: false
+    connected: false,
+    notifications: [],
+    unreadCount: 0,
+    markAsRead: async () => {},
+    markAllAsRead: async () => {},
+    deleteNotification: async () => {},
 });
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 
@@ -23,6 +34,28 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     const { user, syncProfile } = useAuth();
     const [socket, setSocket] = useState<Socket | null>(null);
     const [connected, setConnected] = useState(false);
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    const fetchNotifications = async () => {
+        if (!user) return;
+        try {
+            const res = await api.notifications.getAll() as any;
+            setNotifications(res.notifications || []);
+            setUnreadCount(res.unreadCount || 0);
+        } catch (err) {
+            console.error('[SocketContext] Failed to fetch notifications:', err);
+        }
+    };
+
+    useEffect(() => {
+        if (user) {
+            fetchNotifications();
+        } else {
+            setNotifications([]);
+            setUnreadCount(0);
+        }
+    }, [user]);
 
     useEffect(() => {
         if (!user) {
@@ -51,6 +84,16 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
             newSocket.emit('authenticate');
         });
 
+        // Real-time notification listener
+        newSocket.on('notification', (notif: any) => {
+            console.log('[SocketContext] New notification received:', notif);
+            setNotifications(prev => [notif, ...prev].slice(0, 50));
+            setUnreadCount(prev => prev + 1);
+            
+            // Show toast if desired
+            // toast.success(notif.title);
+        });
+
         // Real-time subscription sync
         newSocket.on('subscription_updated', async (data: any) => {
             console.log('[SocketContext] Real-time subscription update received');
@@ -71,8 +114,49 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         };
     }, [user, syncProfile]);
 
+    const markAsRead = async (id: string) => {
+        try {
+            await api.notifications.markRead(id);
+            setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+            setUnreadCount(prev => Math.max(0, prev - 1));
+        } catch (err) {
+            console.error('Failed to mark notification as read:', err);
+        }
+    };
+
+    const markAllAsRead = async () => {
+        try {
+            await api.notifications.markAllRead();
+            setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+            setUnreadCount(0);
+        } catch (err) {
+            console.error('Failed to mark all notifications as read:', err);
+        }
+    };
+
+    const deleteNotification = async (id: string) => {
+        try {
+            const notif = notifications.find(n => n.id === id);
+            await api.notifications.delete(id);
+            setNotifications(prev => prev.filter(n => n.id !== id));
+            if (notif && !notif.isRead) {
+                setUnreadCount(prev => Math.max(0, prev - 1));
+            }
+        } catch (err) {
+            console.error('Failed to delete notification:', err);
+        }
+    };
+
     return (
-        <SocketContext.Provider value={{ socket, connected }}>
+        <SocketContext.Provider value={{ 
+            socket, 
+            connected, 
+            notifications, 
+            unreadCount, 
+            markAsRead, 
+            markAllAsRead, 
+            deleteNotification 
+        }}>
             {children}
         </SocketContext.Provider>
     );

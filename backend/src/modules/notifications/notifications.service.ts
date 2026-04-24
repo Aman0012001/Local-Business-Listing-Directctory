@@ -1,16 +1,45 @@
 import { Injectable, Inject, forwardRef, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { Notification } from '../../entities/notification.entity';
+import { Notification, NotificationPriority } from '../../entities/notification.entity';
 import { NotificationsGateway } from './notifications.gateway';
 import { User } from '../../entities/user.entity';
 import { PushService } from './push.service';
+
+export enum NotificationType {
+    // Vendor specific
+    INQUIRY_RECEIVED = 'inquiry_received',
+    INQUIRY_REPLIED = 'inquiry_replied',
+    LEAD_RECEIVED = 'lead_received',
+    CHAT_MESSAGE = 'chat_message',
+    REVIEW_RECEIVED = 'review_received',
+    REVIEW_REPLIED = 'review_replied',
+    NEGATIVE_REVIEW_ALERT = 'negative_review_alert',
+    SUBSCRIPTION_ALERT = 'subscription_alert',
+    DEMAND_ALERT = 'demand_alert',
+    
+    // User specific
+    OFFER_NEW = 'offer_new',
+    NEARBY_ALERT = 'nearby_alert',
+    REVIEW_LIKE = 'review_like',
+    BROADCAST_RESPONSE = 'broadcast_response',
+
+    // Admin specific
+    FRAUD_ALERT = 'fraud_alert',
+    SYSTEM_SPIKE = 'system_spike',
+    PAYMENT_FAILURE = 'payment_failure',
+    
+    // Generic
+    SYSTEM_UPDATE = 'system_update',
+    INFO = 'info',
+}
 
 export interface CreateNotificationDto {
     userId: string;
     title: string;
     message: string;
-    type?: string;
+    type: NotificationType;
+    priority?: NotificationPriority;
     data?: Record<string, any>;
     link?: string;
 }
@@ -38,37 +67,75 @@ export class NotificationsService {
 
     /** Create and persist a notification, then push via WebSocket */
     async create(dto: CreateNotificationDto): Promise<Notification> {
+        const user = await this.userRepo.findOne({
+            where: { id: dto.userId },
+            select: ['id', 'notificationSettings'],
+        });
+
+        const settings = user?.notificationSettings || {};
+        const inAppEnabled = this.isChannelEnabled(dto.type, 'inApp', settings);
+        const pushEnabled = this.isChannelEnabled(dto.type, 'push', settings);
+
         const notification = this.notificationRepo.create({
             userId: dto.userId,
             title: dto.title,
             message: dto.message,
-            type: dto.type || 'info',
+            type: dto.type,
+            priority: dto.priority || NotificationPriority.MEDIUM,
+            link: dto.link,
             data: dto.data || {},
         });
         const saved = await this.notificationRepo.save(notification);
 
-        const payload = {
-            id: saved.id,
-            title: saved.title,
-            message: saved.message,
-            type: saved.type,
-            data: saved.data,
-            isRead: false,
-            createdAt: saved.createdAt,
-        };
+        if (inAppEnabled) {
+            const payload = {
+                id: saved.id,
+                title: saved.title,
+                message: saved.message,
+                type: saved.type,
+                priority: saved.priority,
+                link: saved.link,
+                data: saved.data,
+                isRead: false,
+                createdAt: saved.createdAt,
+            };
 
-        // Push real-time via WebSocket (if tab is open)
-        this.gateway.sendToUser(dto.userId, 'notification', payload);
+            // Push real-time via WebSocket
+            this.gateway.sendToUser(dto.userId, 'notification', payload);
+        }
 
-        // Push via Web Push API (OS-level, works even when tab is closed)
-        this.pushService.sendToUser(dto.userId, {
-            title: saved.title,
-            message: saved.message,
-            type: saved.type,
-            url: dto.link || '/notifications',
-        }).catch(() => { /* non-critical */ });
+        if (pushEnabled) {
+            // Push via Web Push / FCM
+            this.pushService.sendToUser(dto.userId, {
+                title: saved.title,
+                message: saved.message,
+                type: saved.type,
+                url: dto.link || '/notifications',
+            }).catch(() => { /* non-critical */ });
+        }
 
         return saved;
+    }
+
+    private isChannelEnabled(type: NotificationType, channel: 'inApp' | 'push' | 'email', settings: any): boolean {
+        const channelSettings = settings[channel];
+        if (!channelSettings) return true;
+
+        // Map notification type to setting key
+        const typeToKeyMap: Record<string, string> = {
+            [NotificationType.INQUIRY_RECEIVED]: 'inquiry',
+            [NotificationType.INQUIRY_REPLIED]: 'inquiry',
+            [NotificationType.LEAD_RECEIVED]: 'lead',
+            [NotificationType.CHAT_MESSAGE]: 'message',
+            [NotificationType.REVIEW_RECEIVED]: 'review',
+            [NotificationType.REVIEW_REPLIED]: 'review',
+            [NotificationType.OFFER_NEW]: 'offers',
+            [NotificationType.SYSTEM_UPDATE]: 'system',
+            [NotificationType.FRAUD_ALERT]: 'system',
+        };
+
+        const key = typeToKeyMap[type] || 'system';
+        return channelSettings[key] !== false;
     }
 
     /** Broadcast a notification to ALL regular users and vendors (role = user/vendor) */

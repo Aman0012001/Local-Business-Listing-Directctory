@@ -142,4 +142,16 @@ export class UsersController {
     cancelDeletion(@CurrentUser() user: User) {
         return this.usersService.cancelDeletion(user.id);
     }
+
+    @Patch('profile/notification-settings')
+    @ApiOperation({ summary: 'Update notification settings' })
+    updateNotificationSettings(@CurrentUser() user: User, @Body() settings: any) {
+        return this.usersService.updateNotificationSettings(user.id, settings);
+    }
+
+    @Patch('profile/device-token')
+    @ApiOperation({ summary: 'Update device token for push notifications' })
+    updateDeviceToken(@CurrentUser() user: User, @Body('token') token: string) {
+        return this.usersService.updateDeviceToken(user.id, token);
+    }
 }

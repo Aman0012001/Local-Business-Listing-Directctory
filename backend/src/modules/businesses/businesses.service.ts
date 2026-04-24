@@ -28,7 +28,7 @@ import {
 } from '../../common/utils/pagination.util';
 import { generateSlug, generateUniqueSlug } from '../../common/utils/slug.util';
 import { calculateDistance } from '../../common/utils/geolocation.util';
-import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationsService, NotificationType } from '../notifications/notifications.service';
 import { SearchService } from '../search/search.service';
 import { DemandService } from '../demand/demand.service';
 
@@ -228,7 +228,7 @@ export class BusinessesService implements OnModuleInit {
             this.notificationsService.notifyAdmin({
                 title: '🆕 New Category Suggestion',
                 message: `Vendor "${vendor.businessName}" suggested a new category: "${createBusinessDto.suggestedCategoryName}" for their listing "${result.title}".`,
-                type: 'system',
+                type: NotificationType.SYSTEM_UPDATE,
                 data: { businessId: result.id, suggestedCategory: createBusinessDto.suggestedCategoryName },
             }).catch(() => {/* non-blocking */ });
         }

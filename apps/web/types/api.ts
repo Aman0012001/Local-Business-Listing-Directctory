@@ -148,6 +148,10 @@ export interface Review {
     user: {
         fullName: string;
         avatarUrl?: string;
+        trust_score?: number;
+        badge?: string;
+        review_count?: number;
+        helpful_votes?: number;
     };
     business?: {
         id: string;
@@ -161,6 +165,8 @@ export interface Review {
     vendorResponseAt?: string;
     replies?: ReviewReply[];
     createdAt: string;
+    ip_address?: string;
+    device_id?: string;
 }
 
 export interface SearchResponse {

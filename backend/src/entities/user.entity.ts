@@ -9,7 +9,7 @@ import {
     Index,
     DeleteDateColumn,
 } from 'typeorm';
-import { Exclude } from 'class-transformer';
+import { Exclude, Expose } from 'class-transformer';
 import { Vendor } from './vendor.entity';
 import { Review } from './review.entity';
 import { Lead } from './lead.entity';
@@ -126,6 +126,50 @@ export class User {
     @Column({ name: 'last_active_at', nullable: true, type: 'timestamp' })
     lastActiveAt: Date;
 
+    @Column({ name: 'trust_score', type: 'int', default: 50 })
+    trustScore: number;
+
+    @Column({ name: 'review_count', type: 'int', default: 0 })
+    reviewCount: number;
+
+    @Column({ name: 'helpful_votes_count', type: 'int', default: 0 })
+    helpfulVotesCount: number;
+
+    @Column({ name: 'spam_flags_count', type: 'int', default: 0 })
+    spamFlagsCount: number;
+
+    @Column({
+        name: 'notification_settings',
+        type: 'jsonb',
+        default: {
+            inApp: {
+                inquiry: true,
+                lead: true,
+                review: true,
+                message: true,
+                offers: true,
+                system: true,
+            },
+            push: {
+                inquiry: true,
+                lead: true,
+                review: true,
+                message: true,
+                offers: false,
+                system: true,
+            },
+            email: {
+                inquiry: true,
+                lead: false,
+                review: false,
+                message: false,
+                offers: false,
+                system: true,
+            },
+        },
+    })
+    notificationSettings: any;
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
@@ -137,6 +181,16 @@ export class User {
 
     @Column({ name: 'deletion_scheduled_at', nullable: true, type: 'timestamp' })
     deletionScheduledAt: Date;
+
+    /**
+     * Virtual field for user badge
+     */
+    @Expose()
+    get badge(): string {
+        if (this.trustScore >= 80) return 'Trusted Reviewer';
+        if (this.trustScore >= 40) return 'Active Member';
+        return 'New Member';
+    }
 
 
     // ── Relations ─────────────────────────────────────────────────────────────

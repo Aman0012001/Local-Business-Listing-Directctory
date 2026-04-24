@@ -7,6 +7,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User, UserRole } from '../../entities/user.entity';
 import { Public } from '../../common/decorators/public.decorator';
+import { NotificationType } from './notifications.service';
 
 @Controller('notifications')
 export class NotificationsController {
@@ -103,7 +104,7 @@ export class NotificationsController {
             userId,
             title: title || '🔔 Test Notification',
             message: message || 'This is a test push notification from the admin panel.',
-            type: type || 'test',
+            type: (type as any) || NotificationType.INFO,
         });
     }
 }

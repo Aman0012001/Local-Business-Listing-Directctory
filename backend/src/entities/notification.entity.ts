@@ -9,6 +9,12 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 
+export enum NotificationPriority {
+    HIGH = 'high',
+    MEDIUM = 'medium',
+    LOW = 'low',
+}
+
 @Entity('notifications')
 export class Notification {
     @PrimaryGeneratedColumn('uuid')
@@ -26,6 +32,16 @@ export class Notification {
 
     @Column({ nullable: true, length: 50 })
     type: string;
+
+    @Column({
+        type: 'enum',
+        enum: NotificationPriority,
+        default: NotificationPriority.MEDIUM,
+    })
+    priority: NotificationPriority;
+
+    @Column({ nullable: true })
+    link: string;
 
     @Column({ nullable: true, type: 'jsonb' })
     data: Record<string, any>;

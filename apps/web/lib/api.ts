@@ -65,9 +65,9 @@ async function fetcher<T>(endpoint: string, options?: FetcherOptions): Promise<T
             // Only redirect on 401 for protected (non-auth) endpoints.
             const isAuthEndpoint = endpoint.startsWith('/auth/');
 
-            if (response.status === 401 && !isAuthEndpoint) {
+            if (response.status === 401 && !isAuthEndpoint && !options?.silent) {
                 if (typeof window !== 'undefined') {
-                    console.error('[api.ts] Unauthorized! Clearing token...');
+                    console.error('[api.ts] Unauthorized! Redirecting to login...');
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
                     window.location.href = '/login?error=expired';
@@ -369,6 +369,14 @@ export const api = {
         },
         markNotificationRead: (id: string) => fetcher<void>(`/users/notifications/${id}/read`, {
             method: 'PATCH',
+        }),
+        updateNotificationSettings: (settings: any) => fetcher<any>('/users/profile/notification-settings', {
+            method: 'PATCH',
+            body: JSON.stringify({ settings }),
+        }),
+        updateDeviceToken: (deviceToken: string) => fetcher<any>('/users/profile/device-token', {
+            method: 'PATCH',
+            body: JSON.stringify({ deviceToken }),
         }),
         requestDeletion: () => fetcher<any>('/users/profile', {
             method: 'DELETE',

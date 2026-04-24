@@ -289,6 +289,25 @@ export class UsersService {
     }
 
     /**
+     * Update notification settings
+     */
+    async updateNotificationSettings(userId: string, settings: any): Promise<User> {
+        const user = await this.getProfile(userId);
+        // Deep merge or replace
+        user.notificationSettings = settings;
+        return this.userRepository.save(user);
+    }
+
+    /**
+     * Update FCM device token
+     */
+    async updateDeviceToken(userId: string, token: string): Promise<User> {
+        const user = await this.getProfile(userId);
+        user.deviceToken = token;
+        return this.userRepository.save(user);
+    }
+
+    /**
      * Permanent deletion of accounts that have passed their 30-day grace period
      */
     @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)

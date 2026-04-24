@@ -43,7 +43,6 @@ export default function DashboardHeader({ toggleSidebar, unreadNotifications = 0
                     </div>
 
                     <div className="flex items-center gap-4 sm:gap-8">
-                        {/* Search Bar (Desktop) */}
 
 
                         <div className="flex items-center gap-2 sm:gap-4">

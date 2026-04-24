@@ -50,6 +50,12 @@ export class Review {
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
+    @Column({ name: 'ip_address', nullable: true, length: 45 })
+    ipAddress: string;
+
+    @Column({ name: 'device_id', nullable: true, length: 255 })
+    deviceId: string;
+
     @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
 }

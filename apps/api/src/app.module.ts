@@ -9,6 +9,8 @@ import { BusinessesModule } from './modules/businesses/businesses.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CitiesModule } from './modules/cities/cities.module';
 import { DemandModule } from './modules/demand/demand.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
+import { TrustModule } from './modules/trust/trust.module';
 import { NotificationsGateway } from './gateways/notifications.gateway';
 
 @Module({
@@ -59,6 +61,8 @@ import { NotificationsGateway } from './gateways/notifications.gateway';
     AuthModule,
     CitiesModule,
     DemandModule,
+    ReviewsModule,
+    TrustModule,
   ],
   controllers: [AppController],
   providers: [AppService, NotificationsGateway],

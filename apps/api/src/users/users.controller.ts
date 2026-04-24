@@ -12,13 +12,17 @@ import {
 import { UsersService } from './users.service';
 import { User } from '../entities/user.entity';
 
+import { JwtAuthGuard } from '../modules/auth/guards/jwt-auth.guard';
+import { Req, UseGuards } from '@nestjs/common';
+
 @Controller('users')
 export class UsersController {
     constructor(private readonly usersService: UsersService) { }
 
     @Get('profile')
-    async getProfile(): Promise<any> {
-        return { message: 'Profile Mock', user: { id: '1', email: 'user@example.com', fullName: 'John Doe' } };
+    @UseGuards(JwtAuthGuard)
+    async getProfile(@Req() req: any): Promise<User | null> {
+        return this.usersService.findOne(req.user.id);
     }
 
     @Get()

@@ -14,6 +14,7 @@ import { Category } from '../../entities/category.entity';
 import { Listing } from '../../entities/business.entity';
 import { BroadcastService } from './broadcast.service';
 import { PushService } from './push.service';
+import { FcmService } from './fcm.service';
 
 @Global()
 @Module({
@@ -31,8 +32,8 @@ import { PushService } from './push.service';
         }),
         TypeOrmModule.forFeature([Notification, User, SearchLog, NotificationLog, Category, Listing])
     ],
-    providers: [NotificationsGateway, NotificationsService, WsJwtGuard, BroadcastService, PushService],
+    providers: [NotificationsGateway, NotificationsService, WsJwtGuard, BroadcastService, PushService, FcmService],
     controllers: [NotificationsController],
-    exports: [NotificationsGateway, NotificationsService, BroadcastService, PushService],
+    exports: [NotificationsGateway, NotificationsService, BroadcastService, PushService, FcmService],
 })
 export class NotificationsModule { }

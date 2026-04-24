@@ -57,6 +57,21 @@ export class User {
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
+    @Column({ name: 'trust_score', type: 'integer', default: 10 })
+    trustScore: number;
+
+    @Column({ name: 'review_count', type: 'integer', default: 0 })
+    reviewCount: number;
+
+    @Column({ name: 'helpful_votes', type: 'integer', default: 0 })
+    helpfulVotes: number;
+
+    @Column({ name: 'spam_flags', type: 'integer', default: 0 })
+    spamFlags: number;
+
+    @Column({ name: 'badge', type: 'varchar', length: 50, default: 'New Member' })
+    badge: string;
+
     @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
 }

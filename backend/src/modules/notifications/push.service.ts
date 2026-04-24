@@ -4,16 +4,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../../entities/user.entity';
 import * as webpush from 'web-push';
+import { FcmService } from './fcm.service';
 
 @Injectable()
 export class PushService {
     private readonly logger = new Logger(PushService.name);
-    private readonly isConfigured: boolean;
+    private readonly isWebPushConfigured: boolean;
 
     constructor(
         private configService: ConfigService,
         @InjectRepository(User)
         private userRepo: Repository<User>,
+        private fcmService: FcmService,
     ) {
         const publicKey = this.configService.get<string>('VAPID_PUBLIC_KEY');
         const privateKey = this.configService.get<string>('VAPID_PRIVATE_KEY');
@@ -21,11 +23,11 @@ export class PushService {
 
         if (publicKey && privateKey && mailto) {
             webpush.setVapidDetails(mailto, publicKey, privateKey);
-            this.isConfigured = true;
+            this.isWebPushConfigured = true;
             this.logger.log('Web Push (VAPID) configured successfully');
         } else {
-            this.isConfigured = false;
-            this.logger.warn('Web Push: VAPID keys missing – push notifications disabled');
+            this.isWebPushConfigured = false;
+            this.logger.warn('Web Push: VAPID keys missing – Web Push disabled');
         }
     }
 
@@ -79,25 +81,35 @@ export class PushService {
         userId: string,
         payload: { title: string; message: string; type?: string; url?: string },
     ): Promise<void> {
-        if (!this.isConfigured) return;
-
         const user = await this.userRepo.findOne({
             where: { id: userId },
-            select: ['id', 'pushSubscriptions'],
+            select: ['id', 'pushSubscriptions', 'deviceToken'],
         });
 
-        if (!user || !Array.isArray(user.pushSubscriptions) || user.pushSubscriptions.length === 0) {
-            return;
+        if (!user) return;
+
+        // 1. Send via FCM if device token is present
+        if (user.deviceToken) {
+            this.fcmService.sendToDevice(user.deviceToken, {
+                title: payload.title,
+                body: payload.message,
+                data: {
+                    type: payload.type || 'notification',
+                    url: payload.url || '/notifications',
+                }
+            }).catch(err => this.logger.error(`FCM failed for user ${userId}: ${err.message}`));
         }
 
-        const push = JSON.stringify({
-            title: payload.title,
-            body: payload.message,
-            icon: '/logo.png',
-            badge: '/logo.png',
-            tag: payload.type || 'notification',
-            data: { url: payload.url || '/notifications' },
-        });
+        // 2. Send via Web Push if subscriptions are present
+        if (this.isWebPushConfigured && Array.isArray(user.pushSubscriptions) && user.pushSubscriptions.length > 0) {
+            const push = JSON.stringify({
+                title: payload.title,
+                body: payload.message,
+                icon: '/logo.png',
+                badge: '/logo.png',
+                tag: payload.type || 'notification',
+                data: { url: payload.url || '/notifications' },
+            });
 
         const invalidEndpoints: string[] = [];
 
@@ -118,12 +130,14 @@ export class PushService {
             }),
         );
 
-        // Clean up invalid subscriptions
-        if (invalidEndpoints.length > 0) {
-            const valid = user.pushSubscriptions.filter(
-                (s: any) => !invalidEndpoints.includes(s.endpoint),
-            );
-            await this.userRepo.update(userId, { pushSubscriptions: valid } as any);
+            // Clean up invalid subscriptions
+            if (invalidEndpoints.length > 0) {
+                const valid = user.pushSubscriptions.filter(
+                    (s: any) => !invalidEndpoints.includes(s.endpoint),
+                );
+                await this.userRepo.update(userId, { pushSubscriptions: valid } as any);
+            }
         }
     }
 }
+

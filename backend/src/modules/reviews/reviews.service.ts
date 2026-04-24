@@ -23,6 +23,7 @@ import {
     calculateSkip,
 } from '../../common/utils/pagination.util';
 import { ReviewDetectionService } from './review-detection.service';
+import { TrustService } from '../users/trust.service';
 
 @Injectable()
 export class ReviewsService {
@@ -38,6 +39,7 @@ export class ReviewsService {
         @InjectRepository(Vendor)
         private vendorRepository: Repository<Vendor>,
         private reviewDetectionService: ReviewDetectionService,
+        private trustService: TrustService,
     ) { }
 
     /**
@@ -125,6 +127,9 @@ export class ReviewsService {
 
         // Update business rating
         await this.updateBusinessRating(businessId);
+
+        // Update user trust score
+        await this.trustService.updateTrustScore(user.id);
 
         return this.findOne(savedReview.id);
     }
@@ -223,6 +228,9 @@ export class ReviewsService {
             await this.updateBusinessRating(review.businessId);
         }
 
+        // Update user trust score
+        await this.trustService.updateTrustScore(review.userId);
+
         return this.findOne(id);
     }
 
@@ -249,6 +257,9 @@ export class ReviewsService {
 
         // Update business rating
         await this.updateBusinessRating(businessId);
+
+        // Update user trust score
+        await this.trustService.updateTrustScore(review.userId);
     }
 
     /**
@@ -319,6 +330,9 @@ export class ReviewsService {
 
         // Increment helpful count
         await this.reviewRepository.increment({ id: reviewId }, 'helpfulCount', 1);
+
+        // Update user trust score of the review OWNER
+        await this.trustService.updateTrustScore(review.userId);
     }
 
     /**
@@ -340,6 +354,12 @@ export class ReviewsService {
 
         // Decrement helpful count
         await this.reviewRepository.decrement({ id: reviewId }, 'helpfulCount', 1);
+
+        // Update user trust score of the review OWNER
+        const review = await this.reviewRepository.findOne({ where: { id: reviewId } });
+        if (review) {
+            await this.trustService.updateTrustScore(review.userId);
+        }
     }
 
     /**
@@ -496,6 +516,9 @@ export class ReviewsService {
         
         // Update business rating if approval status changed
         await this.updateBusinessRating(review.businessId);
+
+        // Update user trust score (suspicious flags might have changed)
+        await this.trustService.updateTrustScore(review.userId);
         
         return review;
     }

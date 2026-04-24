@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { Menu, ChevronDown, MapPin, User as UserIcon, LogOut, X, Search, Building2, Globe, Bell, Check, Trash2, BellRing, Megaphone, MessageSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import { api, getImageUrl } from '../lib/api';
 import VendorAvatar from './VendorAvatar';
 import { Category, City } from '../types/api';
@@ -20,30 +21,31 @@ export default function Navbar() {
     // ── Web Push Notifications ───────────────────────────────────────
     const { supported: pushSupported, permission: pushPermission, isSubscribed: pushSubscribed, subscribe: enablePush, loading: pushLoading } = usePushNotifications(user?.id, true);
 
-    // ── Notifications ───────────────────────────────────────────────
-    const [notifications, setNotifications] = useState<any[]>([]);
-    const [unreadCount, setUnreadCount] = useState(0);
+    // ── Notifications (via SocketContext) ───────────────────────────
+    const { 
+        notifications, 
+        unreadCount, 
+        markAsRead, 
+        markAllAsRead, 
+        deleteNotification 
+    } = useSocket();
+    
     const [unreadChatCount, setUnreadChatCount] = useState(0);
     const [showBell, setShowBell] = useState(false);
     const [activeSub, setActiveSub] = useState<any>(null);
     const [loadingSub, setLoadingSub] = useState(true);
     const bellRef = useRef<HTMLDivElement>(null);
 
-    const fetchNotifications = useCallback(async () => {
+    const fetchUnreadChat = useCallback(async () => {
         if (!user) return;
         try {
-            const [notifRes, chatRes] = await Promise.all([
-                api.notifications.getAll() as any,
-                chatApi.getUnreadCount() as any
-            ]);
-            setNotifications(notifRes.notifications || []);
-            setUnreadCount(notifRes.unreadCount || 0);
+            const chatRes = await chatApi.getUnreadCount() as any;
             setUnreadChatCount(chatRes.count || 0);
         } catch { /* ignore */ }
     }, [user]);
 
     useEffect(() => {
-        fetchNotifications();
+        fetchUnreadChat();
 
         const fetchSub = async () => {
             if (!user || user.role !== 'vendor') {
@@ -61,9 +63,9 @@ export default function Navbar() {
         };
 
         fetchSub();
-        const interval = setInterval(fetchNotifications, 30000);
+        const interval = setInterval(fetchUnreadChat, 30000);
         return () => clearInterval(interval);
-    }, [fetchNotifications, user]);
+    }, [fetchUnreadChat, user]);
 
     // Close bell dropdown on outside click
     useEffect(() => {
@@ -76,26 +78,9 @@ export default function Navbar() {
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
-    const handleMarkRead = async (id: string) => {
-        await api.notifications.markRead(id).catch(() => { });
-        setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
-        setUnreadCount(prev => Math.max(0, prev - 1));
-    };
-
-    const handleMarkAllRead = async () => {
-        await api.notifications.markAllRead().catch(() => { });
-        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-        setUnreadCount(0);
-    };
-
     const handleDelete = async (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
-        await api.notifications.delete(id).catch(() => { });
-        setNotifications(prev => prev.filter(n => n.id !== id));
-        setUnreadCount(prev => {
-            const deleted = notifications.find(n => n.id === id);
-            return deleted && !deleted.isRead ? Math.max(0, prev - 1) : prev;
-        });
+        await deleteNotification(id);
     };
 
     const timeAgo = (date: string) => {
@@ -405,7 +390,7 @@ export default function Navbar() {
                                                 <span className="font-bold text-slate-900 text-sm">Notifications</span>
                                                 {unreadCount > 0 && (
                                                     <button
-                                                        onClick={handleMarkAllRead}
+                                                        onClick={markAllAsRead}
                                                         className="text-[11px] font-bold text-[#FF7A30] hover:text-[#E86920] flex items-center gap-1 transition-colors"
                                                     >
                                                         <Check className="w-3 h-3" /> Mark all read
@@ -424,7 +409,7 @@ export default function Navbar() {
                                                     notifications.slice(0, 10).map(n => (
                                                         <div
                                                             key={n.id}
-                                                            onClick={() => { if (!n.isRead) handleMarkRead(n.id); }}
+                                                            onClick={() => { if (!n.isRead) markAsRead(n.id); }}
                                                             className={`flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 transition-colors group ${n.isRead ? 'opacity-60' : 'bg-orange-50/30'
                                                                 }`}
                                                         >

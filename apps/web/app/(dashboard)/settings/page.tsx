@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Settings, User, Phone, MapPin, Globe, Save, Loader2, CheckCircle2, AlertCircle, Upload, KeyRound, Camera, ChevronDown, Clock, Facebook, Instagram, Linkedin, Twitter, Youtube, ExternalLink, Trash2, Plus, Share2, AlertTriangle, RefreshCcw } from 'lucide-react';
+import { Settings, User, Phone, MapPin, Globe, Save, Loader2, CheckCircle2, AlertCircle, Upload, KeyRound, Camera, ChevronDown, Clock, Facebook, Instagram, Linkedin, Twitter, Youtube, ExternalLink, Trash2, Plus, Share2, AlertTriangle, RefreshCcw, Bell, Mail } from 'lucide-react';
 import { api, getImageUrl } from '../../../lib/api';
 import VendorAvatar from '../../../components/VendorAvatar';
 import { useAuth } from '../../../context/AuthContext';
@@ -38,7 +38,21 @@ export default function AccountSettings() {
         gstNumber: '',
         ntnNumber: '',
         businessHours: {} as Record<string, { isOpen: boolean, openTime: string, closeTime: string }>,
-        socialLinks: [] as { platform: string, url: string }[]
+        socialLinks: [] as { platform: string, url: string }[],
+        notificationSettings: {
+            email: {
+                marketing: true,
+                security: true,
+                updates: true,
+                leads: true
+            },
+            push: {
+                new_message: true,
+                new_review: true,
+                system_alerts: true,
+                offers: true
+            }
+        }
     });
 
     // Password State
@@ -114,7 +128,8 @@ export default function AccountSettings() {
                             saturday: { isOpen: false, openTime: '09:00', closeTime: '18:00' },
                             sunday: { isOpen: false, openTime: '09:00', closeTime: '18:00' },
                         },
-                        socialLinks: profile.vendor?.socialLinks || []
+                        socialLinks: profile.vendor?.socialLinks || [],
+                        notificationSettings: profile.notificationSettings || prev.notificationSettings
                     }));
                     if (profile.avatarUrl) {
                         setPreviewImage(getImageUrl(profile.avatarUrl));
@@ -201,6 +216,19 @@ export default function AccountSettings() {
             return { ...prev, socialLinks: newLinks };
         });
     };
+    
+    const handleNotificationToggle = (category: 'email' | 'push', setting: string) => {
+        setFormData(prev => ({
+            ...prev,
+            notificationSettings: {
+                ...prev.notificationSettings,
+                [category]: {
+                    ...prev.notificationSettings[category as keyof typeof prev.notificationSettings],
+                    [setting]: !((prev.notificationSettings[category as keyof typeof prev.notificationSettings] as any)[setting])
+                }
+            }
+        }));
+    };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -263,6 +291,9 @@ export default function AccountSettings() {
                 });
                 await api.vendors.updateProfile(vendorPayload);
             }
+            
+            // 4. Update Notification Settings
+            await api.users.updateNotificationSettings(formData.notificationSettings);
 
             // 4. BIG SYNC: Re-fetch the entire profile from the backend to ensure a source of truth
             const finalFullProfile = await api.users.getProfile();
@@ -287,7 +318,8 @@ export default function AccountSettings() {
                 gstNumber: finalFullProfile.vendor?.gstNumber || '',
                 ntnNumber: finalFullProfile.vendor?.ntnNumber || '',
                 businessHours: finalFullProfile.vendor?.businessHours || formData.businessHours,
-                socialLinks: finalFullProfile.vendor?.socialLinks || []
+                socialLinks: finalFullProfile.vendor?.socialLinks || [],
+                notificationSettings: finalFullProfile.notificationSettings || formData.notificationSettings
             }));
 
             if (finalFullProfile.avatarUrl) {
@@ -343,6 +375,19 @@ export default function AccountSettings() {
         } finally {
             setPwdSaving(false);
         }
+    };
+
+    const handleNotificationToggle = (type: 'email' | 'push', key: string) => {
+        setFormData(prev => ({
+            ...prev,
+            notificationSettings: {
+                ...prev.notificationSettings,
+                [type]: {
+                    ...(prev.notificationSettings as any)[type],
+                    [key]: !(prev.notificationSettings as any)[type][key]
+                }
+            }
+        }));
     };
 
     const handleRequestDeletion = async () => {
@@ -419,6 +464,60 @@ export default function AccountSettings() {
             </header>
 
             <div className="space-y-12">
+                {/* Reputation & Trust Score */}
+                <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-[40px] border border-slate-700 shadow-2xl overflow-hidden group p-10 lg:p-12 text-white relative">
+                    <div className="absolute top-0 right-0 p-12 opacity-10">
+                        <ShieldCheck className="w-48 h-48 rotate-12" />
+                    </div>
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="w-12 h-12 bg-blue-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+                                <Award className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="text-2xl font-black mb-1">Reputation & Trust</h3>
+                                <p className="text-slate-400 font-bold text-sm uppercase tracking-widest">Your platform status and authority</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-6 border border-white/10">
+                                <div className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-2">Trust Score</div>
+                                <div className="text-4xl font-black text-blue-400 mb-2">{user?.trust_score || 0}</div>
+                                <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                                    <div 
+                                        className="h-full bg-blue-500 rounded-full" 
+                                        style={{ width: `${user?.trust_score || 0}%` }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-6 border border-white/10">
+                                <div className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-2">Current Badge</div>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Award className="w-6 h-6 text-amber-400" />
+                                    <div className="text-xl font-black text-white">{user?.badge || 'New Member'}</div>
+                                </div>
+                                <p className="text-xs text-slate-400 leading-relaxed font-medium">Your badge determines your authority in reviews and interactions.</p>
+                            </div>
+
+                            <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-6 border border-white/10">
+                                <div className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-2">Activity Stats</div>
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-bold text-slate-300">Reviews</span>
+                                        <span className="text-xs font-black text-blue-400">{user?.review_count || 0}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-bold text-slate-300">Helpful Votes</span>
+                                        <span className="text-xs font-black text-emerald-400">{user?.helpful_votes || 0}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {/* General Profile Info */}
                 <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden group">
                     <div className="p-10 lg:p-12 border-b border-slate-50 bg-slate-50/30 relative overflow-hidden">
@@ -1029,6 +1128,97 @@ export default function AccountSettings() {
                         </button>
                     </div>
                 </form>
+            </div>
+
+            {/* Notification Preferences */}
+            <div className="bg-white rounded-[20px] border border-slate-100 shadow-sm overflow-hidden mb-12">
+                <div className="p-8 lg:p-12 border-b border-slate-50 bg-slate-50/30 flex items-start gap-4">
+                    <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center shrink-0">
+                        <Bell className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-black text-slate-900 mb-2">Notification Preferences</h3>
+                        <p className="text-sm text-slate-500 font-medium">Choose how you want to be notified about activity, security, and updates.</p>
+                    </div>
+                </div>
+
+                <div className="p-8 lg:p-12 space-y-10">
+                    {/* Email Notifications */}
+                    <div>
+                        <div className="flex items-center gap-3 mb-6">
+                            <Mail className="w-5 h-5 text-slate-400" />
+                            <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">Email Notifications</h4>
+                        </div>
+                        <div className="grid sm:grid-cols-2 gap-x-12 gap-y-6">
+                            {[
+                                { id: 'leads', label: 'New Leads', desc: 'Get notified when a customer sends an inquiry.' },
+                                { id: 'updates', label: 'Product Updates', desc: 'News about new features and improvements.' },
+                                { id: 'security', label: 'Security Alerts', desc: 'Important alerts about your account security.' },
+                                { id: 'marketing', label: 'Marketing', desc: 'Receive offers and promotional content.' },
+                            ].map((item) => (
+                                <div key={item.id} className="flex items-start justify-between gap-4 p-4 rounded-2xl hover:bg-slate-50 transition-colors">
+                                    <div className="flex-1">
+                                        <p className="text-sm font-black text-slate-900">{item.label}</p>
+                                        <p className="text-xs text-slate-500 font-medium mt-0.5">{item.desc}</p>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer pt-1">
+                                        <input
+                                            type="checkbox"
+                                            className="sr-only peer"
+                                            checked={(formData.notificationSettings.email as any)[item.id] || false}
+                                            onChange={() => handleNotificationToggle('email', item.id)}
+                                        />
+                                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                    </label>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="h-px bg-slate-100" />
+
+                    {/* Push Notifications */}
+                    <div>
+                        <div className="flex items-center gap-3 mb-6">
+                            <Bell className="w-5 h-5 text-slate-400" />
+                            <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">Push Notifications</h4>
+                        </div>
+                        <div className="grid sm:grid-cols-2 gap-x-12 gap-y-6">
+                            {[
+                                { id: 'new_message', label: 'New Messages', desc: 'Real-time alerts for new chat messages.' },
+                                { id: 'new_review', label: 'New Reviews', desc: 'Get notified when someone leaves a review.' },
+                                { id: 'offers', label: 'Exclusive Offers', desc: 'Don\'t miss out on time-limited business deals.' },
+                                { id: 'system_alerts', label: 'System Alerts', desc: 'Critical system and service notifications.' },
+                            ].map((item) => (
+                                <div key={item.id} className="flex items-start justify-between gap-4 p-4 rounded-2xl hover:bg-slate-50 transition-colors">
+                                    <div className="flex-1">
+                                        <p className="text-sm font-black text-slate-900">{item.label}</p>
+                                        <p className="text-xs text-slate-500 font-medium mt-0.5">{item.desc}</p>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer pt-1">
+                                        <input
+                                            type="checkbox"
+                                            className="sr-only peer"
+                                            checked={(formData.notificationSettings.push as any)[item.id] || false}
+                                            onChange={() => handleNotificationToggle('push', item.id)}
+                                        />
+                                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                    </label>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="pt-6 border-t border-slate-50 flex justify-end">
+                        <button
+                            onClick={handleSubmit}
+                            disabled={saving}
+                            className="flex items-center justify-center gap-3 px-10 py-4 bg-indigo-600 text-white rounded-2xl font-black  shadow-indigo-500/20 hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-50 disabled:scale-100"
+                        >
+                            {saving ? 'Updating...' : 'Save Preferences'}
+                        </button>
+                    </div>
+                </div>
             </div>
 
             {/* Danger Zone: Account Deletion */}

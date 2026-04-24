@@ -9,15 +9,17 @@ import { Notification } from '../../entities/notification.entity';
 import { Listing } from '../../entities/business.entity';
 
 import { AdminModule } from '../admin/admin.module';
+import { Review } from '../../entities/review.entity';
+import { TrustService } from './trust.service';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([User, SavedListing, Notification, Listing]),
+        TypeOrmModule.forFeature([User, SavedListing, Notification, Listing, Review]),
         SubscriptionsModule,
         AdminModule,
     ],
     controllers: [UsersController],
-    providers: [UsersService],
-    exports: [UsersService],
+    providers: [UsersService, TrustService],
+    exports: [UsersService, TrustService],
 })
 export class UsersModule { }

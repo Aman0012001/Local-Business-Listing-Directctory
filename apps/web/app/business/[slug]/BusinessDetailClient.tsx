@@ -37,6 +37,8 @@ import {
   Loader2,
   Footprints,
   Info,
+  Award,
+  Activity,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "../../../components/Navbar";
@@ -90,6 +92,30 @@ const VendorOnlineBadge = ({
   );
 };
 
+// User Trust Badge
+const TrustBadge = ({ badge, score }: { badge?: string; score?: number }) => {
+  if (!badge) return null;
+
+  const getBadgeStyles = (b: string) => {
+    const lb = b.toLowerCase();
+    if (lb.includes("trusted")) return "bg-amber-50 text-amber-700 border-amber-200";
+    if (lb.includes("active")) return "bg-blue-50 text-blue-700 border-blue-200";
+    return "bg-slate-50 text-slate-600 border-slate-200";
+  };
+
+  return (
+    <div
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border shadow-sm ${getBadgeStyles(
+        badge
+      )}`}
+    >
+      <Award className="w-2.5 h-2.5" />
+      {badge}
+      {score !== undefined && <span className="ml-1 opacity-60">Score: {score}</span>}
+    </div>
+  );
+};
+
 // Open / Closed badge based on business hours
 // Falls back to vendor.businessHours (Record) if listing.businessHours (Array) is empty
 const BusinessOpenBadge = ({ business }: { business: Business }) => {
@@ -128,6 +154,20 @@ export default function BusinessDetailClient({
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("Overview");
+  const [deviceId, setDeviceId] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      let id = localStorage.getItem("device_id");
+      if (!id) {
+        id =
+          Math.random().toString(36).substring(2, 15) +
+          Math.random().toString(36).substring(2, 15);
+        localStorage.setItem("device_id", id);
+      }
+      setDeviceId(id);
+    }
+  }, []);
   const [comments, setComments] = useState<any[]>([]); // We keep the name 'comments' to minimize changes but it will hold Review objects
   const [isFavorite, setIsFavorite] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -644,6 +684,7 @@ export default function BusinessDetailClient({
         businessId: business.id,
         rating: reviewRating,
         comment: reviewComment.trim(),
+        device_id: deviceId,
       });
       // Refresh reviews
       const reviewsData = await api.reviews.getByBusiness(business.id);
@@ -872,23 +913,23 @@ export default function BusinessDetailClient({
       )}
 
       {/* Breadcrumbs */}
-      <div className="max-w-7xl mx-auto px-4 py-6 border-b border-slate-100 flex items-center gap-2 text-sm text-slate-400">
-        <Link href="/" className="hover:text-blue-600">
+      <div className="max-w-7xl mx-auto px-4 py-4 md:py-6 border-b border-slate-100 flex flex-wrap items-center gap-2 text-xs md:text-sm text-slate-400">
+        <Link href="/" className="hover:text-blue-600 shrink-0">
           Home
         </Link>
-        <ChevronRight className="w-4 h-4" />
+        <ChevronRight className="w-3 h-3 md:w-4 md:h-4 shrink-0" />
         <Link
           href={`/search?category=${business.category?.slug || ""}`}
-          className="hover:text-blue-600"
+          className="hover:text-blue-600 truncate max-w-[100px] md:max-w-none"
         >
           {business.category?.name || "Category"}
         </Link>
-        <ChevronRight className="w-4 h-4" />
-        <span className="text-slate-900 font-medium">{business.title}</span>
+        <ChevronRight className="w-3 h-3 md:w-4 md:h-4 shrink-0" />
+        <span className="text-slate-900 font-medium truncate">{business.title}</span>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 py-12">
-        <div className="grid lg:grid-cols-3 gap-12">
+      <main className="max-w-7xl mx-auto px-4 py-8 md:py-12 pb-24 lg:pb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
           {/* Main Content */}
           <div className="lg:col-span-2">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
@@ -920,22 +961,22 @@ export default function BusinessDetailClient({
                   />
                   <BusinessOpenBadge business={business} />
                 </div>
-                <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-4">
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 mb-4 leading-tight">
                   {business.title}
                 </h1>
-                <div className="flex flex-wrap items-center gap-6 text-slate-600">
+                <div className="flex flex-wrap items-center gap-4 md:gap-6 text-slate-600">
                   <div className="flex items-center gap-1.5">
-                    <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
+                    <Star className="w-4 h-4 md:w-5 md:h-5 text-amber-400 fill-amber-400" />
                     <span className="font-bold text-slate-900">
                       {business.averageRating || "New"}
                     </span>
-                    <span className="text-sm">
+                    <span className="text-xs md:text-sm">
                       ({business.totalReviews || 0} reviews)
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-sm">
+                  <div className="flex items-center gap-1.5 text-xs md:text-sm">
                     <MapPin className="w-4 h-4 text-slate-400" />{" "}
-                    {business.address}, {business.city}
+                    <span className="line-clamp-1">{business.address}, {business.city}</span>
                   </div>
                 </div>
               </div>
@@ -964,12 +1005,12 @@ export default function BusinessDetailClient({
             </div>
 
             {/* Gallery */}
-            <div className="grid grid-cols-4 grid-rows-2 h-[500px] gap-4 mb-16 relative z-10 transition-all duration-500">
+            <div className="grid grid-cols-2 md:grid-cols-4 md:grid-rows-2 h-[350px] md:h-[500px] gap-2 md:gap-4 mb-10 md:mb-16 relative z-10 transition-all duration-500">
               {galleryImages.length > 0 ? (
                 <>
                   <div
                     onClick={() => openLightbox(0)}
-                    className={`${galleryImages.length === 1 ? 'col-span-4' : 'col-span-2'} row-span-2 rounded-[24px] overflow-hidden border border-slate-100 bg-slate-50 cursor-pointer group/outer relative`}
+                    className={`${galleryImages.length === 1 ? 'col-span-2 md:col-span-4' : 'col-span-2 md:col-span-2'} row-span-1 md:row-span-2 rounded-[16px] md:rounded-[24px] overflow-hidden border border-slate-100 bg-slate-50 cursor-pointer group/outer relative`}
                   >
                     <img
                       src={galleryImages[0]}
@@ -978,7 +1019,7 @@ export default function BusinessDetailClient({
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover/outer:bg-black/10 transition-colors duration-300" />
                     {galleryImages.length === 1 && (
-                      <div className="absolute bottom-6 right-6 px-4 py-2 bg-black/50 backdrop-blur-md rounded-xl text-white text-[10px] font-black uppercase tracking-widest border border-white/10">
+                      <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 px-3 md:px-4 py-1.5 md:py-2 bg-black/50 backdrop-blur-md rounded-lg md:rounded-xl text-white text-[8px] md:text-[10px] font-black uppercase tracking-widest border border-white/10">
                         Featured Image
                       </div>
                     )}
@@ -986,7 +1027,7 @@ export default function BusinessDetailClient({
                   {galleryImages.length > 1 && (
                     <div
                       onClick={() => openLightbox(1)}
-                      className={`${galleryImages.length === 2 ? 'col-span-2' : 'col-span-2'} row-span-1 rounded-[24px] overflow-hidden border border-slate-100 bg-slate-50 cursor-pointer group/outer relative`}
+                      className={`${galleryImages.length === 2 ? 'col-span-2' : 'col-span-1 md:col-span-2'} row-span-1 rounded-[16px] md:rounded-[24px] overflow-hidden border border-slate-100 bg-slate-50 cursor-pointer group/outer relative`}
                     >
                       <img
                         src={galleryImages[1]}
@@ -999,7 +1040,7 @@ export default function BusinessDetailClient({
                   {galleryImages.length > 2 && (
                     <div
                       onClick={() => openLightbox(2)}
-                      className="col-span-1 row-span-1 rounded-[20px] overflow-hidden border border-slate-100 bg-slate-50 cursor-pointer group/outer relative"
+                      className="col-span-1 row-span-1 rounded-[16px] md:rounded-[20px] overflow-hidden border border-slate-100 bg-slate-50 cursor-pointer group/outer relative"
                     >
                       <img
                         src={galleryImages[2]}
@@ -1012,7 +1053,7 @@ export default function BusinessDetailClient({
                   {galleryImages.length > 0 && (
                     <div
                       onClick={() => openLightbox(galleryImages.length > 3 ? 3 : 0)}
-                      className={`${galleryImages.length === 2 ? 'col-span-2' : 'col-span-1'} row-span-1 rounded-[20px] bg-slate-900 flex flex-col items-center justify-center cursor-pointer hover:bg-blue-600 transition-all duration-300 group shadow-xl relative overflow-hidden`}
+                      className={`${galleryImages.length === 2 ? 'col-span-2' : 'col-span-1'} row-span-1 rounded-[16px] md:rounded-[20px] bg-slate-900 flex flex-col items-center justify-center cursor-pointer hover:bg-blue-600 transition-all duration-300 group shadow-xl relative overflow-hidden`}
                     >
                       {galleryImages.length >= 4 && (
                         <>
@@ -1024,13 +1065,13 @@ export default function BusinessDetailClient({
                           <div className="absolute inset-0 bg-slate-900/40 group-hover:bg-blue-600/40 transition-colors" />
                         </>
                       )}
-                      <div className="relative z-10 flex flex-col items-center">
-                        <Images className="w-5 h-5 text-white/50 mb-2 group-hover:scale-110 group-hover:text-white transition-all" />
-                        <span className="text-white font-black uppercase tracking-[0.2em] text-[10px]">
+                      <div className="relative z-10 flex flex-col items-center p-2">
+                        <Images className="w-4 h-4 md:w-5 md:h-5 text-white/50 mb-1 md:mb-2 group-hover:scale-110 group-hover:text-white transition-all" />
+                        <span className="text-white font-black uppercase tracking-[0.1em] md:tracking-[0.2em] text-[8px] md:text-[10px] text-center">
                           {galleryImages.length}{" "}
                           {galleryImages.length === 1 ? "Photo" : "Photos"}
                         </span>
-                        <span className="text-white/40 font-bold uppercase tracking-widest text-[8px] mt-1">
+                        <span className="text-white/40 font-bold uppercase tracking-widest text-[7px] md:text-[8px] mt-0.5 md:mt-1">
                           {galleryImages.length > 3 ? "View All" : "Full View"}
                         </span>
                       </div>
@@ -1038,13 +1079,13 @@ export default function BusinessDetailClient({
                   )}
                 </>
               ) : (
-                <div className="col-span-4 row-span-2 rounded-[32px] bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-300 gap-4 group hover:border-blue-200 transition-colors">
-                  <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-500">
-                    <Images className="w-10 h-10 opacity-20" />
+                <div className="col-span-2 md:col-span-4 row-span-1 md:row-span-2 rounded-[24px] md:rounded-[32px] bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-300 gap-3 md:gap-4 group hover:border-blue-200 transition-colors p-6">
+                  <div className="w-12 h-12 md:w-20 md:h-20 bg-white rounded-2xl md:rounded-3xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-500">
+                    <Images className="w-6 h-6 md:w-10 md:h-10 opacity-20" />
                   </div>
                   <div className="text-center">
-                    <p className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">No Gallery Photos</p>
-                    <p className="text-[10px] font-bold mt-1 text-slate-300 max-w-[200px]">The vendor has not uploaded any photos for this business yet.</p>
+                    <p className="text-xs md:text-sm font-black uppercase tracking-[0.1em] md:tracking-[0.2em] text-slate-400">No Gallery Photos</p>
+                    <p className="text-[8px] md:text-[10px] font-bold mt-1 text-slate-300 max-w-[150px] md:max-w-[200px] mx-auto">The vendor has not uploaded any photos for this business yet.</p>
                   </div>
                 </div>
               )}
@@ -1057,7 +1098,7 @@ export default function BusinessDetailClient({
                 [];
               return (
                 <>
-                  <div className="border-b border-slate-100 flex items-center gap-12 mb-10 overflow-x-auto scrollbar-hide">
+                  <div className="border-b border-slate-100 flex items-center gap-6 md:gap-12 mb-8 md:mb-10 overflow-x-auto scrollbar-hide">
                     {[
                       "Overview",
                       "Reviews",
@@ -1069,7 +1110,7 @@ export default function BusinessDetailClient({
                       <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
-                        className={`pb-4 text-sm font-bold tracking-wide border-b-2 transition-all whitespace-nowrap ${activeTab === tab ? "text-blue-600 border-blue-600" : "text-slate-400 border-transparent hover:text-slate-600"}`}
+                        className={`pb-4 text-xs md:text-sm font-bold tracking-wide border-b-2 transition-all whitespace-nowrap ${activeTab === tab ? "text-blue-600 border-blue-600" : "text-slate-400 border-transparent hover:text-slate-600"}`}
                       >
                         {tab}
                       </button>
@@ -1123,16 +1164,16 @@ export default function BusinessDetailClient({
                             />
 
                             {/* Floating Info Overlay */}
-                            <div className="absolute bottom-6 left-6 right-6 md:w-80 p-6 bg-white/90 backdrop-blur-xl border border-white/20 rounded-[16px] shadow-2xl">
-                              <div className="flex items-start gap-4">
-                                <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30 shrink-0">
-                                  <MapPin className="w-6 h-6" />
+                            <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-6 md:right-auto md:w-80 p-4 md:p-6 bg-white/90 backdrop-blur-xl border border-white/20 rounded-[16px] shadow-2xl">
+                              <div className="flex items-start gap-3 md:gap-4">
+                                <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-600 rounded-xl md:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30 shrink-0">
+                                  <MapPin className="w-5 h-5 md:w-6 md:h-6" />
                                 </div>
                                 <div>
-                                  <p className="text-sm font-black text-slate-900 leading-tight mb-1">
+                                  <p className="text-xs md:text-sm font-black text-slate-900 leading-tight mb-1">
                                     {business.address}
                                   </p>
-                                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                                  <p className="text-[9px] md:text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                                     {business.city}, {business.state}{" "}
                                     {business.pincode}
                                   </p>
@@ -1143,7 +1184,7 @@ export default function BusinessDetailClient({
                                         "_blank",
                                       )
                                     }
-                                    className="mt-3 flex items-center gap-2 text-blue-600 text-xs font-black uppercase tracking-widest hover:text-blue-700 transition-colors"
+                                    className="mt-2 md:mt-3 flex items-center gap-2 text-blue-600 text-[10px] md:text-xs font-black uppercase tracking-widest hover:text-blue-700 transition-colors"
                                   >
                                     Get Directions{" "}
                                     <ChevronRight className="w-3 h-3" />
@@ -1214,9 +1255,15 @@ export default function BusinessDetailClient({
                                       )}
                                     </div>
                                     <div>
-                                      <h4 className="font-bold text-slate-900">
-                                        {comment.user?.fullName || "Anonymous"}
-                                      </h4>
+                                      <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                                        <h4 className="font-bold text-slate-900">
+                                          {comment.user?.fullName || "Anonymous"}
+                                        </h4>
+                                        <TrustBadge
+                                          badge={comment.user?.badge}
+                                          score={comment.user?.trust_score}
+                                        />
+                                      </div>
                                       <div className="flex items-center gap-1 mt-0.5">
                                         {[...Array(5)].map((_, i) => (
                                           <Star
@@ -1397,21 +1444,21 @@ export default function BusinessDetailClient({
                           Business Amenities
                         </h3>
                         {business.businessAmenities && business.businessAmenities.length > 0 ? (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                             {business.businessAmenities.map((item, idx) => (
                               <motion.div
                                 key={idx}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: idx * 0.05 }}
-                                className="group flex items-center gap-4 p-5 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-100 transition-all hover:-translate-y-1"
+                                className="group flex items-center gap-3 md:gap-4 p-4 md:p-5 bg-white rounded-xl md:rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-100 transition-all hover:-translate-y-1"
                               >
-                                <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-blue-50 transition-colors">
-                                  <DynamicIcon name={item.amenity?.icon || "CheckCircle2"} className="w-6 h-6 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                                <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-blue-50 transition-colors shrink-0">
+                                  <DynamicIcon name={item.amenity?.icon || "CheckCircle2"} className="w-5 h-5 md:w-6 md:h-6 text-slate-400 group-hover:text-blue-600 transition-colors" />
                                 </div>
-                                <div>
-                                  <h4 className="font-bold text-slate-900 leading-tight">{item.amenity?.name}</h4>
-                                  <p className="text-xs text-slate-400 font-medium">Verified Amenity</p>
+                                <div className="min-w-0">
+                                  <h4 className="font-bold text-slate-900 leading-tight text-sm md:text-base truncate">{item.amenity?.name}</h4>
+                                  <p className="text-[10px] md:text-xs text-slate-400 font-medium">Verified</p>
                                 </div>
                               </motion.div>
                             ))}
@@ -1631,9 +1678,9 @@ export default function BusinessDetailClient({
                             {!isOwner && (
                               <div
                                 id="ask-question-form"
-                                className="mt-12 p-8 bg-blue-50/50 rounded-[32px] border border-blue-100"
+                                className="mt-8 md:mt-12 p-6 md:p-8 bg-blue-50/50 rounded-[24px] md:rounded-[32px] border border-blue-100"
                               >
-                                <h4 className="text-xl font-bold text-slate-900 mb-6">
+                                <h4 className="text-lg md:text-xl font-bold text-slate-900 mb-4 md:mb-6">
                                   Ask a Question
                                 </h4>
                                 <form
@@ -1699,17 +1746,17 @@ export default function BusinessDetailClient({
                         )}
 
                         {/* Offer card */}
-                        <div className="relative p-8 bg-gradient-to-br from-orange-50 to-amber-50 rounded-[20px] border border-orange-100 overflow-hidden">
+                        <div className="relative p-6 md:p-8 bg-gradient-to-br from-orange-50 to-amber-50 rounded-[20px] border border-orange-100 overflow-hidden">
                           {/* Decorative blob */}
                           <div className="absolute -top-8 -right-8 w-40 h-40 bg-orange-100 rounded-full opacity-60" />
                           <div className="relative z-10">
                             {business.offerBadge && (
-                              <span className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-orange-500 text-white rounded-full text-[11px] font-black uppercase tracking-widest mb-5 shadow-md shadow-orange-500/30">
-                                <Zap className="w-3 h-3" />{" "}
+                              <span className="inline-flex items-center gap-1.5 px-3 md:px-4 py-1 md:py-1.5 bg-orange-500 text-white rounded-full text-[9px] md:text-[11px] font-black uppercase tracking-widest mb-4 md:mb-5 shadow-md shadow-orange-500/30">
+                                <Zap className="w-2.5 h-2.5 md:w-3 md:h-3" />{" "}
                                 {business.offerBadge}
                               </span>
                             )}
-                            <h4 className="text-3xl font-black text-slate-900 mb-3 leading-tight">
+                            <h4 className="text-2xl md:text-3xl font-black text-slate-900 mb-2 md:mb-3 leading-tight">
                               {business.offerTitle || "Special Offer"}
                             </h4>
                             {business.offerDescription && (
@@ -1717,20 +1764,19 @@ export default function BusinessDetailClient({
                                 {business.offerDescription}
                               </p>
                             )}
-                            <div className="flex flex-wrap items-center gap-4">
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 md:gap-4">
                               {!isOwner && (
                                 <button
                                   onClick={openEnquiryModal}
-                                  className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-2xl font-black text-sm hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg shadow-orange-500/25 active:scale-95"
+                                  className="inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl md:rounded-2xl font-black text-xs md:text-sm hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg shadow-orange-500/25 active:scale-95"
                                 >
-                                  <Zap className="w-4 h-4" /> Enquire About This
-                                  Offer
+                                  <Zap className="w-4 h-4" /> Enquire Now
                                 </button>
                               )}
                               {business.phone && (
                                 <button
                                   onClick={() => handleContactIntent("call")}
-                                  className="inline-flex items-center gap-2 px-6 py-3.5 bg-white border border-slate-200 text-slate-700 rounded-2xl font-bold text-sm hover:border-orange-400 hover:text-orange-600 transition-all"
+                                  className="inline-flex items-center justify-center gap-2 px-5 md:px-6 py-3 md:py-3.5 bg-white border border-slate-200 text-slate-700 rounded-xl md:rounded-2xl font-bold text-xs md:text-sm hover:border-orange-400 hover:text-orange-600 transition-all"
                                 >
                                   <Phone className="w-4 h-4" /> Call to Claim
                                 </button>
@@ -1738,10 +1784,9 @@ export default function BusinessDetailClient({
                               {(business.whatsapp || business.phone) && (
                                 <button
                                   onClick={() => handleContactIntent("whatsapp")}
-                                  className="inline-flex items-center gap-2 px-6 py-3.5 bg-[#25D366] text-white rounded-2xl font-bold text-sm hover:bg-[#128C7E] transition-all shadow-lg shadow-green-500/20"
+                                  className="inline-flex items-center justify-center gap-2 px-5 md:px-6 py-3 md:py-3.5 bg-[#25D366] text-white rounded-xl md:rounded-2xl font-bold text-xs md:text-sm hover:bg-[#128C7E] transition-all shadow-lg shadow-green-500/20"
                                 >
-                                  <WhatsAppIcon className="w-5 h-5" /> WhatsApp
-                                  Us
+                                  <WhatsAppIcon className="w-4 h-4 md:w-5 md:h-5" /> WhatsApp
                                 </button>
                               )}
                             </div>
@@ -1805,8 +1850,8 @@ export default function BusinessDetailClient({
           {/* end lg:col-span-2 */}
 
           {/* Sidebar Area */}
-          <aside>
-            <div className="sticky top-28 space-y-8">
+          <aside className="relative">
+            <div className="lg:sticky lg:top-28 space-y-8">
               {/* Actions/Contact Card */}
               <div className="bg-slate-900 rounded-[16px] p-8 text-white shadow-2xl shadow-blue-500/20">
                 <h4 className="text-xl font-bold mb-6">
@@ -2265,46 +2310,64 @@ export default function BusinessDetailClient({
         </section>
       )}
 
+      {/* Mobile Sticky Action Bar */}
+      {!isOwner && (
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 p-4 bg-white/80 backdrop-blur-xl border-t border-slate-100 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] animate-in slide-in-from-bottom duration-500">
+          <div className="flex items-center gap-3">
+            {business.phone && (
+              <button
+                onClick={() => handleContactIntent("call")}
+                className="flex-1 h-12 bg-slate-900 text-white rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all text-sm"
+              >
+                <Phone className="w-4 h-4" /> Call
+              </button>
+            )}
+            {(business.whatsapp || business.phone) && (
+              <button
+                onClick={() => handleContactIntent("whatsapp")}
+                className="flex-1 h-12 bg-[#25D366] text-white rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all text-sm"
+              >
+                <WhatsAppIcon className="w-5 h-5" /> WhatsApp
+              </button>
+            )}
+            <button
+              onClick={() => openEnquiryModal()}
+              className="w-12 h-12 bg-blue-600 text-white rounded-xl flex items-center justify-center active:scale-95 transition-all shadow-lg shadow-blue-500/20"
+            >
+              <Send className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <Footer />
 
       {showReviewModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-lg rounded-[16px] p-8 shadow-2xl relative animate-in zoom-in-95 duration-300">
+          <div className="bg-white w-full max-w-lg rounded-[20px] md:rounded-[16px] p-6 md:p-8 shadow-2xl relative animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setShowReviewModal(false)}
-              className="absolute top-8 right-8 text-slate-400 hover:text-slate-900 transition-colors"
+              className="absolute top-4 right-4 md:top-8 md:right-8 text-slate-400 hover:text-slate-900 transition-colors p-2"
             >
               <span className="sr-only">Close</span>
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+              <X className="w-6 h-6" />
             </button>
 
-            <div className="text-center mb-8">
-              <h3 className="text-3xl font-black text-slate-900 mb-2">
+            <div className="text-center mb-6 md:mb-8">
+              <h3 className="text-2xl md:text-3xl font-black text-slate-900 mb-2">
                 Write a Review
               </h3>
-              <p className="text-slate-500">
+              <p className="text-sm text-slate-500">
                 Share your experience with {business.title}
               </p>
             </div>
 
-            <form onSubmit={handleReviewSubmit} className="space-y-6">
+            <form onSubmit={handleReviewSubmit} className="space-y-4 md:space-y-6">
               <div className="flex flex-col items-center">
                 <label className="block text-sm font-bold text-slate-700 mb-4">
                   How was your experience?
                 </label>
-                <div className="flex gap-2">
+                <div className="flex gap-1 md:gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
@@ -2313,7 +2376,7 @@ export default function BusinessDetailClient({
                       className="p-1 transition-transform hover:scale-110 active:scale-90"
                     >
                       <Star
-                        className={`w-10 h-10 ${star <= reviewRating ? "text-amber-400 fill-amber-400" : "text-slate-200"}`}
+                        className={`w-8 h-8 md:w-10 md:h-10 ${star <= reviewRating ? "text-amber-400 fill-amber-400" : "text-slate-200"}`}
                       />
                     </button>
                   ))}
@@ -2330,14 +2393,14 @@ export default function BusinessDetailClient({
                   onChange={(e) => setReviewComment(e.target.value)}
                   rows={4}
                   placeholder="Tell others what you liked or disliked..."
-                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-3xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-slate-300 text-slate-600"
+                  className="w-full px-4 md:px-6 py-3 md:py-4 bg-slate-50 border border-slate-100 rounded-2xl md:rounded-3xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-slate-300 text-sm md:text-base text-slate-600"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={submittingReview}
-                className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+                className="w-full py-3.5 md:py-4 bg-slate-900 text-white rounded-xl md:rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95 disabled:opacity-50 disabled:active:scale-100"
               >
                 {submittingReview ? "Submitting..." : "Submit Review"}
               </button>
@@ -2365,10 +2428,10 @@ export default function BusinessDetailClient({
               {/* Header gradient bar */}
               {/* <div className="h-2 w-full bg-gradient-to-r from-violet-500 via-blue-500 to-indigo-500" /> */}
 
-              <div className="p-8">
+              <div className="p-6 md:p-8">
                 <button
                   onClick={() => setShowEnquiryModal(false)}
-                  className="absolute top-6 right-6 text-slate-400 hover:text-slate-900 transition-colors p-1 rounded-full hover:bg-slate-100"
+                  className="absolute top-4 right-4 md:top-6 md:right-6 text-slate-400 hover:text-slate-900 transition-colors p-1.5 rounded-full hover:bg-slate-100"
                 >
                   <X className="w-5 h-5" />
                 </button>

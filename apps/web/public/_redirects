@@ -1,7 +1,7 @@
-# Redirect old vendor paths to new clean dashboard paths
-/vendor/*    /:splat    301
+# Redirect old vendor paths to new plural vendors path
+/vendor/*    /vendors/:splat    301
 
-# SPA Fallback for Dashboard and Admin routes
+# SPA Fallbacks for Dashboard and Admin routes (handled by Next.js but kept for safety)
 /dashboard/*  /dashboard/index.html  200
 /listings/*   /listings/index.html   200
 /leads/*      /leads/index.html      200
@@ -9,12 +9,4 @@
 /settings/*   /settings/index.html   200
 /admin/*     /admin/:splat.html     200
 
-# Category and City slug fallbacks - ensure dynamic list pages work on refresh
-/categories/*  /categories/template/index.html  200
-/cities/*      /cities/template/index.html      200
-
-# Business slug fallback - ensure dynamic business pages work on refresh
-/business/*  /business/template/index.html  200
-
-# Generic fallback to index.html for unknown routes
-/*  /index.html  200
+# Next.js handles its own dynamic routing now that we are using SSR (no output: export)

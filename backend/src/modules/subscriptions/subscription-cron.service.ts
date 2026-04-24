@@ -6,7 +6,7 @@ import { Subscription, SubscriptionStatus } from '../../entities/subscription.en
 import { ActivePlan, ActivePlanStatus } from '../../entities/active-plan.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { User } from '../../entities/user.entity';
-import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationsService, NotificationType } from '../notifications/notifications.service';
 import { PushService } from '../notifications/push.service';
 import { Listing } from '../../entities/business.entity';
 import { PricingPlanType } from '../../entities/pricing-plan.entity';
@@ -239,7 +239,7 @@ export class SubscriptionCronService {
                     userId: user.id,
                     title,
                     message,
-                    type: 'subscription_expiry',
+                    type: NotificationType.SUBSCRIPTION_ALERT,
                     link: '/subscription',
                     data: {
                         subscriptionId: sub.id,
@@ -253,7 +253,7 @@ export class SubscriptionCronService {
                 await this.pushService.sendToUser(user.id, {
                     title,
                     message,
-                    type: 'subscription_expiry',
+                    type: NotificationType.SUBSCRIPTION_ALERT,
                     url: '/subscription',
                 });
 
