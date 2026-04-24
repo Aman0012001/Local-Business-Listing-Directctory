@@ -61,16 +61,28 @@ async function bootstrap() {
             /^http:\/\/127\.0.0\.1(:\d+)?$/,    // 127.0.0.1 with any port
         ];
 
+        // Debug middleware to trace incoming requests and CORS issues
+        app.use((req, res, next) => {
+            const origin = req.headers.origin;
+            if (req.method === 'OPTIONS') {
+                console.log(`🔍 [CORS-PREFLIGHT] ${req.method} ${req.url} | Origin: ${origin}`);
+            }
+            next();
+        });
+
         app.enableCors({
             origin: (origin, callback) => {
-                // Allow if no origin (Postman, mobile apps, server-to-server)
-                if (!origin) return callback(null, true);
+                // 1. Allow if no origin (Postman, mobile apps, server-to-server)
+                if (!origin) {
+                    return callback(null, true);
+                }
 
-                // 1. Check explicit allowed origins from ENV
+                // 2. Check explicit allowed origins from ENV
                 if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
                     return callback(null, true);
                 }
 
+                // 3. Check dynamic patterns
                 const isMatchingPattern = allowedPatterns.some(pattern => {
                     if (pattern instanceof RegExp) {
                         return pattern.test(origin);
@@ -82,13 +94,16 @@ async function bootstrap() {
                     return callback(null, true);
                 }
 
-                // Fallback for development
+                // 4. Fallback for development
                 if (nodeEnv !== 'production' || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+                    console.log(`✅ [CORS-DEBUG] Allowing development origin: ${origin}`);
                     return callback(null, true);
                 }
 
-                console.warn(`❌ CORS Blocked: origin ${origin} not allowed`);
-                return callback(new Error('Not allowed by CORS'), false);
+                console.warn(`❌ [CORS-BLOCKED] Origin: ${origin} not allowed`);
+                // Instead of returning Error object (which can cause null status in browser), 
+                // return null for origin to let Nest handle the 403 properly
+                return callback(null, false);
             },
             credentials: true,
             methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
@@ -100,8 +115,12 @@ async function bootstrap() {
                 'Origin',
                 'X-CSRF-Token',
                 'Apollo-Require-Preflight',
+                'sentry-trace',
+                'baggage',
             ],
             exposedHeaders: ['Content-Range', 'X-Content-Range', 'X-Total-Count'],
+            preflightContinue: false,
+            optionsSuccessStatus: 204,
         });
 
         /**

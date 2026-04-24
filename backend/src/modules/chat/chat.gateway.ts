@@ -28,7 +28,8 @@ import { SendMessageDto } from './dto/chat.dto';
             if (!origin || allowedOrigins.includes(origin) || (origin && (origin.endsWith('.netlify.app') || origin.endsWith('.railway.app')))) {
                 return callback(null, true);
             }
-            callback(new Error('Not allowed by CORS'));
+            console.warn(`❌ [CHAT-CORS-BLOCKED] Origin: ${origin}`);
+            return callback(null, false);
         },
         credentials: true,
     },

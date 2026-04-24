@@ -27,7 +27,8 @@ import { User } from '../../entities/user.entity';
             if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.netlify.app') || origin.endsWith('.railway.app')) {
                 return callback(null, true);
             }
-            callback(new Error('Not allowed by CORS'));
+            console.warn(`❌ [SOCKET-CORS-BLOCKED] Origin: ${origin}`);
+            return callback(null, false);
         },
         credentials: true,
     },
