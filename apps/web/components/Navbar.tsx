@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { Menu, ChevronDown, MapPin, User as UserIcon, LogOut, X, Search, Building2, Globe, Bell, Check, Trash2, BellRing, Megaphone, MessageSquare } from 'lucide-react';
+import { Menu, ChevronDown, MapPin, User as UserIcon, LogOut, X, Search, Building2, Globe, Bell, Check, Trash2, BellRing, Megaphone, MessageSquare, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { api, getImageUrl } from '../lib/api';
@@ -14,6 +15,7 @@ import { chatApi } from '../services/chat.service';
 export default function Navbar() {
     const { user, logout } = useAuth();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [mobileDropdown, setMobileDropdown] = useState<string | null>(null);
     const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
@@ -459,11 +461,153 @@ export default function Navbar() {
                             </div>
                         ) : null}
 
-                        <nav className="space-y-2">
-                            <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 font-bold text-slate-900">Home</Link>
-                            <Link href="/categories" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold text-slate-700">Categories <ChevronDown className="w-4 h-4 opacity-40 -rotate-90" /></Link>
-                            <Link href="/search" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold text-slate-700">Businesses <ChevronDown className="w-4 h-4 opacity-40 -rotate-90" /></Link>
-                            <Link href="/cities" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold text-slate-700">Cities <ChevronDown className="w-4 h-4 opacity-40 -rotate-90" /></Link>
+                        <nav className="space-y-3">
+                            <Link 
+                                href="/" 
+                                onClick={() => setIsMobileMenuOpen(false)} 
+                                className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 font-bold text-slate-900 hover:bg-slate-100 transition-colors"
+                            >
+                                Home
+                            </Link>
+                            
+                            {/* Categories Mobile Dropdown */}
+                            <div className="space-y-1">
+                                <button 
+                                    onClick={() => setMobileDropdown(mobileDropdown === 'categories' ? null : 'categories')}
+                                    className={`w-full flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold transition-all ${mobileDropdown === 'categories' ? 'text-[#FF7A30] bg-orange-50/50 border-orange-100' : 'text-slate-700 bg-white'}`}
+                                >
+                                    <span>Categories</span>
+                                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${mobileDropdown === 'categories' ? 'rotate-180' : '-rotate-90 opacity-40'}`} />
+                                </button>
+                                <AnimatePresence>
+                                    {mobileDropdown === 'categories' && (
+                                        <motion.div 
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            transition={{ duration: 0.2 }}
+                                            className="overflow-hidden"
+                                        >
+                                            <div className="grid grid-cols-1 gap-2 p-2 bg-slate-50/50 rounded-2xl mt-1 border border-slate-100">
+                                                {categories.map((cat) => (
+                                                    <Link
+                                                        key={cat.id}
+                                                        href={`/categories/${cat.slug}`}
+                                                        onClick={() => setIsMobileMenuOpen(false)}
+                                                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-white transition-all group"
+                                                    >
+                                                        <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500">
+                                                            <Search className="w-3.5 h-3.5" />
+                                                        </div>
+                                                        <span className="text-sm font-semibold text-slate-700">{cat.name}</span>
+                                                    </Link>
+                                                ))}
+                                                <Link
+                                                    href="/categories"
+                                                    onClick={() => setIsMobileMenuOpen(false)}
+                                                    className="p-3 text-center text-xs font-bold text-[#FF7A30] uppercase tracking-widest border-t border-slate-100 mt-1"
+                                                >
+                                                    View All Categories
+                                                </Link>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+
+                            {/* Businesses Mobile Dropdown */}
+                            <div className="space-y-1">
+                                <button 
+                                    onClick={() => setMobileDropdown(mobileDropdown === 'businesses' ? null : 'businesses')}
+                                    className={`w-full flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold transition-all ${mobileDropdown === 'businesses' ? 'text-[#FF7A30] bg-orange-50/50 border-orange-100' : 'text-slate-700 bg-white'}`}
+                                >
+                                    <span>Businesses</span>
+                                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${mobileDropdown === 'businesses' ? 'rotate-180' : '-rotate-90 opacity-40'}`} />
+                                </button>
+                                <AnimatePresence>
+                                    {mobileDropdown === 'businesses' && (
+                                        <motion.div 
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            transition={{ duration: 0.2 }}
+                                            className="overflow-hidden"
+                                        >
+                                            <div className="flex flex-col gap-1 p-2 bg-slate-50/50 rounded-2xl mt-1 border border-slate-100">
+                                                <Link href="/search?filter=featured" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white transition-all">
+                                                    <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-[#FF7A30]">
+                                                        <Building2 className="w-4 h-4" />
+                                                    </div>
+                                                    <span className="text-sm font-bold text-slate-700">Featured</span>
+                                                </Link>
+                                                <Link href="/search?filter=new" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white transition-all">
+                                                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
+                                                        <Search className="w-4 h-4" />
+                                                    </div>
+                                                    <span className="text-sm font-bold text-slate-700">New Listings</span>
+                                                </Link>
+                                                <Link href="/offers-events" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white transition-all">
+                                                    <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-500">
+                                                        <Megaphone className="w-4 h-4" />
+                                                    </div>
+                                                    <span className="text-sm font-bold text-slate-700">Offer & Events</span>
+                                                </Link>
+                                                <Link href="/broadcast-request" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white transition-all">
+                                                    <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-500">
+                                                        <Megaphone className="w-4 h-4" />
+                                                    </div>
+                                                    <span className="text-sm font-bold text-slate-700">Broadcast Request</span>
+                                                </Link>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+
+                            {/* Cities Mobile Dropdown */}
+                            <div className="space-y-1">
+                                <button 
+                                    onClick={() => setMobileDropdown(mobileDropdown === 'cities' ? null : 'cities')}
+                                    className={`w-full flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold transition-all ${mobileDropdown === 'cities' ? 'text-[#FF7A30] bg-orange-50/50 border-orange-100' : 'text-slate-700 bg-white'}`}
+                                >
+                                    <span>Cities</span>
+                                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${mobileDropdown === 'cities' ? 'rotate-180' : '-rotate-90 opacity-40'}`} />
+                                </button>
+                                <AnimatePresence>
+                                    {mobileDropdown === 'cities' && (
+                                        <motion.div 
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            transition={{ duration: 0.2 }}
+                                            className="overflow-hidden"
+                                        >
+                                            <div className="grid grid-cols-1 gap-2 p-2 bg-slate-50/50 rounded-2xl mt-1 border border-slate-100">
+                                                {cities.map((city) => (
+                                                    <Link
+                                                        key={city.id}
+                                                        href={`/cities/${encodeURIComponent(city.name.toLowerCase())}`}
+                                                        onClick={() => setIsMobileMenuOpen(false)}
+                                                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-white transition-all"
+                                                    >
+                                                        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500">
+                                                            <Globe className="w-4 h-4" />
+                                                        </div>
+                                                        <span className="text-sm font-semibold text-slate-700">{city.name}</span>
+                                                    </Link>
+                                                ))}
+                                                <Link
+                                                    href="/cities"
+                                                    onClick={() => setIsMobileMenuOpen(false)}
+                                                    className="p-3 text-center text-xs font-bold text-[#FF7A30] uppercase tracking-widest border-t border-slate-100 mt-1"
+                                                >
+                                                    Browse All Cities
+                                                </Link>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
                         </nav>
 
                         {!user && (

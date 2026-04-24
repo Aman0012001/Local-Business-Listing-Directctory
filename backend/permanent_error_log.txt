@@ -1516,3 +1516,12 @@ Details: {"query":"SELECT DISTINCT \"distinctAlias\".\"listing_id\" AS \"ids_lis
 [2026-04-24T13:03:50.945Z] NotificationsService Constructor Called
 [2026-04-24T13:19:51.985Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
 [2026-04-24T13:19:54.501Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T14:15:08.217Z] NotificationsService Constructor Called
+[2026-04-24T14:15:39.236Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T14:15:43.838Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T14:18:13.474Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T14:18:22.359Z] findAllForUser FALLBACK for user ac3bebe6-652f-42f0-aa40-6189edb00a93: column Notification.priority does not exist
+[2026-04-24T14:20:03.551Z] findAllForUser FALLBACK for user 15f16d2b-b0da-453b-adeb-20ee9761812f: column Notification.priority does not exist
+[2026-04-24T14:20:05.245Z] findAllForUser FALLBACK for user 15f16d2b-b0da-453b-adeb-20ee9761812f: column Notification.priority does not exist
+[2026-04-24T14:20:05.688Z] findAllForUser FALLBACK for user 15f16d2b-b0da-453b-adeb-20ee9761812f: column Notification.priority does not exist
+[2026-04-24T14:20:06.864Z] findAllForUser FALLBACK for user 15f16d2b-b0da-453b-adeb-20ee9761812f: column Notification.priority does not exist
