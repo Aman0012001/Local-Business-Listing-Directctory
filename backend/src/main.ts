@@ -1,39 +1,32 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { Logger, ValidationPipe } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
-    const logger = new Logger('Bootstrap');
     const app = await NestFactory.create(AppModule);
-    const configService = app.get(ConfigService);
 
-    // 1. Production-Ready CORS
-    // Using origin: true as requested to avoid preflight 404s and match Netlify dynamically
-    app.enableCors({
-        origin: true, 
-        credentials: true,
-        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-        allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With, Origin',
-    });
-
-    // 2. Global API Prefix
+    // API prefix
     app.setGlobalPrefix('api/v1');
 
-    // 3. Global Validation
-    app.useGlobalPipes(new ValidationPipe({
-        whitelist: true,
-        transform: true,
-        forbidNonWhitelisted: true,
-    }));
+    // CORS
+    app.enableCors({
+        origin: true,
+        credentials: true,
+    });
 
-    // 4. Port and Host for Railway
-    const port = process.env.PORT || configService.get('PORT') || 3001;
-    
-    // Listening on 0.0.0.0 is mandatory for Railway
+    // Validation
+    app.useGlobalPipes(
+        new ValidationPipe({
+            whitelist: true,
+            transform: true,
+        }),
+    );
+
+    const port = parseInt(process.env.PORT || '8080', 10);
+
     await app.listen(port, '0.0.0.0');
-    
-    logger.log(`🚀 API is running on: http://0.0.0.0:${port}/api/v1`);
+
+    console.log(`🚀 Server running on port ${port}`);
 }
 
 bootstrap();
