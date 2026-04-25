@@ -28,7 +28,9 @@ async function bootstrap() {
 
             // Check if incoming origin is in our allowed list
             const normalizedOrigin = origin.replace(/\/$/, '');
-            const isAllowed = originList.includes(normalizedOrigin);
+            const isAllowed = originList.includes(normalizedOrigin) || 
+                             normalizedOrigin.endsWith('.netlify.app') || 
+                             normalizedOrigin.endsWith('.railway.app');
             
             if (isAllowed) {
                 callback(null, true);
