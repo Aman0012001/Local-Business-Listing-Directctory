@@ -34,8 +34,6 @@ import { BusinessSetupModule } from './modules/business-setup/business-setup.mod
 import { QaModule } from './modules/qa/qa.module';
 import { SearchAnalyticsModule } from './modules/search-analytics/search-analytics.module';
 
-import { join } from 'path';
-
 @Module({
     imports: [
         // Configuration
@@ -127,4 +125,3 @@ import { join } from 'path';
     ],
 })
 export class AppModule { }
-
