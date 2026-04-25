@@ -20,12 +20,12 @@ export class SearchAnalyticsService {
         const totalSearches = await query.getCount();
         
         const uniqueUsersResult = await query
-            .select('COUNT(DISTINCT COALESCE(log.userId::text, log.ipAddress))', 'count')
+            .select('COUNT(DISTINCT COALESCE(log.user_id::text, log.ip_address))', 'count')
             .getRawOne();
         const uniqueUsers = parseInt(uniqueUsersResult?.count || '0', 10);
 
         const noResultQuery = this.searchLogRepository.createQueryBuilder('log')
-            .where('log.resultsCount = 0');
+            .where('log.results_count = 0');
         if (startDate) noResultQuery.andWhere('log.searchedAt >= :startDate', { startDate });
         if (endDate) noResultQuery.andWhere('log.searchedAt <= :endDate', { endDate });
         if (city) noResultQuery.andWhere('log.city = :city', { city });
@@ -78,7 +78,7 @@ export class SearchAnalyticsService {
         const query = this.searchLogRepository.createQueryBuilder('log')
             .select('log.keyword', 'keyword')
             .addSelect('COUNT(log.id)', 'count')
-            .where('log.resultsCount = 0')
+            .where('log.results_count = 0')
             .andWhere('log.keyword IS NOT NULL')
             .andWhere('log.keyword != \'\'')
             .groupBy('log.keyword')
@@ -94,9 +94,9 @@ export class SearchAnalyticsService {
 
     async getTrends(startDate?: string, endDate?: string, city?: string) {
         const query = this.searchLogRepository.createQueryBuilder('log')
-            .select("DATE(log.searchedAt)", 'date')
+            .select("DATE(log.searched_at)", 'date')
             .addSelect('COUNT(log.id)', 'count')
-            .groupBy('DATE(log.searchedAt)')
+            .groupBy('DATE(log.searched_at)')
             .orderBy('date', 'ASC');
 
         if (startDate) query.andWhere('log.searchedAt >= :startDate', { startDate });
