@@ -180,8 +180,7 @@ async function bootstrap() {
          * -----------------------
          */
 
-        const port = configService.get('PORT') || 3001;
-
+        const port = parseInt(process.env.PORT || '3001', 10);
         console.log(`🚀 Starting server on port ${port}...`);
         await app.listen(port, '0.0.0.0');
 
