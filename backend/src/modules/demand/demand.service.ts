@@ -56,6 +56,7 @@ export class DemandService {
         latitude?: number;
         longitude?: number;
         userId?: string;
+        resultsCount?: number;
     }) {
         let { latitude, longitude } = data;
 
@@ -80,6 +81,7 @@ export class DemandService {
             latitude,
             longitude,
             userId: data.userId,
+            resultsCount: data.resultsCount || 0,
             searchedAt: new Date(),
             normalizedKeyword: data.keyword?.toLowerCase().trim() || 'all',
         });
@@ -173,6 +175,8 @@ export class DemandService {
                 keyword: res.keyword || res.normalizedKeyword,
                 normalizedKeyword: res.normalizedKeyword,
                 score,
+                count1h: c1h,
+                count6h: c6h,
                 count24h: c24h,
                 count7d: c7d,
                 topCity: res.topCity || 'N/A',
@@ -446,14 +450,27 @@ ${JSON.stringify(insights.slice(0, 10))}
         }).sort((a, b) => b.score - a.score).slice(0, 50);
     }
 
-    async getHeatmap(keyword?: string) {
+    async getHeatmap(keyword?: string, startDate?: string, endDate?: string) {
         const query = this.searchLogRepository.createQueryBuilder('log')
-            .select('log.latitude', 'lat')
-            .addSelect('log.longitude', 'lng')
+            .select('log.latitude', 'latitude')
+            .addSelect('log.longitude', 'longitude')
+            .addSelect('log.keyword', 'keyword')
+            .addSelect('log.category_slug', 'categorySlug')
             .addSelect('COUNT(*)', 'weight')
             .where('log.latitude IS NOT NULL')
-            .andWhere('log.searched_at >= NOW() - INTERVAL \'30 days\'')
-            .groupBy('log.latitude, log.longitude');
+            .groupBy('log.latitude, log.longitude, log.keyword, log.category_slug');
+
+        if (startDate) {
+            query.andWhere('log.searched_at >= :startDate', { startDate: new Date(startDate) });
+        } else {
+            query.andWhere('log.searched_at >= NOW() - INTERVAL \'90 days\'');
+        }
+
+        if (endDate) {
+            const end = new Date(endDate);
+            end.setUTCHours(23, 59, 59, 999);
+            query.andWhere('log.searched_at <= :endDate', { endDate: end });
+        }
 
         if (keyword) {
             query.andWhere('LOWER(log.keyword) LIKE :kw', { kw: `%${keyword.toLowerCase()}%` });

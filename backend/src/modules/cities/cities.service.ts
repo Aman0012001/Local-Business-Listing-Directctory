@@ -4,14 +4,14 @@ import { Repository } from 'typeorm';
 import { City } from '../../entities/city.entity';
 
 // Comprehensive city dataset organized by country
-const CITY_DATASETS: Record<string, { name: string; state: string; country: string; isPopular: boolean; displayOrder: number }[]> = {
+const CITY_DATASETS: Record<string, { name: string; state: string; country: string; isPopular: boolean; displayOrder: number; latitude?: number; longitude?: number }[]> = {
     'Pakistan': [
         // Punjab
-        { name: 'Lahore', state: 'Punjab', country: 'Pakistan', isPopular: true, displayOrder: 1 },
-        { name: 'Faisalabad', state: 'Punjab', country: 'Pakistan', isPopular: true, displayOrder: 2 },
-        { name: 'Rawalpindi', state: 'Punjab', country: 'Pakistan', isPopular: true, displayOrder: 3 },
-        { name: 'Gujranwala', state: 'Punjab', country: 'Pakistan', isPopular: true, displayOrder: 4 },
-        { name: 'Multan', state: 'Punjab', country: 'Pakistan', isPopular: true, displayOrder: 5 },
+        { name: 'Lahore', state: 'Punjab', country: 'Pakistan', isPopular: true, displayOrder: 1, latitude: 31.5204, longitude: 74.3587 },
+        { name: 'Faisalabad', state: 'Punjab', country: 'Pakistan', isPopular: true, displayOrder: 2, latitude: 31.4504, longitude: 73.1350 },
+        { name: 'Rawalpindi', state: 'Punjab', country: 'Pakistan', isPopular: true, displayOrder: 3, latitude: 33.5651, longitude: 73.0169 },
+        { name: 'Gujranwala', state: 'Punjab', country: 'Pakistan', isPopular: true, displayOrder: 4, latitude: 32.1877, longitude: 74.1945 },
+        { name: 'Multan', state: 'Punjab', country: 'Pakistan', isPopular: true, displayOrder: 5, latitude: 30.1575, longitude: 71.4753 },
         { name: 'Bahawalpur', state: 'Punjab', country: 'Pakistan', isPopular: false, displayOrder: 6 },
         { name: 'Sargodha', state: 'Punjab', country: 'Pakistan', isPopular: false, displayOrder: 7 },
         { name: 'Sialkot', state: 'Punjab', country: 'Pakistan', isPopular: false, displayOrder: 8 },
@@ -42,8 +42,8 @@ const CITY_DATASETS: Record<string, { name: string; state: string; country: stri
         { name: 'Chakwal', state: 'Punjab', country: 'Pakistan', isPopular: false, displayOrder: 33 },
         { name: 'Jhelum', state: 'Punjab', country: 'Pakistan', isPopular: false, displayOrder: 34 },
         // Sindh
-        { name: 'Karachi', state: 'Sindh', country: 'Pakistan', isPopular: true, displayOrder: 35 },
-        { name: 'Hyderabad', state: 'Sindh', country: 'Pakistan', isPopular: true, displayOrder: 36 },
+        { name: 'Karachi', state: 'Sindh', country: 'Pakistan', isPopular: true, displayOrder: 35, latitude: 24.8607, longitude: 67.0011 },
+        { name: 'Hyderabad', state: 'Sindh', country: 'Pakistan', isPopular: true, displayOrder: 36, latitude: 25.3960, longitude: 68.3578 },
         { name: 'Sukkur', state: 'Sindh', country: 'Pakistan', isPopular: false, displayOrder: 37 },
         { name: 'Larkana', state: 'Sindh', country: 'Pakistan', isPopular: false, displayOrder: 38 },
         { name: 'Nawabshah', state: 'Sindh', country: 'Pakistan', isPopular: false, displayOrder: 39 },
@@ -59,7 +59,7 @@ const CITY_DATASETS: Record<string, { name: string; state: string; country: stri
         { name: 'Tando Allahyar', state: 'Sindh', country: 'Pakistan', isPopular: false, displayOrder: 49 },
         { name: 'Ghotki', state: 'Sindh', country: 'Pakistan', isPopular: false, displayOrder: 50 },
         // KPK
-        { name: 'Peshawar', state: 'KPK', country: 'Pakistan', isPopular: true, displayOrder: 51 },
+        { name: 'Peshawar', state: 'KPK', country: 'Pakistan', isPopular: true, displayOrder: 51, latitude: 34.0151, longitude: 71.5249 },
         { name: 'Mardan', state: 'KPK', country: 'Pakistan', isPopular: false, displayOrder: 52 },
         { name: 'Mingora', state: 'KPK', country: 'Pakistan', isPopular: false, displayOrder: 53 },
         { name: 'Abbottabad', state: 'KPK', country: 'Pakistan', isPopular: false, displayOrder: 54 },
@@ -73,7 +73,7 @@ const CITY_DATASETS: Record<string, { name: string; state: string; country: stri
         { name: 'Karak', state: 'KPK', country: 'Pakistan', isPopular: false, displayOrder: 62 },
         { name: 'Bannu', state: 'KPK', country: 'Pakistan', isPopular: false, displayOrder: 63 },
         // Balochistan
-        { name: 'Quetta', state: 'Balochistan', country: 'Pakistan', isPopular: true, displayOrder: 64 },
+        { name: 'Quetta', state: 'Balochistan', country: 'Pakistan', isPopular: true, displayOrder: 64, latitude: 30.1798, longitude: 66.9750 },
         { name: 'Turbat', state: 'Balochistan', country: 'Pakistan', isPopular: false, displayOrder: 65 },
         { name: 'Khuzdar', state: 'Balochistan', country: 'Pakistan', isPopular: false, displayOrder: 66 },
         { name: 'Hub', state: 'Balochistan', country: 'Pakistan', isPopular: false, displayOrder: 67 },
@@ -84,7 +84,7 @@ const CITY_DATASETS: Record<string, { name: string; state: string; country: stri
         { name: 'Dera Bugti', state: 'Balochistan', country: 'Pakistan', isPopular: false, displayOrder: 72 },
         { name: 'Panjgur', state: 'Balochistan', country: 'Pakistan', isPopular: false, displayOrder: 73 },
         // ICT
-        { name: 'Islamabad', state: 'ICT', country: 'Pakistan', isPopular: true, displayOrder: 74 },
+        { name: 'Islamabad', state: 'ICT', country: 'Pakistan', isPopular: true, displayOrder: 74, latitude: 33.6844, longitude: 73.0479 },
         // AJK
         { name: 'Muzaffarabad', state: 'AJK', country: 'Pakistan', isPopular: false, displayOrder: 75 },
         { name: 'Mirpur', state: 'AJK', country: 'Pakistan', isPopular: false, displayOrder: 76 },
@@ -339,7 +339,13 @@ export class CitiesService {
         for (const cityData of dataset) {
             const slug = generateSlug(cityData.name + '-' + cityData.country);
             const existing = await this.cityRepository.findOne({ where: { slug } });
-            if (!existing) {
+            
+            if (existing) {
+                // Update existing city with new data (coordinates, etc)
+                Object.assign(existing, cityData);
+                await this.cityRepository.save(existing);
+                imported++;
+            } else {
                 const city = this.cityRepository.create({ ...cityData, slug });
                 await this.cityRepository.save(city);
                 imported++;

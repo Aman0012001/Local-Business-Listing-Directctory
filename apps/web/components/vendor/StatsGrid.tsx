@@ -69,7 +69,7 @@ export default function StatsGrid({ stats = defaultStats }: StatsGridProps) {
                     </div>
                     <div className="relative z-10">
                         <p className="text-white/70 text-[10px] font-black uppercase tracking-widest leading-none mb-2">{stat.label}</p>
-                        <h4 className="text-3xl font-black leading-none tracking-tight">{stat.value}</h4>
+                        <h4 className="text-3xl font-black leading-none tracking-tight text-white">{stat.value}</h4>
                     </div>
                 </div>
             ))}

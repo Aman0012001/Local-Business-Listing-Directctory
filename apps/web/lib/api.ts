@@ -1,17 +1,40 @@
 import { Business, Category, City, SearchResponse, Review, ReviewReply } from '../types/api';
 
 const isProd = process.env.NODE_ENV === 'production';
-let envApiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || '';
+const isServer = typeof window === 'undefined';
 
-// HARDENING: Prevent localhost API in production builds
+// 1. Environment Variable Extraction
+const clientApiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || '';
+const serverApiUrl = process.env.INTERNAL_API_URL || clientApiUrl;
+
+// 2. Selection based on context (SSR vs Browser)
+let envApiUrl = isServer ? serverApiUrl : clientApiUrl;
+
+// 3. Fallback and Missing URL Guard
+if (!envApiUrl) {
+    if (isProd) {
+        // Hard-coded fallback for production if env vars fail
+        envApiUrl = 'https://local-business-listing-directory-production.up.railway.app/api/v1';
+    } else {
+        // Standard local dev defaults
+        envApiUrl = isServer ? 'http://127.0.0.1:3001/api/v1' : 'http://localhost:3001/api/v1';
+    }
+}
+
+// 4. Hardening: Localhost Protection in Production
 if (isProd && (envApiUrl.includes('localhost') || envApiUrl.includes('127.0.0.1'))) {
-    console.warn('[api.ts] WARNING: Localhost API URL detected in production build! Overriding to Railway production URL.');
+    console.error('[CRITICAL] API_URL mismatch: Localhost detected in production environment! Forcing production URL.');
     envApiUrl = 'https://local-business-listing-directory-production.up.railway.app/api/v1';
 }
 
-const API_BASE_URL = (envApiUrl || (isProd 
-    ? 'https://local-business-listing-directory-production.up.railway.app/api/v1' 
-    : 'http://127.0.0.1:3001/api/v1')).replace(/\/+$/, '');
+const API_BASE_URL = envApiUrl.replace(/\/+$/, '');
+
+// 5. Debugging (visible in server logs and browser console in dev)
+if (isServer) {
+    console.log(`[SSR] Initializing API with: ${API_BASE_URL}`);
+} else if (!isProd) {
+    console.log(`[Client] Initializing API with: ${API_BASE_URL}`);
+}
 
 const API_ROOT = API_BASE_URL ? API_BASE_URL.split('/api')[0] : '';
 
@@ -584,6 +607,28 @@ export const api = {
                 body: JSON.stringify(settings),
             }),
         },
+        searchAnalytics: {
+            getOverview: (params?: { startDate?: string; endDate?: string; city?: string }) => {
+                const query = new URLSearchParams(params as any).toString();
+                return fetcher<any>(`/admin/search-analytics/overview?${query}`);
+            },
+            getTopKeywords: (params?: { startDate?: string; endDate?: string; city?: string; limit?: number }) => {
+                const query = new URLSearchParams(params as any).toString();
+                return fetcher<any[]>(`/admin/search-analytics/top-keywords?${query}`);
+            },
+            getTopCities: (params?: { startDate?: string; endDate?: string; limit?: number }) => {
+                const query = new URLSearchParams(params as any).toString();
+                return fetcher<any[]>(`/admin/search-analytics/top-cities?${query}`);
+            },
+            getNoResults: (params?: { startDate?: string; endDate?: string; city?: string; limit?: number }) => {
+                const query = new URLSearchParams(params as any).toString();
+                return fetcher<any[]>(`/admin/search-analytics/no-results?${query}`);
+            },
+            getTrends: (params?: { startDate?: string; endDate?: string; city?: string }) => {
+                const query = new URLSearchParams(params as any).toString();
+                return fetcher<any[]>(`/admin/search-analytics/trends?${query}`);
+            },
+        },
     },
 
     notifications: {
@@ -705,7 +750,13 @@ export const api = {
         getOverview: (city?: string) => fetcher<any>(`/demand/overview${city ? `?city=${city}` : ''}`, { silent: true }),
         getAISummary: (city?: string) => fetcher<{ summary: string }>(`/demand/summary-ai${city ? `?city=${city}` : ''}`, { silent: true }),
         getNearby: (lat?: number, lng?: number) => fetcher<any[]>(`/demand/nearby${lat !== undefined && lng !== undefined ? `?lat=${lat}&lng=${lng}` : ''}`, { silent: true }),
-        getHeatmap: (keyword?: string) => fetcher<any[]>(`/demand/heatmap${keyword ? `?keyword=${keyword}` : ''}`, { silent: true }),
+        getHeatmap: (startDate?: string, endDate?: string, keyword?: string) => {
+            const params = new URLSearchParams();
+            if (startDate) params.append('startDate', startDate);
+            if (endDate) params.append('endDate', endDate);
+            if (keyword) params.append('keyword', keyword);
+            return fetcher<any[]>(`/demand/heatmap?${params.toString()}`, { silent: true });
+        },
         logSearch: (data: any) => fetcher('/demand/log', { method: 'POST', body: JSON.stringify(data), silent: true }),
     },
     follows: {

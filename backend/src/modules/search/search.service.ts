@@ -293,20 +293,11 @@ export class SearchService implements OnModuleInit {
     }
 
     async search(searchDto: SearchBusinessDto) {
-        // Log search for demand insights
-        if (searchDto.query || searchDto.categorySlug) {
-            this.demandService.logSearch({
-                keyword: searchDto.query || searchDto.categorySlug,
-                city: searchDto.city,
-                categorySlug: searchDto.categorySlug,
-                latitude: searchDto.latitude,
-                longitude: searchDto.longitude,
-            }).catch(err => this.logger.error(`Failed to log search: ${err.message}`));
-        }
-
+        let results: any[];
+        
         if (!this.isElasticAvailable) {
-            return this.dbSearch(searchDto);
-        }
+            results = await this.dbSearch(searchDto);
+        } else {
 
         const {
             query, city, categorySlug, minRating,
@@ -477,11 +468,26 @@ export class SearchService implements OnModuleInit {
             },
         });
 
-        return response.hits.hits.map((hit: any) => ({
+        results = response.hits.hits.map((hit: any) => ({
             ...hit._source,
             score: hit._score,
             distance: hit.sort && sortBy === SearchSortBy.DISTANCE ? hit.sort[0] : undefined
         }));
+        } // end of else block
+
+        // Log search for demand insights
+        if (searchDto.query || searchDto.categorySlug) {
+            this.demandService.logSearch({
+                keyword: searchDto.query || searchDto.categorySlug,
+                city: searchDto.city,
+                categorySlug: searchDto.categorySlug,
+                latitude: searchDto.latitude,
+                longitude: searchDto.longitude,
+                resultsCount: results.length,
+            }).catch(err => this.logger.error(`Failed to log search: ${err.message}`));
+        }
+
+        return results;
     }
 
     /**

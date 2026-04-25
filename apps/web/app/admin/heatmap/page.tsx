@@ -6,7 +6,7 @@ import { Map as MapIcon, RefreshCcw, Navigation, Search, Layers, Sliders, Info, 
 
 export default function SearchHeatmapPage() {
     const [heatmapData, setHeatmapData] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
@@ -78,8 +78,8 @@ export default function SearchHeatmapPage() {
 
             if (heatmapData.length > 0) {
                 const points = heatmapData.map(point => ({
-                    location: new google.maps.LatLng(point.latitude, point.longitude),
-                    weight: point.weight
+                    location: new google.maps.LatLng(parseFloat(point.latitude), parseFloat(point.longitude)),
+                    weight: parseFloat(point.weight) || 1
                 }));
 
                 const heatmap = new google.maps.visualization.HeatmapLayer({

@@ -47,9 +47,9 @@ export class DemandController {
     }
 
     @Get('overview')
-    @Roles(UserRole.SUPERADMIN)
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
     @ApiBearerAuth()
-    @ApiOperation({ summary: 'Get comprehensive site demand overview (SuperAdmin only)' })
+    @ApiOperation({ summary: 'Get comprehensive site demand overview' })
     async getOverview(@Query('city') city?: string) {
         return this.demandService.getOverview(city);
     }
@@ -75,11 +75,15 @@ export class DemandController {
     }
 
     @Get('heatmap')
-    @Roles(UserRole.SUPERADMIN)
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
     @ApiBearerAuth()
-    @ApiOperation({ summary: 'Get demand heatmap data (Super Admin only)' })
+    @ApiOperation({ summary: 'Get demand heatmap data' })
     @ApiResponse({ status: 200, description: 'Heatmap data retrieved' })
-    async getHeatmap(@Query('keyword') keyword?: string) {
-        return this.demandService.getHeatmap(keyword);
+    async getHeatmap(
+        @Query('keyword') keyword?: string,
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string
+    ) {
+        return this.demandService.getHeatmap(keyword, startDate, endDate);
     }
 }

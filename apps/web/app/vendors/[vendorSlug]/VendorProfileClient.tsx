@@ -36,10 +36,10 @@ interface VendorProfile {
     events?: any[];
 }
 
-export default function VendorProfileClient({ slugOrId }: { slugOrId: string }) {
+export default function VendorProfileClient({ slugOrId, initialData }: { slugOrId: string, initialData?: any }) {
     const router = useRouter();
-    const [vendor, setVendor] = useState<VendorProfile | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [vendor, setVendor] = useState<VendorProfile | null>(initialData || null);
+    const [loading, setLoading] = useState(!initialData);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -59,10 +59,17 @@ export default function VendorProfileClient({ slugOrId }: { slugOrId: string }) 
             }
 
             try {
+                if (initialData && (initialData.slug === actualSlug || initialData.id === actualSlug)) {
+                    console.log('[VendorProfile] Using initialData from SSR');
+                    setVendor(initialData);
+                    setLoading(false);
+                    return;
+                }
+
                 const data = await api.vendors.getPublicProfile(actualSlug);
                 
                 // Redirection Logic for SEO (301-like client-side redirect)
-                const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
+                const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
                 if (isUuid && data.slug && data.slug !== slugOrId) {
                     console.log(`[VendorProfile] Legacy ID detected. Redirecting to SEO slug: ${data.slug}`);
                     router.replace(`/vendors/${data.slug}`);

@@ -144,15 +144,17 @@ const BusinessOpenBadge = ({ business }: { business: Business }) => {
 
 interface BusinessDetailClientProps {
   slug: string | string[];
+  initialData?: Business;
 }
 
 export default function BusinessDetailClient({
   slug,
+  initialData,
 }: BusinessDetailClientProps) {
   const { user } = useAuth();
   const router = useRouter();
-  const [business, setBusiness] = useState<Business | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [business, setBusiness] = useState<Business | null>(initialData || null);
+  const [loading, setLoading] = useState(!initialData);
   const [activeTab, setActiveTab] = useState("Overview");
   const [deviceId, setDeviceId] = useState("");
 
@@ -388,21 +390,20 @@ export default function BusinessDetailClient({
       setError(null);
 
       try {
-        const data = await api.listings.getBySlug(actualSlug as string);
-        console.log(
-          "[BusinessDetail] Business data received:",
-          data?.id,
-          "isOnline:",
-          data?.vendor?.user?.isOnline,
-        );
-        if (data?.vendor?.user) {
-          console.log("[BusinessDetail] Vendor User:", {
-            email: data.vendor.user.email,
-            isOnline: data.vendor.user.isOnline,
-            lastLogin: data.vendor.user.lastLoginAt,
-          });
+        let data = business;
+        
+        if (!data) {
+          data = await api.listings.getBySlug(actualSlug as string);
+          console.log(
+            "[BusinessDetail] Business data received:",
+            data?.id,
+            "isOnline:",
+            data?.vendor?.user?.isOnline,
+          );
+          setBusiness(data);
+        } else {
+          console.log("[BusinessDetail] Using initialData for slug:", actualSlug);
         }
-        setBusiness(data);
         console.log("[BusinessDetail] Loaded Amenities:", data?.businessAmenities);
         // Load reviews (replaces legacy comments)
         try {

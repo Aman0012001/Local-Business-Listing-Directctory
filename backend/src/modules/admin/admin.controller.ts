@@ -34,8 +34,8 @@ export class AdminController {
     }
 
     @Get('heatmap-data')
-    @Roles(UserRole.SUPERADMIN)
-    @ApiOperation({ summary: 'Get search heatmap data for super admin' })
+    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+    @ApiOperation({ summary: 'Get search heatmap data' })
     @ApiResponse({ status: 200, description: 'Heatmap data retrieved successfully' })
     getHeatmapData(
         @Query('startDate') startDate?: string,

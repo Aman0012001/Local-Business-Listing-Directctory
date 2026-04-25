@@ -1060,3 +1060,39 @@ QueryFailedError: column Listing__Listing_vendor__Listing__Listing_vendor_user.d
 [2026-04-24T18:43:24.200Z] findBySlug: bike-sell-mnw2g11t (User: Public)
 [2026-04-24T18:43:24.592Z] findBySlug: bike-sell-mnw2g11t - Found in DB. Status: approved
 [2026-04-24T18:43:24.704Z] findBySlug: bike-sell-mnw2g11t - SUCCESS
+[2026-04-25T00:41:18.730Z] findBySlug: bright-future-academy-mn8n7y7p (User: Public)
+[2026-04-25T00:41:20.407Z] findBySlug: bright-future-academy-mn8n7y7p - Found in DB. Status: approved
+[2026-04-25T00:41:21.274Z] findBySlug: bright-future-academy-mn8n7y7p - SUCCESS
+[2026-04-25T00:46:30.918Z] findBySlug: restaurants-best-pizza-mnm6c77s (User: Public)
+[2026-04-25T00:46:31.846Z] findBySlug: restaurants-best-pizza-mnm6c77s - Found in DB. Status: approved
+[2026-04-25T00:46:32.143Z] findBySlug: restaurants-best-pizza-mnm6c77s - SUCCESS
+[2026-04-25T00:58:14.850Z] findBySlug: bright-future-academy-mn8n7y7p (User: Public)
+[2026-04-25T00:58:15.744Z] findBySlug: bright-future-academy-mn8n7y7p - Found in DB. Status: approved
+[2026-04-25T00:58:16.028Z] findBySlug: bright-future-academy-mn8n7y7p - SUCCESS
+[2026-04-25T01:02:01.423Z] findBySlug: test-mnh4czx8 (User: Public)
+[2026-04-25T01:02:02.434Z] findBySlug: test-mnh4czx8 - Found in DB. Status: approved
+[2026-04-25T01:02:02.734Z] findBySlug: test-mnh4czx8 - SUCCESS
+[2026-04-25T01:10:43.895Z] findBySlug: bright-future-academy-mn8n7y7p (User: Public)
+[2026-04-25T01:10:44.547Z] findBySlug: bright-future-academy-mn8n7y7p - Found in DB. Status: approved
+[2026-04-25T01:10:44.837Z] findBySlug: bright-future-academy-mn8n7y7p - SUCCESS
+[2026-04-25T01:32:50.998Z] findBySlug: bright-future-academy-mn8n7y7p (User: Public)
+[2026-04-25T01:32:51.955Z] findBySlug: bright-future-academy-mn8n7y7p - Found in DB. Status: approved
+[2026-04-25T01:32:52.250Z] findBySlug: bright-future-academy-mn8n7y7p - SUCCESS
+[2026-04-25T01:41:06.916Z] findBySlug: test-mnh4bnro (User: Public)
+[2026-04-25T01:41:07.669Z] findBySlug: test-mnh4bnro - Found in DB. Status: approved
+[2026-04-25T01:41:07.966Z] findBySlug: test-mnh4bnro - SUCCESS
+[2026-04-25T01:44:16.295Z] findBySlug: restaurants-best-pizza-mnm6c77s (User: Public)
+[2026-04-25T01:44:17.562Z] findBySlug: restaurants-best-pizza-mnm6c77s - Found in DB. Status: approved
+[2026-04-25T01:44:17.866Z] findBySlug: restaurants-best-pizza-mnm6c77s - SUCCESS
+[2026-04-25T01:49:31.013Z] findBySlug: aprin22-b-mo9z88iu (User: Public)
+[2026-04-25T01:49:31.996Z] findBySlug: aprin22-b-mo9z88iu - Found in DB. Status: approved
+[2026-04-25T01:49:32.304Z] findBySlug: aprin22-b-mo9z88iu - SUCCESS
+[2026-04-25T01:55:30.472Z] findBySlug: restaurants-best-pizza-mnm6c77s (User: Public)
+[2026-04-25T01:55:31.733Z] findBySlug: restaurants-best-pizza-mnm6c77s - Found in DB. Status: approved
+[2026-04-25T01:55:32.036Z] findBySlug: restaurants-best-pizza-mnm6c77s - SUCCESS
+[2026-04-25T02:10:46.806Z] findBySlug: restaurants-best-pizza-mnm6c77s (User: Public)
+[2026-04-25T02:10:47.735Z] findBySlug: restaurants-best-pizza-mnm6c77s - Found in DB. Status: approved
+[2026-04-25T02:10:48.032Z] findBySlug: restaurants-best-pizza-mnm6c77s - SUCCESS
+[2026-04-25T02:12:03.144Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-04-25T02:12:03.815Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-04-25T02:12:04.120Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS

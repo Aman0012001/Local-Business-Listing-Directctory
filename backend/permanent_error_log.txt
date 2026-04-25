@@ -1705,3 +1705,81 @@ Details: {"query":"SELECT DISTINCT \"distinctAlias\".\"listing_id\" AS \"ids_lis
 [2026-04-24T18:58:15.087Z] NotificationsService Constructor Called
 [2026-04-25T00:18:52.943Z] NotificationsService Constructor Called
 [2026-04-25T00:23:03.796Z] NotificationsService Constructor Called
+[2026-04-25T00:56:36.473Z] NotificationsService Constructor Called
+[2026-04-25T01:09:21.208Z] NotificationsService Constructor Called
+[2026-04-25T01:23:50.770Z] NotificationsService Constructor Called
+[2026-04-25T01:24:01.737Z] NotificationsService Constructor Called
+[2026-04-25T01:24:17.785Z] NotificationsService Constructor Called
+[Search ERROR] 2026-04-25T01:41:31.406Z: connect EHOSTUNREACH 66.33.22.240:45505
+Stack: Error: connect EHOSTUNREACH 66.33.22.240:45505
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+Details: {"errno":-4073,"code":"EHOSTUNREACH","syscall":"connect","address":"66.33.22.240","port":45505}
+
+[Search ERROR] 2026-04-25T01:41:31.635Z: connect EHOSTUNREACH 66.33.22.240:45505
+Stack: Error: connect EHOSTUNREACH 66.33.22.240:45505
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+Details: {"errno":-4073,"code":"EHOSTUNREACH","syscall":"connect","address":"66.33.22.240","port":45505}
+
+[2026-04-25T01:43:38.427Z] NotificationsService Constructor Called
+[2026-04-25T01:47:52.456Z] NotificationsService Constructor Called
+[2026-04-25T01:48:08.435Z] NotificationsService Constructor Called
+[2026-04-25T01:53:50.160Z] NotificationsService Constructor Called
+[2026-04-25T01:54:52.809Z] NotificationsService Constructor Called
+[2026-04-25T02:00:22.524Z] NotificationsService Constructor Called
+[2026-04-25T02:03:48.423Z] NotificationsService Constructor Called
+[2026-04-25T02:06:17.177Z] NotificationsService Constructor Called
+[2026-04-25T02:06:17.195Z] NotificationsService Constructor Called
+[2026-04-25T02:06:34.066Z] NotificationsService Constructor Called
+[2026-04-25T02:06:34.301Z] NotificationsService Constructor Called
+[2026-04-25T02:07:35.163Z] NotificationsService Constructor Called
+[2026-04-25T02:07:35.198Z] NotificationsService Constructor Called
+[2026-04-25T02:07:58.102Z] NotificationsService Constructor Called
+[2026-04-25T02:24:05.073Z] NotificationsService Constructor Called
+[2026-04-25T02:24:05.219Z] NotificationsService Constructor Called
+[2026-04-25T02:24:05.280Z] NotificationsService Constructor Called
+[2026-04-25T02:24:13.561Z] NotificationsService Constructor Called
+[2026-04-25T02:24:15.495Z] NotificationsService Constructor Called
+[2026-04-25T02:25:48.979Z] NotificationsService Constructor Called
+[2026-04-25T02:25:49.049Z] NotificationsService Constructor Called
+[2026-04-25T02:26:15.164Z] NotificationsService Constructor Called
+[2026-04-25T02:26:15.197Z] NotificationsService Constructor Called
+[2026-04-25T02:26:34.520Z] NotificationsService Constructor Called
+[2026-04-25T02:26:36.313Z] NotificationsService Constructor Called
+[2026-04-25T02:26:48.008Z] NotificationsService Constructor Called
+[2026-04-25T02:26:48.143Z] NotificationsService Constructor Called
+[2026-04-25T02:27:03.169Z] NotificationsService Constructor Called
+[2026-04-25T02:29:47.374Z] NotificationsService Constructor Called
+[2026-04-25T02:30:17.633Z] NotificationsService Constructor Called
+[2026-04-25T02:30:18.046Z] NotificationsService Constructor Called
+[2026-04-25T02:30:36.512Z] NotificationsService Constructor Called
+[2026-04-25T02:31:14.530Z] NotificationsService Constructor Called
+[2026-04-25T02:31:16.632Z] NotificationsService Constructor Called
+[2026-04-25T02:31:32.881Z] NotificationsService Constructor Called
+[2026-04-25T02:33:50.598Z] NotificationsService Constructor Called
+[2026-04-25T02:33:52.407Z] NotificationsService Constructor Called
+[2026-04-25T02:37:29.338Z] NotificationsService Constructor Called
+[2026-04-25T02:37:31.120Z] NotificationsService Constructor Called
+[2026-04-25T02:38:21.763Z] NotificationsService Constructor Called
+[2026-04-25T02:38:21.779Z] NotificationsService Constructor Called
+[2026-04-25T02:43:02.224Z] NotificationsService Constructor Called
+[2026-04-25T02:43:02.228Z] NotificationsService Constructor Called
+[2026-04-25T02:43:11.160Z] NotificationsService Constructor Called
+[2026-04-25T02:44:06.351Z] NotificationsService Constructor Called
+[2026-04-25T02:44:06.362Z] NotificationsService Constructor Called
+[2026-04-25T02:44:14.482Z] NotificationsService Constructor Called
+[2026-04-25T02:45:54.403Z] NotificationsService Constructor Called
+[2026-04-25T02:45:54.453Z] NotificationsService Constructor Called
+[2026-04-25T02:46:00.519Z] NotificationsService Constructor Called
+[2026-04-25T02:46:40.082Z] NotificationsService Constructor Called
+[2026-04-25T02:53:24.506Z] NotificationsService Constructor Called
+[2026-04-25T02:53:26.332Z] NotificationsService Constructor Called
+[2026-04-25T02:59:30.850Z] NotificationsService Constructor Called
+[2026-04-25T03:00:05.239Z] NotificationsService Constructor Called
+[2026-04-25T03:00:07.369Z] NotificationsService Constructor Called
+[2026-04-25T03:13:58.256Z] NotificationsService Constructor Called
+[2026-04-25T03:13:58.290Z] NotificationsService Constructor Called
+[2026-04-25T03:14:08.167Z] NotificationsService Constructor Called
+[2026-04-25T03:14:08.202Z] NotificationsService Constructor Called
+[2026-04-25T03:29:54.835Z] NotificationsService Constructor Called
+[2026-04-25T03:35:09.987Z] NotificationsService Constructor Called
+[2026-04-25T03:41:12.270Z] NotificationsService Constructor Called

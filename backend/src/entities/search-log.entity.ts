@@ -49,6 +49,9 @@ export class SearchLog {
     @Column({ name: 'ip_address', nullable: true })
     ipAddress: string;
 
+    @Column({ name: 'results_count', type: 'integer', default: 0 })
+    resultsCount: number;
+
     // Relations
     @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'user_id' })

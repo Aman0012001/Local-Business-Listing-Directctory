@@ -67,7 +67,7 @@ export default function AdminDashboard() {
             label: 'Total Users',
             value: stats?.totalUsers || '0',
             icon: Users,
-            color: 'bg-gradient-to-br from-[#EE4444] to-[#CC2222]',
+            color: 'bg-gradient-to-br from-[#EE4444] to-[#CC2222] text-white',
             shadow: 'shadow-red-500/20'
         },
         {
@@ -178,7 +178,7 @@ export default function AdminDashboard() {
 
                 {/* System Tasks Placeholder */}
                 <div className="bg-slate-900 rounded-[16px] p-8 text-white shadow-2xl shadow-red-500/10">
-                    <h3 className="text-2xl font-black mb-8 tracking-tight">Critical Actions</h3>
+                    <h3 className="text-2xl font-black mb-8 tracking-tight text-white">Critical Actions</h3>
                     <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar-dark">
                         <Link href="/admin/reports" className="w-full p-6 bg-white/5 rounded-3xl flex items-center gap-4 hover:bg-white/10 transition-all text-left block">
                             <div className="w-12 h-12 bg-red-500/20 rounded-2xl flex items-center justify-center">

@@ -147,7 +147,7 @@ export default function GenericDashboard() {
     }, [socket]);
 
     const vendorStats = [
-        { label: 'Total Listings', value: stats?.businessCount || '0', icon: ListTree, color: 'bg-gradient-to-br from-blue-600 to-indigo-700', shadow: 'shadow-blue-500/10', onClick: () => router.push('/listings'), show: hasFeature('showListings') },
+        { label: 'Total Listings', value: stats?.businessCount || '0', icon: ListTree, color: 'bg-gradient-to-br text-white from-blue-600 to-indigo-700', shadow: 'shadow-blue-500/10', onClick: () => router.push('/listings'), show: hasFeature('showListings') },
         { label: 'Pending Approval', value: stats?.pendingCount || '0', icon: Clock, color: 'bg-gradient-to-br from-amber-400 to-orange-600', shadow: 'shadow-amber-500/10', onClick: () => router.push('/pending-listings'), show: hasFeature('showListings') },
         { label: 'Total Views', value: stats?.totalViews || '0', icon: TrendingUp, color: 'bg-gradient-to-br from-emerald-500 to-teal-700', shadow: 'shadow-emerald-500/10', show: hasFeature('showAnalytics') },
         { label: 'Live Chat', value: String(conversations.length), icon: MessageSquare, color: 'bg-gradient-to-br from-indigo-500 to-blue-700', shadow: 'shadow-indigo-500/10', onClick: () => router.push('/chat'), show: hasFeature('showChat') },
@@ -228,13 +228,13 @@ export default function GenericDashboard() {
                         {isVendor ? "Manage your presence and see how your listings are performing today." : "Track your favorites, reviews, and community interactions."}
                     </p>
                 </div>
-                
+
                 {((isVendor || isAdmin) ? hasFeature('canAddListing') : false) && (
-                    <Link 
-                        href="/add-listing" 
+                    <Link
+                        href="/add-listing"
                         className="group flex items-center gap-3 px-6 py-4 bg-slate-900 text-white rounded-2xl font-black text-sm shadow-xl shadow-slate-900/10 hover:bg-blue-600 hover:shadow-blue-600/20 active:scale-95 transition-all w-full sm:w-fit justify-center"
                     >
-                        <Plus className="w-5 h-5 transition-transform group-hover:rotate-90" /> 
+                        <Plus className="w-5 h-5 transition-transform group-hover:rotate-90" />
                         Add New Listing
                     </Link>
                 )}
@@ -271,8 +271,8 @@ export default function GenericDashboard() {
                                 </p>
                             </div>
                         </div>
-                        <Link 
-                            href="/subscription" 
+                        <Link
+                            href="/subscription"
                             className="flex items-center gap-2 px-8 py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-black text-sm transition-all border border-white/10 shadow-xl w-full lg:w-auto justify-center group"
                         >
                             Billing & Plans
@@ -311,8 +311,8 @@ export default function GenericDashboard() {
                                                 Join our expert network, list your services, and connect with thousands of local customers.
                                             </p>
                                         </div>
-                                        <Link 
-                                            href="/upgrade" 
+                                        <Link
+                                            href="/upgrade"
                                             className="group flex items-center justify-center gap-3 px-8 py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black transition-all shadow-2xl shadow-blue-600/20 whitespace-nowrap active:scale-95 w-full lg:w-auto"
                                         >
                                             <Zap className="w-5 h-5 text-white animate-pulse" />
@@ -370,7 +370,7 @@ export default function GenericDashboard() {
                                                     <ListingImage src={(biz as any).coverImageUrl || (biz as any).images?.[0]} alt={biz.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <h4 className="text-sm font-black text-slate-900 truncate group-hover:text-blue-600 transition-colors">{biz.title}</h4>
+                                                    <h4 className="text-sm font-black text-slate-900 truncate group-hover:text-white transition-colors">{biz.title}</h4>
                                                     <p className="text-[10px] text-slate-400 font-bold uppercase truncate">{biz.category?.name || 'Local'}</p>
                                                 </div>
                                             </Link>
@@ -476,8 +476,8 @@ export default function GenericDashboard() {
                             <div className="space-y-3">
                                 {conversations.length > 0 ? (
                                     conversations.map((conv) => (
-                                        <Link 
-                                            key={conv.id} 
+                                        <Link
+                                            key={conv.id}
                                             href={`/chat?id=${conv.id}`}
                                             className="block p-4 rounded-2xl bg-slate-50 border border-transparent hover:border-blue-100 hover:bg-white hover:shadow-md transition-all group"
                                         >
@@ -524,7 +524,7 @@ export default function GenericDashboard() {
                     {isVendor && (
                         <section className="bg-slate-900 rounded-3xl p-6 lg:p-8 border border-slate-800 shadow-2xl relative overflow-hidden group">
                             <div className="absolute top-0 right-0 w-40 h-40 bg-blue-600/10 rounded-full blur-[60px] -mr-10 -mt-10 pointer-events-none" />
-                            
+
                             <div className="relative z-10 space-y-6">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
@@ -544,14 +544,14 @@ export default function GenericDashboard() {
                                 {!affiliateStats?.hasReferrer && (
                                     <div className="space-y-3">
                                         <div className="flex gap-2">
-                                            <input 
+                                            <input
                                                 type="text"
                                                 value={referralInput}
                                                 onChange={(e) => setReferralInput(e.target.value)}
                                                 placeholder="Referral Code"
                                                 className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs font-bold text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500 transition-all"
                                             />
-                                            <button 
+                                            <button
                                                 onClick={handleApplyReferral}
                                                 disabled={isApplying || !referralInput}
                                                 className="px-6 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 text-white text-xs font-black rounded-xl transition-all active:scale-95 flex items-center gap-2"
@@ -590,7 +590,7 @@ export default function GenericDashboard() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <Link 
+                                    <Link
                                         href="/affiliate"
                                         className="group flex items-center justify-center w-full py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black text-sm transition-all active:scale-95 shadow-2xl shadow-blue-900/20"
                                     >

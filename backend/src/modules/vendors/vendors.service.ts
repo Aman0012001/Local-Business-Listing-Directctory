@@ -446,6 +446,7 @@ export class VendorsService {
 
             return {
                 id: vendor.id,
+                slug: vendor.slug,
                 businessName: vendor.businessName || vendor.user?.fullName || 'Unnamed Business',
                 vendorName: vendor.user?.fullName || (vendor.user?.email ? vendor.user.email.split('@')[0] : 'Unknown'),
                 businessEmail: vendor.businessEmail || vendor.user?.email,

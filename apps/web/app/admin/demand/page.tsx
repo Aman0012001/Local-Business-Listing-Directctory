@@ -19,7 +19,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 export default function AdminDemandDashboard() {
     const [selectedCity, setSelectedCity] = useState('');
     const [data, setData] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
 
     const refresh = useCallback(async () => {
         setLoading(true);
@@ -226,7 +226,7 @@ export default function AdminDemandDashboard() {
                             <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-orange-400 shadow-xl border border-white/10">
                                 <Flame className="w-6 h-6 fill-orange-400" />
                             </div>
-                            <h3 className="text-2xl font-black tracking-tight">Hot Demand</h3>
+                            <h3 className="text-2xl font-black tracking-tight text-white">Hot Demand</h3>
                         </div>
 
                         <div className="space-y-6">

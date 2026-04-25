@@ -5,17 +5,23 @@ import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 import { chatApi } from '../services/chat.service';
 
-const envSocketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
-const envApiUrl = process.env.NEXT_PUBLIC_API_URL;
-const envApiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-
+const isProd = process.env.NODE_ENV === 'production';
 const isDev = process.env.NODE_ENV === 'development';
 
-const SOCKET_URL = isDev
-    ? (envSocketUrl || 'http://127.0.0.1:3001')
-    : (envSocketUrl ||
-       (envApiUrl ? envApiUrl.split('/api')[0] : '') ||
-       (envApiBaseUrl ? envApiBaseUrl.split('/api')[0] : ''));
+const getSocketUrl = () => {
+    const envUrl = process.env.NEXT_PUBLIC_SOCKET_URL ||
+        (process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.split('/api')[0] : '') ||
+        (process.env.NEXT_PUBLIC_API_BASE_URL ? process.env.NEXT_PUBLIC_API_BASE_URL.split('/api')[0] : '');
+
+    // Hardening: Protect against localhost in production
+    if (isProd && (!envUrl || envUrl.includes('localhost') || envUrl.includes('127.0.0.1'))) {
+        return 'https://local-business-listing-directory-production.up.railway.app';
+    }
+
+    return envUrl || (isDev ? 'http://localhost:3001' : '');
+};
+
+const SOCKET_URL = getSocketUrl().replace(/\/+$/, '');
 
 let sharedSocket: Socket | null = null;
 let currentToken: string | null = null;
