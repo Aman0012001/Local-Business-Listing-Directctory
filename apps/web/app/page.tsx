@@ -380,7 +380,7 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.5 }}
-            className="max-w-5xl mx-auto glass-card rounded-[24px] p-2 flex flex-col md:flex-row items-stretch gap-2"
+            className="max-w-5xl mx-auto glass-card rounded-[24px] md:rounded-[32px] p-2 flex flex-col md:flex-row items-stretch gap-2 relative z-30 shadow-2xl shadow-slate-200/50"
           >
             <div className="md:w-1/3 relative group ">
               <CitySearchSelect
@@ -455,7 +455,7 @@ export default function HomePage() {
           </motion.div>
 
           {/* Quick Category Pills */}
-          <div className="mt-8 grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+          <div className="mt-12 md:mt-16 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 max-w-3xl mx-auto relative z-20 px-2 md:px-0">
             {/* Offers */}
             <Link href="/offers-events">
               <div className="group p-6 rounded-2xl bg-white/50 backdrop-blur-md border border-white hover:bg-white transition-all premium-shadow">

@@ -53,12 +53,10 @@ async function bootstrap() {
         const nodeEnv = configService.get('NODE_ENV');
 
         const allowedPatterns = [
-            /^https:\/\/.*\.netlify\.app$/,      // All Netlify dynamic domains
-            /^https:\/\/.*\.railway\.app$/,      // All Railway dynamic domains
-            /https:\/\/endearing-taffy-91a2c6\.netlify\.app/, // User's specific Netlify domain
-            /https:\/\/singular-melomakarona-8c3308\.netlify\.app/, // Legacy Netlify domain
-            /^http:\/\/localhost(:\d+)?$/,        // localhost with any port
-            /^http:\/\/127\.0.0\.1(:\d+)?$/,    // 127.0.0.1 with any port
+            /^https?:\/\/.*\.netlify\.app$/i,    // All Netlify dynamic domains
+            /^https?:\/\/.*\.railway\.app$/i,    // All Railway dynamic domains
+            /^https?:\/\/localhost(:\d+)?$/i,     // localhost with any port
+            /^https?:\/\/127\.0.0\.1(:\d+)?$/i,   // 127.0.0.1 with any port
         ];
 
         // Debug middleware to trace incoming requests and CORS issues
