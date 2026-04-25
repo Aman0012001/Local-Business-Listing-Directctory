@@ -60,7 +60,13 @@ async function bootstrap() {
         ];
 
         app.enableCors({
-            origin: true,
+            origin: [
+                'https://lucent-yeot-3d8455.netlify.app',
+                'http://localhost:3000',
+                'http://localhost:3001',
+                /\.netlify\.app$/,
+                /\.railway\.app$/,
+            ],
             credentials: true,
             methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
             allowedHeaders: 'Content-Type,Accept,Authorization,X-Requested-With,Origin,X-CSRF-Token,Apollo-Require-Preflight,sentry-trace,baggage',
