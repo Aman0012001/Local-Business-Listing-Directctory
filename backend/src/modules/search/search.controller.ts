@@ -55,7 +55,12 @@ export class SearchController {
                 console.error('Broadcast handleSearch error:', err);
             });
 
-        return this.searchService.search(searchDto);
+        return this.searchService.search(
+            searchDto,
+            req?.user?.id,
+            req?.ip,
+            req?.get('user-agent')
+        );
     }
 
     @Post('sync')

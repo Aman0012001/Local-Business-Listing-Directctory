@@ -292,7 +292,12 @@ export class SearchService implements OnModuleInit {
         }));
     }
 
-    async search(searchDto: SearchBusinessDto) {
+    async search(
+        searchDto: SearchBusinessDto,
+        userId?: string,
+        ipAddress?: string,
+        userAgent?: string
+    ) {
         let results: any[];
         
         if (!this.isElasticAvailable) {
@@ -483,6 +488,9 @@ export class SearchService implements OnModuleInit {
                 categorySlug: searchDto.categorySlug,
                 latitude: searchDto.latitude,
                 longitude: searchDto.longitude,
+                userId,
+                ipAddress,
+                userAgent,
                 resultsCount: results.length,
             }).catch(err => this.logger.error(`Failed to log search: ${err.message}`));
         }

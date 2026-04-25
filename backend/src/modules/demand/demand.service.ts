@@ -57,6 +57,8 @@ export class DemandService {
         longitude?: number;
         userId?: string;
         resultsCount?: number;
+        ipAddress?: string;
+        userAgent?: string;
     }) {
         let { latitude, longitude } = data;
 
@@ -82,6 +84,8 @@ export class DemandService {
             longitude,
             userId: data.userId,
             resultsCount: data.resultsCount || 0,
+            ipAddress: data.ipAddress,
+            userAgent: data.userAgent,
             searchedAt: new Date(),
             normalizedKeyword: data.keyword?.toLowerCase().trim() || 'all',
         });
