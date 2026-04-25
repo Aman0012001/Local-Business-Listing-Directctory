@@ -1,5 +1,4 @@
 import { NestFactory } from '@nestjs/core';
-// Force reload for ai-summary route registration
 import {
     ValidationPipe,
     VersioningType,
@@ -18,26 +17,25 @@ async function bootstrap() {
         const app = await NestFactory.create(AppModule, { rawBody: true });
 
         app.use(compression());
-
         app.enableShutdownHooks();
 
         const configService = app.get(ConfigService);
 
+        const nodeEnv = process.env.NODE_ENV || 'development';
+
         /**
          * -----------------------
-         * GLOBAL API PREFIX
+         * GLOBAL PREFIX
          * -----------------------
          */
-
         const apiPrefix = configService.get('API_PREFIX') || 'api';
         app.setGlobalPrefix(apiPrefix);
 
         /**
          * -----------------------
-         * API VERSIONING
+         * VERSIONING
          * -----------------------
          */
-
         app.enableVersioning({
             type: VersioningType.URI,
             defaultVersion: '1',
@@ -45,38 +43,52 @@ async function bootstrap() {
 
         /**
          * -----------------------
-         * CORS CONFIGURATION
+         * 🔥 CORS FIX (FINAL)
          * -----------------------
          */
-        app.enableCors({
-            origin: true,
-            credentials: true,
+        app.use((req, res, next) => {
+            const origin = req.headers.origin;
+
+            const allowedOrigins = [
+                "https://lucent-yeot-3d8455.netlify.app",
+                "https://willowy-fox-96ff5f.netlify.app"
+            ];
+
+            if (origin && allowedOrigins.includes(origin)) {
+                res.header("Access-Control-Allow-Origin", origin);
+            }
+
+            res.header("Access-Control-Allow-Credentials", "true");
+            res.header(
+                "Access-Control-Allow-Headers",
+                "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+            );
+            res.header(
+                "Access-Control-Allow-Methods",
+                "GET, POST, PUT, DELETE, OPTIONS"
+            );
+
+            if (req.method === "OPTIONS") {
+                return res.sendStatus(200);
+            }
+
+            next();
         });
 
         /**
          * -----------------------
-         * GLOBAL VALIDATION
+         * VALIDATION
          * -----------------------
          */
-
         app.useGlobalPipes(
             new ValidationPipe({
                 whitelist: true,
                 forbidNonWhitelisted: true,
                 transform: true,
-                transformOptions: {
-                    enableImplicitConversion: true,
-                },
             }),
         );
 
         app.useGlobalFilters(new HttpExceptionFilter());
-
-        /**
-         * -----------------------
-         * SERIALIZER INTERCEPTOR
-         * -----------------------
-         */
 
         app.useGlobalInterceptors(
             new ClassSerializerInterceptor(app.get(Reflector)),
@@ -84,74 +96,30 @@ async function bootstrap() {
 
         /**
          * -----------------------
-         * SWAGGER SETUP
+         * SECURITY
          * -----------------------
          */
-
-        const showSwaggerEnv = configService.get('SHOW_SWAGGER');
-
-        const showSwagger =
-            showSwaggerEnv === 'true' ||
-            showSwaggerEnv === true ||
-            nodeEnv !== 'production';
-
-        if (nodeEnv === 'production') {
-            app.use(helmet({
+        app.use(
+            helmet({
                 crossOriginResourcePolicy: { policy: "cross-origin" },
-                // ContentSecurityPolicy can still be enabled if needed, but let's disable it for debugging connectivity
                 contentSecurityPolicy: false,
-            }));
-        } else {
-            // Basic helmet for dev
-            app.use(helmet({
-                hsts: false,
-                contentSecurityPolicy: false,
-                crossOriginResourcePolicy: { policy: "cross-origin" },
-            }));
-        }
+            }),
+        );
 
-        if (showSwagger) {
-            const swaggerConfig = new DocumentBuilder()
-                .setTitle('Local Business Discovery Platform API')
-                .setDescription(
-                    'Hyperlocal business discovery platform API documentation',
-                )
+        /**
+         * -----------------------
+         * SWAGGER
+         * -----------------------
+         */
+        if (nodeEnv !== 'production') {
+            const config = new DocumentBuilder()
+                .setTitle('API')
+                .setDescription('API Docs')
                 .setVersion('1.0')
-                .addBearerAuth()
-                .addTag('auth')
-                .addTag('users')
-                .addTag('vendors')
-                .addTag('businesses')
-                .addTag('categories')
-                .addTag('reviews')
-                .addTag('leads')
-                .addTag('subscriptions')
-                .addTag('search')
-                .addTag('admin')
-                .addTag('qa')
-                .addTag('business-setup')
-                .addTag('cities')
-                .addTag('demand')
-                .addTag('analytics')
-                .addServer('http://localhost:3001', 'Local development server')
-                .addServer(
-                    'https://local-business-listing-directory-production.up.railway.app',
-                    'Production server',
-                )
                 .build();
 
-            const document = SwaggerModule.createDocument(app, swaggerConfig);
-
-            SwaggerModule.setup('docs', app, document, {
-                useGlobalPrefix: true,
-                swaggerOptions: {
-                    persistAuthorization: true,
-                },
-            });
-
-            console.log(`✅ Swagger UI initialized at /${apiPrefix}/docs`);
-        } else {
-            console.log('⚠️ Swagger disabled');
+            const document = SwaggerModule.createDocument(app, config);
+            SwaggerModule.setup('docs', app, document);
         }
 
         /**
@@ -159,19 +127,13 @@ async function bootstrap() {
          * SERVER START
          * -----------------------
          */
-
         const port = parseInt(process.env.PORT || '8080', 10);
-        console.log("PORT:", port);
+
         await app.listen(port, '0.0.0.0');
+
         console.log(`🚀 Server running on port ${port}`);
-        console.log(`📄 Swagger Docs → http://localhost:${port}/${apiPrefix}/docs`);
-        console.log(`🚀 API is ready to accept connections on port ${port}`);
     } catch (error) {
-        console.error('❌ FATAL ERROR DURING STARTUP:', error);
-        // Log more detail if it's a DB connection error
-        if (error.code === 'ECONNREFUSED' || error.message?.includes('Connection')) {
-            console.error('💡 TIP: Check if your Railway Postgres service is running and DATABASE_URL is correct.');
-        }
+        console.error('❌ ERROR:', error);
         process.exit(1);
     }
 }
