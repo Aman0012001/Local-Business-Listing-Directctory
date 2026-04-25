@@ -59,26 +59,32 @@ async function bootstrap() {
             /^https?:\/\/127\.0.0\.1(:\d+)?$/i,   // 127.0.0.1 with any port
         ];
 
-        // Debug middleware to trace incoming requests and CORS issues
+        // Manual CORS middleware to ensure headers are always present and preflight succeeds
         app.use((req, res, next) => {
             const origin = req.headers.origin;
+            const isAllowed = !origin || 
+                origin.includes('localhost') || 
+                origin.includes('127.0.0.1') || 
+                origin.endsWith('.netlify.app') || 
+                origin.endsWith('.railway.app');
+
+            if (isAllowed && origin) {
+                res.setHeader('Access-Control-Allow-Origin', origin);
+                res.setHeader('Access-Control-Allow-Credentials', 'true');
+                res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+                res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Accept,Authorization,X-Requested-With,Origin,X-CSRF-Token,Apollo-Require-Preflight,sentry-trace,baggage');
+            }
+
             if (req.method === 'OPTIONS') {
-                console.log(`🔍 [CORS-PREFLIGHT] ${req.method} ${req.url} | Origin: ${origin}`);
+                return res.status(204).send();
             }
             next();
         });
 
+        // Complementary NestJS CORS configuration
         app.enableCors({
-            origin: [
-                'http://localhost:3000',
-                'http://localhost:3001',
-                'http://127.0.0.1:3000',
-                /\.netlify\.app$/,
-                /\.railway\.app$/,
-            ],
+            origin: true,
             credentials: true,
-            methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-            allowedHeaders: 'Content-Type,Accept,Authorization,X-Requested-With,Origin,X-CSRF-Token,Apollo-Require-Preflight,sentry-trace,baggage',
             optionsSuccessStatus: 204,
         });
 
