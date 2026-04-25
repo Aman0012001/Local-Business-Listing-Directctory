@@ -69,44 +69,16 @@ async function bootstrap() {
         });
 
         app.enableCors({
-            origin: (origin, callback) => {
-                // Log incoming origin for debugging
-                console.log(`🔍 [CORS-CHECK] Origin: ${origin}`);
-
-                if (!origin) {
-                    return callback(null, true);
-                }
-
-                const allowedPatterns = [
-                    /^https?:\/\/.*\.netlify\.app$/i,
-                    /^https?:\/\/.*\.railway\.app$/i,
-                    /^https?:\/\/localhost(:\d+)?$/i,
-                    /^https?:\/\/127\.0.0\.1(:\d+)?$/i,
-                ];
-
-                const isAllowed = allowedPatterns.some(pattern => pattern.test(origin));
-                
-                if (isAllowed) {
-                    return callback(null, true);
-                }
-
-                return callback(null, false);
-            },
-            credentials: true,
-            methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-            allowedHeaders: [
-                'Content-Type',
-                'Accept',
-                'Authorization',
-                'X-Requested-With',
-                'Origin',
-                'X-CSRF-Token',
-                'Apollo-Require-Preflight',
-                'sentry-trace',
-                'baggage',
+            origin: [
+                'http://localhost:3000',
+                'http://localhost:3001',
+                'http://127.0.0.1:3000',
+                /\.netlify\.app$/,
+                /\.railway\.app$/,
             ],
-            exposedHeaders: ['Content-Range', 'X-Content-Range', 'X-Total-Count'],
-            preflightContinue: false,
+            credentials: true,
+            methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+            allowedHeaders: 'Content-Type,Accept,Authorization,X-Requested-With,Origin,X-CSRF-Token,Apollo-Require-Preflight,sentry-trace,baggage',
             optionsSuccessStatus: 204,
         });
 
