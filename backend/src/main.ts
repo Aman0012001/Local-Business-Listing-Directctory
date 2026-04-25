@@ -8,42 +8,29 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule);
     const configService = app.get(ConfigService);
 
-    // 1. CORS Configuration
-    const corsOrigins = configService.get<string>('CORS_ORIGIN') || '*';
-    const allowedOrigins = [
-        'http://localhost:3000',
-        'http://localhost:3001',
-        'https://naampata.com',
-        'https://www.naampata.com',
-        'https://naampata-admin.netlify.app',
-        'https://naampata-frontend.netlify.app',
-        ...(corsOrigins === '*' ? [] : (corsOrigins.includes(',') ? corsOrigins.split(',') : [corsOrigins]))
-    ];
-
+    // 1. Production-Ready CORS
+    // Using origin: true as requested to avoid preflight 404s and match Netlify dynamically
     app.enableCors({
-        origin: (origin, callback) => {
-            if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.netlify.app') || origin.endsWith('.railway.app')) {
-                callback(null, true);
-            } else {
-                logger.warn(`CORS blocked for origin: ${origin}`);
-                callback(new Error('Not allowed by CORS'));
-            }
-        },
-        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+        origin: true, 
         credentials: true,
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
         allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With, Origin',
     });
 
-    // 2. Global Configurations
+    // 2. Global API Prefix
     app.setGlobalPrefix('api/v1');
+
+    // 3. Global Validation
     app.useGlobalPipes(new ValidationPipe({
         whitelist: true,
         transform: true,
         forbidNonWhitelisted: true,
     }));
 
-    // 3. Start Server (Railway compatibility)
+    // 4. Port and Host for Railway
     const port = process.env.PORT || configService.get('PORT') || 3001;
+    
+    // Listening on 0.0.0.0 is mandatory for Railway
     await app.listen(port, '0.0.0.0');
     
     logger.log(`🚀 API is running on: http://0.0.0.0:${port}/api/v1`);
