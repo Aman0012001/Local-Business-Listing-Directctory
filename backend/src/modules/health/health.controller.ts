@@ -14,6 +14,7 @@ export class HealthController {
     @Public()
     async check() {
         let dbStatus = 'ok';
+
         try {
             await this.entityManager.query('SELECT 1');
         } catch (error) {

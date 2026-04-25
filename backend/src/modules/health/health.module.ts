@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { HealthController } from './health.controller';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([])],
+    imports: [TypeOrmModule], // ✅ THIS FIXES EVERYTHING
     controllers: [HealthController],
 })
 export class HealthModule { }
