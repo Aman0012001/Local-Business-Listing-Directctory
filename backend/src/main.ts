@@ -70,37 +70,26 @@ async function bootstrap() {
 
         app.enableCors({
             origin: (origin, callback) => {
-                // 1. Allow if no origin (Postman, mobile apps, server-to-server)
+                // Log incoming origin for debugging
+                console.log(`🔍 [CORS-CHECK] Origin: ${origin}`);
+
                 if (!origin) {
                     return callback(null, true);
                 }
 
-                // 2. Check explicit allowed origins from ENV
-                if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+                const allowedPatterns = [
+                    /^https?:\/\/.*\.netlify\.app$/i,
+                    /^https?:\/\/.*\.railway\.app$/i,
+                    /^https?:\/\/localhost(:\d+)?$/i,
+                    /^https?:\/\/127\.0.0\.1(:\d+)?$/i,
+                ];
+
+                const isAllowed = allowedPatterns.some(pattern => pattern.test(origin));
+                
+                if (isAllowed) {
                     return callback(null, true);
                 }
 
-                // 3. Check dynamic patterns
-                const isMatchingPattern = allowedPatterns.some(pattern => {
-                    if (pattern instanceof RegExp) {
-                        return pattern.test(origin);
-                    }
-                    return pattern === origin;
-                });
-
-                if (isMatchingPattern) {
-                    return callback(null, true);
-                }
-
-                // 4. Fallback for development
-                if (nodeEnv !== 'production' || origin.includes('localhost') || origin.includes('127.0.0.1')) {
-                    console.log(`✅ [CORS-DEBUG] Allowing development origin: ${origin}`);
-                    return callback(null, true);
-                }
-
-                console.warn(`❌ [CORS-BLOCKED] Origin: ${origin} not allowed`);
-                // Instead of returning Error object (which can cause null status in browser), 
-                // return null for origin to let Nest handle the 403 properly
                 return callback(null, false);
             },
             credentials: true,
