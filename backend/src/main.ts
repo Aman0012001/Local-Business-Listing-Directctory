@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { getEntityManagerToken } from '@nestjs/typeorm';
 
 async function bootstrap() {
     const logger = new Logger('Bootstrap');
@@ -58,7 +59,7 @@ async function bootstrap() {
 
     // 4. Database Connectivity Check (Proactive Logging)
     try {
-        const entityManager = app.get('EntityManager');
+        const entityManager = app.get(getEntityManagerToken());
         await entityManager.query('SELECT 1');
         logger.log('✅ Database connection verified successfully.');
     } catch (err) {
