@@ -6,19 +6,25 @@ async function bootstrap() {
     const logger = new Logger('Bootstrap');
     const app = await NestFactory.create(AppModule);
 
-    // 1. Set global prefix (All routes will start with /api/v1)
-    app.setGlobalPrefix('api/v1');
-
-    // 2. Configure CORS correctly using NestJS native method
-    // This handles the preflight OPTIONS requests automatically
+    // 1. Enable CORS FIRST (with permissive settings for debugging)
+    // This ensures preflight OPTIONS requests are handled before routing
     app.enableCors({
-        origin: true, // Dynamically allow the origin of the request (safe for debugging Netlify/Local issues)
+        origin: (origin, callback) => {
+            // Log origin for debugging
+            if (origin) logger.log(`Incoming request from origin: ${origin}`);
+            
+            // Allow all origins for now to resolve the blocking issue
+            callback(null, true);
+        },
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
         credentials: true,
-        allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With',
+        allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With, Origin',
         preflightContinue: false,
-        optionsSuccessStatus: 204, // Return 204 No Content for preflight
+        optionsSuccessStatus: 204,
     });
+
+    // 2. Set global prefix
+    app.setGlobalPrefix('api/v1');
 
     // 3. Global Pipes
     app.useGlobalPipes(new ValidationPipe({
