@@ -11,29 +11,19 @@ async function bootstrap() {
 
     // 1. Robust CORS Configuration
     const corsOrigins = configService.get<string>('CORS_ORIGIN') || '*';
-    const originList = corsOrigins === '*' 
-        ? '*' 
-        : corsOrigins.split(',').map(origin => origin.trim().replace(/\/$/, ''));
-
-    logger.log(`Setting up CORS with origins: ${JSON.stringify(originList)}`);
+    const allowedOrigins = [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'https://naampata.com',
+        'https://www.naampata.com',
+        'https://naampata-admin.netlify.app',
+        'https://naampata-frontend.netlify.app',
+        ...(corsOrigins === '*' ? [] : (Array.isArray(corsOrigins) ? corsOrigins : [corsOrigins]))
+    ];
 
     app.enableCors({
         origin: (origin, callback) => {
-            // If no origin (like mobile apps or curl), allow it
-            if (!origin) return callback(null, true);
-
-            // In development or if set to *, allow all
-            if (originList === '*' || process.env.NODE_ENV !== 'production') {
-                return callback(null, true);
-            }
-
-            // Check if incoming origin is in our allowed list
-            const normalizedOrigin = origin.replace(/\/$/, '');
-            const isAllowed = originList.includes(normalizedOrigin) || 
-                             normalizedOrigin.endsWith('.netlify.app') || 
-                             normalizedOrigin.endsWith('.railway.app');
-            
-            if (isAllowed) {
+            if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.netlify.app') || origin.endsWith('.railway.app')) {
                 callback(null, true);
             } else {
                 logger.warn(`CORS blocked for origin: ${origin}`);
@@ -43,8 +33,6 @@ async function bootstrap() {
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
         credentials: true,
         allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With, Origin',
-        preflightContinue: false,
-        optionsSuccessStatus: 204,
     });
 
     // 2. Set global prefix
@@ -59,11 +47,13 @@ async function bootstrap() {
 
     // 4. Database Connectivity Check (Proactive Logging)
     try {
-        const entityManager = app.get(getEntityManagerToken());
+        const entityManagerToken = getEntityManagerToken();
+        const entityManager = app.get(entityManagerToken, { strict: false });
         await entityManager.query('SELECT 1');
         logger.log('✅ Database connection verified successfully.');
     } catch (err) {
-        logger.error(`❌ Database connection failed: ${err.message}`);
+        logger.error(`❌ Database connection failed or EntityManager not found: ${err.message}`);
+        // Do NOT crash the app here, let it try to recover or stay up for health checks
     }
 
     // 5. Listen on PORT (Railway requirement)

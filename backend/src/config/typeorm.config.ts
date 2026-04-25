@@ -1,64 +1,75 @@
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
-const sharedPoolOptions = {
-    // Increased stability for remote DB (Railway)
-    max: 10,
-    min: 2,
-    idleTimeoutMillis: 30000, 
-    connectionTimeoutMillis: 30000,
-    // Prevents hanging queries from blocking the pool
-    statement_timeout: 45000, // 45s max per query
-    query_timeout: 45000,
-    // TCP Keepalive to prevent firewalls/Railway from dropping idle sockets
-    keepAlive: true,
-    keepAliveInitialDelayMillis: 10000, 
-    application_name: 'naampata_api',
-};
-
 export const typeOrmConfig = (
     configService: ConfigService,
 ): TypeOrmModuleOptions => {
-    const url = configService.get('DATABASE_URL');
-    const host = configService.get('DB_HOST');
-    const port = parseInt(configService.get('DB_PORT') ?? '5432');
-    const sync = configService.get('DB_SYNCHRONIZE') === 'true';
-    const ssl = configService.get('DB_SSL') === 'true' || configService.get('NODE_ENV') === 'production';
-    const sslConfig = ssl ? { rejectUnauthorized: false } : false;
-    // Only enable logging in development AND when explicitly set — too costly with remote DB
-    const logging = configService.get('NODE_ENV') !== 'production' && configService.get('DB_LOGGING') === 'true'
-        ? ['error', 'warn'] as any
-        : false;
+    const isProd = configService.get<string>('NODE_ENV') === 'production';
 
-    if (url) {
-        console.log('🔌 DB: Using DATABASE_URL');
+    const databaseUrl = configService.get<string>('DATABASE_URL');
+
+    const ssl =
+        configService.get<string>('DB_SSL') === 'true' || isProd
+            ? { rejectUnauthorized: false }
+            : false;
+
+    const logging =
+        !isProd && configService.get<string>('DB_LOGGING') === 'true'
+            ? ['error', 'warn']
+            : false;
+
+    // ✅ Railway prefers DATABASE_URL
+    if (databaseUrl) {
+        console.log('✅ Using DATABASE_URL (Railway)');
+
         return {
             type: 'postgres',
-            url,
-            entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-            synchronize: sync,
+            url: databaseUrl,
+
+            autoLoadEntities: true, // 🔥 MUST (fixes EntityManager issues)
+            synchronize: false,
+
+            ssl,
+
             logging,
-            ssl: sslConfig,
+
             retryAttempts: 10,
             retryDelay: 3000,
-            extra: sharedPoolOptions,
+
+            extra: {
+                max: 10,
+                connectionTimeoutMillis: 30000,
+                idleTimeoutMillis: 30000,
+                keepAlive: true,
+            },
         };
     }
 
-    console.log(`🔌 DB: Connecting to ${host}:${port}`);
+    // 🔁 fallback (local/dev)
+    console.log('⚠️ Using manual DB config');
+
     return {
         type: 'postgres',
-        host,
-        port,
-        username: configService.get('DB_USERNAME'),
-        password: configService.get('DB_PASSWORD'),
-        database: configService.get('DB_DATABASE'),
-        entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-        synchronize: sync,
+        host: configService.get<string>('DB_HOST'),
+        port: parseInt(configService.get<string>('DB_PORT') || '5432', 10),
+        username: configService.get<string>('DB_USERNAME'),
+        password: configService.get<string>('DB_PASSWORD'),
+        database: configService.get<string>('DB_DATABASE'),
+
+        autoLoadEntities: true,
+        synchronize: false,
+
+        ssl,
         logging,
-        ssl: sslConfig,
+
         retryAttempts: 10,
         retryDelay: 3000,
-        extra: sharedPoolOptions,
+
+        extra: {
+            max: 10,
+            connectionTimeoutMillis: 30000,
+            idleTimeoutMillis: 30000,
+            keepAlive: true,
+        },
     };
 };
