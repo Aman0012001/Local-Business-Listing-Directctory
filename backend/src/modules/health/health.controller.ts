@@ -1,13 +1,11 @@
 import { Controller, Get } from '@nestjs/common';
-import { InjectEntityManager } from '@nestjs/typeorm';
-import { EntityManager } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { Public } from '../../common/decorators/public.decorator';
 
 @Controller('health')
 export class HealthController {
     constructor(
-        @InjectEntityManager()
-        private readonly entityManager: EntityManager,
+        private readonly dataSource: DataSource, // ✅ USE THIS
     ) { }
 
     @Get()
@@ -16,7 +14,7 @@ export class HealthController {
         let dbStatus = 'ok';
 
         try {
-            await this.entityManager.query('SELECT 1');
+            await this.dataSource.query('SELECT 1'); // ✅ WORKS ALWAYS
         } catch (error) {
             dbStatus = `error: ${error.message}`;
         }
