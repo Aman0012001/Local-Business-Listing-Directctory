@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../../context/AuthContext';
 
 export default function OfferEventDetailClient() {
-    const { id } = useParams() as { id: string };
+    const { offerId: id } = useParams() as { offerId: string };
     const router = useRouter();
     const [offer, setOffer] = useState<any>(null);
     const [loading, setLoading] = useState(true);

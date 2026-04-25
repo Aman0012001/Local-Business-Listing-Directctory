@@ -19,13 +19,19 @@ export class SearchAnalyticsService {
 
         const totalSearches = await query.getCount();
         
-        const uniqueUsersResult = await query
-            .select('COUNT(DISTINCT COALESCE(log.user_id::text, log.ip_address))', 'count')
-            .getRawOne();
-        const uniqueUsers = parseInt(uniqueUsersResult?.count || '0', 10);
+        const uniqueUsersResult = await this.searchLogRepository.query(
+            `SELECT COUNT(DISTINCT COALESCE(user_id::text, ip_address)) as count 
+             FROM search_logs 
+             WHERE 1=1 
+             ${startDate ? 'AND searched_at >= $1' : ''} 
+             ${endDate ? `AND searched_at <= $${startDate ? '2' : '1'}` : ''}
+             ${city ? `AND city = $${(startDate ? 1 : 0) + (endDate ? 1 : 0) + 1}` : ''}`,
+            [...(startDate ? [startDate] : []), ...(endDate ? [endDate] : []), ...(city ? [city] : [])].filter(Boolean)
+        );
+        const uniqueUsers = parseInt(uniqueUsersResult[0]?.count || '0', 10);
 
         const noResultQuery = this.searchLogRepository.createQueryBuilder('log')
-            .where('log.results_count = 0');
+            .where('log.resultsCount = 0');
         if (startDate) noResultQuery.andWhere('log.searchedAt >= :startDate', { startDate });
         if (endDate) noResultQuery.andWhere('log.searchedAt <= :endDate', { endDate });
         if (city) noResultQuery.andWhere('log.city = :city', { city });
@@ -78,7 +84,7 @@ export class SearchAnalyticsService {
         const query = this.searchLogRepository.createQueryBuilder('log')
             .select('log.keyword', 'keyword')
             .addSelect('COUNT(log.id)', 'count')
-            .where('log.results_count = 0')
+            .where('log.resultsCount = 0')
             .andWhere('log.keyword IS NOT NULL')
             .andWhere('log.keyword != \'\'')
             .groupBy('log.keyword')
@@ -94,9 +100,9 @@ export class SearchAnalyticsService {
 
     async getTrends(startDate?: string, endDate?: string, city?: string) {
         const query = this.searchLogRepository.createQueryBuilder('log')
-            .select("DATE(log.searched_at)", 'date')
-            .addSelect('COUNT(log.id)', 'count')
-            .groupBy('DATE(log.searched_at)')
+            .select('DATE("searched_at")', 'date')
+            .addSelect('COUNT("id")', 'count')
+            .groupBy('DATE("searched_at")')
             .orderBy('date', 'ASC');
 
         if (startDate) query.andWhere('log.searchedAt >= :startDate', { startDate });
