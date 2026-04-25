@@ -278,17 +278,16 @@ export default function ReviewModerationPage() {
     };
 
     const handleDelete = async (id: string) => {
+        if (!window.confirm('Are you sure you want to delete this review?')) return;
+        
         setActionLoading(id);
         try {
-            const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-            await fetch(`${process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api/v1'}/reviews/${id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            await api.reviews.adminDelete(id);
             setReviews(prev => prev.filter(r => r.id !== id));
             setTotalReviews(prev => prev - 1);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Delete failed:', err);
+            alert(err.message || 'Failed to delete review');
         } finally {
             setActionLoading(null);
         }

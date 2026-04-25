@@ -24,7 +24,7 @@ async function testAuth() {
         console.log('🧪 Testing Registration...');
         const regRes = await request({
             hostname: 'localhost',
-            port: 3001,
+            port: process.env.PORT || 3001,
             path: '/api/v1/auth/register',
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
@@ -37,7 +37,7 @@ async function testAuth() {
             console.log('\n🧪 Testing Login...');
             const loginRes = await request({
                 hostname: 'localhost',
-                port: 3001,
+                port: process.env.PORT || 3001,
                 path: '/api/v1/auth/login',
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }

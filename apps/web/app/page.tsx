@@ -320,8 +320,8 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <section
-        className="relative pt-10 pb-44 px-4 overflow-hidden bg-[#FBFBFC]"
-        style={{ minHeight: "100vh" }}
+        className="relative pt-20 pb-44 px-4 overflow-hidden bg-mesh"
+        style={{ minHeight: "90vh" }}
       >
         {/* Decorative Elements */}
         <div className="absolute top-20 left-10 opacity-20 hidden md:block">
@@ -365,8 +365,8 @@ export default function HomePage() {
             </div>
 
             <h1 className="text-4xl md:text-7xl font-black mb-6 tracking-tighter text-[#112D4E] leading-[1.05]">
-              Discover Trusted Local Businesses <br />
-              <span className="text-[#FF7A30]">Instantly</span>
+              Discover Trusted Local <br />
+              <span className="text-gradient">Businesses Instantly</span>
             </h1>
             <p className="text-lg md:text-xl text-slate-500 mb-12 max-w-2xl mx-auto font-medium leading-relaxed">
               Search, compare & contact the best services near you —{" "}
@@ -380,7 +380,7 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.5 }}
-            className="max-w-5xl mx-auto bg-white rounded-[24px]  p-2 flex flex-col md:flex-row items-stretch gap-2 border border-slate-100"
+            className="max-w-5xl mx-auto glass-card rounded-[24px] p-2 flex flex-col md:flex-row items-stretch gap-2"
           >
             <div className="md:w-1/3 relative group ">
               <CitySearchSelect
@@ -414,11 +414,11 @@ export default function HomePage() {
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 4 }}
-                    className="absolute top-full left-0 right-0 mt-4 bg-white border border-slate-100 p-2 z-[100] max-h-[400px] overflow-y-auto  rounded-[20px]"
+                    className="absolute top-full left-0 right-0 mt-4 bg-white/95 backdrop-blur-xl border border-slate-100 p-2 z-[100] max-h-[400px] overflow-y-auto rounded-[24px] premium-shadow"
                   >
                     {filteredCategories.length > 0 && (
                       <div className="p-2">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3 px-4 py-2 bg-slate-50 rounded-xl">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3 px-4 py-2 bg-slate-50/50 rounded-xl">
                           Categories
                         </p>
                         {filteredCategories.map((cat) => (
@@ -429,10 +429,10 @@ export default function HomePage() {
                               setIsSuggestionsOpen(false);
                               window.location.href = `/search?category=${cat.slug}`;
                             }}
-                            className="w-full flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl text-slate-700 font-bold transition-all group"
+                            className="w-full flex items-center justify-between p-3 hover:bg-orange-50 rounded-xl text-slate-700 font-bold transition-all group"
                           >
                             <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-[#FF7A30] group-hover:scale-110 transition-transform">
+                              <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-[#FF7A30] group-hover:scale-110 transition-transform">
                                 <Search className="w-4 h-4" />
                               </div>
                               <span>{cat.name}</span>
@@ -447,7 +447,7 @@ export default function HomePage() {
 
             <button
               onClick={handleSearch}
-              className="bg-[#FF7A30] hover:bg-[#E86920] text-white px-10 py-3 rounded-[20px] font-black text-lg transition-all  shadow-orange-100 flex items-center justify-center gap-3 active:scale-95 shrink-0"
+              className="bg-[#FF7A30] hover:bg-[#E86920] text-white px-10 py-3 rounded-[20px] font-black text-lg transition-all shadow-xl shadow-orange-500/20 flex items-center justify-center gap-3 active:scale-95 shrink-0"
             >
               <Search className="w-5 h-5" />
               Search
@@ -458,15 +458,17 @@ export default function HomePage() {
           <div className="mt-8 grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             {/* Offers */}
             <Link href="/offers-events">
-              <div className="group p-6 rounded-2xl ">
+              <div className="group p-6 rounded-2xl bg-white/50 backdrop-blur-md border border-white hover:bg-white transition-all premium-shadow">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-slate-900">                    <Tag className="w-6 h-6" />
+                  <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center text-orange-500 group-hover:bg-orange-500 group-hover:text-white transition-all">
+                    <Tag className="w-6 h-6" />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-lg text-slate-900">
+                  <div className="text-left">
+                    <h3 className="font-bold text-lg text-slate-900 mb-0.5">
+                      Hot Local Deals
                     </h3>
                     <p className="text-sm text-slate-500">
-                      Best deals & local events near you
+                      Best deals & events near you
                     </p>
                   </div>
                 </div>
@@ -475,17 +477,17 @@ export default function HomePage() {
 
             {/* Broadcast */}
             <Link href="/broadcast-request">
-              <div className="group p-6 rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100 hover:shadow-xl transition-all cursor-pointer">
+              <div className="group p-6 rounded-2xl bg-white/50 backdrop-blur-md border border-white hover:bg-white transition-all premium-shadow">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-indigo-500">
+                  <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-500 group-hover:bg-blue-600 group-hover:text-white transition-all">
                     <Megaphone className="w-6 h-6" />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-lg text-slate-900">
-                      Post Your Requirement
+                  <div className="text-left">
+                    <h3 className="font-bold text-lg text-slate-900 mb-0.5">
+                      Get Expert Quotes
                     </h3>
                     <p className="text-sm text-slate-500">
-                      Get quotes from nearby businesses
+                      Post your requirement easily
                     </p>
                   </div>
                 </div>
@@ -560,55 +562,60 @@ export default function HomePage() {
       </section>
 
       {/* Featured Businesses */}
-      <section className="py-24 bg-slate-50/50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-center gap-6 mb-16 text-center">
-            <div className="h-[1px] bg-slate-200 w-24 md:w-48" />
-            <h2 className="text-4xl font-extrabold text-[#112D4E] tracking-tight whitespace-nowrap">
-              Featured Businesses
-            </h2>
-            <div className="h-[1px] bg-slate-200 w-24 md:w-48" />
+      <section className="py-32 bg-slate-50/50 relative overflow-hidden">
+        {/* Decorative Background Element */}
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-orange-100/30 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
+
+        <div className="max-w-7xl mx-auto px-4 relative z-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
+            <div className="max-w-2xl text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-white rounded-full border border-slate-100 mb-4 shadow-sm">
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black text-[#112D4E] tracking-tighter leading-none mb-4">
+                Featured Businesses
+              </h2>
+
+            </div>
+            <Link
+              href="/search"
+              className="flex items-center gap-2 text-[#FF7A30] font-black uppercase tracking-widest text-xs hover:gap-4 transition-all group"
+            >
+              Explore All <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
 
-          <div className="relative min-h-[200px]">
-            {/* Section-level loading overlay — only covers this grid, not the whole page */}
+          <div className="relative min-h-[300px]">
+            {/* Section-level loading overlay */}
             {businessesLoading && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-50/70 rounded-3xl">
-                <div className="flex flex-col items-center gap-3">
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/40 backdrop-blur-sm rounded-[40px]">
+                <div className="flex flex-col items-center gap-4">
                   <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-[#FF7A30]" />
-                  <p className="text-slate-500 font-bold text-sm animate-pulse">Loading businesses...</p>
+                  <p className="text-slate-900 font-black text-xs uppercase tracking-widest animate-pulse">Refreshing...</p>
                 </div>
               </div>
             )}
-            <div className={`grid md:grid-cols-2 lg:grid-cols-4 gap-8 transition-opacity duration-300 ${businessesLoading ? "opacity-30 pointer-events-none" : "opacity-100"}`}>
+            <div className={`grid md:grid-cols-2 lg:grid-cols-4 gap-10 transition-all duration-500 ${businessesLoading ? "opacity-40 blur-[2px] pointer-events-none scale-95" : "opacity-100 scale-100"}`}>
               {featuredBusinesses.length > 0 ? (
                 featuredBusinesses.map((biz, idx) => (
                   <motion.div
                     key={biz.id}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: (idx % 4) * 0.08 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: (idx % 4) * 0.1, duration: 0.5 }}
                   >
                     <BusinessCard
                       business={biz}
-                      variant={
-                        idx % 4 === 0
-                          ? "green"
-                          : idx % 4 === 1
-                            ? "blue"
-                            : idx % 4 === 2
-                              ? "white"
-                              : "dark"
-                      }
-                      showChat={false}
                     />
                   </motion.div>
                 ))
               ) : (
-                <div className="col-span-full py-12 text-center bg-white rounded-3xl border border-slate-100">
-                  <p className="text-slate-500 font-bold">
-                    No featured businesses available at the moment.
-                  </p>
+                <div className="col-span-full py-24 text-center bg-white rounded-[40px] border border-slate-100 shadow-sm">
+                  <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Search className="w-8 h-8 text-slate-300" />
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900 mb-2">No featured businesses found</h3>
+                  <p className="text-slate-500 font-medium">Check back later for new premium listings in your area.</p>
                 </div>
               )}
             </div>
@@ -1006,39 +1013,45 @@ export default function HomePage() {
                     }
                 `}</style>
       </section>
-
       {/* Business Recruitment CTA */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="bg-gradient-to-r from-[#0B2244] to-[#0D2E61] rounded-xl p-8 md:px-12 md:py-10 relative overflow-hidden shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8 border border-white/5">
-            <div
-              className="absolute inset-0 opacity-20 pointer-events-none"
-              style={{
-                backgroundImage:
-                  'url("https://www.transparenttextures.com/patterns/carbon-fibre.png")',
-                opacity: 0.1,
-              }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent pointer-events-none" />
+      <section className="py-16 md:py-24 bg-white">
+        <div className="max-w-6xl mx-auto px-4">
 
-            <div className="relative z-10 text-center md:text-left">
-              <h2 className="text-2xl md:text-4xl font-bold text-white mb-2 tracking-tight">
-                Own a Business? Get More Customers Today!
-              </h2>
-              <p className="text-white/80 text-lg md:text-xl font-medium">
-                List your business for free and grow your reach.
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0B2244] to-[#0D2E61] p-6 md:p-12 shadow-xl border border-white/10 flex flex-col md:flex-row items-center justify-between gap-8">
+
+            {/* Background Effects */}
+            <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
+
+            <div className="absolute -top-32 -right-32 w-72 h-72 bg-blue-500/20 blur-[120px] rounded-full" />
+            <div className="absolute -bottom-32 -left-32 w-72 h-72 bg-orange-500/20 blur-[120px] rounded-full" />
+
+            {/* Content */}
+            <div className="relative z-10 text-center md:text-left max-w-xl">
+
+              <h3 className="text-2xl md:text-4xl font-extrabold text-white leading-tight mb-3">
+                Own a Business?
+                <br />
+                <span className="text-[#FF7A30]">Get More Customers.</span>
+              </h3>
+
+              <p className="text-white/70 text-base md:text-lg">
+                Join thousands of verified vendors and grow your brand reach across the country.
               </p>
+
             </div>
 
-            <div className="relative z-10 shrink-0">
+            {/* Button */}
+            <div className="relative z-10 w-full md:w-auto">
               <Link
                 href="/register?role=vendor"
-                className="bg-gradient-to-r from-[#FF7A30] to-[#FF9050] hover:from-[#E86920] hover:to-[#FF7A30] text-white px-10 py-4 rounded-xl font-bold text-lg md:text-xl transition-all shadow-[0_10px_20px_-5px_rgba(255,122,48,0.4)] active:scale-95 whitespace-nowrap flex items-center justify-center border border-white/10"
+                className="w-full md:w-auto flex items-center justify-center px-8 py-4 md:px-10 md:py-5 rounded-xl font-semibold text-lg md:text-xl bg-white text-[#112D4E] hover:bg-orange-50 transition active:scale-95 shadow-lg"
               >
-                Add Your Business
+                List Business Now
               </Link>
             </div>
+
           </div>
+
         </div>
       </section>
 
@@ -1046,3 +1059,4 @@ export default function HomePage() {
     </div>
   );
 }
+

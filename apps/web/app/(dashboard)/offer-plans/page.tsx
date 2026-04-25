@@ -69,8 +69,8 @@ function VendorOfferPlansPageInner() {
         setLoading(true);
         try {
             const [promosData, invoicesData, offersRes] = await Promise.all([
-                api.subscriptions.getActivePromotions(),
-                api.subscriptions.getMyInvoices(),
+                api.subscriptions.getActivePromotions({ silent: true }),
+                api.subscriptions.getMyInvoices({ silent: true }),
                 api.offers.getMy(1, 100)
             ]);
             

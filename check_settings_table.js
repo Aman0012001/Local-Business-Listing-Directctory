@@ -1,5 +1,5 @@
 const { Client } = require('pg');
-require('dotenv').config({ path: 'e:/localweb/Local-Business-Listing-Directctory/backend/.env' });
+require('dotenv').config({ path: 'e:/localweb/Local-Business-Listing-directory/backend/.env' });
 
 async function checkTable() {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';

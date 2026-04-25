@@ -3,55 +3,67 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 17, 24, 39;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  --primary: #FF7A30;
+  --primary-hover: #E86920;
+  --secondary: #112D4E;
+  --accent: #3C82F6;
+  --background: 255, 255, 255;
+  --foreground: 17, 24, 39;
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.5);
 }
 
 body {
-  font-family: var(--font-roboto), "Roboto", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-family: 'Inter', 'Outfit', 'Roboto', system-ui, -apple-system, sans-serif;
   font-weight: 400;
   color: #111827;
   line-height: 1.6;
   background-color: white;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Heading Hierarchy */
-h1 {
-  @apply text-[32px] font-bold leading-tight;
+h1, h2, h3, h4, h5, h6 {
+  @apply tracking-tight text-slate-900;
+  font-family: 'Outfit', 'Inter', sans-serif;
 }
 
-h2 {
-  @apply text-[28px] font-semibold leading-tight;
-}
+h1 { @apply text-5xl md:text-7xl font-black leading-[1.1]; }
+h2 { @apply text-3xl md:text-5xl font-black leading-tight; }
+h3 { @apply text-2xl md:text-3xl font-bold; }
 
-h3 {
-  @apply text-[22px] font-semibold leading-snug;
-}
-
-h4 {
-  @apply text-[18px] font-medium leading-normal;
-}
-
-/* Ensure all elements inherit fonts unless specifically overridden */
-input,
-button,
-textarea,
-select {
+/* Ensure all elements inherit fonts */
+input, button, textarea, select {
   font-family: inherit;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+@layer components {
+  .btn-primary {
+    @apply bg-[#FF7A30] hover:bg-[#E86920] text-white px-8 py-4 rounded-2xl font-bold transition-all active:scale-95 shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2;
   }
-
-  .glass {
-    @apply bg-white/10 backdrop-blur-md border border-white/20 ;
-  }
-
   
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-xl;
+  }
+
+  .premium-shadow {
+    box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05);
+  }
 }
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#FF7A30] to-[#FF4D4D];
+  }
+
+  .bg-mesh {
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(28,100%,74%,0.15) 0, transparent 50%), 
+      radial-gradient(at 50% 0%, hsla(189,100%,56%,0.05) 0, transparent 50%), 
+      radial-gradient(at 100% 0%, hsla(192,100%,77%,0.1) 0, transparent 50%);
+  }
+}
+
 /* Custom Scrollbar Utilities */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
@@ -79,3 +91,12 @@ select {
   background: rgba(255, 255, 255, 0.3);
 }
 
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}

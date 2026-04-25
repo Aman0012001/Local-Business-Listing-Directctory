@@ -101,8 +101,8 @@ npm run start:dev
 ```
 
 **Local API:** http://process.env.NEXT_PUBLIC_API_URL/api/v1
-**Production API:** https://local-business-listing-directctory-production.up.railway.app/api/v1
-**API Docs (Swagger):** https://local-business-listing-directctory-production.up.railway.app/api/docs
+**Production API:** https://local-business-listing-directory-production.up.railway.app/api/v1
+**API Docs (Swagger):** https://local-business-listing-directory-production.up.railway.app/api/docs
 
 ### 3. Start Frontend
 ```bash
@@ -254,10 +254,10 @@ if (user.role === 'vendor') {
 ### Test User Side
 ```bash
 # Search businesses (Production)
-curl https://local-business-listing-directctory-production.up.railway.app/api/v1/businesses/search?city=Mumbai
+curl https://local-business-listing-directory-production.up.railway.app/api/v1/businesses/search?city=Mumbai
 
 # Get categories (Production)
-curl https://local-business-listing-directctory-production.up.railway.app/api/v1/categories
+curl https://local-business-listing-directory-production.up.railway.app/api/v1/categories
 
 # Get subscription plans (Local)
 curl http://process.env.NEXT_PUBLIC_API_URL/api/v1/subscriptions/plans
@@ -278,11 +278,11 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
 ```bash
 # Get global stats
 curl -H "Authorization: Bearer ADMIN_TOKEN" \
-  https://local-business-listing-directctory-production.up.railway.app/api/v1/admin/stats
+  https://local-business-listing-directory-production.up.railway.app/api/v1/admin/stats
 
 # Get all users
 curl -H "Authorization: Bearer ADMIN_TOKEN" \
-  https://local-business-listing-directctory-production.up.railway.app/api/v1/admin/users
+  https://local-business-listing-directory-production.up.railway.app/api/v1/admin/users
 ```
 
 ---
@@ -301,7 +301,7 @@ DB_DATABASE=webapp
 # API
 PORT=3001
 API_PREFIX=api/v1
-FRONTEND_URL=https://local-business-listing-directctory-production.up.railway.app
+FRONTEND_URL=https://local-business-listing-directory-production.up.railway.app
 
 # JWT
 JWT_SECRET=super-secret-key-for-development
@@ -310,7 +310,7 @@ JWT_EXPIRATION=7d
 
 ### Frontend `.env` (already configured ✅)
 ```env
-NEXT_PUBLIC_API_URL=https://local-business-listing-directctory-production.up.railway.app/api/v1
+NEXT_PUBLIC_API_URL=https://local-business-listing-directory-production.up.railway.app/api/v1
 NEXT_PUBLIC_STRIPE_PUBLIC_KEY=pk_test_...
 ```
 

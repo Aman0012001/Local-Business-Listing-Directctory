@@ -1,0 +1,39 @@
+const { Client } = require('pg');
+const dotenv = require('dotenv');
+const path = require('path');
+
+const envPath = path.resolve(__dirname, '../.env');
+dotenv.config({ path: envPath });
+
+async function checkSearchLogs() {
+    const client = new Client({
+        host: process.env.DB_HOST,
+        port: process.env.DB_PORT,
+        user: process.env.DB_USERNAME,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_DATABASE,
+        ssl: { rejectUnauthorized: false }
+    });
+
+    try {
+        await client.connect();
+        
+        const res = await client.query(`
+            SELECT column_name, data_type, is_nullable
+            FROM information_schema.columns 
+            WHERE table_name = 'search_logs'
+        `);
+        console.log('Columns:');
+        console.table(res.rows);
+
+        const countRes = await client.query(`SELECT COUNT(*) FROM search_logs WHERE keyword IS NULL`);
+        console.log('Rows with NULL keyword:', countRes.rows[0].count);
+
+    } catch (err) {
+        console.error('Error:', err.message);
+    } finally {
+        await client.end();
+    }
+}
+
+checkSearchLogs();

@@ -14,24 +14,15 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
     return outputArray;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+import { api } from './api';
 
 async function fetchVapidPublicKey(): Promise<string> {
-    const res = await fetch(`${API_BASE_URL}/notifications/vapid-public-key`);
-    const data = await res.json();
+    const data = await api.notifications.getVapidPublicKey() as any;
     return data.publicKey;
 }
 
 async function sendSubscriptionToServer(subscription: PushSubscription): Promise<void> {
-    const token = localStorage.getItem('token');
-    await fetch(`${API_BASE_URL}/notifications/push-subscribe`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(subscription.toJSON()),
-    });
+    await api.notifications.subscribePush(subscription.toJSON());
 }
 
 export type PushPermission = 'default' | 'granted' | 'denied';

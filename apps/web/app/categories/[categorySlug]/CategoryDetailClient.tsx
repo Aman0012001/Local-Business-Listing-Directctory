@@ -52,10 +52,10 @@ export default function CategoryDetailClient({ slug }: CategoryDetailClientProps
             let actualSlug = slug;
 
             // Handle SPA fallback where the page is served by a 'template' HTML file
-            if ((slug === 'template' || slug === 'general') && typeof window !== 'undefined') {
+            if ((slug === 'template' || slug === 'general' || slug === 'all') && typeof window !== 'undefined') {
                 const pathParts = window.location.pathname.split('/').filter(Boolean);
                 // URL structure: /categories/slug/ or /categories/slug
-                if (pathParts[0] === 'categories' && pathParts[1] && pathParts[1] !== 'template') {
+                if (pathParts[0] === 'categories' && pathParts[1] && pathParts[1] !== 'template' && pathParts[1] !== 'all') {
                     actualSlug = pathParts[1];
                     console.log('[CategoryDetail] Fallback detected, using actual slug from URL:', actualSlug);
                 }
@@ -327,8 +327,6 @@ export default function CategoryDetailClient({ slug }: CategoryDetailClientProps
                                     <BusinessCard
                                         key={biz.id}
                                         business={biz}
-                                        layout={viewMode}
-                                        variant="minimal"
                                     />
                                 ))}
                             </div>

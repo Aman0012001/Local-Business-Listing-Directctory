@@ -15,6 +15,7 @@ import { chatApi } from '../services/chat.service';
 export default function Navbar() {
     const { user, logout } = useAuth();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
     const [mobileDropdown, setMobileDropdown] = useState<string | null>(null);
     const [isMounted, setIsMounted] = useState(false);
 
@@ -136,10 +137,12 @@ export default function Navbar() {
         fetchData();
     }, []);
 
-    const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
+    const handleDropdownToggle = (name: string) => {
+        setActiveDropdown(activeDropdown === name ? null : name);
+    };
 
     return (
-        <nav className="sticky top-0 z-50 bg-white/90 border-b border-slate-100/80 shadow-sm backdrop-blur-xl">
+        <nav className="sticky top-0 z-[100] bg-white/80 border-b border-slate-100/50 shadow-sm backdrop-blur-2xl">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-20 relative">
 
@@ -159,7 +162,7 @@ export default function Navbar() {
                     {/* Centered Desktop Nav Menu */}
                     <div className="hidden lg:flex flex-grow justify-center absolute left-1/2 -translate-x-1/2 w-full max-w-2xl pointer-events-none">
                         <div className="flex items-center gap-2 pointer-events-auto">
-                            <Link href="/" className="relative text-[#2D3E50] font-bold text-[15px] px-4 py-2 rounded-xl hover:bg-slate-50 transition-all hover:text-[#FF7A30]">
+                            <Link href="/" className="relative text-slate-900 font-black text-[15px] px-5 py-2.5 rounded-2xl hover:bg-slate-50 transition-all hover:text-primary active:scale-95">
                                 Home
                             </Link>
 
@@ -169,19 +172,27 @@ export default function Navbar() {
                                 onMouseEnter={() => setActiveDropdown('categories')}
                                 onMouseLeave={() => setActiveDropdown(null)}
                             >
-                                <button className="flex items-center gap-1 text-[#2D3E50]/70 font-bold text-[15px] px-4 py-2 rounded-xl hover:bg-slate-50 hover:text-[#2D3E50] transition-all group">
-                                    Categories <ChevronDown className={`w-4 h-4 opacity-40 group-hover:opacity-100 transition-all ${activeDropdown === 'categories' ? 'rotate-180' : ''}`} />
+                                <button 
+                                    onClick={() => handleDropdownToggle('categories')}
+                                    className="flex items-center gap-2 text-slate-500 font-black text-[15px] px-5 py-2.5 rounded-2xl hover:bg-slate-50 hover:text-slate-900 transition-all group active:scale-95"
+                                >
+                                    Categories <ChevronDown className={`w-4 h-4 opacity-40 group-hover:opacity-100 transition-all duration-300 ${activeDropdown === 'categories' ? 'rotate-180' : ''}`} />
                                 </button>
 
                                 {activeDropdown === 'categories' && (
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 pt-3 w-[700px] animate-in fade-in slide-in-from-top-2 duration-200" style={{ zIndex: "1000" }}>
-                                        <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-6">
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 pt-4 w-[800px] animate-in fade-in slide-in-from-top-4 duration-500 ease-out-expo" style={{ zIndex: "1000" }}>
+                                        <div className="bg-white rounded-[32px] shadow-premium border border-slate-100 p-8">
+                                            <div className="flex items-center justify-between mb-8">
+                                                <h3 className="text-sm font-black uppercase tracking-[0.3em] text-slate-300">Browse Departments</h3>
+                                                <Link href="/categories" className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline" onClick={() => setActiveDropdown(null)}>View All →</Link>
+                                            </div>
                                             <div className="grid grid-cols-4 gap-6">
                                                 {categories.map((cat) => (
                                                     <Link
                                                         key={cat.id}
                                                         href={`/categories/${cat.slug}`}
                                                         className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group"
+                                                        onClick={() => setActiveDropdown(null)}
                                                     >
                                                         <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500">
                                                             <Search className="w-4 h-4" />
@@ -196,6 +207,7 @@ export default function Navbar() {
                                                 <Link
                                                     href="/categories"
                                                     className="text-xs font-bold uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920]"
+                                                    onClick={() => setActiveDropdown(null)}
                                                 >
                                                     View All Categories
                                                 </Link>
@@ -211,14 +223,17 @@ export default function Navbar() {
                                 onMouseEnter={() => setActiveDropdown('businesses')}
                                 onMouseLeave={() => setActiveDropdown(null)}
                             >
-                                <button className="flex items-center gap-1 text-[#2D3E50]/70 font-bold text-[15px] px-4 py-2 rounded-xl hover:bg-slate-50 hover:text-[#2D3E50] transition-all group">
-                                    Businesses <ChevronDown className={`w-4 h-4 opacity-40 group-hover:opacity-100 transition-all ${activeDropdown === 'businesses' ? 'rotate-180' : ''}`} />
+                                <button 
+                                    onClick={() => handleDropdownToggle('businesses')}
+                                    className="flex items-center gap-2 text-slate-500 font-black text-[15px] px-5 py-2.5 rounded-2xl hover:bg-slate-50 hover:text-slate-900 transition-all group active:scale-95"
+                                >
+                                    Businesses <ChevronDown className={`w-4 h-4 opacity-40 group-hover:opacity-100 transition-all duration-300 ${activeDropdown === 'businesses' ? 'rotate-180' : ''}`} />
                                 </button>
                                 {activeDropdown === 'businesses' && (
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-64 animate-in fade-in slide-in-from-top-2 duration-200" style={{ zIndex: "1000" }}>
-                                        <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-2">
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 pt-4 w-72 animate-in fade-in slide-in-from-top-4 duration-500 ease-out-expo" style={{ zIndex: "1000" }}>
+                                        <div className="bg-white rounded-[32px] shadow-premium border border-slate-100 p-3">
                                             <div className="grid grid-cols-1 gap-1">
-                                                <Link href="/search?filter=featured" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
+                                                <Link href="/search?filter=featured" onClick={() => setActiveDropdown(null)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
                                                     <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-[#FF7A30]">
                                                         <Building2 className="w-4 h-4" />
                                                     </div>
@@ -227,7 +242,7 @@ export default function Navbar() {
                                                         <span className="text-[10px] text-slate-400 font-medium italic">Hand-picked best locals</span>
                                                     </div>
                                                 </Link>
-                                                <Link href="/search?filter=new" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
+                                                <Link href="/search?filter=new" onClick={() => setActiveDropdown(null)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
                                                     <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
                                                         <Search className="w-4 h-4" />
                                                     </div>
@@ -236,7 +251,7 @@ export default function Navbar() {
                                                         <span className="text-[10px] text-slate-400 font-medium italic">Fresh arrivals this week</span>
                                                     </div>
                                                 </Link>
-                                                <Link href="/offers-events" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
+                                                <Link href="/offers-events" onClick={() => setActiveDropdown(null)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
                                                     <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-500">
                                                         <Megaphone className="w-4 h-4" />
                                                     </div>
@@ -245,7 +260,7 @@ export default function Navbar() {
                                                         <span className="text-[10px] text-slate-400 font-medium italic">Best deals & local events</span>
                                                     </div>
                                                 </Link>
-                                                <Link href="/broadcast-request" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
+                                                <Link href="/broadcast-request" onClick={() => setActiveDropdown(null)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
                                                     <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-500">
                                                         <Megaphone className="w-4 h-4" />
                                                     </div>
@@ -254,7 +269,7 @@ export default function Navbar() {
                                                         <span className="text-[10px] text-slate-400 font-medium italic">Get quotes from experts</span>
                                                     </div>
                                                 </Link>
-                                                <Link href="/search" className="mt-2 text-center py-2 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-900 border-t border-slate-50 pt-3">
+                                                <Link href="/search" onClick={() => setActiveDropdown(null)} className="mt-2 text-center py-2 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-900 border-t border-slate-50 pt-3">
                                                     Advanced Search
                                                 </Link>
                                             </div>
@@ -269,18 +284,26 @@ export default function Navbar() {
                                 onMouseEnter={() => setActiveDropdown('cities')}
                                 onMouseLeave={() => setActiveDropdown(null)}
                             >
-                                <button className="flex items-center gap-1 text-[#2D3E50]/70 font-bold text-[15px] px-4 py-2 rounded-xl hover:bg-slate-50 hover:text-[#2D3E50] transition-all group">
-                                    Cities <ChevronDown className={`w-4 h-4 opacity-40 group-hover:opacity-100 transition-all ${activeDropdown === 'cities' ? 'rotate-180' : ''}`} />
+                                <button 
+                                    onClick={() => handleDropdownToggle('cities')}
+                                    className="flex items-center gap-2 text-slate-500 font-black text-[15px] px-5 py-2.5 rounded-2xl hover:bg-slate-50 hover:text-slate-900 transition-all group active:scale-95"
+                                >
+                                    Cities <ChevronDown className={`w-4 h-4 opacity-40 group-hover:opacity-100 transition-all duration-300 ${activeDropdown === 'cities' ? 'rotate-180' : ''}`} />
                                 </button>
                                 {activeDropdown === 'cities' && (
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 pt-3 w-[700px] animate-in fade-in slide-in-from-top-2 duration-200" style={{ zIndex: "1000" }}>
-                                        <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-6">
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 pt-4 w-[800px] animate-in fade-in slide-in-from-top-4 duration-500 ease-out-expo" style={{ zIndex: "1000" }}>
+                                        <div className="bg-white rounded-[32px] shadow-premium border border-slate-100 p-8">
+                                            <div className="flex items-center justify-between mb-8">
+                                                <h3 className="text-sm font-black uppercase tracking-[0.3em] text-slate-300">Popular Locations</h3>
+                                                <Link href="/cities" className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline" onClick={() => setActiveDropdown(null)}>Browse All →</Link>
+                                            </div>
                                             <div className="grid grid-cols-4 gap-8">
                                                 {cities.map((city) => (
                                                     <Link
                                                         key={city.id}
                                                         href={`/cities/${encodeURIComponent(city.name.toLowerCase())}`}
                                                         className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group"
+                                                        onClick={() => setActiveDropdown(null)}
                                                     >
                                                         <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500">
                                                             <Globe className="w-4 h-4" />
@@ -295,6 +318,7 @@ export default function Navbar() {
                                                 <Link
                                                     href="/cities"
                                                     className="text-xs font-bold uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920]"
+                                                    onClick={() => setActiveDropdown(null)}
                                                 >
                                                     Browse All Cities
                                                 </Link>
@@ -390,7 +414,7 @@ export default function Navbar() {
                                                         <div key={n.id} onClick={() => { if (!n.isRead) markAsRead(n.id); }} className={`flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 transition-colors group ${n.isRead ? 'opacity-60' : 'bg-orange-50/30'}`}>
                                                             <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${n.isRead ? 'bg-slate-200' : 'bg-[#FF7A30]'}`} />
                                                             <div className="flex-1 min-w-0">
-                                                                <div className="flex items-center gap-2 mb-0.5">
+                                                                 <div className="flex items-center gap-2 mb-0.5">
                                                                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${typeColor[n.type] || typeColor.info}`}>
                                                                         {n.type?.replace(/_/g, ' ')}
                                                                     </span>
@@ -420,15 +444,15 @@ export default function Navbar() {
                                 </button>
                             </div>
                         ) : (
-                            <div className="hidden sm:flex items-center gap-2">
-                                <Link href="/login" className="px-5 py-2.5 rounded-xl text-[#2D3E50] font-bold text-sm hover:bg-slate-50 transition-all">Login</Link>
-                                <Link href="/register?role=vendor" className="px-5 py-2.5 rounded-xl bg-[#FF7A30] text-white font-bold text-sm hover:bg-[#E86920] shadow-lg shadow-orange-500/20 transition-all active:scale-95 whitespace-nowrap">Add Business</Link>
+                            <div className="hidden sm:flex items-center gap-4">
+                                <Link href="/login" className="px-6 py-3 rounded-2xl text-slate-900 font-black text-sm hover:bg-slate-50 transition-all active:scale-95">Login</Link>
+                                <Link href="/register?role=vendor" className="px-6 py-3 rounded-2xl bg-primary text-white font-black text-sm hover:bg-primary/90 shadow-premium transition-all active:scale-95 whitespace-nowrap">Add Business</Link>
                             </div>
                         )}
 
                         <button
                             onClick={toggleMobileMenu}
-                            className="lg:hidden p-2.5 bg-slate-50 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors relative z-[70]"
+                            className="lg:hidden p-2.5 bg-slate-50 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors relative z-[110]"
                             aria-label="Toggle menu"
                         >
                             {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -441,14 +465,14 @@ export default function Navbar() {
             {/* Mobile Menu Backdrop */}
             {isMounted && (
                 <div 
-                    className={`lg:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[55] transition-all duration-300 ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                    className={`lg:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[80] transition-all duration-300 ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
                     onClick={() => setIsMobileMenuOpen(false)}
                 />
             )}
 
             {/* Mobile Menu Drawer */}
             {isMounted && (
-                <div className={`lg:hidden fixed top-20 left-0 right-0 z-[60] bg-white border-b border-slate-100 shadow-2xl transition-all duration-300 ${isMobileMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}`}>
+                <div className={`lg:hidden fixed top-20 left-0 right-0 z-[90] bg-white border-b border-slate-100 shadow-2xl transition-all duration-300 ${isMobileMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}`}>
                     <div className="p-6 space-y-8 overflow-y-auto max-h-[calc(100vh-5rem)]">
                         {/* User Profile in Mobile Menu */}
                         {user ? (

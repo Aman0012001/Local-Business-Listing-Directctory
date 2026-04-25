@@ -117,37 +117,50 @@ function SearchResults() {
     };
 
     return (
-        <div className="min-h-screen bg-white flex flex-col">
+        <div className="min-h-screen bg-white flex flex-col font-medium">
             <Navbar />
 
             {/* Header Section */}
-            <div className="bg-white border-b border-slate-50 pt-16 pb-12">
-                <div className="max-w-7xl mx-auto px-4">
-                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                        <div className="max-w-2xl">
-                            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-300 mb-6">
-                                <Link href="/" className="hover:text-blue-600">Home</Link>
-                                <span>/</span>
-                                <span className="text-slate-900">Search Results</span>
+            <div className="bg-slate-900 pt-32 pb-24 relative overflow-hidden">
+                {/* Background effects */}
+                <div className="absolute inset-0 opacity-20">
+                    <div className="absolute top-0 -left-20 w-96 h-96 bg-primary/30 rounded-full blur-[120px]" />
+                    <div className="absolute bottom-0 -right-20 w-96 h-96 bg-blue-600/20 rounded-full blur-[120px]" />
+                </div>
+                
+                <div className="max-w-7xl mx-auto px-4 relative z-10">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-12">
+                        <div className="max-w-3xl">
+                            <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-8">
+                                <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+                                <span className="w-4 h-[1px] bg-slate-700" />
+                                <span className="text-white">Search Results</span>
                             </div>
-                            <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-tight">
+                            <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-[0.9] mb-4">
                                 {filter === 'featured' ? (
-                                    <>Featured <span className="text-blue-600">Businesses</span></>
+                                    <>Premier <span className="text-primary italic">Selection</span></>
                                 ) : filter === 'new' ? (
-                                    <>Recent <span className="text-blue-600">Listings</span></>
+                                    <>Latest <span className="text-primary italic">Arrivals</span></>
                                 ) : city ? (
-                                    <>Results for <span className="text-blue-600">"{query || 'Businesses'}"</span> in <span className="text-blue-600">{city}</span></>
+                                    <>Best in <span className="text-primary italic">{city}</span></>
                                 ) : query ? (
-                                    <>Find the best <span className="text-blue-600">"{query}"</span></>
+                                    <>Finding <span className="text-primary italic">"{query}"</span></>
                                 ) : (
-                                    <>Explore <span className="text-blue-600">Local Listings</span></>
+                                    <>Explore <span className="text-primary italic">Locals</span></>
                                 )}
                             </h1>
+                            <p className="text-slate-400 text-lg font-bold">
+                                {results.length} premium results matched your criteria
+                            </p>
                         </div>
-                        <div className="flex items-center gap-4 bg-slate-50 px-6 py-4 rounded-2xl border border-slate-100">
-                             <div>
-                                <div className="text-2xl font-black text-slate-900 leading-none mb-1">{results.length}</div>
-                                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Matches</div>
+                        
+                        <div className="flex items-center gap-6 bg-white/5 backdrop-blur-xl px-8 py-6 rounded-[32px] border border-white/10 shadow-2xl">
+                             <div className="text-right">
+                                <div className="text-3xl font-black text-white leading-none mb-1">{results.length}</div>
+                                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Live Matches</div>
+                            </div>
+                            <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center">
+                                <Search className="w-6 h-6 text-primary" />
                             </div>
                         </div>
                     </div>
@@ -160,16 +173,16 @@ function SearchResults() {
                     {/* Filters Sidebar */}
                     <aside className={`lg:col-span-3 w-full space-y-12 sticky top-28`}>
                         <div className="flex items-center justify-between lg:hidden mb-6">
-                            <h3 className="text-sm font-black uppercase tracking-widest">Search Parameters</h3>
-                            <button onClick={() => setShowFilters(!showFilters)} className="p-2 bg-slate-100 rounded-lg">
-                                <Filter className="w-4 h-4" />
+                            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Search Parameters</h3>
+                            <button onClick={() => setShowFilters(!showFilters)} className="p-4 bg-slate-50 rounded-2xl">
+                                <Filter className="w-5 h-5 text-slate-900" />
                             </button>
                         </div>
 
                         <div className={`${showFilters ? 'block' : 'hidden lg:block'} space-y-12 animate-in fade-in duration-500`}>
                             {/* Sort Filter - NEW */}
                             <div>
-                                <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mb-6">Sort By</h4>
+                                <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mb-8">Sort By</h4>
                                 <div className="grid grid-cols-1 gap-2">
                                     <button
                                         onClick={() => updateFilter('filter', filter === 'new' ? null : 'new')}
@@ -344,7 +357,7 @@ function SearchResults() {
                             
                             <button 
                                 onClick={() => router.push('/search')}
-                                className="w-full py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 hover:text-red-500 transition-colors"
+                                className="w-full py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 hover:text-red-500 transition-all bg-slate-50/50 rounded-[20px] border border-slate-100/50"
                             >
                                 Reset All Params
                             </button>
@@ -371,7 +384,6 @@ function SearchResults() {
                                     <BusinessCard 
                                         key={biz.id} 
                                         business={biz} 
-                                        variant="minimal"
                                     />
                                 ))}
                             </div>

@@ -73,8 +73,6 @@ export default function SavedPage() {
                             <BusinessCard
                                 key={biz.id}
                                 business={biz}
-                                variant="white"
-                                layout="grid"
                             />
                         ))}
                     </div>

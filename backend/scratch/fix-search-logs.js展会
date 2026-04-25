@@ -1,0 +1,40 @@
+const { Client } = require('pg');
+const dotenv = require('dotenv');
+const path = require('path');
+
+const envPath = path.resolve(__dirname, '../.env');
+dotenv.config({ path: envPath });
+
+async function fixSearchLogs() {
+    const client = new Client({
+        host: process.env.DB_HOST,
+        port: process.env.DB_PORT,
+        user: process.env.DB_USERNAME,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_DATABASE,
+        ssl: { rejectUnauthorized: false }
+    });
+
+    try {
+        await client.connect();
+        console.log('Connected to DB');
+
+        console.log('Fixing search_logs table...');
+        
+        // Update null keywords to a default string or delete them
+        const res = await client.query(`
+            DELETE FROM search_logs WHERE keyword IS NULL;
+        `);
+        console.log(`Deleted ${res.rowCount} rows with null keyword.`);
+        
+        // Or if it was supposed to be empty string:
+        // await client.query(`UPDATE search_logs SET keyword = '' WHERE keyword IS NULL;`);
+
+    } catch (err) {
+        console.error('Error:', err.message);
+    } finally {
+        await client.end();
+    }
+}
+
+fixSearchLogs();

@@ -60,10 +60,18 @@ export class DemandController {
     @ApiOperation({ summary: 'Get local demand trends for vendor' })
     @ApiResponse({ status: 200, description: 'Nearby demand retrieved' })
     async getNearbyDemand(
-        @Query('lat') lat?: number,
-        @Query('lng') lng?: number,
+        @Query('lat') lat?: string,
+        @Query('lng') lng?: string,
     ) {
-        return this.demandService.getNearbyDemand(lat, lng);
+        try {
+            const parsedLat = lat ? parseFloat(lat) : undefined;
+            const parsedLng = lng ? parseFloat(lng) : undefined;
+            return await this.demandService.getNearbyDemand(parsedLat as number, parsedLng as number);
+        } catch (error) {
+            console.error('ERROR in getNearbyDemand:', error);
+            require('fs').writeFileSync('error_dump.txt', error.stack || error.message || String(error));
+            throw error;
+        }
     }
 
     @Get('heatmap')

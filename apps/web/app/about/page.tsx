@@ -14,10 +14,10 @@ export const metadata: Metadata = {
 };
 
 const stats = [
-    { label: "Businesses Listed", value: "10,000+", icon: Building2, color: "text-[#FF7A30] bg-orange-50" },
-    { label: "Happy Users", value: "50,000+", icon: Users, color: "text-blue-600 bg-blue-50" },
-    { label: "Cities Covered", value: "200+", icon: Globe, color: "text-emerald-600 bg-emerald-50" },
-    { label: "Reviews Posted", value: "120,000+", icon: Star, color: "text-yellow-600 bg-yellow-50" },
+    { label: "Businesses Listed", value: "10,000+", icon: Building2, color: "text-primary bg-primary/10" },
+    { label: "Verified Users", value: "50,000+", icon: Users, color: "text-blue-600 bg-blue-50" },
+    { label: "Active Cities", value: "200+", icon: Globe, color: "text-emerald-600 bg-emerald-50" },
+    { label: "Trust Reviews", value: "120,000+", icon: Star, color: "text-amber-500 bg-amber-50" },
 ];
 
 const values = [
@@ -37,7 +37,7 @@ const values = [
         icon: Zap,
         title: "Relentless Innovation",
         desc: "From live chat to push notifications, we continuously ship features that make discovering and connecting with local businesses effortless.",
-        color: "text-[#FF7A30] bg-orange-50",
+        color: "text-primary bg-primary/10",
     },
     {
         icon: Globe,
@@ -56,122 +56,136 @@ const team = [
 
 export default function AboutPage() {
     return (
-        <>
+        <div className="bg-white min-h-screen font-medium">
             <Navbar />
             <main>
                 {/* ── Hero ── */}
-                <section className="relative overflow-hidden bg-gradient-to-br from-[#112D4E] via-[#1a3f6b] to-[#2D3E50] py-28 px-4">
-                    {/* decorative blobs */}
-                    <div className="absolute -top-32 -left-32 w-96 h-96 bg-[#FF7A30]/10 rounded-full blur-3xl pointer-events-none" />
-                    <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+                <section className="relative pt-44 pb-32 px-4 bg-slate-900 overflow-hidden">
+                    {/* decorative elements */}
+                    <div className="absolute top-0 left-0 w-full h-full opacity-30 pointer-events-none">
+                        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px]" />
+                        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[120px]" />
+                    </div>
 
-                    <div className="relative max-w-4xl mx-auto text-center">
-                        <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 text-white/80 text-xs font-bold uppercase tracking-widest mb-6 backdrop-blur-sm border border-white/10">
-                            <MapPin className="w-3.5 h-3.5 text-[#FF7A30]" /> Our Story
-                        </span>
-                        <h1 className="text-4xl md:text-6xl font-black text-white leading-tight mb-6">
-                            Connecting People with <br />
-                            <span className="text-[#FF7A30]">Local Greatness</span>
+                    <div className="relative max-w-5xl mx-auto text-center z-10">
+                        <div className="flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-10">
+                            <span className="w-10 h-[1px] bg-slate-700" />
+                            Our Genesis
+                            <span className="w-10 h-[1px] bg-slate-700" />
+                        </div>
+                        <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter leading-[0.85] mb-10">
+                            Empowering <br />
+                            <span className="text-primary italic">Local Greatness.</span>
                         </h1>
-                        <p className="text-lg md:text-xl text-white/70 max-w-2xl mx-auto leading-relaxed font-medium">
+                        <p className="text-xl md:text-2xl text-slate-400 max-w-3xl mx-auto leading-relaxed font-bold">
                             naampata was born from a simple belief — every neighbourhood has hidden gems waiting to be discovered. We built the platform to make that discovery effortless.
                         </p>
                     </div>
                 </section>
 
                 {/* ── Stats ── */}
-                <section className="bg-white py-16 px-4 border-b border-slate-100">
-                    <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
-                        {stats.map(({ label, value, icon: Icon, color }) => (
-                            <div key={label} className="flex flex-col items-center text-center gap-3 p-6 rounded-2xl border border-slate-100 hover:shadow-lg transition-shadow">
-                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${color}`}>
-                                    <Icon className="w-6 h-6" />
-                                </div>
-                                <span className="text-3xl font-black text-[#112D4E]">{value}</span>
-                                <span className="text-sm text-slate-500 font-semibold">{label}</span>
-                            </div>
-                        ))}
-                    </div>
-                </section>
-
-                {/* ── Mission ── */}
-                <section className="py-20 px-4 bg-slate-50">
-                    <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
-                        <div>
-                            <span className="text-[#FF7A30] text-xs font-black uppercase tracking-widest">Our Mission</span>
-                            <h2 className="mt-3 text-3xl md:text-4xl font-black text-[#112D4E] leading-tight">
-                                Empowering Local Economies, One Discovery at a Time
-                            </h2>
-                            <p className="mt-5 text-slate-600 font-medium leading-relaxed">
-                                We give local businesses a powerful digital presence — complete with verified profiles, customer reviews, real-time chat, and targeted offers — so that when someone searches for a service nearby, the best match is right at their fingertips.
-                            </p>
-                            <ul className="mt-6 space-y-3">
-                                {[
-                                    "Free basic listing for every local business",
-                                    "AI-assisted search for precision discovery",
-                                    "Review moderation for trustworthy ratings",
-                                    "Real-time enquiry and broadcast system",
-                                ].map((item) => (
-                                    <li key={item} className="flex items-start gap-3 text-slate-700 font-medium">
-                                        <CheckCircle className="w-5 h-5 text-[#FF7A30] flex-shrink-0 mt-0.5" />
-                                        {item}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-
-                        {/* visual card */}
-                        <div className="relative">
-                            <div className="bg-gradient-to-br from-[#FF7A30] to-rose-500 rounded-3xl p-8 text-white shadow-2xl shadow-orange-500/20">
-                                <MapPin className="w-10 h-10 mb-4 opacity-80" />
-                                <p className="text-2xl font-black leading-snug">
-                                    "Making local businesses as easy to find as they are great to experience."
-                                </p>
-                                <p className="mt-4 text-sm text-white/70 font-semibold">— naampata founding team</p>
-                            </div>
-                            <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-[#112D4E] rounded-3xl -z-10" />
-                        </div>
-                    </div>
-                </section>
-
-                {/* ── Values ── */}
-                <section className="py-20 px-4 bg-white">
-                    <div className="max-w-5xl mx-auto">
-                        <div className="text-center mb-14">
-                            <span className="text-[#FF7A30] text-xs font-black uppercase tracking-widest">What We Stand For</span>
-                            <h2 className="mt-3 text-3xl md:text-4xl font-black text-[#112D4E]">Our Core Values</h2>
-                        </div>
-                        <div className="grid sm:grid-cols-2 gap-6">
-                            {values.map(({ icon: Icon, title, desc, color }) => (
-                                <div key={title} className="flex gap-5 p-6 rounded-2xl border border-slate-100 hover:shadow-lg hover:border-slate-200 transition-all">
-                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
-                                        <Icon className="w-6 h-6" />
+                <section className="py-24 px-4 bg-white">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                            {stats.map(({ label, value, icon: Icon, color }) => (
+                                <div key={label} className="group p-10 rounded-[40px] border border-slate-100 bg-slate-50/30 hover:bg-white hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500">
+                                    <div className={`w-16 h-16 rounded-[24px] flex items-center justify-center mb-8 group-hover:scale-110 transition-transform ${color}`}>
+                                        <Icon className="w-8 h-8" />
                                     </div>
-                                    <div>
-                                        <h3 className="text-lg font-bold text-[#112D4E]">{title}</h3>
-                                        <p className="mt-1 text-sm text-slate-500 font-medium leading-relaxed">{desc}</p>
-                                    </div>
+                                    <div className="text-5xl font-black text-slate-900 tracking-tighter mb-2">{value}</div>
+                                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{label}</div>
                                 </div>
                             ))}
                         </div>
                     </div>
                 </section>
 
-                {/* ── Team ── */}
-                <section className="py-20 px-4 bg-slate-50">
-                    <div className="max-w-5xl mx-auto">
-                        <div className="text-center mb-14">
-                            <span className="text-[#FF7A30] text-xs font-black uppercase tracking-widest">The People</span>
-                            <h2 className="mt-3 text-3xl md:text-4xl font-black text-[#112D4E]">Meet the Team</h2>
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                            {team.map(({ name, role, initials, gradient }) => (
-                                <div key={name} className="flex flex-col items-center text-center">
-                                    <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white text-2xl font-black shadow-lg mb-4`}>
-                                        {initials}
+                {/* ── Mission ── */}
+                <section className="py-32 px-4 relative overflow-hidden">
+                     <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-24 items-center">
+                        <div className="relative order-2 lg:order-1">
+                             <div className="relative z-10 p-2 bg-slate-100 rounded-[48px] overflow-hidden rotate-[-2deg]">
+                                <div className="bg-slate-900 rounded-[40px] p-12 text-white">
+                                    <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center mb-10">
+                                        <Zap className="w-8 h-8 text-primary" />
                                     </div>
-                                    <p className="font-bold text-[#112D4E]">{name}</p>
-                                    <p className="text-xs text-slate-500 font-medium mt-0.5">{role}</p>
+                                    <h3 className="text-4xl font-black tracking-tighter leading-none mb-8">
+                                        The <span className="text-primary italic">Vision</span> behind the platform.
+                                    </h3>
+                                    <p className="text-slate-400 text-lg font-bold leading-relaxed mb-10">
+                                        "Making local businesses as easy to find as they are great to experience is our singular focus."
+                                    </p>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center text-xs font-black">NP</div>
+                                        <div>
+                                            <div className="text-sm font-black uppercase tracking-widest text-white">Founder Core</div>
+                                            <div className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Est. 2024</div>
+                                        </div>
+                                    </div>
+                                </div>
+                             </div>
+                             {/* Floating elements */}
+                             <div className="absolute top-[-20px] right-[-20px] w-40 h-40 bg-primary/10 rounded-full blur-3xl -z-10 animate-pulse" />
+                             <div className="absolute bottom-[-20px] left-[-20px] w-40 h-40 bg-blue-500/10 rounded-full blur-3xl -z-10" />
+                        </div>
+
+                        <div className="order-1 lg:order-2">
+                            <div className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
+                                <span className="w-8 h-[2px] bg-primary" />
+                                Our Mission
+                            </div>
+                            <h2 className="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-[0.9] mb-10">
+                                Empowering Local <br />
+                                <span className="text-slate-400">Economies.</span>
+                            </h2>
+                            <p className="text-lg text-slate-500 font-bold leading-relaxed mb-10">
+                                We give local businesses a powerful digital presence — complete with verified profiles, customer reviews, real-time chat, and targeted offers — so that when someone searches for a service nearby, the best match is right at their fingertips.
+                            </p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                {[
+                                    "Precision Discovery",
+                                    "Trustworthy Ratings",
+                                    "Real-time Enquiry",
+                                    "Free Basic Tier"
+                                ].map((item) => (
+                                    <div key={item} className="flex items-center gap-4 p-6 rounded-[24px] bg-slate-50 border border-slate-100 hover:border-primary/30 transition-colors group">
+                                        <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                                            <CheckCircle className="w-5 h-5 text-primary" />
+                                        </div>
+                                        <span className="font-black text-slate-900 uppercase tracking-widest text-[11px]">{item}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* ── Values ── */}
+                <section className="py-32 px-4 bg-slate-900 text-white rounded-[64px] mx-4 mb-32 relative overflow-hidden">
+                    <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
+                        <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+                    </div>
+                    
+                    <div className="max-w-7xl mx-auto relative z-10">
+                        <div className="text-center mb-24">
+                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-6 flex items-center justify-center gap-3">
+                                <span className="w-8 h-[1px] bg-slate-700" />
+                                Principles
+                                <span className="w-8 h-[1px] bg-slate-700" />
+                            </div>
+                            <h2 className="text-5xl md:text-7xl font-black tracking-tighter leading-none">
+                                Core <span className="text-primary italic">Values.</span>
+                            </h2>
+                        </div>
+                        
+                        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                            {values.map(({ icon: Icon, title, desc, color }) => (
+                                <div key={title} className="p-10 rounded-[40px] bg-white/5 border border-white/10 backdrop-blur-xl hover:bg-white/10 transition-all group">
+                                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform ${color.replace('bg-', 'bg-opacity-20 bg-')}`}>
+                                        <Icon className="w-7 h-7" />
+                                    </div>
+                                    <h3 className="text-xl font-black mb-4 tracking-tight">{title}</h3>
+                                    <p className="text-slate-400 text-sm font-bold leading-relaxed">{desc}</p>
                                 </div>
                             ))}
                         </div>
@@ -179,28 +193,37 @@ export default function AboutPage() {
                 </section>
 
                 {/* ── CTA ── */}
-                <section className="py-20 px-4 bg-gradient-to-br from-[#112D4E] to-[#1a3f6b]">
-                    <div className="max-w-2xl mx-auto text-center">
-                        <h2 className="text-3xl md:text-4xl font-black text-white mb-4">Ready to grow with us?</h2>
-                        <p className="text-white/70 font-medium mb-8">Join thousands of local businesses already thriving on naampata.</p>
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <section className="py-44 px-4 relative">
+                    <div className="max-w-4xl mx-auto text-center">
+                         <div className="w-24 h-24 bg-primary/10 rounded-[32px] flex items-center justify-center mx-auto mb-12 rotate-12">
+                            <Building2 className="w-12 h-12 text-primary" />
+                         </div>
+                        <h2 className="text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] mb-10">
+                            Join the <br />
+                            <span className="text-slate-400">Network.</span>
+                        </h2>
+                        <p className="text-xl text-slate-500 font-bold mb-16 max-w-xl mx-auto">
+                            Join thousands of local businesses already thriving on naampata systems.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-6 justify-center">
                             <Link
                                 href="/register?role=vendor"
-                                className="inline-flex items-center gap-2 px-8 py-4 bg-[#FF7A30] text-white font-bold rounded-2xl hover:bg-[#E86920] shadow-lg shadow-orange-500/30 transition-all active:scale-95"
+                                className="inline-flex items-center gap-4 px-12 py-8 bg-primary text-white font-black uppercase tracking-widest text-xs rounded-[24px] hover:shadow-2xl hover:shadow-primary/40 transition-all active:scale-95 group"
                             >
-                                List Your Business <ArrowRight className="w-4 h-4" />
+                                List Your Business 
+                                <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
                             </Link>
                             <Link
                                 href="/contact"
-                                className="inline-flex items-center gap-2 px-8 py-4 bg-white/10 text-white font-bold rounded-2xl hover:bg-white/20 border border-white/20 transition-all"
+                                className="inline-flex items-center gap-4 px-12 py-8 bg-slate-900 text-white font-black uppercase tracking-widest text-xs rounded-[24px] hover:bg-slate-800 transition-all"
                             >
-                                Contact Us
+                                Contact Support
                             </Link>
                         </div>
                     </div>
                 </section>
             </main>
             <Footer />
-        </>
+        </div>
     );
 }

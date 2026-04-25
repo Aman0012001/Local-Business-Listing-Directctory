@@ -1,0 +1,65 @@
+const { Client } = require('pg');
+const dotenv = require('dotenv');
+const path = require('path');
+
+const envPath = path.resolve(__dirname, '../.env');
+dotenv.config({ path: envPath });
+
+async function fixSchema() {
+    const client = new Client({
+        host: process.env.DB_HOST,
+        port: process.env.DB_PORT,
+        user: process.env.DB_USERNAME,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_DATABASE,
+        ssl: { rejectUnauthorized: false }
+    });
+
+    try {
+        await client.connect();
+        console.log('Connected to DB');
+
+        console.log('Applying schema fixes...');
+
+        // 1. Create Enum for Notification Priority
+        try {
+            await client.query(`
+                DO $$ BEGIN
+                    CREATE TYPE "notifications_priority_enum" AS ENUM('high', 'medium', 'low');
+                EXCEPTION
+                    WHEN duplicate_object THEN null;
+                END $$;
+            `);
+            console.log(' - Enum "notifications_priority_enum" checked/created');
+        } catch (e) {
+            console.log(' - Enum creation skipped or failed (might already exist):', e.message);
+        }
+
+        // 2. Add columns to notifications table
+        const notificationColumns = [
+            { name: 'priority', type: 'notifications_priority_enum', default: "'medium'" },
+            { name: 'link', type: 'character varying', nullable: true }
+        ];
+
+        for (const col of notificationColumns) {
+            try {
+                await client.query(`
+                    ALTER TABLE "notifications" 
+                    ADD COLUMN IF NOT EXISTS "${col.name}" ${col.type} ${col.default ? `DEFAULT ${col.default}` : ''}
+                `);
+                console.log(` - Column "notifications.${col.name}" added/verified`);
+            } catch (e) {
+                console.error(` - Failed to add "notifications.${col.name}":`, e.message);
+            }
+        }
+
+        console.log('Schema fixes applied successfully!');
+
+    } catch (err) {
+        console.error('Migration Error:', err);
+    } finally {
+        await client.end();
+    }
+}
+
+fixSchema();

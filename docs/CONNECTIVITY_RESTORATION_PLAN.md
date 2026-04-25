@@ -3,7 +3,7 @@
 To restore seamless communication between the Netlify frontend and Railway backend, follow these steps:
 
 ## 1. Correct DNS Typos (Completed in Codebase)
-The primary issue was a DNS typo (`directctory` instead of `directory`) in the production environment variables.
+The primary issue was a DNS typo (`directory` instead of `directory`) in the production environment variables.
 
 - **Frontend URL Fixed:** `https://local-business-listing-directory-production.up.railway.app`
 - **Socket URL Fixed:** `https://local-business-listing-directory-production.up.railway.app`

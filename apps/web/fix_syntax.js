@@ -1,5 +1,5 @@
 const fs = require('fs');
-const path = 'e:\\localweb\\Local-Business-Listing-Directctory\\apps\\web\\app\\business\\[slug]\\BusinessDetailClient.tsx';
+const path = 'e:\\localweb\\Local-Business-Listing-directory\\apps\\web\\app\\business\\[slug]\\BusinessDetailClient.tsx';
 let content = fs.readFileSync(path, 'utf8');
 
 // The extra braces are at line 739.

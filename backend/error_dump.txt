@@ -1,0 +1,7 @@
+QueryFailedError: relation "search_logs" does not exist
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async DemandService.getInsights (E:\localweb\Local-Business-Listing-directory\backend\src\modules\demand\demand.service.ts:156:23)
+    at async DemandController.getNearbyDemand (E:\localweb\Local-Business-Listing-directory\backend\src\modules\demand\demand.controller.ts:70:20)

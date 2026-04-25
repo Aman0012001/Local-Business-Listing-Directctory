@@ -153,14 +153,14 @@ export default function VendorOffersPage() {
 
   const loadPricing = async () => {
     try {
-      const res = await api.promotions.getPricingRules();
+      const res = await api.promotions.getPricingRules({ silent: true });
       setPricingOptions(res || []);
     } catch { }
   };
 
   const loadActiveSub = async () => {
     try {
-      const res = await api.subscriptions.getActive();
+      const res = await api.subscriptions.getActive({ silent: true });
       const isAdminOrVendor =
         user?.role === "vendor" ||
         user?.role === "admin" ||

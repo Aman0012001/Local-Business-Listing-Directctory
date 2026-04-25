@@ -5,11 +5,17 @@ import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 import { chatApi } from '../services/chat.service';
 
-const SOCKET_URL =
-    process.env.NEXT_PUBLIC_SOCKET_URL ||
-    process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '')?.replace('/api', '') ||
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '')?.replace('/api', '') ||
-    'http://localhost:3001';
+const envSocketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
+const envApiUrl = process.env.NEXT_PUBLIC_API_URL;
+const envApiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+const isDev = process.env.NODE_ENV === 'development';
+
+const SOCKET_URL = isDev
+    ? (envSocketUrl || 'http://127.0.0.1:3001')
+    : (envSocketUrl ||
+       (envApiUrl ? envApiUrl.split('/api')[0] : '') ||
+       (envApiBaseUrl ? envApiBaseUrl.split('/api')[0] : ''));
 
 let sharedSocket: Socket | null = null;
 let currentToken: string | null = null;

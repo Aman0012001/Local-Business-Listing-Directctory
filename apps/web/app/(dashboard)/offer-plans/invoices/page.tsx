@@ -36,8 +36,8 @@ export default function VendorInvoicesPage() {
             try {
                 setLoading(true);
                 const [invoicesData, promosData] = await Promise.all([
-                    api.subscriptions.getMyInvoices(),
-                    api.subscriptions.getActivePromotions()
+                    api.subscriptions.getMyInvoices({ silent: true }),
+                    api.subscriptions.getActivePromotions({ silent: true })
                 ]);
                 setInvoices(invoicesData);
                 setPromotions(promosData);

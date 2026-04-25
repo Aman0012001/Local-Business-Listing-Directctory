@@ -25,10 +25,21 @@ const SocketContext = createContext<SocketContextType>({
     deleteNotification: async () => {},
 });
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 
-    (process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api/v1', '') : 
-     process.env.NEXT_PUBLIC_API_BASE_URL ? process.env.NEXT_PUBLIC_API_BASE_URL.replace('/api/v1', '') : 
-     'http://localhost:3001');
+const isProd = process.env.NODE_ENV === 'production';
+let envSocketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 
+    (process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.split('/api')[0] : 
+     process.env.NEXT_PUBLIC_API_BASE_URL ? process.env.NEXT_PUBLIC_API_BASE_URL.split('/api')[0] : 
+     '');
+
+// HARDENING: Prevent localhost socket URL in production builds
+if (isProd && (envSocketUrl.includes('localhost') || envSocketUrl.includes('127.0.0.1'))) {
+    console.warn('[SocketContext] WARNING: Localhost Socket URL detected in production build! Overriding to Railway production URL.');
+    envSocketUrl = 'https://local-business-listing-directory-production.up.railway.app';
+}
+
+const SOCKET_URL = envSocketUrl || (isProd 
+    ? 'https://local-business-listing-directory-production.up.railway.app' 
+    : 'http://127.0.0.1:3001');
 
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     const { user, syncProfile } = useAuth();

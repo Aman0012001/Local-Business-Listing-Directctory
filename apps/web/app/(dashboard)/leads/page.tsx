@@ -1,11 +1,10 @@
 "use client";
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../../../lib/api';
 import {
     Phone, Mail, MessageSquare, Globe, Download, Filter,
     RefreshCw, TrendingUp, Users, CheckCircle, XCircle,
-    PhoneCall, ChevronDown, Search, Eye, ChevronLeft, ChevronRight, Loader2, Lock
+    PhoneCall, ChevronDown, Search, Eye, ChevronLeft, ChevronRight, Loader2, Lock, User
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../../context/AuthContext';
@@ -124,7 +123,7 @@ function LeadDetailModal({ lead, onClose, onStatusChange }: {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={onClose} />
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }}
                 className="relative bg-white rounded-[40px] shadow-2xl w-full max-w-xl overflow-hidden z-10 border border-white/20">
-                
+
                 {/* Header with Background Gradient */}
                 <div className="h-32 bg-gradient-to-br from-blue-600 to-indigo-700 p-8 relative">
                     <button onClick={onClose} className="absolute top-6 right-6 w-10 h-10 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all active:scale-90">
@@ -181,9 +180,9 @@ function LeadDetailModal({ lead, onClose, onStatusChange }: {
                                 <p className="text-sm text-slate-600 leading-relaxed font-medium relative z-10">"{lead.message}"</p>
                             </div>
                         )}
-                        
+
                         <div className="flex items-center justify-between px-2">
-                             <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">Received on {new Date(lead.createdAt).toLocaleDateString()} at {new Date(lead.createdAt).toLocaleTimeString()}</p>
+                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">Received on {new Date(lead.createdAt).toLocaleDateString()} at {new Date(lead.createdAt).toLocaleTimeString()}</p>
                         </div>
                     </div>
 
@@ -335,187 +334,187 @@ export default function VendorLeadsPage() {
     return (
         <FeatureGate feature="showLeads" title="Manage Your Business Leads" description="Track and respond to customers who have expressed interest in your business. Gain professional insights into your customer base.">
             <div className="min-h-screen pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Header */}
-            <div className="py-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-4xl font-black text-slate-900 tracking-tight">Leads</h1>
-                    <p className="text-slate-400 font-bold mt-1">Track and manage all customer enquiries</p>
-                </div>
-                <div className="flex items-center gap-3">
-                    <button id="refresh-leads-btn" onClick={() => fetchLeads(true)} disabled={refreshing}
-                        className="p-3 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-slate-900 hover:border-slate-300 transition-all shadow-sm">
-                        <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
-                    </button>
-                    <button id="download-leads-btn" onClick={handleDownload}
-                        className="flex items-center gap-2 px-5 py-3 bg-slate-900 text-white rounded-xl font-bold shadow-lg hover:bg-slate-800 active:scale-95 transition-all">
-                        <Download className="w-4 h-4" />
-                        Export CSV
-                    </button>
-                </div>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                {statCards.map(s => <StatCard key={s.label} {...s} />)}
-            </div>
-
-            {/* Filters */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 mb-6 flex flex-col sm:flex-row gap-3">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input id="leads-search" type="text" placeholder="Search by name, email, phone…"
-                        value={search} onChange={e => setSearch(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 text-sm font-medium bg-slate-50 rounded-xl border border-transparent focus:border-blue-400 focus:bg-white outline-none transition-all" />
-                </div>
-                <div className="relative">
-                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                    <select id="leads-status-filter" value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}
-                        className="pl-9 pr-8 py-2.5 text-sm font-bold bg-slate-50 rounded-xl border border-transparent focus:border-blue-400 outline-none appearance-none cursor-pointer">
-                        <option value="">All Statuses</option>
-                        {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                    </select>
-                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                </div>
-                <div className="relative">
-                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                    <select id="leads-type-filter" value={filterType} onChange={e => { setFilterType(e.target.value); setPage(1); }}
-                        className="pl-9 pr-8 py-2.5 text-sm font-bold bg-slate-50 rounded-xl border border-transparent focus:border-blue-400 outline-none appearance-none cursor-pointer">
-                        <option value="">All Types</option>
-                        {Object.entries(TYPE_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                    </select>
-                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                </div>
-            </div>
-
-            {/* Table */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                {filtered.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-24 gap-3">
-                        <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center">
-                            <Users className="w-8 h-8 text-slate-300" />
-                        </div>
-                        <p className="text-slate-400 font-bold">No leads found</p>
-                        <p className="text-slate-300 text-sm">Leads appear here when customers contact your business</p>
+                {/* Header */}
+                <div className="py-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-4xl font-black text-slate-900 tracking-tight">Leads</h1>
+                        <p className="text-slate-400 font-bold mt-1">Track and manage all customer enquiries</p>
                     </div>
-                ) : (
-                    <>
-                        {/* Desktop table */}
-                        <div className="hidden md:block overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="border-b border-slate-100 bg-slate-50/50">
-                                        <th className="px-6 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Contact</th>
-                                        <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Type</th>
-                                        <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Status</th>
-                                        <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Message</th>
-                                        <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Date</th>
-                                        <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-50">
-                                    <AnimatePresence>
-                                        {filtered.map((lead, i) => (
-                                            <motion.tr key={lead.id}
-                                                initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: i * 0.03 }}
-                                                className="hover:bg-slate-50/70 transition-colors group">
-                                                <td className="px-6 py-4">
-                                                    <p className="font-black text-slate-900 text-sm">{lead.name || '—'}</p>
-                                                    {lead.email && <p className="text-xs text-slate-400 font-medium mt-0.5">{lead.email}</p>}
-                                                    {lead.phone && (
-                                                        <a href={`tel:${lead.phone}`} className="text-xs text-blue-500 font-bold mt-0.5 block hover:underline">
-                                                            {lead.phone}
-                                                        </a>
-                                                    )}
-                                                </td>
-                                                <td className="px-4 py-4"><TypeBadge type={lead.type} /></td>
-                                                <td className="px-4 py-4">
-                                                    <div className="relative inline-block mt-0.5">
-                                                        <select
-                                                            value={lead.status}
-                                                            onChange={(e) => handleStatusChange(lead.id, e.target.value as LeadStatus)}
-                                                            className={`appearance-none pl-3 pr-8 py-1 rounded-full text-xs font-bold border outline-none cursor-pointer transition-all ${STATUS_CONFIG[lead.status].bg} ${STATUS_CONFIG[lead.status].color} focus:ring-2 focus:ring-current/20`}
-                                                        >
-                                                            {(Object.keys(STATUS_CONFIG) as LeadStatus[]).map(s => (
-                                                                <option key={s} value={s} className="bg-white text-slate-900 font-bold">{STATUS_CONFIG[s].label}</option>
-                                                            ))}
-                                                        </select>
-                                                        <ChevronDown className={`absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none opacity-60`} />
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-4 max-w-[200px]">
-                                                    <p className="text-sm text-slate-500 truncate">{lead.message || '—'}</p>
-                                                </td>
-                                                <td className="px-4 py-4">
-                                                    <p className="text-xs text-slate-400 font-medium whitespace-nowrap">
-                                                        {new Date(lead.createdAt).toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                                    </p>
-                                                </td>
-                                                <td className="px-4 py-4">
-                                                    <button id={`view-lead-${lead.id}`} onClick={() => setSelectedLead(lead)}
-                                                        className="p-2 rounded-xl bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-all opacity-0 group-hover:opacity-100">
-                                                        <Eye className="w-4 h-4" />
-                                                    </button>
-                                                </td>
-                                            </motion.tr>
-                                        ))}
-                                    </AnimatePresence>
-                                </tbody>
-                            </table>
-                        </div>
+                    <div className="flex items-center gap-3">
+                        <button id="refresh-leads-btn" onClick={() => fetchLeads(true)} disabled={refreshing}
+                            className="p-3 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-slate-900 hover:border-slate-300 transition-all shadow-sm">
+                            <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+                        </button>
+                        <button id="download-leads-btn" onClick={handleDownload}
+                            className="flex items-center gap-2 px-5 py-3 bg-slate-900 text-white rounded-xl font-bold shadow-lg hover:bg-slate-800 active:scale-95 transition-all">
+                            <Download className="w-4 h-4" />
+                            Export CSV
+                        </button>
+                    </div>
+                </div>
 
-                        {/* Mobile cards */}
-                        <div className="md:hidden divide-y divide-slate-50">
-                            {filtered.map(lead => (
-                                <div key={lead.id} className="p-4 flex items-start gap-4" onClick={() => setSelectedLead(lead)}>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                                            <TypeBadge type={lead.type} />
-                                            <StatusBadge status={lead.status} />
+                {/* Stats */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    {statCards.map(s => <StatCard key={s.label} {...s} />)}
+                </div>
+
+                {/* Filters */}
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 mb-6 flex flex-col sm:flex-row gap-3">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input id="leads-search" type="text" placeholder="Search by name, email, phone…"
+                            value={search} onChange={e => setSearch(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2.5 text-sm font-medium bg-slate-50 rounded-xl border border-transparent focus:border-blue-400 focus:bg-white outline-none transition-all" />
+                    </div>
+                    <div className="relative">
+                        <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                        <select id="leads-status-filter" value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}
+                            className="pl-9 pr-8 py-2.5 text-sm font-bold bg-slate-50 rounded-xl border border-transparent focus:border-blue-400 outline-none appearance-none cursor-pointer">
+                            <option value="">All Statuses</option>
+                            {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                        </select>
+                        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    </div>
+                    <div className="relative">
+                        <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                        <select id="leads-type-filter" value={filterType} onChange={e => { setFilterType(e.target.value); setPage(1); }}
+                            className="pl-9 pr-8 py-2.5 text-sm font-bold bg-slate-50 rounded-xl border border-transparent focus:border-blue-400 outline-none appearance-none cursor-pointer">
+                            <option value="">All Types</option>
+                            {Object.entries(TYPE_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                        </select>
+                        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    </div>
+                </div>
+
+                {/* Table */}
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                    {filtered.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-24 gap-3">
+                            <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center">
+                                <Users className="w-8 h-8 text-slate-300" />
+                            </div>
+                            <p className="text-slate-400 font-bold">No leads found</p>
+                            <p className="text-slate-300 text-sm">Leads appear here when customers contact your business</p>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Desktop table */}
+                            <div className="hidden md:block overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="border-b border-slate-100 bg-slate-50/50">
+                                            <th className="px-6 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Contact</th>
+                                            <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Type</th>
+                                            <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Status</th>
+                                            <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Message</th>
+                                            <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Date</th>
+                                            <th className="px-4 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50">
+                                        <AnimatePresence>
+                                            {filtered.map((lead, i) => (
+                                                <motion.tr key={lead.id}
+                                                    initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: i * 0.03 }}
+                                                    className="hover:bg-slate-50/70 transition-colors group">
+                                                    <td className="px-6 py-4">
+                                                        <p className="font-black text-slate-900 text-sm">{lead.name || '—'}</p>
+                                                        {lead.email && <p className="text-xs text-slate-400 font-medium mt-0.5">{lead.email}</p>}
+                                                        {lead.phone && (
+                                                            <a href={`tel:${lead.phone}`} className="text-xs text-blue-500 font-bold mt-0.5 block hover:underline">
+                                                                {lead.phone}
+                                                            </a>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-4"><TypeBadge type={lead.type} /></td>
+                                                    <td className="px-4 py-4">
+                                                        <div className="relative inline-block mt-0.5">
+                                                            <select
+                                                                value={lead.status}
+                                                                onChange={(e) => handleStatusChange(lead.id, e.target.value as LeadStatus)}
+                                                                className={`appearance-none pl-3 pr-8 py-1 rounded-full text-xs font-bold border outline-none cursor-pointer transition-all ${STATUS_CONFIG[lead.status].bg} ${STATUS_CONFIG[lead.status].color} focus:ring-2 focus:ring-current/20`}
+                                                            >
+                                                                {(Object.keys(STATUS_CONFIG) as LeadStatus[]).map(s => (
+                                                                    <option key={s} value={s} className="bg-white text-slate-900 font-bold">{STATUS_CONFIG[s].label}</option>
+                                                                ))}
+                                                            </select>
+                                                            <ChevronDown className={`absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none opacity-60`} />
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-4 max-w-[200px]">
+                                                        <p className="text-sm text-slate-500 truncate">{lead.message || '—'}</p>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <p className="text-xs text-slate-400 font-medium whitespace-nowrap">
+                                                            {new Date(lead.createdAt).toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                        </p>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <button id={`view-lead-${lead.id}`} onClick={() => setSelectedLead(lead)}
+                                                            className="p-2 rounded-xl bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-all opacity-0 group-hover:opacity-100">
+                                                            <Eye className="w-4 h-4" />
+                                                        </button>
+                                                    </td>
+                                                </motion.tr>
+                                            ))}
+                                        </AnimatePresence>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Mobile cards */}
+                            <div className="md:hidden divide-y divide-slate-50">
+                                {filtered.map(lead => (
+                                    <div key={lead.id} className="p-4 flex items-start gap-4" onClick={() => setSelectedLead(lead)}>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                                                <TypeBadge type={lead.type} />
+                                                <StatusBadge status={lead.status} />
+                                            </div>
+                                            <p className="font-black text-slate-900 text-sm">{lead.name || '—'}</p>
+                                            {lead.phone && <p className="text-xs text-blue-500 font-bold">{lead.phone}</p>}
+                                            {lead.message && <p className="text-xs text-slate-400 mt-1 line-clamp-2">{lead.message}</p>}
+                                            <p className="text-[10px] text-slate-300 font-medium mt-1">{new Date(lead.createdAt).toLocaleDateString()}</p>
                                         </div>
-                                        <p className="font-black text-slate-900 text-sm">{lead.name || '—'}</p>
-                                        {lead.phone && <p className="text-xs text-blue-500 font-bold">{lead.phone}</p>}
-                                        {lead.message && <p className="text-xs text-slate-400 mt-1 line-clamp-2">{lead.message}</p>}
-                                        <p className="text-[10px] text-slate-300 font-medium mt-1">{new Date(lead.createdAt).toLocaleDateString()}</p>
+                                        <Eye className="w-4 h-4 text-slate-400 flex-shrink-0 mt-1" />
                                     </div>
-                                    <Eye className="w-4 h-4 text-slate-400 flex-shrink-0 mt-1" />
-                                </div>
-                            ))}
-                        </div>
-                    </>
-                )}
+                                ))}
+                            </div>
+                        </>
+                    )}
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                    <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
-                        <p className="text-xs text-slate-400 font-medium">
-                            Page {page} of {totalPages} · {total} total
-                        </p>
-                        <div className="flex items-center gap-2">
-                            <button id="leads-prev-page" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                                className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:border-slate-300 disabled:opacity-40 transition-all">
-                                <ChevronLeft className="w-4 h-4" />
-                            </button>
-                            <button id="leads-next-page" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                                className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:border-slate-300 disabled:opacity-40 transition-all">
-                                <ChevronRight className="w-4 h-4" />
-                            </button>
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
+                            <p className="text-xs text-slate-400 font-medium">
+                                Page {page} of {totalPages} · {total} total
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <button id="leads-prev-page" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+                                    className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:border-slate-300 disabled:opacity-40 transition-all">
+                                    <ChevronLeft className="w-4 h-4" />
+                                </button>
+                                <button id="leads-next-page" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+                                    className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:border-slate-300 disabled:opacity-40 transition-all">
+                                    <ChevronRight className="w-4 h-4" />
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
+
+                {/* Detail Modal */}
+                <AnimatePresence>
+                    {selectedLead && (
+                        <LeadDetailModal
+                            lead={selectedLead}
+                            onClose={() => setSelectedLead(null)}
+                            onStatusChange={handleStatusChange}
+                        />
+                    )}
+                </AnimatePresence>
             </div>
-
-            {/* Detail Modal */}
-            <AnimatePresence>
-                {selectedLead && (
-                    <LeadDetailModal
-                        lead={selectedLead}
-                        onClose={() => setSelectedLead(null)}
-                        onStatusChange={handleStatusChange}
-                    />
-                )}
-            </AnimatePresence>
-        </div>
         </FeatureGate>
     );
 }

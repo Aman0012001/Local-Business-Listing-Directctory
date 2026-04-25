@@ -122,7 +122,6 @@ export default function BusinessListingPage() {
                                 <motion.div key={biz.id} variants={itemVariants}>
                                     <BusinessCard
                                         business={biz}
-                                        variant={idx % 4 === 0 ? 'blue' : idx % 4 === 1 ? 'green' : idx % 4 === 2 ? 'dark' : 'white'}
                                     />
                                 </motion.div>
                             ))}

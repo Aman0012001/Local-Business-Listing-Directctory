@@ -1,7 +1,19 @@
 import { Business, Category, City, SearchResponse, Review, ReviewReply } from '../types/api';
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:3001/api/v1').replace(/\/+$/, '');
-const API_ROOT = API_BASE_URL.split('/api')[0];
+const isProd = process.env.NODE_ENV === 'production';
+let envApiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || '';
+
+// HARDENING: Prevent localhost API in production builds
+if (isProd && (envApiUrl.includes('localhost') || envApiUrl.includes('127.0.0.1'))) {
+    console.warn('[api.ts] WARNING: Localhost API URL detected in production build! Overriding to Railway production URL.');
+    envApiUrl = 'https://local-business-listing-directory-production.up.railway.app/api/v1';
+}
+
+const API_BASE_URL = (envApiUrl || (isProd 
+    ? 'https://local-business-listing-directory-production.up.railway.app/api/v1' 
+    : 'http://127.0.0.1:3001/api/v1')).replace(/\/+$/, '');
+
+const API_ROOT = API_BASE_URL ? API_BASE_URL.split('/api')[0] : '';
 
 console.log('[api.ts] Unified API_BASE_URL:', API_BASE_URL);
 
@@ -10,7 +22,7 @@ export const getImageUrl = (path: string | null | undefined) => {
     if (path.startsWith('data:')) return path; // Base64 preview
     if (path.startsWith('http')) return path; // Cloudinary or full URL
 
-    // For relative paths, prepend API_ROOT (e.g., http://127.0.0.1:3001)
+    // For relative paths, prepend API_ROOT (the base domain of the API)
     // Trim leading slash if present
     const cleanPath = path.startsWith('/') ? path.substring(1) : path;
     return `${API_ROOT}/${cleanPath}`;
@@ -76,7 +88,7 @@ async function fetcher<T>(endpoint: string, options?: FetcherOptions): Promise<T
                 console.error(`[api.ts] API Error on ${endpoint}:`, response.status, response.statusText, errorData);
             }
 
-            if (options?.silent && response.status === 404) {
+            if (options?.silent) {
                 return null as any;
             }
             throw new Error(errorData.message || 'API request failed');
@@ -106,40 +118,46 @@ async function fetcher<T>(endpoint: string, options?: FetcherOptions): Promise<T
     } catch (error: any) {
         clearTimeout(timeoutId);
         
-        // Don't re-throw if it's already an error we processed (with a message we like)
-        if (error.message && (error.message.includes('Invalid JSON') || error.message.includes('Connection Failed'))) {
-            throw error;
-        }
-
         // Comprehensive Network Error Logging
-        const isNetworkError = (error instanceof TypeError && (
-            error.message.includes('fetch') ||
-            error.message.includes('NetworkError') ||
-            error.message.includes('Network Request Failed') ||
-            error.message.includes('Failed to fetch')
-        )) || error.name === 'AbortError' || error.message?.includes('timed out');
+        const errMessage = error.message || '';
+        const errName = error.name || '';
+        
+        const isNetworkError = 
+            errMessage.includes('fetch') ||
+            errMessage.includes('NetworkError') ||
+            errMessage.includes('Network Request Failed') ||
+            errMessage.includes('Failed to fetch') ||
+            errName === 'AbortError' || 
+            errMessage.includes('timed out') ||
+            errMessage.includes('NetworkError when attempting to fetch resource');
 
         if (isNetworkError) {
-            console.error('[api.ts] Network Connectivity Issue:', {
-                message: error.message,
-                name: error.name,
+            console.error('[api.ts] Network Connectivity Issue Detected:', {
+                message: errMessage,
+                name: errName,
                 requestedUrl: url,
                 apiUrlConfig: API_BASE_URL,
                 origin: typeof window !== 'undefined' ? window.location.origin : 'server-side',
+                stack: error.stack
             });
             
-            const hint = url.includes('localhost') ? ' (Hint: Ensure your local backend is running on port 3001)' : '';
-            throw new Error(`Connection Failed: Unable to reach the backend at ${url}${hint}. Please check your internet, server status, or CORS settings.`);
+            let hint = '';
+            if (url.includes('localhost') || url.includes('127.0.0.1')) {
+                hint = ' (Local Backend Unreachable). 1. Ensure your backend is running on port 3001. 2. If it is running, try restarting it. 3. Check for ghost processes with `npm run stop` or similar.';
+            } else if (url.includes('railway.app')) {
+                hint = ' (Production Backend Unreachable). Check Railway status or your internet connection.';
+            }
+                
+            throw new Error(`Connection Failed: Unable to reach the backend at ${url}.${hint}`);
         }
 
-        if (error.name === 'AbortError') {
-            throw new Error('Request timed out. Please check your connection.');
-        }
 
         if (options?.silent) {
-            console.warn(`[api.ts] Silent error on ${endpoint}`, error.message);
+            console.warn(`[api.ts] Silent error on ${endpoint}`, errMessage);
             return null as any;
         }
+
+        // Re-throw other errors
         throw error;
     }
 }
@@ -159,10 +177,10 @@ export const api = {
     delete: <T>(endpoint: string, options?: FetcherOptions) => fetcher<T>(endpoint, { ...options, method: 'DELETE' }),
     
     categories: {
-        getAll: () => fetcher<Category[]>('/categories'),
-        getPopular: (limit = 8) => fetcher<Category[]>(`/categories/popular?limit=${limit}`),
-        getTree: () => fetcher<Category[]>('/categories/tree'),
-        getBySlug: (slug: string) => fetcher<Category>(`/categories/slug/${slug}`),
+        getAll: (options?: FetcherOptions) => fetcher<Category[]>('/categories', options),
+        getPopular: (limit = 8, options?: FetcherOptions) => fetcher<Category[]>(`/categories/popular?limit=${limit}`, options),
+        getTree: (options?: FetcherOptions) => fetcher<Category[]>('/categories/tree', options),
+        getBySlug: (slug: string, options?: FetcherOptions) => fetcher<Category>(`/categories/slug/${slug}`, options),
         // Admin endpoints
         adminGetAll: (page = 1, limit = 10, search = '') => {
             const query = new URLSearchParams({
@@ -217,8 +235,8 @@ export const api = {
             const query = new URLSearchParams(sanitizedParams).toString();
             return fetcher<SearchResponse>(`/businesses/search?${query}`);
         },
-        getBySlug: (slug: string) => fetcher<Business>(`/businesses/slug/${slug}`),
-        getFeatured: (page = 1, limit = 12) => fetcher<SearchResponse>(`/businesses/search?featuredOnly=true&page=${page}&limit=${limit}`),
+        getBySlug: (slug: string, options?: FetcherOptions) => fetcher<Business>(`/businesses/slug/${slug}`, options),
+        getFeatured: (page = 1, limit = 12, options?: FetcherOptions) => fetcher<SearchResponse>(`/businesses/search?featuredOnly=true&page=${page}&limit=${limit}`, options),
         uploadImage: async (file: File) => {
             const result = await api.cloudinary.uploadToCloudinary(file, 'listings');
             return { url: result.secure_url };
@@ -238,9 +256,9 @@ export const api = {
         }),
     },
     cities: {
-        getPopular: () => fetcher<City[]>('/cities/popular'),
-        getAll: () => fetcher<City[]>('/cities'),
-        getSupportedCountries: () => fetcher<{ country: string; cityCount: number }[]>('/cities/supported-countries'),
+        getPopular: (options?: FetcherOptions) => fetcher<City[]>('/cities/popular', options),
+        getAll: (options?: FetcherOptions) => fetcher<City[]>('/cities', options),
+        getSupportedCountries: (options?: FetcherOptions) => fetcher<{ country: string; cityCount: number }[]>('/cities/supported-countries', options),
         // Admin endpoints
         adminCreate: (data: any) => fetcher<City>('/cities/admin', {
             method: 'POST',
@@ -268,14 +286,14 @@ export const api = {
         }),
     },
     reviews: {
-        findAll: (params: any = {}) => {
+        findAll: (params: any = {}, options?: FetcherOptions) => {
             const query = new URLSearchParams(params).toString();
-            return fetcher<{ data: Review[], meta: any }>(`/reviews?${query}`);
+            return fetcher<{ data: Review[], meta: any }>(`/reviews?${query}`, options);
         },
-        getByBusiness: (idOrSlug: string) => fetcher<{ data: Review[], meta: any }>(`/reviews/business/${idOrSlug}`),
-        getByVendor: (vendorId: string) => fetcher<{ data: Review[], meta: any }>(`/reviews?vendorId=${vendorId}`),
-        getVendorAll: (page = 1, limit = 20) => fetcher<{ data: Review[], meta: any }>(`/reviews/vendor/all?page=${page}&limit=${limit}`),
-        getPopular: (limit = 3) => fetcher<{ data: Review[], meta: any }>(`/reviews?rating=5&limit=${limit}`),
+        getByBusiness: (idOrSlug: string, options?: FetcherOptions) => fetcher<{ data: Review[], meta: any }>(`/reviews/business/${idOrSlug}`, options),
+        getByVendor: (vendorId: string, options?: FetcherOptions) => fetcher<{ data: Review[], meta: any }>(`/reviews?vendorId=${vendorId}`, options),
+        getVendorAll: (page = 1, limit = 20, options?: FetcherOptions) => fetcher<{ data: Review[], meta: any }>(`/reviews/vendor/all?page=${page}&limit=${limit}`, options),
+        getPopular: (limit = 3, options?: FetcherOptions) => fetcher<{ data: Review[], meta: any }>(`/reviews?rating=5&limit=${limit}`, options),
         create: (reviewData: any) => fetcher<Review>('/reviews', {
             method: 'POST',
             body: JSON.stringify(reviewData),
@@ -296,6 +314,9 @@ export const api = {
         adminModerate: (id: string, data: { isApproved?: boolean; isSuspicious?: boolean }) => fetcher<Review>(`/reviews/admin/${id}/moderate`, {
             method: 'PATCH',
             body: JSON.stringify(data),
+        }),
+        adminDelete: (id: string) => fetcher<void>(`/reviews/admin/${id}`, {
+            method: 'DELETE',
         }),
     },
     cloudinary: {
@@ -337,7 +358,7 @@ export const api = {
         }
     },
     users: {
-        getProfile: () => fetcher<any>('/users/profile'),
+        getProfile: (options?: FetcherOptions) => fetcher<any>('/users/profile', options),
         updateProfile: (profileData: any) => fetcher<any>('/users/profile', {
             method: 'PATCH',
             body: JSON.stringify(profileData),
@@ -386,8 +407,8 @@ export const api = {
         }),
     },
     vendors: {
-        getStats: () => fetcher<any>('/vendors/dashboard-stats'),
-        getProfile: () => fetcher<any>('/vendors/profile'),
+        getStats: (options?: FetcherOptions) => fetcher<any>('/vendors/dashboard-stats', options),
+        getProfile: (options?: FetcherOptions) => fetcher<any>('/vendors/profile', options),
         updateProfile: (profileData: any) => fetcher<any>('/vendors/profile', {
             method: 'PATCH',
             body: JSON.stringify(profileData),
@@ -566,10 +587,15 @@ export const api = {
     },
 
     notifications: {
-        getAll: () => fetcher('/notifications'),
+        getAll: (options?: FetcherOptions) => fetcher('/notifications', options),
         markRead: (id: string) => fetcher(`/notifications/${id}/read`, { method: 'PATCH' }),
         markAllRead: () => fetcher('/notifications/read-all', { method: 'PATCH' }),
         delete: (id: string) => fetcher(`/notifications/${id}`, { method: 'DELETE' }),
+        getVapidPublicKey: () => fetcher<{ publicKey: string }>('/notifications/vapid-public-key'),
+        subscribePush: (subscription: any) => fetcher('/notifications/push-subscribe', {
+            method: 'POST',
+            body: JSON.stringify(subscription),
+        }),
     },
     affiliate: {
         join: (dto: any) => fetcher('/affiliate/join', { method: 'POST', body: JSON.stringify(dto) }),
@@ -589,12 +615,12 @@ export const api = {
         getSettings: () => fetcher<any>('/affiliate/settings'),
     },
     subscriptions: {
-        getPlans: () => fetcher<any[]>('/subscriptions/plans'),
+        getPlans: (options?: FetcherOptions) => fetcher<any[]>('/subscriptions/plans', options),
         getPricingPlans: (type?: string) => fetcher<any[]>(`/subscriptions/pricing/plans${type ? `?type=${type}` : ''}`),
-        getActive: () => fetcher<any>('/subscriptions/active'),
-        getActivePromotions: () => fetcher<any>('/subscriptions/active-promotions'),
-        getMyInvoices: () => fetcher<any[]>('/subscriptions/my-invoices'),
-        getInvoice: (id: string) => fetcher<any>(`/subscriptions/invoice/${id}`),
+        getActive: (options?: FetcherOptions) => fetcher<any>('/subscriptions/active', options),
+        getActivePromotions: (options?: FetcherOptions) => fetcher<any>('/subscriptions/active-promotions', options),
+        getMyInvoices: (options?: FetcherOptions) => fetcher<any[]>('/subscriptions/my-invoices', options),
+        getInvoice: (id: string, options?: FetcherOptions) => fetcher<any>(`/subscriptions/invoice/${id}`, options),
         mockCheckout: (planId: string) => fetcher<any>(`/subscriptions/mock-success/${planId}`, { method: 'POST' }),
         createCheckout: (planId: string) => api.post<{ sessionId: string; checkoutUrl: string }>('/subscriptions/checkout', { planId }),
         verify: (sessionId: string) => api.post<{ success: boolean; alreadyProcessed: boolean }>('/subscriptions/verify', { sessionId }),
@@ -703,7 +729,7 @@ export const api = {
         getResponses: (id: string) => fetcher<any[]>(`/broadcasts/${id}/responses`),
     },
     promotions: {
-        getPricingRules: () => fetcher<any[]>('/promotions/pricing-rules'),
+        getPricingRules: (options?: FetcherOptions) => fetcher<any[]>('/promotions/pricing-rules', options),
         calculatePrice: (data: { placements: string[], startTime: string, endTime: string, pricingId?: string }, type: string = 'offer') => 
             api.post<{ totalPrice: number; durationHours: number; breakup: any[]; isMinimumApplied?: boolean }>(`/promotions/calculate?type=${type}`, data),
         book: (data: { offerEventId: string; placements: string[]; startTime: string; endTime: string }) => 
@@ -711,13 +737,13 @@ export const api = {
         verifySession: (sessionId: string) => fetcher<any>(`/promotions/verify-session?session_id=${sessionId}`),
     },
     businessSetup: {
-        getQuestions: () => fetcher<any[]>('/business-setup/questions', { silent: true }),
-        getStatus: () => fetcher<{ isCompleted: boolean; answers: Record<string, string[]> }>('/business-setup/status', { silent: true }),
+        getQuestions: (options?: FetcherOptions) => fetcher<any[]>('/business-setup/questions', { silent: true, ...options }),
+        getStatus: (options?: FetcherOptions) => fetcher<{ isCompleted: boolean; answers: Record<string, string[]> }>('/business-setup/status', { silent: true, ...options }),
         saveAnswers: (answers: Record<string, string | string[]>) => 
             api.post<{ success: boolean }>('/business-setup/answers', { answers }),
     },
     qa: {
-        getForBusiness: (businessId: string) => fetcher<any[]>(`/qa/business/${businessId}`, { silent: true }),
+        getForBusiness: (businessId: string, options?: FetcherOptions) => fetcher<any[]>(`/qa/business/${businessId}`, { silent: true, ...options }),
         askQuestion: (data: { businessId: string; content: string }) => 
             fetcher<any>('/qa/questions', { method: 'POST', body: JSON.stringify(data) }),
         postAnswer: (data: { questionId: string; content: string }) => 

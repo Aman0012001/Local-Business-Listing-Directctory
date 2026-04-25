@@ -159,98 +159,98 @@
 [2026-03-13T03:57:35.296Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
 [2026-03-13T03:57:35.970Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - ERROR: column Listing__Listing_reviews.is_suspicious does not exist
 QueryFailedError: column Listing__Listing_reviews.is_suspicious does not exist
-    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
-    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
-    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
-    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
-    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
-    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:405:29)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
+    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
+    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
+    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-directory\backend\src\modules\businesses\businesses.service.ts:405:29)
 [2026-03-13T03:57:36.457Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
 [2026-03-13T03:57:36.458Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
 [2026-03-13T03:57:36.999Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - ERROR: column Listing__Listing_reviews.is_suspicious does not exist
 QueryFailedError: column Listing__Listing_reviews.is_suspicious does not exist
-    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
-    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
-    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
-    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
-    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
-    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:405:29)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
+    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
+    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
+    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-directory\backend\src\modules\businesses\businesses.service.ts:405:29)
 [2026-03-13T03:57:44.681Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
 [2026-03-13T03:57:44.682Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
 [2026-03-13T03:57:44.695Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
 [2026-03-13T03:57:44.695Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
 [2026-03-13T03:57:45.262Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - ERROR: column Listing__Listing_reviews.is_suspicious does not exist
 QueryFailedError: column Listing__Listing_reviews.is_suspicious does not exist
-    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
-    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
-    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
-    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
-    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
-    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:405:29)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
+    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
+    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
+    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-directory\backend\src\modules\businesses\businesses.service.ts:405:29)
 [2026-03-13T03:57:45.284Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - ERROR: column Listing__Listing_reviews.is_suspicious does not exist
 QueryFailedError: column Listing__Listing_reviews.is_suspicious does not exist
-    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
-    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
-    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
-    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
-    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
-    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:405:29)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
+    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
+    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
+    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-directory\backend\src\modules\businesses\businesses.service.ts:405:29)
 [2026-03-13T03:57:58.229Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
 [2026-03-13T03:57:58.230Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
 [2026-03-13T03:57:58.255Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
 [2026-03-13T03:57:58.255Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: superadmin@example.com)
 [2026-03-13T03:57:58.826Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - ERROR: column Listing__Listing_reviews.is_suspicious does not exist
 QueryFailedError: column Listing__Listing_reviews.is_suspicious does not exist
-    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
-    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
-    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
-    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
-    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
-    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:405:29)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
+    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
+    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
+    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-directory\backend\src\modules\businesses\businesses.service.ts:405:29)
 [2026-03-13T03:57:58.915Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - ERROR: column Listing__Listing_reviews.is_suspicious does not exist
 QueryFailedError: column Listing__Listing_reviews.is_suspicious does not exist
-    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
-    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
-    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
-    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
-    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
-    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:405:29)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
+    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
+    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
+    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-directory\backend\src\modules\businesses\businesses.service.ts:405:29)
 [2026-03-13T03:58:03.776Z] [BusinessesController] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: superadmin@example.com)
 [2026-03-13T03:58:03.776Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: superadmin@example.com)
 [2026-03-13T03:58:04.299Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - ERROR: column Listing__Listing_reviews.is_suspicious does not exist
 QueryFailedError: column Listing__Listing_reviews.is_suspicious does not exist
-    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
-    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
-    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
-    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
-    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
-    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:405:29)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
+    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
+    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
+    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-directory\backend\src\modules\businesses\businesses.service.ts:405:29)
 [2026-03-13T03:58:04.780Z] [BusinessesController] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: superadmin@example.com)
 [2026-03-13T03:58:04.781Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: superadmin@example.com)
 [2026-03-13T03:58:05.281Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - ERROR: column Listing__Listing_reviews.is_suspicious does not exist
 QueryFailedError: column Listing__Listing_reviews.is_suspicious does not exist
-    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
-    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
-    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
-    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
-    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
-    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:405:29)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
+    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
+    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
+    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-directory\backend\src\modules\businesses\businesses.service.ts:405:29)
 [2026-03-13T04:06:13.626Z] [BusinessesController] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: Public)
 [2026-03-13T04:06:13.627Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: Public)
 [2026-03-13T04:06:20.598Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - Found in DB. Status: pending
@@ -535,11 +535,11 @@ Error: connect ENETUNREACH 66.33.22.240:45505
 [2026-03-15T10:46:35.206Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
 [2026-03-15T10:46:45.259Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - ERROR: Connection terminated due to connection timeout
 Error: Connection terminated due to connection timeout
-    at Client._connectionCallback (E:\localweb\Local-Business-Listing-Directctory\node_modules\pg-pool\index.js:262:17)
-    at Connection.<anonymous> (E:\localweb\Local-Business-Listing-Directctory\node_modules\pg\lib\client.js:190:18)
+    at Client._connectionCallback (E:\localweb\Local-Business-Listing-directory\node_modules\pg-pool\index.js:262:17)
+    at Connection.<anonymous> (E:\localweb\Local-Business-Listing-directory\node_modules\pg\lib\client.js:190:18)
     at Object.onceWrapper (node:events:622:28)
     at Connection.emit (node:events:508:28)
-    at Socket.<anonymous> (E:\localweb\Local-Business-Listing-Directctory\node_modules\pg\lib\connection.js:61:12)
+    at Socket.<anonymous> (E:\localweb\Local-Business-Listing-directory\node_modules\pg\lib\connection.js:61:12)
     at Socket.emit (node:events:520:35)
     at TCP.<anonymous> (node:net:346:12)
 [2026-03-15T10:47:04.328Z] [BusinessesController] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
@@ -686,7 +686,7 @@ Error: Connection terminated due to connection timeout
 [2026-03-28T08:45:32.809Z] findBySlug: featured-coaching-institute-mn9snny7p - NOT FOUND IN DB
 [2026-03-28T08:45:32.814Z] findBySlug: featured-coaching-institute-mn9snny7p - ERROR: Listing not found
 NotFoundException: Listing not found
-    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:444:23)
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-directory\backend\src\modules\businesses\businesses.service.ts:444:23)
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
 [2026-03-28T08:47:27.962Z] findBySlug: bright-future-academy-mn8n7y7p (User: Public)
 [2026-03-28T08:47:29.341Z] findBySlug: bright-future-academy-mn8n7y7p - Found in DB. Status: approved
@@ -823,31 +823,31 @@ NotFoundException: Listing not found
 [2026-04-07T13:32:23.582Z] findBySlug: undefined - NOT FOUND IN DB
 [2026-04-07T13:32:23.607Z] findBySlug: undefined - ERROR: Listing not found
 NotFoundException: Listing not found
-    at BusinessesService.findBySlug (C:\Websites\Outsource\Chittu\LB1\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:474:23)
+    at BusinessesService.findBySlug (C:\Websites\Outsource\Chittu\LB1\Local-Business-Listing-directory\backend\src\modules\businesses\businesses.service.ts:474:23)
     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
 [2026-04-07T13:32:24.082Z] findBySlug: undefined (User: mkuser@hey.com)
 [2026-04-07T13:32:24.463Z] findBySlug: undefined - NOT FOUND IN DB
 [2026-04-07T13:32:24.464Z] findBySlug: undefined - ERROR: Listing not found
 NotFoundException: Listing not found
-    at BusinessesService.findBySlug (C:\Websites\Outsource\Chittu\LB1\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:474:23)
+    at BusinessesService.findBySlug (C:\Websites\Outsource\Chittu\LB1\Local-Business-Listing-directory\backend\src\modules\businesses\businesses.service.ts:474:23)
     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
 [2026-04-07T13:32:35.416Z] findBySlug: undefined (User: mkuser@hey.com)
 [2026-04-07T13:32:35.753Z] findBySlug: undefined - NOT FOUND IN DB
 [2026-04-07T13:32:35.755Z] findBySlug: undefined - ERROR: Listing not found
 NotFoundException: Listing not found
-    at BusinessesService.findBySlug (C:\Websites\Outsource\Chittu\LB1\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:474:23)
+    at BusinessesService.findBySlug (C:\Websites\Outsource\Chittu\LB1\Local-Business-Listing-directory\backend\src\modules\businesses\businesses.service.ts:474:23)
     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
 [2026-04-07T13:38:19.753Z] findBySlug: undefined (User: mkuser@hey.com)
 [2026-04-07T13:38:20.195Z] findBySlug: undefined - NOT FOUND IN DB
 [2026-04-07T13:38:20.196Z] findBySlug: undefined - ERROR: Listing not found
 NotFoundException: Listing not found
-    at BusinessesService.findBySlug (C:\Websites\Outsource\Chittu\LB1\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:474:23)
+    at BusinessesService.findBySlug (C:\Websites\Outsource\Chittu\LB1\Local-Business-Listing-directory\backend\src\modules\businesses\businesses.service.ts:474:23)
     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
 [2026-04-07T13:38:20.523Z] findBySlug: undefined (User: mkuser@hey.com)
 [2026-04-07T13:38:20.844Z] findBySlug: undefined - NOT FOUND IN DB
 [2026-04-07T13:38:20.846Z] findBySlug: undefined - ERROR: Listing not found
 NotFoundException: Listing not found
-    at BusinessesService.findBySlug (C:\Websites\Outsource\Chittu\LB1\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:474:23)
+    at BusinessesService.findBySlug (C:\Websites\Outsource\Chittu\LB1\Local-Business-Listing-directory\backend\src\modules\businesses\businesses.service.ts:474:23)
     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
 [2026-04-07T16:38:24.418Z] findBySlug: the-mk-tea-stall-mnof3q0j (User: mkuser@hey.com)
 [2026-04-07T16:38:25.694Z] findBySlug: the-mk-tea-stall-mnof3q0j - Found in DB. Status: approved
@@ -897,36 +897,36 @@ NotFoundException: Listing not found
 [2026-04-14T14:17:13.019Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: superadmin@example.com)
 [2026-04-14T14:17:13.618Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - ERROR: column Listing__Listing_category.is_featured does not exist
 QueryFailedError: column Listing__Listing_category.is_featured does not exist
-    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
-    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
-    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
-    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
-    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
-    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:519:29)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
+    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
+    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
+    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-directory\backend\src\modules\businesses\businesses.service.ts:519:29)
 [2026-04-14T14:17:33.425Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: superadmin@example.com)
 [2026-04-14T14:17:34.095Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - ERROR: column Listing__Listing_category.is_featured does not exist
 QueryFailedError: column Listing__Listing_category.is_featured does not exist
-    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
-    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
-    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
-    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
-    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
-    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:519:29)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
+    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
+    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
+    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-directory\backend\src\modules\businesses\businesses.service.ts:519:29)
 [2026-04-14T14:18:18.023Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: superadmin@example.com)
 [2026-04-14T14:18:18.590Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - ERROR: column Listing__Listing_category.is_featured does not exist
 QueryFailedError: column Listing__Listing_category.is_featured does not exist
-    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
-    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
-    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
-    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
-    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
-    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:519:29)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
+    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
+    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
+    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-directory\backend\src\modules\businesses\businesses.service.ts:519:29)
 [2026-04-14T14:20:13.429Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: superadmin@example.com)
 [2026-04-14T14:20:14.530Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - Found in DB. Status: approved
 [2026-04-14T14:20:14.924Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - SUCCESS
@@ -942,25 +942,25 @@ QueryFailedError: column Listing__Listing_category.is_featured does not exist
 [2026-04-16T14:21:46.778Z] findBySlug: the-mk-tea-stall-mnof3q0j (User: Public)
 [2026-04-16T14:21:47.596Z] findBySlug: the-mk-tea-stall-mnof3q0j - ERROR: column Listing__Listing_vendor__Listing__Listing_vendor_user.deletion_scheduled_at does not exist
 QueryFailedError: column Listing__Listing_vendor__Listing__Listing_vendor_user.deletion_scheduled_at does not exist
-    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
-    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
-    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
-    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
-    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
-    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:520:29)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
+    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
+    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
+    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-directory\backend\src\modules\businesses\businesses.service.ts:520:29)
 [2026-04-16T14:21:48.281Z] findBySlug: the-mk-tea-stall-mnof3q0j (User: Public)
 [2026-04-16T14:21:48.787Z] findBySlug: the-mk-tea-stall-mnof3q0j - ERROR: column Listing__Listing_vendor__Listing__Listing_vendor_user.deletion_scheduled_at does not exist
 QueryFailedError: column Listing__Listing_vendor__Listing__Listing_vendor_user.deletion_scheduled_at does not exist
-    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
+    at PostgresQueryRunner.query (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\driver\src\driver\postgres\PostgresQueryRunner.ts:325:19)
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
-    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
-    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
-    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
-    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-Directctory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
-    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:520:29)
+    at async SelectQueryBuilder.loadRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3868:25)
+    at async SelectQueryBuilder.getRawMany (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1627:29)
+    at async SelectQueryBuilder.executeEntitiesAndRawResults (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:3530:26)
+    at async SelectQueryBuilder.getRawAndEntities (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1671:29)
+    at async SelectQueryBuilder.getOne (E:\localweb\Local-Business-Listing-directory\node_modules\typeorm\query-builder\src\query-builder\SelectQueryBuilder.ts:1698:25)
+    at async BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-directory\backend\src\modules\businesses\businesses.service.ts:520:29)
 [2026-04-16T14:25:36.932Z] findBySlug: the-mk-tea-stall-mnof3q0j (User: deepak@gmail.com)
 [2026-04-16T14:25:39.615Z] findBySlug: the-mk-tea-stall-mnof3q0j - Found in DB. Status: approved
 [2026-04-16T14:25:40.106Z] findBySlug: the-mk-tea-stall-mnof3q0j - SUCCESS
@@ -1048,3 +1048,15 @@ QueryFailedError: column Listing__Listing_vendor__Listing__Listing_vendor_user.d
 [2026-04-24T14:18:49.851Z] findBySlug: dev-vendor-listing3-mnvuffaq (User: Public)
 [2026-04-24T14:18:50.605Z] findBySlug: dev-vendor-listing3-mnvuffaq - Found in DB. Status: approved
 [2026-04-24T14:18:50.916Z] findBySlug: dev-vendor-listing3-mnvuffaq - SUCCESS
+[2026-04-24T18:04:14.113Z] findBySlug: bright-future-academy-mn8n7y7p (User: fd@gmail.com)
+[2026-04-24T18:04:15.063Z] findBySlug: bright-future-academy-mn8n7y7p - Found in DB. Status: approved
+[2026-04-24T18:04:15.363Z] findBySlug: bright-future-academy-mn8n7y7p - SUCCESS
+[2026-04-24T18:30:05.676Z] findBySlug: test-mnh4bnro (User: Public)
+[2026-04-24T18:30:05.976Z] findBySlug: test-mnh4bnro - Found in DB. Status: approved
+[2026-04-24T18:30:06.084Z] findBySlug: test-mnh4bnro - SUCCESS
+[2026-04-24T18:32:19.022Z] findBySlug: aprin22-b-mo9z88iu (User: Public)
+[2026-04-24T18:32:19.663Z] findBySlug: aprin22-b-mo9z88iu - Found in DB. Status: approved
+[2026-04-24T18:32:19.967Z] findBySlug: aprin22-b-mo9z88iu - SUCCESS
+[2026-04-24T18:43:24.200Z] findBySlug: bike-sell-mnw2g11t (User: Public)
+[2026-04-24T18:43:24.592Z] findBySlug: bike-sell-mnw2g11t - Found in DB. Status: approved
+[2026-04-24T18:43:24.704Z] findBySlug: bike-sell-mnw2g11t - SUCCESS

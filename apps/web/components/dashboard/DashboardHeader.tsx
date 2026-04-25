@@ -76,33 +76,68 @@ export default function DashboardHeader({ toggleSidebar, unreadNotifications = 0
                         <div className="h-8 w-px bg-slate-200/60 mx-1 hidden sm:block" />
 
                         {/* User Dropdown / Profile */}
-                        <div className="flex items-center gap-3 sm:gap-4 group cursor-pointer pl-2">
+                        <div className="relative group/user">
+                            <button 
+                                className="flex items-center gap-3 sm:gap-4 cursor-pointer pl-2 hover:bg-slate-50/50 p-2 rounded-2xl transition-all"
+                            >
+                                {/* Text */}
+                                <div className="hidden sm:flex flex-col items-end leading-tight">
+                                    <span className="text-sm font-bold text-slate-900 group-hover/user:text-indigo-600 transition-colors">
+                                        {user?.fullName?.split(' ')[0] || 'User'}
+                                    </span>
 
-                            {/* Text */}
-                            <div className="hidden sm:flex flex-col items-end leading-tight">
-                                <span className="text-sm font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                                    {user?.fullName?.split(' ')[0] || 'User'}
-                                </span>
+                                    <div className="flex items-center gap-1 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                        <span>Verified</span>
+                                        <Shield className="w-2.5 h-2.5 text-indigo-500" />
+                                    </div>
+                                </div>
 
-                                <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
-                                    <span>Verified</span>
-                                    <Shield className="w-3 h-3 text-blue-500" />
+                                {/* Avatar */}
+                                <div className="w-10 h-10 rounded-xl overflow-hidden ring-2 ring-white shadow-sm flex items-center justify-center bg-slate-100 group-hover/user:ring-indigo-100 transition-all">
+                                    <VendorAvatar
+                                        src={user?.avatarUrl}
+                                        alt={user?.fullName || 'User'}
+                                        size="sm"
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                            </button>
+
+                            {/* Dropdown Menu */}
+                            <div className="absolute right-0 mt-3 w-56 bg-white border border-slate-100 rounded-2xl shadow-xl shadow-slate-200/50 opacity-0 invisible group-hover/user:opacity-100 group-hover/user:visible transition-all duration-200 z-50 transform origin-top-right group-hover/user:translate-y-0 translate-y-2">
+                                <div className="p-3 border-b border-slate-50">
+                                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 px-2">Account</p>
+                                    <div className="flex items-center gap-3 p-2">
+                                        <div className="w-8 h-8 rounded-lg overflow-hidden bg-slate-100">
+                                            <VendorAvatar src={user?.avatarUrl} alt={user?.fullName} size="sm" />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-bold text-slate-900 truncate max-w-[120px]">{user?.fullName}</span>
+                                            <span className="text-[10px] text-slate-500 truncate max-w-[120px]">{user?.email}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="p-2">
+                                    <Link 
+                                        href="/settings"
+                                        className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50 rounded-xl transition-all"
+                                    >
+                                        <User className="w-4 h-4" />
+                                        <span>My Profile</span>
+                                    </Link>
+                                    <button 
+                                        onClick={() => {
+                                            localStorage.removeItem('token');
+                                            localStorage.removeItem('user');
+                                            window.location.href = '/login';
+                                        }}
+                                        className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-all mt-1"
+                                    >
+                                        <LogOut className="w-4 h-4" />
+                                        <span>Logout</span>
+                                    </button>
                                 </div>
                             </div>
-
-                            {/* Avatar */}
-                            <div className="w-10 h-10 rounded-xl overflow-hidden ring-2 ring-white shadow-sm 
-flex items-center justify-center bg-slate-100 group-hover:ring-indigo-100 transition-all">
-
-                                <VendorAvatar
-                                    src={user?.avatarUrl}
-                                    alt={user?.fullName || 'User'}
-                                    size="sm"
-                                    className="w-full h-full object-cover"
-                                />
-
-                            </div>
-
                         </div>
                     </div>
                 </div>

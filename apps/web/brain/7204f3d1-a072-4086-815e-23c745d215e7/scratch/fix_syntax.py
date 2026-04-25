@@ -1,6 +1,6 @@
 import os
 
-file_path = r"e:\localweb\Local-Business-Listing-Directctory\apps\web\app\(dashboard)\settings\page.tsx"
+file_path = r"e:\localweb\Local-Business-Listing-directory\apps\web\app\(dashboard)\settings\page.tsx"
 with open(file_path, 'r', encoding='utf-8') as f:
     lines = f.readlines()
 
