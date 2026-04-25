@@ -20,7 +20,7 @@ export class SearchAnalyticsService {
         const totalSearches = await query.getCount();
         
         const uniqueUsersResult = await query
-            .select('COUNT(DISTINCT COALESCE(log.userId, log.ipAddress))', 'count')
+            .select('COUNT(DISTINCT COALESCE(log.userId::text, log.ipAddress))', 'count')
             .getRawOne();
         const uniqueUsers = parseInt(uniqueUsersResult?.count || '0', 10);
 

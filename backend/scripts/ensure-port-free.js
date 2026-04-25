@@ -65,13 +65,9 @@ function ensurePortFree(port) {
     }
 }
 
-// Clean up both 3000 (Frontend) and 3001 (Backend) to avoid ghost conflicts
-const portsToClean = [3000, 3001];
+// Clean up only the target port (usually 3001) to avoid conflicts without killing frontend
 const targetPort = parseInt(process.argv[2] || process.env.PORT || getPortFromEnv() || 3001);
-
-if (!portsToClean.includes(targetPort)) {
-    portsToClean.push(targetPort);
-}
+const portsToClean = [targetPort];
 
 portsToClean.forEach(ensurePortFree);
 
