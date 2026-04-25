@@ -15,9 +15,10 @@ const roboto = Roboto({
     display: "swap",
 });
 
-const baseUrl = process.env.NODE_ENV === 'production' 
-    ? "https://endearing-taffy-91a2c6.netlify.app"
-    : "http://localhost:3000";
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+    (process.env.NODE_ENV === 'production' 
+        ? "https://endearing-taffy-91a2c6.netlify.app"
+        : "http://localhost:3000");
 
 export const metadata = {
     metadataBase: new URL(baseUrl),

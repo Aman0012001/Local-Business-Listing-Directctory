@@ -155,6 +155,11 @@ async function fetcher<T>(endpoint: string, options?: FetcherOptions): Promise<T
             errMessage.includes('NetworkError when attempting to fetch resource');
 
         if (isNetworkError) {
+            if (options?.silent) {
+                console.warn(`[api.ts] Silent network error on ${endpoint}`, errMessage);
+                return null as any;
+            }
+
             console.error('[api.ts] Network Connectivity Issue Detected:', {
                 message: errMessage,
                 name: errName,
@@ -173,7 +178,6 @@ async function fetcher<T>(endpoint: string, options?: FetcherOptions): Promise<T
                 
             throw new Error(`Connection Failed: Unable to reach the backend at ${url}.${hint}`);
         }
-
 
         if (options?.silent) {
             console.warn(`[api.ts] Silent error on ${endpoint}`, errMessage);
