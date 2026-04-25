@@ -48,29 +48,9 @@ async function bootstrap() {
          * CORS CONFIGURATION
          * -----------------------
          */
-        const corsOrigin = configService.get<string>('CORS_ORIGIN');
-        const allowedOrigins = corsOrigin ? corsOrigin.split(',').map(o => o.trim()) : [];
-        const nodeEnv = configService.get('NODE_ENV');
-
-        const allowedPatterns = [
-            /^https?:\/\/.*\.netlify\.app$/i,    // All Netlify dynamic domains
-            /^https?:\/\/.*\.railway\.app$/i,    // All Railway dynamic domains
-            /^https?:\/\/localhost(:\d+)?$/i,     // localhost with any port
-            /^https?:\/\/127\.0.0\.1(:\d+)?$/i,   // 127.0.0.1 with any port
-        ];
-
         app.enableCors({
-            origin: [
-                'https://lucent-yeot-3d8455.netlify.app',
-                'http://localhost:3000',
-                'http://localhost:3001',
-                /\.netlify\.app$/,
-                /\.railway\.app$/,
-            ],
+            origin: true,
             credentials: true,
-            methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-            allowedHeaders: 'Content-Type,Accept,Authorization,X-Requested-With,Origin,X-CSRF-Token,Apollo-Require-Preflight,sentry-trace,baggage',
-            optionsSuccessStatus: 204,
         });
 
         /**
