@@ -74,10 +74,7 @@ import { SearchAnalyticsModule } from './modules/search-analytics/search-analyti
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
-            useFactory: (configService: ConfigService) => ({
-                ...typeOrmConfig(configService),
-                autoLoadEntities: true,
-            }),
+            useFactory: (configService: ConfigService) => typeOrmConfig(configService),
         }),
 
         // Rate Limiting
