@@ -180,10 +180,9 @@ async function bootstrap() {
          * -----------------------
          */
 
-        const port = parseInt(process.env.PORT || '3001', 10);
-        console.log(`🚀 Starting server on port ${port}...`);
+        const port = parseInt(process.env.PORT || '8080', 10);
+        console.log("PORT:", port);
         await app.listen(port, '0.0.0.0');
-
         console.log(`🚀 Server running on port ${port}`);
         console.log(`📄 Swagger Docs → http://localhost:${port}/${apiPrefix}/docs`);
         console.log(`🚀 API is ready to accept connections on port ${port}`);
