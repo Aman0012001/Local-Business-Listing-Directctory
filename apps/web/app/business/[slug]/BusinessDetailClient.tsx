@@ -391,7 +391,7 @@ export default function BusinessDetailClient({
 
       try {
         let data = business;
-        
+
         if (!data) {
           data = await api.listings.getBySlug(actualSlug as string);
           console.log(
@@ -458,27 +458,27 @@ export default function BusinessDetailClient({
         setLoading(false);
       }
     };
-        if (slug) loadBusiness();
-    }, [slug]);
+    if (slug) loadBusiness();
+  }, [slug]);
 
-    // Load Q&As
-    useEffect(() => {
-        const loadQA = async () => {
-            if (!business?.id) return;
-            setQaLoading(true);
-            try {
-                const data = await api.qa.getForBusiness(business.id);
-                setQuestions(data || []);
-            } catch (err) {
-                console.error("[BusinessDetail] Failed to load Q&A:", err);
-            } finally {
-                setQaLoading(false);
-            }
-        };
-        if (activeTab === "Q&A") {
-            loadQA();
-        }
-    }, [business?.id, activeTab]);
+  // Load Q&As
+  useEffect(() => {
+    const loadQA = async () => {
+      if (!business?.id) return;
+      setQaLoading(true);
+      try {
+        const data = await api.qa.getForBusiness(business.id);
+        setQuestions(data || []);
+      } catch (err) {
+        console.error("[BusinessDetail] Failed to load Q&A:", err);
+      } finally {
+        setQaLoading(false);
+      }
+    };
+    if (activeTab === "Q&A") {
+      loadQA();
+    }
+  }, [business?.id, activeTab]);
 
   // Separate effect for user-specific state (e.g. favorite status)
   useEffect(() => {
@@ -959,11 +959,11 @@ export default function BusinessDetailClient({
                   />
                   <BusinessOpenBadge business={business} />
                 </div>
-                
+
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 mb-6 leading-tight tracking-tight">
                   {business.title}
                 </h1>
-                
+
                 <div className="flex flex-wrap items-center gap-6 text-slate-500">
                   <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100">
                     <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
@@ -988,11 +988,10 @@ export default function BusinessDetailClient({
               <div className="flex items-center gap-4">
                 <button
                   onClick={handleLike}
-                  className={`p-4 rounded-2xl transition-all duration-300 shadow-sm border ${
-                    isFavorite 
-                      ? "bg-rose-500 text-white border-rose-500 shadow-rose-500/20" 
-                      : "bg-white border-slate-200 text-slate-400 hover:border-rose-400 hover:text-rose-500"
-                  }`}
+                  className={`p-4 rounded-2xl transition-all duration-300 shadow-sm border ${isFavorite
+                    ? "bg-rose-500 text-white border-rose-500 shadow-rose-500/20"
+                    : "bg-white border-slate-200 text-slate-400 hover:border-rose-400 hover:text-rose-500"
+                    }`}
                 >
                   <Heart
                     className={`w-6 h-6 ${isFavorite ? "fill-white" : ""}`}
@@ -1030,7 +1029,7 @@ export default function BusinessDetailClient({
                       View HD Photo
                     </div>
                   </div>
-                  
+
                   {galleryImages.length > 1 && (
                     <div
                       onClick={() => openLightbox(1)}
@@ -1044,7 +1043,7 @@ export default function BusinessDetailClient({
                       <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     </div>
                   )}
-                  
+
                   {galleryImages.length > 2 && (
                     <div
                       onClick={() => openLightbox(2)}
@@ -1058,7 +1057,7 @@ export default function BusinessDetailClient({
                       <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     </div>
                   )}
-                  
+
                   {galleryImages.length > 0 && (
                     <div
                       onClick={() => openLightbox(galleryImages.length > 3 ? 3 : 0)}
@@ -1119,11 +1118,10 @@ export default function BusinessDetailClient({
                       <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
-                        className={`relative py-5 text-sm font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${
-                          activeTab === tab 
-                            ? "text-primary" 
-                            : "text-slate-400 hover:text-slate-600"
-                        }`}
+                        className={`relative py-5 text-sm font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeTab === tab
+                          ? "text-primary"
+                          : "text-slate-400 hover:text-slate-600"
+                          }`}
                       >
                         {tab}
                         {activeTab === tab && (
@@ -1156,10 +1154,10 @@ export default function BusinessDetailClient({
                         {/* Detailed Map Section */}
                         <div className="space-y-8">
                           <h3 className="text-3xl font-black text-slate-900 flex items-center gap-4">
-                             <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center">
                               <Navigation className="w-6 h-6 text-blue-600" />
-                             </div>
-                             Location & Directions
+                            </div>
+                            Location & Directions
                           </h3>
                           <div className="relative h-[400px] rounded-[20px] overflow-hidden border border-slate-100 shadow-xl shadow-slate-200/50 bg-slate-50">
                             {mapError ? (
@@ -1597,7 +1595,7 @@ export default function BusinessDetailClient({
                                                     {a.isOfficial
                                                       ? "Official Answer"
                                                       : a.user?.fullName ||
-                                                        "User Answer"}
+                                                      "User Answer"}
                                                   </span>
                                                   {a.isOfficial && (
                                                     <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
@@ -1618,10 +1616,10 @@ export default function BusinessDetailClient({
 
                                       {(!q.answers ||
                                         q.answers.length === 0) && (
-                                        <p className="text-sm text-slate-400 italic">
-                                          No answers yet.
-                                        </p>
-                                      )}
+                                          <p className="text-sm text-slate-400 italic">
+                                            No answers yet.
+                                          </p>
+                                        )}
                                     </div>
 
                                     {/* Reply Form Trigger */}
@@ -1885,12 +1883,11 @@ export default function BusinessDetailClient({
               <div className="bg-slate-900 rounded-[32px] p-8 text-white shadow-premium relative overflow-hidden group">
                 {/* Background Pattern */}
                 <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
-                
-                <h4 className="text-2xl font-black mb-8 relative z-10 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
-                    <MessageSquare className="w-5 h-5 text-primary" />
+                <h4 className="text-2xl font-black mb-8 relative z-10 flex items-center gap-3 text-white">
+                  <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white">
+                    {/* <MessageSquare className="w-5 h-5 text-white" /> */}
                   </div>
-                  Connect
+                  Contact
                 </h4>
 
                 <div className="space-y-4 mb-6 relative z-10">
@@ -1920,7 +1917,7 @@ export default function BusinessDetailClient({
                       businessName={business.title}
                       className="w-full py-5 bg-emerald-600 text-white rounded-[20px] font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 hover:bg-emerald-700 transition-all duration-300 shadow-xl shadow-emerald-500/20 active:scale-95 mb-4"
                     />
-                    
+
                     <button
                       id="send-enquiry-btn"
                       onClick={() => openEnquiryModal()}
@@ -2274,7 +2271,7 @@ export default function BusinessDetailClient({
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60" />
-                    
+
                     {offer.offerBadge && (
                       <div className="absolute top-4 left-4 px-4 py-2 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-xl shadow-primary/30 border border-white/20">
                         {offer.offerBadge}

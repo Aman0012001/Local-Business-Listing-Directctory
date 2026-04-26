@@ -3,6 +3,9 @@ import { Metadata } from 'next';
 import BusinessDetailClient from './BusinessDetailClient';
 import { api } from '../../../lib/api';
 
+export const dynamic = 'force-static';
+export const dynamicParams = false;
+
 // Static Export Requirement: Must pre-generate all possible paths
 export async function generateStaticParams() {
   try {

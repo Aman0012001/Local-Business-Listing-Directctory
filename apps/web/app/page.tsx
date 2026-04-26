@@ -341,12 +341,12 @@ export default function HomePage() {
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-50 border border-orange-100 mb-8">
               <span className="text-[10px] font-black text-orange-500 uppercase tracking-[0.2em]">✨ Your Local. Your Choice.</span>
             </div>
-            
+
             <h1 className="text-5xl md:text-7xl font-black text-[#112D4E] mb-6 tracking-tight leading-[1.1]">
               Discover Trusted Local Businesses <br />
               <span className="text-orange-500">Instantly</span>
             </h1>
-            
+
             <p className="text-lg md:text-xl text-slate-500 mb-12 max-w-2xl mx-auto font-medium">
               Search, compare & contact the best services near you — <br className="hidden md:block" />
               fast and reliable.
@@ -913,9 +913,9 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="bg-[#112D4E] rounded-[24px] p-10 md:p-16 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl">
             <div className="text-center md:text-left">
-              <h2 className="text-3xl md:text-5xl font-black text-white mb-4 tracking-tight">
+              <h3 className="text-3xl md:text-3xl font-black text-white mb-4 tracking-tight">
                 Own a Business? Get More Customers Today!
-              </h2>
+              </h3>
               <p className="text-slate-300 text-lg md:text-xl font-medium">
                 List your business for free and grow your reach.
               </p>

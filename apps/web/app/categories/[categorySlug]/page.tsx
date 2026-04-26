@@ -3,6 +3,7 @@ import { Metadata } from 'next';
 import CategoryDetailClient from './CategoryDetailClient';
 import { api } from '../../../lib/api';
 
+export const dynamic = 'force-static';
 export const dynamicParams = false;
 
 // Dynamic route handling for categories
