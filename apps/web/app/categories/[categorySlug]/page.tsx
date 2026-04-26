@@ -3,22 +3,7 @@ import { Metadata } from 'next';
 import CategoryDetailClient from './CategoryDetailClient';
 import { api } from '../../../lib/api';
 
-export async function generateStaticParams() {
-    try {
-        const categories = await api.categories.getAll();
-        
-        if (!categories || categories.length === 0) {
-            return [{ categorySlug: 'all' }];
-        }
-
-        return categories.map((cat: any) => ({
-            categorySlug: cat.slug,
-        }));
-    } catch (error) {
-        console.error('Error generating static params for categories:', error);
-        return [{ categorySlug: 'all' }];
-    }
-}
+// Dynamic route handling for categories
 
 export async function generateMetadata({ 
     params 

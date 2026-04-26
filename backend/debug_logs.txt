@@ -1096,3 +1096,27 @@ QueryFailedError: column Listing__Listing_vendor__Listing__Listing_vendor_user.d
 [2026-04-25T02:12:03.144Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
 [2026-04-25T02:12:03.815Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
 [2026-04-25T02:12:04.120Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-04-26T08:49:49.477Z] findBySlug: restaurants-best-pizza-mnm6c77s (User: Public)
+[2026-04-26T08:49:49.511Z] findBySlug: restaurants-best-pizza-mnm6c77s (User: Public)
+[2026-04-26T08:49:50.256Z] findBySlug: restaurants-best-pizza-mnm6c77s - Found in DB. Status: approved
+[2026-04-26T08:49:50.601Z] findBySlug: restaurants-best-pizza-mnm6c77s - SUCCESS
+[2026-04-26T08:49:50.638Z] findBySlug: restaurants-best-pizza-mnm6c77s - Found in DB. Status: approved
+[2026-04-26T08:49:50.939Z] findBySlug: restaurants-best-pizza-mnm6c77s - SUCCESS
+[2026-04-26T08:53:05.567Z] findBySlug: test-mnh580gx (User: Public)
+[2026-04-26T08:53:05.585Z] findBySlug: test-mnh580gx (User: Public)
+[2026-04-26T08:53:06.278Z] findBySlug: test-mnh580gx - Found in DB. Status: approved
+[2026-04-26T08:53:06.286Z] findBySlug: test-mnh580gx - Found in DB. Status: approved
+[2026-04-26T08:53:06.568Z] findBySlug: test-mnh580gx - SUCCESS
+[2026-04-26T08:53:06.582Z] findBySlug: test-mnh580gx - SUCCESS
+[2026-04-26T09:00:28.334Z] findBySlug: restaurants-best-pizza-mnm6c77s (User: Public)
+[2026-04-26T09:00:28.419Z] findBySlug: restaurants-best-pizza-mnm6c77s (User: Public)
+[2026-04-26T09:00:30.576Z] findBySlug: restaurants-best-pizza-mnm6c77s - Found in DB. Status: approved
+[2026-04-26T09:00:30.597Z] findBySlug: restaurants-best-pizza-mnm6c77s - Found in DB. Status: approved
+[2026-04-26T09:00:30.719Z] findBySlug: restaurants-best-pizza-mnm6c77s - SUCCESS
+[2026-04-26T09:00:30.735Z] findBySlug: restaurants-best-pizza-mnm6c77s - SUCCESS
+[2026-04-26T09:02:02.332Z] findBySlug: bright-future-academy-mn8n7y7p (User: Public)
+[2026-04-26T09:02:02.353Z] findBySlug: bright-future-academy-mn8n7y7p (User: Public)
+[2026-04-26T09:02:06.729Z] findBySlug: bright-future-academy-mn8n7y7p - Found in DB. Status: approved
+[2026-04-26T09:02:07.071Z] findBySlug: bright-future-academy-mn8n7y7p - SUCCESS
+[2026-04-26T09:02:07.424Z] findBySlug: bright-future-academy-mn8n7y7p - Found in DB. Status: approved
+[2026-04-26T09:02:07.730Z] findBySlug: bright-future-academy-mn8n7y7p - SUCCESS
