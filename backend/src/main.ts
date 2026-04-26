@@ -7,36 +7,27 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
     const logger = new Logger('Bootstrap');
 
-    logger.log('--- APP STARTING ---');
+    logger.log('--- 🚀 APP STARTING (PRODUCTION READY) ---');
 
-    // Create App
     const app = await NestFactory.create(AppModule, {
         logger: ['error', 'warn', 'log', 'debug', 'verbose'],
     });
 
     const configService = app.get(ConfigService);
+    const port = process.env.PORT || configService.get<number>('PORT') || 3001;
 
-    const port =
-        process.env.PORT ||
-        configService.get<number>('PORT') ||
-        3001;
-
-    // Global Prefix
+    // 1. Global Prefix
     app.setGlobalPrefix('api/v1');
 
-    // Request Logger Middleware
+    // 2. Request Logging Middleware (for debugging production 404s/CORS)
     app.use((req, res, next) => {
-        logger.debug(`Incoming Request: ${req.method} ${req.url}`);
+        if (req.method !== 'OPTIONS') {
+            logger.debug(`[Request] ${req.method} ${req.url} - Origin: ${req.headers.origin || 'None'}`);
+        }
         next();
     });
 
-    // Simple Health Check
-    const httpAdapter = app.getHttpAdapter();
-    httpAdapter.get('/health', (req, res) => {
-        res.status(200).send({ status: 'OK', timestamp: new Date().toISOString(), version: 'v3-logging' });
-    });
-
-    // Validation Pipe
+    // 3. Validation Pipe
     app.useGlobalPipes(
         new ValidationPipe({
             whitelist: true,
@@ -45,58 +36,44 @@ async function bootstrap() {
         }),
     );
 
-    // ============================
-    // ✅ SWAGGER DOCUMENTATION
-    // ============================
+    // 4. Swagger Setup (at multiple paths for safety)
     const config = new DocumentBuilder()
         .setTitle('Business SAAS API')
-        .setDescription('The API documentation for the Local Business Listing and Discovery Platform.')
+        .setDescription('API documentation for the Discovery Platform.')
         .setVersion('1.0')
         .addBearerAuth()
         .build();
     const document = SwaggerModule.createDocument(app, config);
-    
-    // Register at /api/v1/docs
     SwaggerModule.setup('api/v1/docs', app, document);
-    
-    // Fallback registration
     SwaggerModule.setup('api/docs', app, document);
-    SwaggerModule.setup('docs', app, document);
 
-    // ============================
-    // ✅ CORS FIX (IMPORTANT)
-    // ============================
-
+    // 5. CORS Configuration
     const corsOriginRaw = configService.get<string>('CORS_ORIGIN', '');
-
     const allowedOrigins = corsOriginRaw
         .split(',')
-        .map(origin => origin.trim().replace(/\/$/, '')) // remove trailing slash
+        .map(origin => origin.trim().replace(/\/$/, ''))
         .filter(origin => origin.length > 0);
 
-    logger.log(`Allowed CORS Origins: ${JSON.stringify(allowedOrigins)}`);
+    // Always allow common dev/prod domains
+    const baseAllowed = [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'http://localhost:3001',
+        'https://lucent-ywot-3d8455.netlify.app'
+    ];
+
+    const finalAllowed = [...new Set([...allowedOrigins, ...baseAllowed])];
+    logger.log(`✅ Allowed CORS Origins: ${JSON.stringify(finalAllowed)}`);
 
     app.enableCors({
         origin: (origin, callback) => {
-            // allow requests with no origin (Postman, mobile apps)
-            if (!origin) {
-                return callback(null, true);
-            }
-
+            if (!origin) return callback(null, true);
+            
             const cleanOrigin = origin.replace(/\/$/, '');
-
-            // 1. Check explicit allowed origins
-            if (allowedOrigins.includes(cleanOrigin)) {
-                return callback(null, true);
-            }
-
-            // 2. Allow any Netlify subdomain
-            if (cleanOrigin.endsWith('.netlify.app')) {
-                return callback(null, true);
-            }
-
-            // 3. Allow any Railway subdomain
-            if (cleanOrigin.endsWith('.up.railway.app')) {
+            
+            if (finalAllowed.includes(cleanOrigin) || 
+                cleanOrigin.endsWith('.netlify.app') || 
+                cleanOrigin.endsWith('.up.railway.app')) {
                 return callback(null, true);
             }
 
@@ -105,32 +82,12 @@ async function bootstrap() {
         },
         credentials: true,
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-        allowedHeaders:
-            'Content-Type, Accept, Authorization, X-Requested-With, Origin',
+        allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With, Origin',
     });
 
-    // ============================
-    // 🚀 START SERVER
-    // ============================
-
-    await app.listen(port);
-
+    // 6. Start Server
+    await app.listen(port, '0.0.0.0');
     logger.log(`🚀 Server running on: http://0.0.0.0:${port}/api/v1`);
-
-    // Log all routes for debugging 404 issues
-    const server = app.getHttpServer();
-    const router = server._events?.request?._router || (app as any).getHttpAdapter().getInstance()._router;
-
-    logger.log('--- REGISTERED ROUTES ---');
-    if (router && router.stack) {
-        router.stack.forEach((layer: any) => {
-            if (layer.route) {
-                const path = layer.route.path;
-                const methods = Object.keys(layer.route.methods).join(',').toUpperCase();
-                logger.log(`Route: ${methods} ${path}`);
-            }
-        });
-    }
 }
 
 bootstrap();
