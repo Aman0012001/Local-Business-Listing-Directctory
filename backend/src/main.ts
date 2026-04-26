@@ -54,7 +54,18 @@ async function bootstrap() {
 
             const cleanOrigin = origin.replace(/\/$/, '');
 
+            // 1. Check explicit allowed origins
             if (allowedOrigins.includes(cleanOrigin)) {
+                return callback(null, true);
+            }
+
+            // 2. Allow any Netlify subdomain
+            if (cleanOrigin.endsWith('.netlify.app')) {
+                return callback(null, true);
+            }
+
+            // 3. Allow any Railway subdomain
+            if (cleanOrigin.endsWith('.up.railway.app')) {
                 return callback(null, true);
             }
 
