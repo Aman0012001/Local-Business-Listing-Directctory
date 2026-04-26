@@ -29,6 +29,7 @@ export * from './subscription.entity';
 export * from './transaction.entity';
 export * from './affiliate.entity';
 export * from './referral.entity';
+export * from './pricing-plan.entity';
 export * from './search-log.entity';
 export * from './notification-log.entity';
 
