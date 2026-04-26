@@ -30,6 +30,12 @@ async function bootstrap() {
         next();
     });
 
+    // Simple Health Check
+    const httpAdapter = app.getHttpAdapter();
+    httpAdapter.get('/health', (req, res) => {
+        res.status(200).send({ status: 'OK', timestamp: new Date().toISOString(), version: 'v3-logging' });
+    });
+
     // Validation Pipe
     app.useGlobalPipes(
         new ValidationPipe({
@@ -49,8 +55,13 @@ async function bootstrap() {
         .addBearerAuth()
         .build();
     const document = SwaggerModule.createDocument(app, config);
+    
+    // Register at /api/v1/docs
     SwaggerModule.setup('api/v1/docs', app, document);
+    
+    // Fallback registration
     SwaggerModule.setup('api/docs', app, document);
+    SwaggerModule.setup('docs', app, document);
 
     // ============================
     // ✅ CORS FIX (IMPORTANT)
