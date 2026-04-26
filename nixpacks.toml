@@ -5,13 +5,11 @@ cmds = ["npm install --include=dev"]
 
 [phases.build]
 cmds = [
-    "echo '--- CLEANING DIST ---'",
-    "rm -rf backend/dist",
-    "echo '--- BUILDING BACKEND ---'",
+    "npm install",
     "npm run build --workspace=@business-saas/api",
-    "echo '--- BUILD COMPLETE ---'",
-    "ls -la backend/dist"
+    "ls -la backend/dist",
+    "echo '--- BUILD COMPLETE ---'"
 ]
 
 [start]
-cmd = "node backend/dist/main.js"
+cmd = "npm run start:prod --prefix backend"
