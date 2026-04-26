@@ -6,6 +6,8 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-yet';
 import { APP_GUARD } from '@nestjs/core';
+
+// Modules
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { VendorsModule } from './modules/vendors/vendors.module';
@@ -19,8 +21,6 @@ import { AdminModule } from './modules/admin/admin.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { CitiesModule } from './modules/cities/cities.module';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
-import { typeOrmConfig } from './config/typeorm.config';
-import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { HealthModule } from './modules/health/health.module';
 import { OffersModule } from './modules/offers/offers.module';
 import { CommentsModule } from './modules/comments/comments.module';
@@ -34,21 +34,30 @@ import { BusinessSetupModule } from './modules/business-setup/business-setup.mod
 import { QaModule } from './modules/qa/qa.module';
 import { SearchAnalyticsModule } from './modules/search-analytics/search-analytics.module';
 
+import { typeOrmConfig } from './config/typeorm.config';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+
 @Module({
     imports: [
-        // Configuration
+        // ENV CONFIG (GLOBAL)
         ConfigModule.forRoot({
             isGlobal: true,
             envFilePath: ['.env.local', '.env'],
         }),
+
+        // SCHEDULER
         ScheduleModule.forRoot(),
+
+        // CACHE (REDIS + FALLBACK MEMORY)
         CacheModule.registerAsync({
             isGlobal: true,
-            imports: [ConfigModule],
             inject: [ConfigService],
             useFactory: async (configService: ConfigService) => {
                 const redisEnabled = configService.get('REDIS_ENABLED') === 'true';
-                const ttl = configService.get('REDIS_TTL') ? parseInt(configService.get('REDIS_TTL')) * 1000 : 600 * 1000;
+                const ttl =
+                    configService.get('REDIS_TTL')
+                        ? parseInt(configService.get('REDIS_TTL')) * 1000
+                        : 600000;
 
                 if (!redisEnabled) {
                     return { ttl };
@@ -58,38 +67,37 @@ import { SearchAnalyticsModule } from './modules/search-analytics/search-analyti
                     const store = await redisStore({
                         socket: {
                             host: configService.get('REDIS_HOST') || 'localhost',
-                            port: parseInt(configService.get('REDIS_PORT')) || 6379,
+                            port: parseInt(configService.get('REDIS_PORT') || '6379'),
                         },
-                        ttl,
                     });
+
                     return { store, ttl };
                 } catch (error) {
-                    console.error('Failed to initialize Redis store, falling back to memory:', error.message);
+                    console.error('Redis failed, using memory cache:', error.message);
                     return { ttl };
                 }
             },
         }),
 
-        // Database
+        // ✅ DATABASE (CRITICAL FIX AREA)
         TypeOrmModule.forRootAsync({
-            imports: [ConfigModule],
             inject: [ConfigService],
-            useFactory: (configService: ConfigService) => typeOrmConfig(configService),
+            useFactory: (configService: ConfigService) =>
+                typeOrmConfig(configService),
         }),
 
-        // Rate Limiting
+        // RATE LIMITING
         ThrottlerModule.forRootAsync({
-            imports: [ConfigModule],
             inject: [ConfigService],
             useFactory: (configService: ConfigService) => [
                 {
-                    ttl: configService.get('THROTTLE_TTL') ? parseInt(configService.get('THROTTLE_TTL')) : 60,
-                    limit: configService.get('THROTTLE_LIMIT') ? parseInt(configService.get('THROTTLE_LIMIT')) : 100,
+                    ttl: parseInt(configService.get('THROTTLE_TTL') || '60'),
+                    limit: parseInt(configService.get('THROTTLE_LIMIT') || '100'),
                 },
             ],
         }),
 
-        // Feature Modules
+        // FEATURE MODULES
         AuthModule,
         UsersModule,
         VendorsModule,
@@ -116,6 +124,7 @@ import { SearchAnalyticsModule } from './modules/search-analytics/search-analyti
         QaModule,
         SearchAnalyticsModule,
     ],
+
     providers: [
         {
             provide: APP_GUARD,
