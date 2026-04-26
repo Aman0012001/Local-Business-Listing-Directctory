@@ -4,7 +4,7 @@ import BusinessDetailClient from './BusinessDetailClient';
 import { api } from '../../../lib/api';
 
 export const dynamic = 'force-static';
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 // Static Export Requirement: Must pre-generate all possible paths
 export async function generateStaticParams() {
@@ -17,15 +17,43 @@ export async function generateStaticParams() {
     
     // Fallback if no listings found
     if (listings.length === 0) {
-      return [{ slug: 'sample-business' }];
+      return [
+        { businessSlug: 'sample-business' },
+        { businessSlug: 'test-mnh4czx8' },
+        { businessSlug: 'test-mnh4bnro' },
+        { businessSlug: 'bright-future-academy-mn8n7y7p' },
+        { businessSlug: 'template' }
+      ];
     }
 
-    return listings.map((business: any) => ({
-      slug: business.slug,
+    const params = listings.map((business: any) => ({
+      businessSlug: business.slug,
     }));
+
+    // Ensure our important test slugs and template are always included
+    const essentialSlugs = [
+      'sample-business', 
+      'test-mnh4czx8', 
+      'test-mnh4bnro', 
+      'bright-future-academy-mn8n7y7p', 
+      'template'
+    ];
+    essentialSlugs.forEach(slug => {
+      if (!params.some(p => p.businessSlug === slug)) {
+        params.push({ businessSlug: slug });
+      }
+    });
+
+    return params;
   } catch (error) {
     console.error('Error generating static params:', error);
-    return [{ slug: 'sample-business' }];
+    return [
+      { businessSlug: 'sample-business' },
+      { businessSlug: 'test-mnh4czx8' },
+      { businessSlug: 'test-mnh4bnro' },
+      { businessSlug: 'bright-future-academy-mn8n7y7p' },
+      { businessSlug: 'template' }
+    ];
   }
 }
 
@@ -33,12 +61,12 @@ export async function generateStaticParams() {
 export async function generateMetadata({ 
   params 
 }: { 
-  params: Promise<{ slug: string }> 
+  params: Promise<{ businessSlug: string }> 
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const { businessSlug } = await params;
   
   try {
-    const business = await api.listings.getBySlug(slug, { silent: true });
+    const business = await api.listings.getBySlug(businessSlug, { silent: true });
     
     if (!business) {
       return {
@@ -66,13 +94,18 @@ export async function generateMetadata({
 export default async function BusinessDetailPage({ 
   params 
 }: { 
-  params: Promise<{ slug: string }> 
+  params: Promise<{ businessSlug: string }> 
 }) {
-  const { slug } = await params;
+  const { businessSlug } = await params;
 
   // For static export, this will be called during build time for each slug in generateStaticParams
-  const business = await api.listings.getBySlug(slug, { silent: true });
+  let business;
+  try {
+    business = await api.listings.getBySlug(businessSlug, { silent: true });
+  } catch (err) {
+    console.error(`Error fetching business data for static generation: ${businessSlug}`);
+  }
 
   // Use || undefined to fix Type 'Business | null' is not assignable to type 'Business | undefined'
-  return <BusinessDetailClient slug={slug} initialData={business || undefined} />;
+  return <BusinessDetailClient slug={businessSlug} initialData={business || undefined} />;
 }

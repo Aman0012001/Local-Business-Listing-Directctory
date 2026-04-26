@@ -48,17 +48,35 @@ export default function VendorProfileClient({ slugOrId, initialData }: { slugOrI
         const fetchProfile = async () => {
             let actualSlug = slugOrId;
 
-            // Handle SPA fallback where the page is served by a 'template' HTML file
-            if ((slugOrId === 'template' || slugOrId === 'default') && typeof window !== 'undefined') {
+            // Handle SPA fallback where the page is served by a 'template' HTML file or data is missing
+            if (typeof window !== 'undefined') {
                 const pathParts = window.location.pathname.split('/').filter(Boolean);
+                
+                // Check for originalSlug in query params (passed by NotFound redirect)
+                const urlParams = new URLSearchParams(window.location.search);
+                const querySlug = urlParams.get('originalSlug');
+
                 // URL structure: /vendors/slug/ or /vendors/slug
                 if (pathParts[0] === 'vendors' && pathParts[1] && pathParts[1] !== 'template' && pathParts[1] !== 'default') {
-                    actualSlug = pathParts[1];
-                    console.log('[VendorProfile] Fallback detected, using actual slug from URL:', actualSlug);
+                    if (!vendor || actualSlug !== pathParts[1]) {
+                        actualSlug = pathParts[1];
+                        console.log('[VendorProfile] Route detected from URL:', actualSlug);
+                    }
+                } else if (querySlug) {
+                    actualSlug = querySlug;
+                    console.log('[VendorProfile] Route detected from query param:', actualSlug);
                 }
             }
 
             try {
+                let data = vendor;
+
+                // If the slug from the URL is different from the currently loaded vendor, force a reload
+                if (data && data.slug !== actualSlug && data.id !== actualSlug) {
+                    console.log('[VendorProfile] Slug mismatch, forcing reload for:', actualSlug);
+                    data = null;
+                }
+
                 if (initialData && (initialData.slug === actualSlug || initialData.id === actualSlug)) {
                     console.log('[VendorProfile] Using initialData from SSR');
                     setVendor(initialData);
@@ -66,17 +84,22 @@ export default function VendorProfileClient({ slugOrId, initialData }: { slugOrI
                     return;
                 }
 
-                const data = await api.vendors.getPublicProfile(actualSlug);
-                
-                // Redirection Logic for SEO (301-like client-side redirect)
-                const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
-                if (isUuid && data.slug && data.slug !== slugOrId) {
-                    console.log(`[VendorProfile] Legacy ID detected. Redirecting to SEO slug: ${data.slug}`);
-                    router.replace(`/vendors/${data.slug}`);
+                if (data) {
+                    setLoading(false);
                     return;
                 }
 
-                setVendor(data);
+                const profileData = await api.vendors.getPublicProfile(actualSlug);
+                
+                // Redirection Logic for SEO (301-like client-side redirect)
+                const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
+                if (isUuid && profileData.slug && profileData.slug !== slugOrId) {
+                    console.log(`[VendorProfile] Legacy ID detected. Redirecting to SEO slug: ${profileData.slug}`);
+                    router.replace(`/vendors/${profileData.slug}`);
+                    return;
+                }
+
+                setVendor(profileData);
             } catch (err: any) {
                 console.error('[VendorProfile] Failed to load profile:', err);
                 setError(err.message || 'Failed to load vendor profile');

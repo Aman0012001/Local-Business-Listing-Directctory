@@ -70,6 +70,9 @@ export class Business {
     @Column({ name: 'is_featured', default: false })
     isFeatured: boolean;
 
+    @Column({ name: 'recent_until', nullable: true, type: 'timestamp' })
+    recentUntil: Date;
+
     @Column({ name: 'average_rating', type: 'decimal', precision: 3, scale: 2, default: 0 })
     averageRating: number;
 

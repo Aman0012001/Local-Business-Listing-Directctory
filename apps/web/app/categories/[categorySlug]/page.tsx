@@ -4,7 +4,7 @@ import CategoryDetailClient from './CategoryDetailClient';
 import { api } from '../../../lib/api';
 
 export const dynamic = 'force-static';
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 // Dynamic route handling for categories
 export async function generateStaticParams() {
@@ -14,13 +14,21 @@ export async function generateStaticParams() {
             categorySlug: cat.slug
         }));
         
-        if (params.length === 0) {
-            return [{ categorySlug: 'sample-category' }];
+        // Add common fallbacks
+        if (!params.some(p => p.categorySlug === 'sample-category')) {
+            params.push({ categorySlug: 'sample-category' });
         }
+        if (!params.some(p => p.categorySlug === 'template')) {
+            params.push({ categorySlug: 'template' });
+        }
+        
         return params;
     } catch (error) {
         console.error('Error generating category static params:', error);
-        return [{ categorySlug: 'sample-category' }];
+        return [
+            { categorySlug: 'sample-category' },
+            { categorySlug: 'template' }
+        ];
     }
 }
 

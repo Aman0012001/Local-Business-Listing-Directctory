@@ -1180,3 +1180,15 @@ QueryFailedError: column Listing__Listing_vendor__Listing__Listing_vendor_user.d
 [2026-04-26T16:20:08.251Z] findBySlug: mobile-repair-mnioktfs - Found in DB. Status: approved
 [2026-04-26T16:20:08.533Z] findBySlug: mobile-repair-mnioktfs - SUCCESS
 [2026-04-26T16:20:08.542Z] findBySlug: mobile-repair-mnioktfs - SUCCESS
+[2026-04-26T17:29:26.785Z] findBySlug: test-mnh4bnro (User: Public)
+[2026-04-26T17:29:26.825Z] findBySlug: test-mnh4bnro (User: Public)
+[2026-04-26T17:29:27.107Z] findBySlug: test-mnh4bnro - Found in DB. Status: approved
+[2026-04-26T17:29:27.260Z] findBySlug: test-mnh4bnro - SUCCESS
+[2026-04-26T17:29:28.323Z] findBySlug: test-mnh4bnro - Found in DB. Status: approved
+[2026-04-26T17:29:28.444Z] findBySlug: test-mnh4bnro - SUCCESS
+[2026-04-26T17:56:07.942Z] findBySlug: bright-future-academy-mn8n7y7p (User: Public)
+[2026-04-26T17:56:07.961Z] findBySlug: bright-future-academy-mn8n7y7p (User: Public)
+[2026-04-26T17:56:09.380Z] findBySlug: bright-future-academy-mn8n7y7p - Found in DB. Status: approved
+[2026-04-26T17:56:09.419Z] findBySlug: bright-future-academy-mn8n7y7p - Found in DB. Status: approved
+[2026-04-26T17:56:09.520Z] findBySlug: bright-future-academy-mn8n7y7p - SUCCESS
+[2026-04-26T17:56:09.537Z] findBySlug: bright-future-academy-mn8n7y7p - SUCCESS

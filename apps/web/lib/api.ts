@@ -11,21 +11,10 @@ const serverApiUrl = process.env.INTERNAL_API_URL || clientApiUrl;
 let envApiUrl = isServer ? serverApiUrl : clientApiUrl;
 
 // 3. Fallback and Missing URL Guard
-if (!envApiUrl) {
-    if (isProd) {
-        // Hard-coded fallback for production if env vars fail
-        // Note: Project name has a typo 'directctory' matching the repo name
-        envApiUrl = 'https://local-business-listing-directctory-production.up.railway.app/api/v1';
-    } else {
-        // Standard local dev defaults
-        envApiUrl = 'http://127.0.0.1:3001/api/v1';
-    }
-}
-
-// 4. Hardening: Localhost Protection in Production
-if (isProd && (envApiUrl.includes('localhost') || envApiUrl.includes('127.0.0.1'))) {
-    console.error('[CRITICAL] API_URL mismatch: Localhost detected in production environment! Forcing production URL.');
-    envApiUrl = 'https://local-business-listing-directctory-production.up.railway.app/api/v1';
+if (!envApiUrl || envApiUrl.includes('127.0.0.1') || envApiUrl.includes('localhost')) {
+    // Force Railway for both dev and prod unless a specific internal URL is provided
+    // This ensures local dev "connects with railway database" as requested
+    envApiUrl = 'https://local-business-listing-directory-production.up.railway.app/api/v1';
 }
 
 const API_BASE_URL = envApiUrl.replace(/\/+$/, '');

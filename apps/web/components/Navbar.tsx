@@ -335,7 +335,7 @@ export default function Navbar() {
                                     <VendorAvatar
                                         src={user.avatarUrl}
                                         alt={user.fullName || user.email}
-                                        size="xs"
+                                        size="sm"
                                         className="shadow-sm"
                                     />
                                     <span className="text-xs font-medium text-[#202124] max-w-[80px] truncate">{user.fullName || user.email}</span>

@@ -4,9 +4,6 @@ const nextConfig = {
         unoptimized: true,
     },
     trailingSlash: true,
-    typescript: {
-        ignoreBuildErrors: true,
-    },
 };
 
 export default nextConfig;

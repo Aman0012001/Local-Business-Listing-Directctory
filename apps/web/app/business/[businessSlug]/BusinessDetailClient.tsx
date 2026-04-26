@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Star,
   MapPin,
@@ -361,12 +361,14 @@ export default function BusinessDetailClient({
     const loadBusiness = async () => {
       let actualSlug = Array.isArray(slug) ? slug[0] : slug;
 
-      // Handle SPA fallback where the page is served by a 'template' HTML file
-      if (
-        (slug === "template" || slug === "sample-business" || slug === "index") &&
-        typeof window !== "undefined"
-      ) {
+      // Handle SPA fallback where the page is served by a 'template' HTML file or data is missing
+      if (typeof window !== "undefined") {
         const pathParts = window.location.pathname.split("/").filter(Boolean);
+        
+        // Check for originalSlug in query params (passed by NotFound redirect)
+        const urlParams = new URLSearchParams(window.location.search);
+        const querySlug = urlParams.get('originalSlug');
+
         // URL structure: /business/slug/ or /business/slug
         if (
           pathParts[0] === "business" &&
@@ -374,11 +376,16 @@ export default function BusinessDetailClient({
           pathParts[1] !== "template" &&
           pathParts[1] !== "index"
         ) {
-          actualSlug = pathParts[1];
-          console.log(
-            "[BusinessDetail] Fallback detected, using actual slug from URL:",
-            actualSlug,
-          );
+          if (!business || actualSlug !== pathParts[1]) {
+            actualSlug = pathParts[1];
+            console.log(
+              "[BusinessDetail] Route detected from URL:",
+              actualSlug,
+            );
+          }
+        } else if (querySlug) {
+            actualSlug = querySlug;
+            console.log("[BusinessDetail] Route detected from query param:", actualSlug);
         }
       }
 
@@ -391,6 +398,12 @@ export default function BusinessDetailClient({
 
       try {
         let data = business;
+
+        // If the slug from the URL is different from the currently loaded business, force a reload
+        if (data && data.slug !== actualSlug) {
+          console.log("[BusinessDetail] Slug mismatch, forcing reload for:", actualSlug);
+          data = null;
+        }
 
         if (!data) {
           data = await api.listings.getBySlug(actualSlug as string);
