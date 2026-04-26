@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
     const logger = new Logger('Bootstrap');
@@ -31,6 +32,18 @@ async function bootstrap() {
             forbidNonWhitelisted: true,
         }),
     );
+
+    // ============================
+    // ✅ SWAGGER DOCUMENTATION
+    // ============================
+    const config = new DocumentBuilder()
+        .setTitle('Business SAAS API')
+        .setDescription('The API documentation for the Local Business Listing and Discovery Platform.')
+        .setVersion('1.0')
+        .addBearerAuth()
+        .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/v1/docs', app, document);
 
     // ============================
     // ✅ CORS FIX (IMPORTANT)
