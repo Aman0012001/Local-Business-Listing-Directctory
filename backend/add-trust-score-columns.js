@@ -15,7 +15,7 @@ function loadEnv() {
     }
 }
 loadEnv();
-
+// sddcvdcsdcdscsdc
 async function migrate() {
     const client = new Client({
         host: process.env.DB_HOST,
@@ -28,7 +28,7 @@ async function migrate() {
 
     try {
         await client.connect();
-        console.log('Connected to database for migration...');
+        console.log('Connected to database for ...');
 
         // Add columns to users
         console.log('Adding trust score columns to users table...');
