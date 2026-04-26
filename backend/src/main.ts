@@ -24,6 +24,12 @@ async function bootstrap() {
     // Global Prefix
     app.setGlobalPrefix('api/v1');
 
+    // Request Logger Middleware
+    app.use((req, res, next) => {
+        logger.debug(`Incoming Request: ${req.method} ${req.url}`);
+        next();
+    });
+
     // Validation Pipe
     app.useGlobalPipes(
         new ValidationPipe({
@@ -44,6 +50,7 @@ async function bootstrap() {
         .build();
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api/v1/docs', app, document);
+    SwaggerModule.setup('api/docs', app, document);
 
     // ============================
     // ✅ CORS FIX (IMPORTANT)
