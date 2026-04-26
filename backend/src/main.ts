@@ -82,7 +82,7 @@ async function bootstrap() {
     // 🚀 START SERVER
     // ============================
 
-    await app.listen(port, '0.0.0.0');
+    await app.listen(port);
 
     logger.log(`🚀 Server running on: http://0.0.0.0:${port}/api/v1`);
 
