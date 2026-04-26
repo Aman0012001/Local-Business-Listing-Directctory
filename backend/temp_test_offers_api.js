@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 async function testOffersApi() {
-    const baseUrl = 'http://process.env.NEXT_PUBLIC_API_URL/api/v1';
+    const baseUrl = '`${process.env.NEXT_PUBLIC_API_URL}`';
 
     console.log('Testing Public Offers Search API...');
 

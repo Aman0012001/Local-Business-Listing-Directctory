@@ -295,12 +295,12 @@ npm run dev
 
 ```bash
 # Public endpoints
-curl http://process.env.NEXT_PUBLIC_API_URL/api/v1/categories
-curl http://process.env.NEXT_PUBLIC_API_URL/api/v1/subscriptions/plans
+curl `${process.env.NEXT_PUBLIC_API_URL}`/categories
+curl `${process.env.NEXT_PUBLIC_API_URL}`/subscriptions/plans
 
 # Auth required
 curl -H "Authorization: Bearer TOKEN" \
-  http://process.env.NEXT_PUBLIC_API_URL/api/v1/vendors/dashboard-stats
+  `${process.env.NEXT_PUBLIC_API_URL}`/vendors/dashboard-stats
 ```
 
 ---

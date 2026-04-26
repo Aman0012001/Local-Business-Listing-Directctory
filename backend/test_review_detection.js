@@ -1,5 +1,5 @@
 async function testReviews() {
-    const baseUrl = 'http://process.env.NEXT_PUBLIC_API_URL/api/v1';
+    const baseUrl = '`${process.env.NEXT_PUBLIC_API_URL}`';
     const token = 'YOUR_TOKEN_HERE'; // I'll need a token or use a public businessId
 
     // First, let's find a businessId

@@ -1,5 +1,5 @@
 async function test() {
-    const baseUrl = 'http://process.env.NEXT_PUBLIC_API_URL/api/v1';
+    const baseUrl = '`${process.env.NEXT_PUBLIC_API_URL}`';
 
     const searches = [
         { query: 'pizza', city: 'Lahore', latitude: 31.5204, longitude: 74.3587 },

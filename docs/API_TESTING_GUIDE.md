@@ -26,13 +26,13 @@ npm run start:dev
 
 #### 1. Subscription Plans
 ```powershell
-curl http://process.env.NEXT_PUBLIC_API_URL/api/v1/subscriptions/plans -UseBasicParsing
+curl `${process.env.NEXT_PUBLIC_API_URL}`/subscriptions/plans -UseBasicParsing
 ```
 **Expected:** List of 4 subscription plans (Free, Basic, Premium, Enterprise)
 
 #### 2. Categories
 ```powershell
-curl http://process.env.NEXT_PUBLIC_API_URL/api/v1/categories -UseBasicParsing
+curl `${process.env.NEXT_PUBLIC_API_URL}`/categories -UseBasicParsing
 ```
 **Expected:** List of 8 categories (Restaurants, Health, Education, etc.)
 

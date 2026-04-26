@@ -130,13 +130,13 @@ curl http://localhost:3000/users -UseBasicParsing
 ### Test Full Backend (after starting)
 ```powershell
 # Health check
-curl http://process.env.NEXT_PUBLIC_API_URL/api/v1/health -UseBasicParsing
+curl `${process.env.NEXT_PUBLIC_API_URL}`/health -UseBasicParsing
 
 # Get subscription plans
-curl http://process.env.NEXT_PUBLIC_API_URL/api/v1/subscriptions/plans -UseBasicParsing
+curl `${process.env.NEXT_PUBLIC_API_URL}`/subscriptions/plans -UseBasicParsing
 
 # Get categories
-curl http://process.env.NEXT_PUBLIC_API_URL/api/v1/categories -UseBasicParsing
+curl `${process.env.NEXT_PUBLIC_API_URL}`/categories -UseBasicParsing
 ```
 
 ---

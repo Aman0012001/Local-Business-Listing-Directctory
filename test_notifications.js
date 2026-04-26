@@ -1,7 +1,7 @@
 const fetch = require('node-fetch');
 
 async function test() {
-    const baseUrl = 'http://process.env.NEXT_PUBLIC_API_URL/api/v1';
+    const baseUrl = '`${process.env.NEXT_PUBLIC_API_URL}`';
 
     // 1. Try to login (using superadmin credentials if known, or vendor)
     // Based on logs, a common user is vendore@gmail.com

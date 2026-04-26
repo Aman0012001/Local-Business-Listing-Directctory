@@ -100,7 +100,7 @@ npm install  # First time only
 npm run start:dev
 ```
 
-**Local API:** http://process.env.NEXT_PUBLIC_API_URL/api/v1
+**Local API:** `${process.env.NEXT_PUBLIC_API_URL}`
 **Production API:** https://local-business-listing-directory-production.up.railway.app/api/v1
 **API Docs (Swagger):** https://local-business-listing-directory-production.up.railway.app/api/docs
 
@@ -260,18 +260,18 @@ curl https://local-business-listing-directory-production.up.railway.app/api/v1/b
 curl https://local-business-listing-directory-production.up.railway.app/api/v1/categories
 
 # Get subscription plans (Local)
-curl http://process.env.NEXT_PUBLIC_API_URL/api/v1/subscriptions/plans
+curl `${process.env.NEXT_PUBLIC_API_URL}`/subscriptions/plans
 ```
 
 ### Test Vendor Side (requires auth token)
 ```bash
 # Get vendor dashboard stats
 curl -H "Authorization: Bearer YOUR_TOKEN" \
-  http://process.env.NEXT_PUBLIC_API_URL/api/v1/vendors/dashboard-stats
+  `${process.env.NEXT_PUBLIC_API_URL}`/vendors/dashboard-stats
 
 # Get my businesses
 curl -H "Authorization: Bearer YOUR_TOKEN" \
-  http://process.env.NEXT_PUBLIC_API_URL/api/v1/businesses/my-businesses
+  `${process.env.NEXT_PUBLIC_API_URL}`/businesses/my-businesses
 ```
 
 ### Test Admin Side (requires admin token)

@@ -1,7 +1,7 @@
 const fetch = require('node-fetch');
 
 async function testAdminCreate() {
-    const API_URL = 'http://process.env.NEXT_PUBLIC_API_URL/api/v1';
+    const API_URL = '`${process.env.NEXT_PUBLIC_API_URL}`';
 
     // 1. Login as Super Admin
     console.log('Logging in as Super Admin...');

@@ -284,21 +284,21 @@ Test Backend API (Swagger):
 Test Endpoints with curl:
 
 # Get categories
-curl http://process.env.NEXT_PUBLIC_API_URL/api/v1/categories
+curl `${process.env.NEXT_PUBLIC_API_URL}`/categories
 
 # Get subscription plans
-curl http://process.env.NEXT_PUBLIC_API_URL/api/v1/subscriptions/plans
+curl `${process.env.NEXT_PUBLIC_API_URL}`/subscriptions/plans
 
 # Search businesses
-curl "http://process.env.NEXT_PUBLIC_API_URL/api/v1/businesses/search?city=Mumbai"
+curl "`${process.env.NEXT_PUBLIC_API_URL}`/businesses/search?city=Mumbai"
 
 # Vendor stats (requires token)
 curl -H "Authorization: Bearer TOKEN" \
-  http://process.env.NEXT_PUBLIC_API_URL/api/v1/vendors/dashboard-stats
+  `${process.env.NEXT_PUBLIC_API_URL}`/vendors/dashboard-stats
 
 # Admin stats (requires admin token)
 curl -H "Authorization: Bearer ADMIN_TOKEN" \
-  http://process.env.NEXT_PUBLIC_API_URL/api/v1/admin/stats
+  `${process.env.NEXT_PUBLIC_API_URL}`/admin/stats
 
 ┌──────────────────────────────────────────────────────────────────┐
 │ 📊 ARCHITECTURE                                                  │

@@ -3,7 +3,7 @@ import http from 'k6/http';
 import { htmlReport } from 'https://raw.githubusercontent.com/benc-uk/k6-reporter/main/dist/bundle.js';
 import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.1/index.js';
 
-const BASE_URL = __ENV.API_URL || 'http://process.env.NEXT_PUBLIC_API_URL/api/v1';
+const BASE_URL = __ENV.API_URL || '`${process.env.NEXT_PUBLIC_API_URL}`';
 
 export const options = {
     scenarios: {

@@ -161,7 +161,7 @@ Configuration:
    npm run start:dev
 
 2. Test APIs:
-   curl http://process.env.NEXT_PUBLIC_API_URL/api/v1/subscriptions/plans
+   curl `${process.env.NEXT_PUBLIC_API_URL}`/subscriptions/plans
 
 3. View API Docs:
    http://process.env.NEXT_PUBLIC_API_URL/api/docs

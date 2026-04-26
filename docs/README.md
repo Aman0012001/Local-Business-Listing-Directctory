@@ -108,7 +108,7 @@ npm run start:dev
 ## 🔗 Useful Links
 
 - **Production API Root:** https://local-business-listing-directory-production.up.railway.app/api/v1
-- **Local API Root:** http://process.env.NEXT_PUBLIC_API_URL/api/v1
+- **Local API Root:** `${process.env.NEXT_PUBLIC_API_URL}`
 - **Swagger Docs:** https://local-business-listing-directory-production.up.railway.app/api/docs
 
 ---

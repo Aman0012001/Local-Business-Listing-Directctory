@@ -2,7 +2,7 @@
 
 ## Base URL
 ```
-Development: http://process.env.NEXT_PUBLIC_API_URL/api/v1
+Development: `${process.env.NEXT_PUBLIC_API_URL}`
 Production: https://local-business-listing-directory-production.up.railway.app/api/v1
 ```
 

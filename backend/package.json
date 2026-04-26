@@ -24,7 +24,7 @@
         "migration:run": "npx ts-node --project tsconfig.json --transpile-only -r tsconfig-paths/register ../node_modules/typeorm/cli.js migration:run -d src/data-source.ts",
         "migration:revert": "npx ts-node --project tsconfig.json --transpile-only -r tsconfig-paths/register ../node_modules/typeorm/cli.js migration:revert -d src/data-source.ts",
         "seed": "ts-node src/database/seeds/run-seeds.ts",
-        "search:sync": "curl -X POST http://process.env.NEXT_PUBLIC_API_URL/api/v1/search/sync"
+        "search:sync": "curl -X POST `${process.env.NEXT_PUBLIC_API_URL}`/search/sync"
     },
     "engines": {
         "node": ">=20.0.0"
