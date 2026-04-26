@@ -2,7 +2,7 @@ import React from 'react';
 import VendorProfileClient from './VendorProfileClient';
 
 export const dynamic = 'force-static';
-export const dynamicParams = true;
+export const dynamicParams = false;
 
 export async function generateStaticParams() {
     return [

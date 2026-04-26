@@ -2,7 +2,7 @@ import React from 'react';
 import OfferEventDetailClient from './OfferEventDetailClient';
 
 export const dynamic = 'force-static';
-export const dynamicParams = true;
+export const dynamicParams = false;
 
 export function generateStaticParams() {
     return [

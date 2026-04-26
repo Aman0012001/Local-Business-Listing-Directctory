@@ -4,7 +4,7 @@ import BusinessDetailClient from './BusinessDetailClient';
 import { api } from '../../../lib/api';
 
 export const dynamic = 'force-static';
-export const dynamicParams = true;
+export const dynamicParams = false;
 
 // Static Export Requirement: Must pre-generate all possible paths
 export async function generateStaticParams() {
@@ -63,15 +63,20 @@ export async function generateMetadata({
 }: { 
   params: Promise<{ businessSlug: string }> 
 }): Promise<Metadata> {
-  const { businessSlug } = await params;
-  
   try {
+    const { businessSlug } = await params;
+    
+    // During build, if businessSlug is 'template' or similar, return default metadata
+    if (businessSlug === 'template' || businessSlug === 'sample-business') {
+        return { title: 'Business Details | naampata' };
+    }
+
     const business = await api.listings.getBySlug(businessSlug, { silent: true });
     
     if (!business) {
       return {
-        title: 'Business Not Found | naampata',
-        description: 'The business you are looking for could not be found.'
+        title: 'Business Details | naampata',
+        description: 'Find local businesses in your neighborhood.'
       };
     }
 
@@ -85,6 +90,7 @@ export async function generateMetadata({
       }
     };
   } catch (error) {
+    console.error('[Metadata] Error generating metadata:', error);
     return {
       title: 'Business Details | naampata',
     };
@@ -98,12 +104,16 @@ export default async function BusinessDetailPage({
 }) {
   const { businessSlug } = await params;
 
+  if (!businessSlug) {
+      return <div>Invalid Business Slug</div>;
+  }
+
   // For static export, this will be called during build time for each slug in generateStaticParams
-  let business;
+  let business = null;
   try {
     business = await api.listings.getBySlug(businessSlug, { silent: true });
   } catch (err) {
-    console.error(`Error fetching business data for static generation: ${businessSlug}`);
+    console.error(`[BusinessPage] Error fetching data for ${businessSlug}:`, err);
   }
 
   // Use || undefined to fix Type 'Business | null' is not assignable to type 'Business | undefined'

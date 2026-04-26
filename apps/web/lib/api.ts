@@ -11,9 +11,8 @@ const serverApiUrl = process.env.INTERNAL_API_URL || clientApiUrl;
 let envApiUrl = isServer ? serverApiUrl : clientApiUrl;
 
 // 3. Fallback and Missing URL Guard
-if (!envApiUrl || envApiUrl.includes('127.0.0.1') || envApiUrl.includes('localhost')) {
-    // Force Railway for both dev and prod unless a specific internal URL is provided
-    // This ensures local dev "connects with railway database" as requested
+if (!envApiUrl) {
+    // Default to Railway Production if no environment variables are set
     envApiUrl = 'https://local-business-listing-directory-production.up.railway.app/api/v1';
 }
 
