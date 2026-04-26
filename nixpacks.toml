@@ -4,7 +4,14 @@ providers = ["node"]
 cmds = ["npm install --include=dev"]
 
 [phases.build]
-cmds = ["npm run build --workspace=@business-saas/api"]
+cmds = [
+    "echo '--- CLEANING DIST ---'",
+    "rm -rf backend/dist",
+    "echo '--- BUILDING BACKEND ---'",
+    "npm run build --workspace=@business-saas/api",
+    "echo '--- BUILD COMPLETE ---'",
+    "ls -la backend/dist"
+]
 
 [start]
 cmd = "node backend/dist/main.js"

@@ -7,7 +7,7 @@ async function bootstrap() {
     const logger = new Logger('Bootstrap');
     
     // Initialize NestJS Application
-    logger.log('--- DEBUG: BOOTSTRAPPING WITH NEW FIX ---');
+    logger.log('--- DEBUG: BOOTSTRAPPING MARKER: 2026-04-26-07-00 ---');
     const app = await NestFactory.create(AppModule, {
         logger: ['error', 'warn', 'log', 'debug', 'verbose'],
     });

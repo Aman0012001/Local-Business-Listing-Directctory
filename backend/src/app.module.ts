@@ -47,10 +47,11 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
         // ✅ DATABASE (CRITICAL FIX AREA)
         TypeOrmModule.forRootAsync({
-            imports: [ConfigModule],
             inject: [ConfigService],
-            useFactory: (configService: ConfigService) =>
-                typeOrmConfig(configService),
+            useFactory: (configService: ConfigService) => {
+                console.log('--- DEBUG: AppModule -> useFactory(TypeOrmModule) called ---');
+                return typeOrmConfig(configService);
+            },
         }),
 
         // SCHEDULER
