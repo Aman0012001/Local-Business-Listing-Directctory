@@ -4,8 +4,8 @@ import {
     ForbiddenException,
     OnModuleInit,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectRepository, InjectEntityManager } from '@nestjs/typeorm';
+import { Repository, EntityManager } from 'typeorm';
 import { Lead, LeadStatus } from '../../entities/lead.entity';
 import { Listing } from '../../entities/business.entity';
 import { Vendor } from '../../entities/vendor.entity';
@@ -30,6 +30,8 @@ export class LeadsService {
         private readonly listingRepository: Repository<Listing>,
         @InjectRepository(Vendor)
         private vendorRepository: Repository<Vendor>,
+        @InjectEntityManager()
+        private readonly entityManager: EntityManager,
         private notificationsGateway: NotificationsGateway,
         private notificationsService: NotificationsService,
     ) { }
@@ -128,7 +130,7 @@ export class LeadsService {
         });
 
         if (!vendor) {
-            const userUser = await this.vendorRepository.manager.findOne(User, { where: { id: userId }, select: ['id', 'role'] });
+            const userUser = await this.entityManager.findOne(User, { where: { id: userId }, select: ['id', 'role'] });
             if (userUser && userUser.role === UserRole.VENDOR) {
                 const newVendor = this.vendorRepository.create({ userId, isVerified: false });
                 try {
@@ -216,7 +218,7 @@ export class LeadsService {
         }
 
         // Fetch user role from DB
-        const user = await this.vendorRepository.manager.findOne(User, {
+        const user = await this.entityManager.findOne(User, {
             where: { id: userId },
             select: ['id', 'role'],
         });
@@ -282,7 +284,7 @@ export class LeadsService {
         });
 
         if (!vendor) {
-            const userUser = await this.vendorRepository.manager.findOne(User, { where: { id: userId }, select: ['id', 'role'] });
+            const userUser = await this.entityManager.findOne(User, { where: { id: userId }, select: ['id', 'role'] });
             if (userUser && userUser.role === UserRole.VENDOR) {
                 const newVendor = this.vendorRepository.create({ userId, isVerified: false });
                 try {

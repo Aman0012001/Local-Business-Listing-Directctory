@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not } from 'typeorm';
+import { InjectRepository, InjectEntityManager } from '@nestjs/typeorm';
+import { Repository, Not, EntityManager } from 'typeorm';
 import { ChatConversation, ChatMessage, User, Listing, Vendor } from '../../entities';
 import { LeadsService } from '../leads/leads.service';
 import { Inject, forwardRef } from '@nestjs/common';
@@ -18,6 +18,8 @@ export class ChatService {
         private vendorRepository: Repository<Vendor>,
         @Inject(forwardRef(() => LeadsService))
         private leadsService: LeadsService,
+        @InjectEntityManager()
+        private readonly entityManager: EntityManager,
     ) { }
 
     async getOrCreateConversation(userId: string, businessId: string) {
@@ -51,7 +53,7 @@ export class ChatService {
 
             // Create a Lead for this chat start if it's the first time
             if (conversation) {
-                const userObj = await this.vendorRepository.manager.findOne(User, { where: { id: userId } });
+                const userObj = await this.entityManager.findOne(User, { where: { id: userId } });
                 await this.leadsService.create({
                     businessId,
                     name: userObj?.fullName || 'User',

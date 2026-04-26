@@ -45,12 +45,21 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
             envFilePath: ['.env.local', '.env'],
         }),
 
+        // ✅ DATABASE (CRITICAL FIX AREA)
+        TypeOrmModule.forRootAsync({
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: (configService: ConfigService) =>
+                typeOrmConfig(configService),
+        }),
+
         // SCHEDULER
         ScheduleModule.forRoot(),
 
         // CACHE (REDIS + FALLBACK MEMORY)
         CacheModule.registerAsync({
             isGlobal: true,
+            imports: [ConfigModule],
             inject: [ConfigService],
             useFactory: async (configService: ConfigService) => {
                 const redisEnabled = configService.get('REDIS_ENABLED') === 'true';
@@ -79,15 +88,9 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
             },
         }),
 
-        // ✅ DATABASE (CRITICAL FIX AREA)
-        TypeOrmModule.forRootAsync({
-            inject: [ConfigService],
-            useFactory: (configService: ConfigService) =>
-                typeOrmConfig(configService),
-        }),
-
         // RATE LIMITING
         ThrottlerModule.forRootAsync({
+            imports: [ConfigModule],
             inject: [ConfigService],
             useFactory: (configService: ConfigService) => [
                 {
@@ -124,6 +127,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
         QaModule,
         SearchAnalyticsModule,
     ],
+
 
     providers: [
         {

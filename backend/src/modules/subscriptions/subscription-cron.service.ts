@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThanOrEqual, MoreThan } from 'typeorm';
+import { InjectRepository, InjectEntityManager } from '@nestjs/typeorm';
+import { Repository, LessThanOrEqual, MoreThan, EntityManager } from 'typeorm';
 import { Subscription, SubscriptionStatus } from '../../entities/subscription.entity';
 import { ActivePlan, ActivePlanStatus } from '../../entities/active-plan.entity';
 import { Vendor } from '../../entities/vendor.entity';
@@ -35,6 +35,8 @@ export class SubscriptionCronService {
         private promotionsService: PromotionsService,
         private notificationsService: NotificationsService,
         private pushService: PushService,
+        @InjectEntityManager()
+        private readonly entityManager: EntityManager,
     ) { }
 
     /**
@@ -159,8 +161,8 @@ export class SubscriptionCronService {
                 return;
             }
 
-            // No active plan found, auto-assign Free plan
-            const freePlan = await this.activePlanRepo.manager.getRepository('pricing_plans').findOne({
+            // Fallback to Free Plan if found
+            const freePlan = await this.entityManager.getRepository('pricing_plans').findOne({
                 where: { name: 'Free', type: PricingPlanType.SUBSCRIPTION }
             });
 

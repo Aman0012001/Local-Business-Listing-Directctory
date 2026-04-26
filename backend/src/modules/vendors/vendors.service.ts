@@ -4,8 +4,8 @@ import {
     ConflictException,
     ForbiddenException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, Brackets } from 'typeorm';
+import { InjectRepository, InjectEntityManager } from '@nestjs/typeorm';
+import { Repository, In, Brackets, EntityManager } from 'typeorm';
 import { Vendor } from '../../entities/vendor.entity';
 import { User, UserRole } from '../../entities/user.entity';
 import { Listing } from '../../entities/business.entity';
@@ -28,6 +28,8 @@ export class VendorsService {
         private listingRepository: Repository<Listing>,
         @InjectRepository(OfferEvent)
         private offerEventRepository: Repository<OfferEvent>,
+        @InjectEntityManager()
+        private readonly entityManager: EntityManager,
     ) { }
 
     private async ensureUniqueSlug(name: string, currentId?: string): Promise<string> {
@@ -197,7 +199,7 @@ export class VendorsService {
         fifteenDaysAgo.setHours(0, 0, 0, 0);
 
         // Fetch ALL real leads for this vendor's businesses to derive 'Leads' and 'Contacts'
-        const rawActivity = await this.listingRepository.manager
+        const rawActivity = await this.entityManager
             .createQueryBuilder(Lead, 'lead')
             .innerJoin('lead.business', 'business')
             .select("TO_CHAR(lead.createdAt, 'YYYY-MM-DD')", 'day')
