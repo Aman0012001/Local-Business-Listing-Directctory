@@ -1,85 +1,81 @@
-import React from 'react';
+'use client';
+
 import Link from 'next/link';
-import { MapPin, Twitter, Linkedin, Instagram, ArrowUpRight } from 'lucide-react';
 
 export default function Footer() {
-    return (
-        <footer className="bg-slate-900 text-white pt-24 pb-12 overflow-hidden relative">
-            {/* Background pattern */}
-            <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
-                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-            </div>
+  const currentYear = new Date().getFullYear();
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-16 mb-20">
-                    <div className="col-span-2">
-                        <Link href="/" className="flex items-center mb-8 group overflow-hidden h-16">
-                            <div className="h-24 w-40 relative transition-all duration-500 group-hover:scale-105">
-                                <img
-                                    src="/logo.png"
-                                    alt="naampata logo"
-                                    className="absolute inset-0 w-full h-full object-contain scale-[2.5] brightness-0 invert"
-                                />
-                            </div>
-                        </Link>
-                        <p className="text-slate-400 text-lg max-w-sm mb-10 font-medium leading-relaxed">
-                            The definitive platform for discovering premium local businesses and services. Verified excellence, around the corner.
-                        </p>
-                        <div className="flex gap-4">
-                            {[
-                                { icon: Twitter, href: "#" },
-                                { icon: Linkedin, href: "#" },
-                                { icon: Instagram, href: "#" }
-                            ].map((social, i) => (
-                                <Link 
-                                    key={i} 
-                                    href={social.href}
-                                    className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center hover:bg-primary transition-all duration-300 group"
-                                >
-                                    <social.icon className="w-5 h-5 text-slate-300 group-hover:text-white transition-colors" />
-                                </Link>
-                            ))}
-                        </div>
-                    </div>
+  return (
+    <footer className="bg-slate-50 border-t border-slate-200 pt-20 pb-10 mt-auto">
+      <div className="max-w-7xl mx-auto px-4 md:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-20">
+          {/* Brand Column */}
+          <div className="md:col-span-1">
+            <Link href="/" className="inline-block mb-6">
+              <span className="text-3xl font-black text-[#112D4E] tracking-tight">
+                naampata<span className="text-orange-500">.</span>
+              </span>
+            </Link>
+            <p className="text-slate-500 text-sm font-medium leading-relaxed max-w-xs">
+              Discover the best local businesses, services, and professionals in your area. Your trusted local guide to everything around you.
+            </p>
+          </div>
 
-                    <div>
-                        <h4 className="font-black text-white mb-8 uppercase tracking-[0.2em] text-[10px]">Discover</h4>
-                        <ul className="space-y-4 text-sm text-slate-400 font-bold">
-                            <li><Link href="/search?category=restaurants-food" className="hover:text-white transition-colors flex items-center gap-2 group">Restaurants <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all" /></Link></li>
-                            <li><Link href="/search?category=beauty-spa" className="hover:text-white transition-colors flex items-center gap-2 group">Health & Wellness <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all" /></Link></li>
-                            <li><Link href="/search?category=education" className="hover:text-white transition-colors flex items-center gap-2 group">Education <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all" /></Link></li>
-                            <li><Link href="/search?category=automobile" className="hover:text-white transition-colors flex items-center gap-2 group">Automotive <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all" /></Link></li>
-                        </ul>
-                    </div>
+          {/* Discover Column */}
+          <div>
+            <h4 className="text-[#112D4E] font-black uppercase tracking-widest text-xs mb-8">Discover</h4>
+            <ul className="space-y-4">
+              {['Restaurants', 'Health & Wellness', 'Education', 'Automotive'].map((item) => (
+                <li key={item}>
+                  <Link href={`/search?q=${item.toLowerCase()}`} className="text-slate-600 text-sm font-bold hover:text-orange-500 transition-colors">
+                    {item}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-                    <div>
-                        <h4 className="font-black text-white mb-8 uppercase tracking-[0.2em] text-[10px]">Partners</h4>
-                        <ul className="space-y-4 text-sm text-slate-400 font-bold">
-                            <li><Link href="/register?role=vendor" className="hover:text-white transition-colors">Add Business</Link></li>
-                            <li><Link href="/login" className="hover:text-white transition-colors">Vendor Dashboard</Link></li>
-                            <li><Link href="/pricing" className="hover:text-white transition-colors">Growth Plans</Link></li>
-                        </ul>
-                    </div>
+          {/* For Vendors Column */}
+          <div>
+            <h4 className="text-[#112D4E] font-black uppercase tracking-widest text-xs mb-8">For Vendors</h4>
+            <ul className="space-y-4">
+              {['Add Business', 'Vendor Login', 'Pricing Plans'].map((item) => (
+                <li key={item}>
+                  <Link href="#" className="text-slate-600 text-sm font-bold hover:text-orange-500 transition-colors">
+                    {item}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-                    <div>
-                        <h4 className="font-black text-white mb-8 uppercase tracking-[0.2em] text-[10px]">Company</h4>
-                        <ul className="space-y-4 text-sm text-slate-400 font-bold">
-                            <li><Link href="/about" className="hover:text-white transition-colors">Our Vision</Link></li>
-                            <li><Link href="/contact" className="hover:text-white transition-colors">Support Center</Link></li>
-                            <li><Link href="/terms" className="hover:text-white transition-colors">Legal Terms</Link></li>
-                            <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
-                        </ul>
-                    </div>
-                </div>
+          {/* Company Column */}
+          <div>
+            <h4 className="text-[#112D4E] font-black uppercase tracking-widest text-xs mb-8">Company</h4>
+            <ul className="space-y-4">
+              {['About Us', 'Contact', 'Terms of Service', 'Privacy Policy'].map((item) => (
+                <li key={item}>
+                  <Link href="#" className="text-slate-600 text-sm font-bold hover:text-orange-500 transition-colors">
+                    {item}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
 
-                <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">
-                    <div className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        Platform Status: Operational
-                    </div>
-                    <p>© 2026 naampata systems. All rights reserved.</p>
-                </div>
-            </div>
-        </footer>
-    );
+        {/* Bottom Bar */}
+        <div className="pt-8 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-6">
+          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">
+            &copy; {currentYear} naampata. All rights reserved.
+          </p>
+          <div className="flex gap-8 text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+            <Link href="#" className="hover:text-orange-500 transition-colors">Twitter</Link>
+            <Link href="#" className="hover:text-orange-500 transition-colors">Linkedin</Link>
+            <Link href="#" className="hover:text-orange-500 transition-colors">Instagram</Link>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
 }

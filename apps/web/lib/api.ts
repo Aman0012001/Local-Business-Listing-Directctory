@@ -14,17 +14,18 @@ let envApiUrl = isServer ? serverApiUrl : clientApiUrl;
 if (!envApiUrl) {
     if (isProd) {
         // Hard-coded fallback for production if env vars fail
-        envApiUrl = 'https://local-business-listing-directory-production.up.railway.app/api/v1';
+        // Note: Project name has a typo 'directctory' matching the repo name
+        envApiUrl = 'https://local-business-listing-directctory-production.up.railway.app/api/v1';
     } else {
         // Standard local dev defaults
-        envApiUrl = isServer ? 'http://127.0.0.1:3001/api/v1' : 'http://localhost:3001/api/v1';
+        envApiUrl = 'http://127.0.0.1:3001/api/v1';
     }
 }
 
 // 4. Hardening: Localhost Protection in Production
 if (isProd && (envApiUrl.includes('localhost') || envApiUrl.includes('127.0.0.1'))) {
     console.error('[CRITICAL] API_URL mismatch: Localhost detected in production environment! Forcing production URL.');
-    envApiUrl = 'https://local-business-listing-directory-production.up.railway.app/api/v1';
+    envApiUrl = 'https://local-business-listing-directctory-production.up.railway.app/api/v1';
 }
 
 const API_BASE_URL = envApiUrl.replace(/\/+$/, '');

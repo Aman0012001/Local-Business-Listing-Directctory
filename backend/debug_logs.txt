@@ -1132,3 +1132,33 @@ QueryFailedError: column Listing__Listing_vendor__Listing__Listing_vendor_user.d
 [2026-04-26T10:35:57.477Z] findBySlug: test-mnh4cfax - Found in DB. Status: approved
 [2026-04-26T10:35:57.485Z] findBySlug: test-mnh4cfax - SUCCESS
 [2026-04-26T10:35:57.769Z] findBySlug: test-mnh4cfax - SUCCESS
+[2026-04-26T15:14:40.970Z] findBySlug: bike-sell-mnw2g11t (User: Public)
+[2026-04-26T15:14:41.006Z] findBySlug: bike-sell-mnw2g11t (User: Public)
+[2026-04-26T15:14:41.625Z] findBySlug: bike-sell-mnw2g11t - Found in DB. Status: approved
+[2026-04-26T15:14:41.937Z] findBySlug: bike-sell-mnw2g11t - SUCCESS
+[2026-04-26T15:14:42.404Z] findBySlug: bike-sell-mnw2g11t - Found in DB. Status: approved
+[2026-04-26T15:14:42.519Z] findBySlug: bike-sell-mnw2g11t - SUCCESS
+[2026-04-26T15:19:55.590Z] findBySlug: bike-sell-mnw2g11t (User: Public)
+[2026-04-26T15:19:55.618Z] findBySlug: bike-sell-mnw2g11t (User: Public)
+[2026-04-26T15:19:55.912Z] findBySlug: bike-sell-mnw2g11t - Found in DB. Status: approved
+[2026-04-26T15:19:56.029Z] findBySlug: bike-sell-mnw2g11t - Found in DB. Status: approved
+[2026-04-26T15:19:56.034Z] findBySlug: bike-sell-mnw2g11t - SUCCESS
+[2026-04-26T15:19:56.154Z] findBySlug: bike-sell-mnw2g11t - SUCCESS
+[2026-04-26T15:40:05.477Z] findBySlug: bike-sell-mnw2g11t (User: Public)
+[2026-04-26T15:40:05.532Z] findBySlug: bike-sell-mnw2g11t (User: Public)
+[2026-04-26T15:40:05.793Z] findBySlug: bike-sell-mnw2g11t - Found in DB. Status: approved
+[2026-04-26T15:40:05.918Z] findBySlug: bike-sell-mnw2g11t - SUCCESS
+[2026-04-26T15:40:06.911Z] findBySlug: bike-sell-mnw2g11t - Found in DB. Status: approved
+[2026-04-26T15:40:07.030Z] findBySlug: bike-sell-mnw2g11t - SUCCESS
+[2026-04-26T15:54:53.469Z] findBySlug: bike-sell-mnw2g11t (User: Public)
+[2026-04-26T15:54:53.502Z] findBySlug: bike-sell-mnw2g11t (User: Public)
+[2026-04-26T15:54:55.219Z] findBySlug: bike-sell-mnw2g11t - Found in DB. Status: approved
+[2026-04-26T15:54:55.299Z] findBySlug: bike-sell-mnw2g11t - Found in DB. Status: approved
+[2026-04-26T15:54:56.032Z] findBySlug: bike-sell-mnw2g11t - SUCCESS
+[2026-04-26T15:54:56.154Z] findBySlug: bike-sell-mnw2g11t - SUCCESS
+[2026-04-26T15:55:31.976Z] findBySlug: aprin22-b-mo9z88iu (User: Public)
+[2026-04-26T15:55:31.987Z] findBySlug: aprin22-b-mo9z88iu (User: Public)
+[2026-04-26T15:55:33.265Z] findBySlug: aprin22-b-mo9z88iu - Found in DB. Status: approved
+[2026-04-26T15:55:33.370Z] findBySlug: aprin22-b-mo9z88iu - SUCCESS
+[2026-04-26T15:55:35.211Z] findBySlug: aprin22-b-mo9z88iu - Found in DB. Status: approved
+[2026-04-26T15:55:35.504Z] findBySlug: aprin22-b-mo9z88iu - SUCCESS

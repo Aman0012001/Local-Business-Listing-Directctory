@@ -3,6 +3,8 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { DataSource } from 'typeorm';
+import { fixProductionSchema } from './database/schema-fixer';
 
 async function bootstrap() {
     const logger = new Logger('Bootstrap');
@@ -16,10 +18,14 @@ async function bootstrap() {
     const configService = app.get(ConfigService);
     const port = process.env.PORT || configService.get<number>('PORT') || 3001;
 
+    // 0. Production DB Schema Fix (Run before listen)
+    const dataSource = app.get(DataSource);
+    await fixProductionSchema(dataSource);
+
     // 1. Global Prefix
     app.setGlobalPrefix('api/v1');
 
-    // 2. Request Logging Middleware (for debugging production 404s/CORS)
+    // 2. Request Logging Middleware
     app.use((req, res, next) => {
         if (req.method !== 'OPTIONS') {
             logger.debug(`[Request] ${req.method} ${req.url} - Origin: ${req.headers.origin || 'None'}`);
@@ -36,7 +42,7 @@ async function bootstrap() {
         }),
     );
 
-    // 4. Swagger Setup (at multiple paths for safety)
+    // 4. Swagger Setup
     const config = new DocumentBuilder()
         .setTitle('Business SAAS API')
         .setDescription('API documentation for the Discovery Platform.')
@@ -44,8 +50,12 @@ async function bootstrap() {
         .addBearerAuth()
         .build();
     const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api/v1/docs', app, document);
-    SwaggerModule.setup('api/docs', app, document);
+    
+    // Register Swagger at multiple paths for backward compatibility and prefix safety
+    // Note: With 'api/v1' global prefix, 'docs' becomes '/api/v1/docs'
+    SwaggerModule.setup('docs', app, document);
+    SwaggerModule.setup('swagger', app, document); // /api/v1/swagger
+    SwaggerModule.setup('api-docs', app, document); // /api/v1/api-docs
 
     // 5. CORS Configuration
     const corsOriginRaw = configService.get<string>('CORS_ORIGIN', '');
@@ -54,7 +64,6 @@ async function bootstrap() {
         .map(origin => origin.trim().replace(/\/$/, ''))
         .filter(origin => origin.length > 0);
 
-    // Always allow common dev/prod domains
     const baseAllowed = [
         'http://localhost:3000',
         'http://127.0.0.1:3000',
@@ -88,6 +97,7 @@ async function bootstrap() {
     // 6. Start Server
     await app.listen(port, '0.0.0.0');
     logger.log(`🚀 Server running on: http://0.0.0.0:${port}/api/v1`);
+    logger.log(`📝 Swagger Docs available at: /api/v1/docs, /api/docs, /docs`);
 }
 
 bootstrap();

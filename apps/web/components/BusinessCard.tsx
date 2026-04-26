@@ -9,17 +9,16 @@ import { ListingImage } from './ListingImage';
 // ⭐ Rating Component
 const RatingStars = ({ rating }: { rating: number }) => {
     return (
-        <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-                <Star className="w-5 h-5 fill-orange-500 text-orange-500" />
-                <span className="text-lg font-semibold text-orange-500">
-                    {Number(rating || 0).toFixed(2)}
-                </span>
-            </div>
-
+        <div className="flex items-center gap-1.5">
+            <span className="text-sm font-medium text-[#70757a]">
+                {Number(rating || 0).toFixed(1)}
+            </span>
             <div className="flex items-center gap-0.5">
                 {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 text-gray-300" />
+                    <Star 
+                        key={i} 
+                        className={`w-3.5 h-3.5 ${i < Math.round(rating || 0) ? 'fill-[#fbbc04] text-[#fbbc04]' : 'text-gray-200'}`} 
+                    />
                 ))}
             </div>
         </div>
@@ -56,7 +55,7 @@ export default function BusinessCard({ business }: BusinessCardProps) {
             <div className="p-5 flex flex-col gap-4 flex-grow">
 
                 {/* Title */}
-                <h3 className="text-xl font-semibold text-blue-700 line-clamp-1">
+                <h3 className="text-lg font-medium text-[#1a0dab] group-hover:underline line-clamp-1">
                     {business.title}
                 </h3>
 
@@ -83,7 +82,7 @@ export default function BusinessCard({ business }: BusinessCardProps) {
                 {/* Button */}
                 <Link
                     href={businessUrl}
-                    className="mt-auto w-full text-center py-3 bg-blue-100 hover:bg-blue-200 text-blue-600 font-semibold rounded-xl transition"
+                    className="mt-auto w-full text-center py-2 border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-[#3c4043] font-medium rounded-md text-sm transition"
                 >
                     View Details
                 </Link>

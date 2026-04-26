@@ -10,9 +10,10 @@ interface Props {
     value: string;
     onChange: (cityName: string) => void;
     placeholder?: string;
+    minimal?: boolean;
 }
 
-export default function CitySearchSelect({ cities, value, onChange, placeholder = "Select City" }: Props) {
+export default function CitySearchSelect({ cities, value, onChange, placeholder = "Select City", minimal = false }: Props) {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
     const [isLocating, setIsLocating] = useState(false);
@@ -88,26 +89,38 @@ export default function CitySearchSelect({ cities, value, onChange, placeholder 
     };
 
     return (
-        <div className="relative w-full" ref={containerRef}>
-            <button
-                type="button"
-                onClick={() => setIsOpen(!isOpen)}
-                className={`w-full flex items-center justify-between px-6 py-5 bg-white transition-all duration-300 group ${isOpen ? 'rounded-t-[20px]' : 'rounded-[20px]'
-                    }`}
-            >
-                <div className="flex items-center gap-4">
-                    <div className={`p-2 rounded-xl transition-colors ${value ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400'}`}>
-                        <MapPin className="w-5 h-5" />
+        <div className={`relative ${minimal ? '' : 'w-full'}`} ref={containerRef}>
+            {minimal ? (
+                <button
+                    type="button"
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="flex items-center gap-2 text-[#70757a] hover:text-[#202124] transition-colors py-1 px-2 rounded-md hover:bg-gray-50"
+                >
+                    <MapPin className="w-4 h-4" />
+                    <span className="text-sm font-medium">{value || placeholder}</span>
+                    <ChevronDown className={`w-3 h-3 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+                </button>
+            ) : (
+                <button
+                    type="button"
+                    onClick={() => setIsOpen(!isOpen)}
+                    className={`w-full flex items-center justify-between px-6 py-5 bg-white transition-all duration-300 group ${isOpen ? 'rounded-t-[20px]' : 'rounded-[20px]'
+                        }`}
+                >
+                    <div className="flex items-center gap-4">
+                        <div className={`p-2 rounded-xl transition-colors ${value ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400'}`}>
+                            <MapPin className="w-5 h-5" />
+                        </div>
+                        <div className="text-left">
+                            <span className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0">Your Area</span>
+                            <span className={`text-lg font-bold truncate block leading-tight ${!value ? 'text-slate-300' : 'text-slate-900'}`}>
+                                {value || placeholder}
+                            </span>
+                        </div>
                     </div>
-                    <div className="text-left">
-                        <span className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0">Your Area</span>
-                        <span className={`text-lg font-bold truncate block leading-tight ${!value ? 'text-slate-300' : 'text-slate-900'}`}>
-                            {value || placeholder}
-                        </span>
-                    </div>
-                </div>
-                <ChevronDown className={`w-5 h-5 text-slate-300 transition-transform duration-500 ${isOpen ? 'rotate-180 text-orange-500' : ''}`} />
-            </button>
+                    <ChevronDown className={`w-5 h-5 text-slate-300 transition-transform duration-500 ${isOpen ? 'rotate-180 text-orange-500' : ''}`} />
+                </button>
+            )}
 
             <AnimatePresence>
                 {isOpen && (
@@ -115,16 +128,15 @@ export default function CitySearchSelect({ cities, value, onChange, placeholder 
                         initial={{ opacity: 0, y: 10, scale: 0.98 }}
                         animate={{ opacity: 1, y: 4, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                        className="absolute z-[100] top-full left-0 right-0 bg-white border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[400px] rounded-b-[12px]"
+                        className={`absolute z-[100] ${minimal ? 'right-0 top-full' : 'top-full left-0 right-0'} mt-2 bg-white border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[400px] rounded-[12px] min-w-[280px]`}
                     >
                         {/* Auto-detect button */}
                         <div className="p-6 pb-2">
                             <button
                                 onClick={handleAutoDetect}
                                 disabled={isLocating}
-                                className="w-full relative group overflow-hidden py-5 px-6 bg-slate-900 hover:bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-500 disabled:opacity-50 flex items-center justify-center gap-3 shadow-lg hover:shadow-blue-200"
+                                className="w-full relative group overflow-hidden py-3 px-6 bg-[#f8f9fa] hover:bg-[#f1f3f4] border border-[#f8f9fa] hover:border-[#dadce0] text-[#3c4043] rounded-md font-medium text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-3"
                             >
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer" />
                                 {isLocating ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
                                 ) : (
@@ -151,7 +163,7 @@ export default function CitySearchSelect({ cities, value, onChange, placeholder 
                                     placeholder="Which city are you in?"
                                     value={search}
                                     onChange={e => setSearch(e.target.value)}
-                                    className="w-full pl-14 pr-6 py-5 bg-slate-50 border-none rounded-2xl text-base font-bold text-slate-900 focus:ring-4 focus:ring-blue-100 placeholder:text-slate-300 outline-none transition-all"
+                                    className="w-full pl-12 pr-6 py-3 bg-slate-50 border border-transparent focus:border-[#dadce0] rounded-md text-sm font-medium text-slate-900 placeholder:text-slate-400 outline-none transition-all"
                                 />
                             </div>
                         </div>
@@ -177,9 +189,9 @@ export default function CitySearchSelect({ cities, value, onChange, placeholder 
                                                     setIsOpen(false);
                                                     setSearch('');
                                                 }}
-                                                className={`w-full flex items-center justify-between px-6 py-4 rounded-xl transition-all duration-300 ${isSelected
-                                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-100'
-                                                    : 'hover:bg-slate-50 text-slate-600 font-bold'
+                                                className={`w-full flex items-center justify-between px-6 py-3 rounded-md transition-all duration-300 ${isSelected
+                                                    ? 'bg-[#1a73e8] text-white'
+                                                    : 'hover:bg-slate-50 text-slate-600 font-medium'
                                                     }`}
                                             >
                                                 <div className="flex items-center gap-4">

@@ -1,10 +1,1 @@
-# SPA Fallback for Next.js Static Export
-# These rules ensure that dynamic URLs are handled by the client-side router in index.html
-/business/*        /index.html   200
-/categories/*      /index.html   200
-/vendors/*         /index.html   200
-/cities/*          /index.html   200
-/offers-events/*   /index.html   200
-
-# Catch-all fallback for other routes
-/*                 /index.html   200
+/* /index.html 200

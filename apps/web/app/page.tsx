@@ -319,81 +319,66 @@ export default function HomePage() {
       {/* Google Maps Script is handled in layout.tsx */}
 
       {/* Hero Section */}
-      <section
-        className="relative pt-20 pb-44 px-4 overflow-hidden bg-mesh"
-        style={{ minHeight: "90vh" }}
-      >
-        {/* Decorative Elements */}
-        <div className="absolute top-20 left-10 opacity-20 hidden md:block">
+      <section className="relative pt-24 pb-32 px-4 bg-[#FDFCFB]">
+        {/* Subtle background patterns like in the image */}
+        <div className="absolute top-10 left-10 opacity-20">
           <div className="grid grid-cols-4 gap-2">
-            {[...Array(16)].map((_, i) => (
-              <div key={i} className="w-1 h-1 bg-orange-400 rounded-full" />
-            ))}
+            {[...Array(12)].map((_, i) => <div key={i} className="w-1 h-1 bg-gray-400 rounded-full" />)}
           </div>
         </div>
-        <div className="absolute top-40 right-20 opacity-20 hidden md:block">
-          <ShieldCheck className="w-12 h-12 text-slate-300" />
-        </div>
-        <div className="absolute bottom-40 right-10 opacity-20 hidden md:block">
+        <div className="absolute bottom-10 right-10 opacity-20">
           <div className="grid grid-cols-4 gap-2">
-            {[...Array(16)].map((_, i) => (
-              <div key={i} className="w-1 h-1 bg-orange-400 rounded-full" />
-            ))}
+            {[...Array(12)].map((_, i) => <div key={i} className="w-1 h-1 bg-gray-400 rounded-full" />)}
           </div>
-        </div>
-        <div className="absolute inset-x-0 bottom-0 pointer-events-none opacity-5">
-          <svg viewBox="0 0 1440 320" className="w-full h-auto">
-            <path
-              fill="#FF7A30"
-              fillOpacity="1"
-              d="M0,160L48,176C96,192,192,224,288,224C384,224,480,192,576,165.3C672,139,768,117,864,128C960,139,1056,181,1152,186.7C1248,192,1344,160,1392,144L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
-            ></path>
-          </svg>
         </div>
 
-        <div className="max-w-7xl mx-auto relative z-10 text-center">
+        <div className="max-w-7xl mx-auto text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-6 py-2 bg-orange-50 rounded-full mb-8 border border-orange-100/50 shadow-sm">
-              <span className="text-[#FF7A30] font-black text-xs uppercase tracking-widest leading-none">
-                * {badgeText}
-              </span>
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-50 border border-orange-100 mb-8">
+              <span className="text-[10px] font-black text-orange-500 uppercase tracking-[0.2em]">✨ Your Local. Your Choice.</span>
             </div>
-
-            <h1 className="text-4xl md:text-7xl font-black mb-6 tracking-tighter text-[#112D4E] leading-[1.05]">
-              Discover Trusted Local <br />
-              <span className="text-gradient">Businesses Instantly</span>
+            
+            <h1 className="text-5xl md:text-7xl font-black text-[#112D4E] mb-6 tracking-tight leading-[1.1]">
+              Discover Trusted Local Businesses <br />
+              <span className="text-orange-500">Instantly</span>
             </h1>
-            <p className="text-lg md:text-xl text-slate-500 mb-12 max-w-2xl mx-auto font-medium leading-relaxed">
-              Search, compare & contact the best services near you —{" "}
-              <br className="hidden md:block" /> fast and reliable.
+            
+            <p className="text-lg md:text-xl text-slate-500 mb-12 max-w-2xl mx-auto font-medium">
+              Search, compare & contact the best services near you — <br className="hidden md:block" />
+              fast and reliable.
             </p>
           </motion.div>
 
-          {/* Search Bar Container */}
+          {/* New Search Bar Design */}
           <motion.div
             ref={searchRef}
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="max-w-5xl mx-auto glass-card rounded-[24px] md:rounded-[32px] p-2 flex flex-col md:flex-row items-stretch gap-2 relative z-30 shadow-2xl shadow-slate-200/50"
+            transition={{ delay: 0.2, duration: 0.6 }}
+            className="max-w-5xl mx-auto mb-12"
           >
-            <div className="md:w-1/3 relative group ">
-              <CitySearchSelect
-                cities={citiesList}
-                value={selectedCity}
-                onChange={setSelectedCity}
-              />
-              <div className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 w-[1px] h-10 bg-slate-100 group-hover:bg-orange-500 transition-colors" />
-            </div>
+            <div className="bg-white rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-gray-100 p-3 flex flex-col md:flex-row items-center gap-2">
+              {/* City Selection */}
+              <div className="flex-1 w-full flex items-center px-6 py-4 md:border-r border-gray-100 group">
+                <MapPin className="w-5 h-5 text-slate-300 mr-4 group-hover:text-orange-500 transition-colors" />
+                <div className="flex flex-col items-start text-left flex-1">
+                  <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">Your Area</span>
+                  <CitySearchSelect
+                    cities={citiesList}
+                    value={selectedCity}
+                    onChange={setSelectedCity}
+                    minimal
+                  />
+                </div>
+              </div>
 
-            <div className="flex-1 relative">
-              <div className="relative h-full">
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 z-10" />
+              {/* Search Input */}
+              <div className="flex-[1.5] w-full flex items-center px-6 py-4 group">
+                <Search className="w-5 h-5 text-slate-300 mr-4 group-hover:text-orange-500 transition-colors" />
                 <input
                   type="text"
                   placeholder="Search categories or businesses..."
@@ -404,112 +389,46 @@ export default function HomePage() {
                   }}
                   onFocus={() => setIsSuggestionsOpen(true)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  className="w-full h-full pl-14 pr-8 py-5 bg-transparent text-slate-900 placeholder:text-slate-400 border-none outline-none font-bold text-lg rounded-[20px]"
+                  className="w-full bg-transparent border-none outline-none text-slate-900 text-lg font-medium placeholder:text-slate-300"
                 />
               </div>
 
-              {isSuggestionsOpen &&
-                (filteredCategories.length > 0 ||
-                  filteredCities.length > 0) && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 4 }}
-                    className="absolute top-full left-0 right-0 mt-4 bg-white/95 backdrop-blur-xl border border-slate-100 p-2 z-[100] max-h-[400px] overflow-y-auto rounded-[24px] premium-shadow"
-                  >
-                    {filteredCategories.length > 0 && (
-                      <div className="p-2">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3 px-4 py-2 bg-slate-50/50 rounded-xl">
-                          Categories
-                        </p>
-                        {filteredCategories.map((cat) => (
-                          <button
-                            key={cat.id}
-                            onClick={() => {
-                              setSearchQuery(cat.name);
-                              setIsSuggestionsOpen(false);
-                              window.location.href = `/search?category=${cat.slug}`;
-                            }}
-                            className="w-full flex items-center justify-between p-3 hover:bg-orange-50 rounded-xl text-slate-700 font-bold transition-all group"
-                          >
-                            <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-[#FF7A30] group-hover:scale-110 transition-transform">
-                                <Search className="w-4 h-4" />
-                              </div>
-                              <span>{cat.name}</span>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </motion.div>
-                )}
+              <button
+                onClick={handleSearch}
+                className="w-full md:w-auto bg-[#FF7A30] hover:bg-[#E86920] text-white px-10 py-5 rounded-[24px] font-black text-lg transition-all active:scale-95 shadow-xl shadow-orange-500/20 flex items-center justify-center gap-3"
+              >
+                <Search className="w-5 h-5" />
+                Search
+              </button>
             </div>
-
-            <button
-              onClick={handleSearch}
-              className="bg-[#FF7A30] hover:bg-[#E86920] text-white px-10 py-3 rounded-[20px] font-black text-lg transition-all shadow-xl shadow-orange-500/20 flex items-center justify-center gap-3 active:scale-95 shrink-0"
-            >
-              <Search className="w-5 h-5" />
-              Search
-            </button>
           </motion.div>
 
-          {/* Quick Category Pills */}
-          <div className="mt-12 md:mt-16 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 max-w-3xl mx-auto relative z-20 px-2 md:px-0">
-            {/* Offers */}
-            <Link href="/offers-events">
-              <div className="group p-6 rounded-2xl bg-white/50 backdrop-blur-md border border-white hover:bg-white transition-all premium-shadow">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center text-orange-500 group-hover:bg-orange-500 group-hover:text-white transition-all">
-                    <Tag className="w-6 h-6" />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="font-bold text-lg text-slate-900 mb-0.5">
-                      Hot Local Deals
-                    </h3>
-                    <p className="text-sm text-slate-500">
-                      Best deals & events near you
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </Link>
-
-            {/* Broadcast */}
-            <Link href="/broadcast-request">
-              <div className="group p-6 rounded-2xl bg-white/50 backdrop-blur-md border border-white hover:bg-white transition-all premium-shadow">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-500 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                    <Megaphone className="w-6 h-6" />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="font-bold text-lg text-slate-900 mb-0.5">
-                      Get Expert Quotes
-                    </h3>
-                    <p className="text-sm text-slate-500">
-                      Post your requirement easily
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </Link>
+          {/* Quick Categories Icons */}
+          <div className="flex flex-wrap items-center justify-center gap-4 mb-24">
+            {quickCategories.map((cat) => (
+              <Link
+                key={cat.slug}
+                href={`/search?category=${cat.slug}`}
+                className={`flex items-center gap-3 px-6 py-3 rounded-full ${cat.color} font-bold text-sm transition-all hover:-translate-y-1 hover:shadow-md border border-transparent hover:border-gray-100`}
+              >
+                {React.cloneElement(cat.icon as React.ReactElement, { className: "w-4 h-4" })}
+                {cat.name}
+              </Link>
+            ))}
           </div>
 
-          {/* Feature Highlights Bar */}
-          <div className="mt-20 max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 bg-white/50 backdrop-blur-md rounded-[24px] border border-slate-100 shadow-sm p-4 overflow-hidden">
+          {/* Feature Highlights Bar - Matching the image */}
+          <div className="max-w-6xl mx-auto bg-white/50 backdrop-blur-sm rounded-[32px] border border-gray-100 shadow-sm p-4 md:p-8 grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-100">
             {highlights.map((h, i) => (
-              <div
-                key={i}
-                className={`flex items-center gap-5 p-6 ${i !== highlights.length - 1 ? "md:border-r border-slate-100" : ""}`}
-              >
-                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm border border-slate-50 shrink-0">
+              <div key={i} className="flex items-center gap-4 px-8 py-4 md:py-0 first:pt-0 last:pb-0">
+                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm border border-gray-50 shrink-0">
                   {h.icon}
                 </div>
                 <div className="text-left">
-                  <h4 className="font-black text-[#112D4E] text-sm uppercase tracking-tight">
+                  <h4 className="font-bold text-[#112D4E] text-[11px] uppercase tracking-wider mb-0.5">
                     {h.title}
                   </h4>
-                  <p className="text-slate-500 text-xs font-medium">{h.desc}</p>
+                  <p className="text-slate-400 text-[10px] font-medium leading-tight">{h.desc}</p>
                 </div>
               </div>
             ))}
@@ -520,12 +439,11 @@ export default function HomePage() {
       {/* Popular Categories */}
       <section className="py-24 bg-white relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-center gap-6 mb-16">
-            <div className="h-[1px] bg-slate-200 w-24 md:w-48" />
-            <h2 className="text-4xl font-extrabold text-[#112D4E] tracking-tight whitespace-nowrap">
+          <div className="flex flex-col items-center justify-center mb-16 text-center">
+            <h2 className="text-2xl md:text-3xl font-bold text-[#202124] tracking-tight relative pb-4">
               Popular Categories
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-[#FF7A30] rounded-full"></div>
             </h2>
-            <div className="h-[1px] bg-slate-200 w-24 md:w-48" />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -562,26 +480,14 @@ export default function HomePage() {
       </section>
 
       {/* Featured Businesses */}
-      <section className="py-32 bg-slate-50/50 relative overflow-hidden">
-        {/* Decorative Background Element */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-orange-100/30 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
+      <section className="py-24 bg-white relative overflow-hidden">
 
         <div className="max-w-7xl mx-auto px-4 relative z-10">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
-            <div className="max-w-2xl text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-white rounded-full border border-slate-100 mb-4 shadow-sm">
-              </div>
-              <h2 className="text-4xl md:text-5xl font-black text-[#112D4E] tracking-tighter leading-none mb-4">
-                Featured Businesses
-              </h2>
-
-            </div>
-            <Link
-              href="/search"
-              className="flex items-center gap-2 text-[#FF7A30] font-black uppercase tracking-widest text-xs hover:gap-4 transition-all group"
-            >
-              Explore All <ArrowRight className="w-4 h-4" />
-            </Link>
+          <div className="flex flex-col items-center justify-center mb-16 text-center">
+            <h2 className="text-2xl md:text-3xl font-bold text-[#202124] tracking-tight relative pb-4">
+              Featured Businesses
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-[#FF7A30] rounded-full"></div>
+            </h2>
           </div>
 
           <div className="relative min-h-[300px]">
@@ -679,48 +585,38 @@ export default function HomePage() {
       {/* How It Works Section */}
       <section className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-center gap-6 mb-20 text-center">
-            <div className="h-[1px] bg-slate-200 w-24 md:w-48" />
-            <h2 className="text-4xl font-extrabold text-[#112D4E] tracking-tight whitespace-nowrap">
+          <div className="flex flex-col items-center justify-center mb-16 text-center">
+            <h2 className="text-2xl md:text-3xl font-bold text-[#202124] tracking-tight relative pb-4">
               How It Works
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-[#FF7A30] rounded-full"></div>
             </h2>
-            <div className="h-[1px] bg-slate-200 w-24 md:w-48" />
           </div>
 
-          <div className="grid md:grid-cols-3 gap-16 md:gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-12 max-w-5xl mx-auto">
             <div className="flex flex-col items-center text-center">
-              <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-8 relative">
-                <div className="absolute top-0 right-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold border-4 border-white">
-                  1
-                </div>
-                <Search className="w-10 h-10 text-blue-600" />
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+                <Search className="w-6 h-6 text-gray-400" />
               </div>
-              <h3 className="text-2xl font-black mb-4">1. Search & Find</h3>
-              <p className="text-slate-500 font-medium leading-relaxed">
+              <h3 className="text-xl font-bold text-[#202124] mb-3">Search & Find</h3>
+              <p className="text-[#70757a] text-sm leading-relaxed">
                 Choose the service you need from our verified categories.
               </p>
             </div>
             <div className="flex flex-col items-center text-center">
-              <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mb-8 relative">
-                <div className="absolute top-0 right-0 w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-white font-bold border-4 border-white">
-                  2
-                </div>
-                <Heart className="w-10 h-10 text-red-600" />
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+                <Heart className="w-6 h-6 text-gray-400" />
               </div>
-              <h3 className="text-2xl font-black mb-4">2. Compare & Review</h3>
-              <p className="text-slate-500 font-medium leading-relaxed">
+              <h3 className="text-xl font-bold text-[#202124] mb-3">Compare & Review</h3>
+              <p className="text-[#70757a] text-sm leading-relaxed">
                 Read reviews & select the best local providers.
               </p>
             </div>
             <div className="flex flex-col items-center text-center">
-              <div className="w-24 h-24 bg-orange-50 rounded-full flex items-center justify-center mb-8 relative">
-                <div className="absolute top-0 right-0 w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center text-white font-bold border-4 border-white">
-                  3
-                </div>
-                <Phone className="w-10 h-10 text-orange-600" />
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+                <Phone className="w-6 h-6 text-gray-400" />
               </div>
-              <h3 className="text-2xl font-black mb-4">3. Contact & Connect</h3>
-              <p className="text-slate-500 font-medium leading-relaxed">
+              <h3 className="text-xl font-bold text-[#202124] mb-3">Contact & Connect</h3>
+              <p className="text-[#70757a] text-sm leading-relaxed">
                 Reach out directly to your chosen business in seconds.
               </p>
             </div>
@@ -731,12 +627,11 @@ export default function HomePage() {
       {/* Special Offers & Events */}
       <section className="py-24 bg-slate-50/50">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-center gap-6 mb-16 text-center">
-            <div className="h-[1px] bg-slate-200 w-24 md:w-48" />
-            <h2 className="text-4xl font-extrabold text-[#112D4E] tracking-tight whitespace-nowrap">
+          <div className="flex flex-col items-center justify-center mb-16 text-center">
+            <h2 className="text-2xl md:text-3xl font-bold text-[#202124] tracking-tight relative pb-4">
               Offers & Events
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-[#FF7A30] rounded-full"></div>
             </h2>
-            <div className="h-[1px] bg-slate-200 w-24 md:w-48" />
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -780,12 +675,11 @@ export default function HomePage() {
       {/* Top Cities We Serve */}
       <section className="py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-center gap-6 mb-16 text-center">
-            <div className="h-[1px] bg-slate-200 w-24 md:w-48" />
-            <h2 className="text-4xl font-extrabold text-[#112D4E] tracking-tight whitespace-nowrap">
+          <div className="flex flex-col items-center justify-center mb-16 text-center">
+            <h2 className="text-2xl md:text-3xl font-bold text-[#202124] tracking-tight relative pb-4">
               Top Cities We Serve
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-[#FF7A30] rounded-full"></div>
             </h2>
-            <div className="h-[1px] bg-slate-200 w-24 md:w-48" />
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
@@ -830,12 +724,12 @@ export default function HomePage() {
       {/* Testimonials - What People Are Saying */}
       <section className="py-24 bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 mb-16">
-          <div className="flex items-center justify-center gap-6 text-center">
-            <div className="h-[1px] bg-slate-200 w-24 md:w-48" />
-            <h2 className="text-4xl font-extrabold text-[#112D4E] tracking-tight whitespace-nowrap">
+          <div className="flex items-center justify-center gap-4 mb-16 text-center">
+            <div className="flex-1 h-px bg-slate-200 hidden md:block max-w-[200px]" />
+            <h2 className="text-3xl md:text-4xl font-bold text-[#112D4E] tracking-tight px-4">
               What People Are Saying
             </h2>
-            <div className="h-[1px] bg-slate-200 w-24 md:w-48" />
+            <div className="flex-1 h-px bg-slate-200 hidden md:block max-w-[200px]" />
           </div>
         </div>
 
@@ -1003,55 +897,38 @@ export default function HomePage() {
         })()}
 
         <style>{`
-                    @keyframes marquee-rtl {
-                        0%   { transform: translateX(0); }
-                        100% { transform: translateX(-33.333%); }
-                    }
-                    @keyframes marquee-ltr {
-                        0%   { transform: translateX(-33.333%); }
-                        100% { transform: translateX(0); }
-                    }
-                `}</style>
+          @keyframes marquee-rtl {
+            0%   { transform: translateX(0); }
+            100% { transform: translateX(-33.333%); }
+          }
+          @keyframes marquee-ltr {
+            0%   { transform: translateX(-33.333%); }
+            100% { transform: translateX(0); }
+          }
+        `}</style>
       </section>
-      {/* Business Recruitment CTA */}
-      <section className="py-16 md:py-24 bg-white">
-        <div className="max-w-6xl mx-auto px-4">
 
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0B2244] to-[#0D2E61] p-6 md:p-12 shadow-xl border border-white/10 flex flex-col md:flex-row items-center justify-between gap-8">
-
-            {/* Background Effects */}
-            <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
-
-            <div className="absolute -top-32 -right-32 w-72 h-72 bg-blue-500/20 blur-[120px] rounded-full" />
-            <div className="absolute -bottom-32 -left-32 w-72 h-72 bg-orange-500/20 blur-[120px] rounded-full" />
-
-            {/* Content */}
-            <div className="relative z-10 text-center md:text-left max-w-xl">
-
-              <h3 className="text-2xl md:text-4xl font-extrabold text-white leading-tight mb-3">
-                Own a Business?
-                <br />
-                <span className="text-[#FF7A30]">Get More Customers.</span>
-              </h3>
-
-              <p className="text-white/70 text-base md:text-lg">
-                Join thousands of verified vendors and grow your brand reach across the country.
+      {/* Own a Business Section - Matching the reference image */}
+      <section className="py-24 px-4 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-[#112D4E] rounded-[24px] p-10 md:p-16 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl">
+            <div className="text-center md:text-left">
+              <h2 className="text-3xl md:text-5xl font-black text-white mb-4 tracking-tight">
+                Own a Business? Get More Customers Today!
+              </h2>
+              <p className="text-slate-300 text-lg md:text-xl font-medium">
+                List your business for free and grow your reach.
               </p>
-
             </div>
-
-            {/* Button */}
-            <div className="relative z-10 w-full md:w-auto">
+            <div className="shrink-0 w-full md:w-auto">
               <Link
                 href="/register?role=vendor"
-                className="w-full md:w-auto flex items-center justify-center px-8 py-4 md:px-10 md:py-5 rounded-xl font-semibold text-lg md:text-xl bg-white text-[#112D4E] hover:bg-orange-50 transition active:scale-95 shadow-lg"
+                className="bg-[#FF7A30] hover:bg-[#E86920] text-white px-10 py-5 rounded-[16px] font-black text-lg transition-all shadow-[0_10px_30px_rgba(255,122,48,0.3)] active:scale-95 whitespace-nowrap block text-center"
               >
-                List Business Now
+                Add Your Business
               </Link>
             </div>
-
           </div>
-
         </div>
       </section>
 
@@ -1059,4 +936,3 @@ export default function HomePage() {
     </div>
   );
 }
-

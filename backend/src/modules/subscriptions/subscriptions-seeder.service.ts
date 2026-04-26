@@ -1,11 +1,11 @@
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import { Injectable, OnApplicationBootstrap, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not, In } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { SubscriptionPlan, SubscriptionPlanType } from '../../entities/subscription-plan.entity';
 
 @Injectable()
-export class SubscriptionsSeederService implements OnModuleInit {
+export class SubscriptionsSeederService implements OnApplicationBootstrap {
     private readonly logger = new Logger(SubscriptionsSeederService.name);
 
     constructor(
@@ -14,7 +14,7 @@ export class SubscriptionsSeederService implements OnModuleInit {
         private configService: ConfigService,
     ) { }
 
-    async onModuleInit() {
+    async onApplicationBootstrap() {
         const val = this.configService.get('SEED_DATABASE');
         const shouldSeed = String(val) === 'true';
         if (shouldSeed) {

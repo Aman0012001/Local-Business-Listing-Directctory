@@ -142,27 +142,24 @@ export default function Navbar() {
     };
 
     return (
-        <nav className="sticky top-0 z-[100] bg-white/80 border-b border-slate-100/50 shadow-sm backdrop-blur-2xl">
+        <nav className="sticky top-0 z-[100] bg-white border-b border-gray-200">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-20 relative">
 
-                    {/* Logo - Fixed Width Area */}
-                    <div className="flex-shrink-0 w-48 flex items-center">
-                        <Link href="/" className="flex items-center group overflow-hidden h-20">
-                            <div className="h-28 w-48 relative transition-all duration-300 group-hover:scale-105">
-                                <img
-                                    src="/logo.png"
-                                    alt="naampata logo"
-                                    className="absolute inset-0 w-full h-full object-contain scale-[2.2]"
-                                />
-                            </div>
+                    {/* Logo Area */}
+                    <div className="flex-shrink-0 flex items-center">
+                        <Link href="/" className="flex items-center group h-16">
+                            <span className="text-xl font-bold text-[#202124] tracking-tight">
+                                naampata<span className="text-[#FF7A30]">.</span>
+                            </span>
                         </Link>
                     </div>
 
-                    {/* Centered Desktop Nav Menu */}
-                    <div className="hidden lg:flex flex-grow justify-center absolute left-1/2 -translate-x-1/2 w-full max-w-2xl pointer-events-none">
-                        <div className="flex items-center gap-2 pointer-events-auto">
-                            <Link href="/" className="relative text-slate-900 font-black text-[15px] px-5 py-2.5 rounded-2xl hover:bg-slate-50 transition-all hover:text-primary active:scale-95">
+
+                    {/* Centered Desktop Nav Menu - Simplified */}
+                    <div className="hidden lg:flex flex-grow justify-center">
+                        <div className="flex items-center gap-1">
+                            <Link href="/" className="text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors">
                                 Home
                             </Link>
 
@@ -174,9 +171,9 @@ export default function Navbar() {
                             >
                                 <button 
                                     onClick={() => handleDropdownToggle('categories')}
-                                    className="flex items-center gap-2 text-slate-500 font-black text-[15px] px-5 py-2.5 rounded-2xl hover:bg-slate-50 hover:text-slate-900 transition-all group active:scale-95"
+                                    className="flex items-center gap-1 text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors"
                                 >
-                                    Categories <ChevronDown className={`w-4 h-4 opacity-40 group-hover:opacity-100 transition-all duration-300 ${activeDropdown === 'categories' ? 'rotate-180' : ''}`} />
+                                    Categories <ChevronDown className="w-3 h-3 opacity-60" />
                                 </button>
 
                                 {activeDropdown === 'categories' && (
@@ -225,9 +222,9 @@ export default function Navbar() {
                             >
                                 <button 
                                     onClick={() => handleDropdownToggle('businesses')}
-                                    className="flex items-center gap-2 text-slate-500 font-black text-[15px] px-5 py-2.5 rounded-2xl hover:bg-slate-50 hover:text-slate-900 transition-all group active:scale-95"
+                                    className="flex items-center gap-1 text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors"
                                 >
-                                    Businesses <ChevronDown className={`w-4 h-4 opacity-40 group-hover:opacity-100 transition-all duration-300 ${activeDropdown === 'businesses' ? 'rotate-180' : ''}`} />
+                                    Businesses <ChevronDown className="w-3 h-3 opacity-60" />
                                 </button>
                                 {activeDropdown === 'businesses' && (
                                     <div className="absolute top-full left-1/2 -translate-x-1/2 pt-4 w-72 animate-in fade-in slide-in-from-top-4 duration-500 ease-out-expo" style={{ zIndex: "1000" }}>
@@ -286,9 +283,9 @@ export default function Navbar() {
                             >
                                 <button 
                                     onClick={() => handleDropdownToggle('cities')}
-                                    className="flex items-center gap-2 text-slate-500 font-black text-[15px] px-5 py-2.5 rounded-2xl hover:bg-slate-50 hover:text-slate-900 transition-all group active:scale-95"
+                                    className="flex items-center gap-1 text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors"
                                 >
-                                    Cities <ChevronDown className={`w-4 h-4 opacity-40 group-hover:opacity-100 transition-all duration-300 ${activeDropdown === 'cities' ? 'rotate-180' : ''}`} />
+                                    Cities <ChevronDown className="w-3 h-3 opacity-60" />
                                 </button>
                                 {activeDropdown === 'cities' && (
                                     <div className="absolute top-full left-1/2 -translate-x-1/2 pt-4 w-[800px] animate-in fade-in slide-in-from-top-4 duration-500 ease-out-expo" style={{ zIndex: "1000" }}>
@@ -330,23 +327,18 @@ export default function Navbar() {
                         </div>
                     </div>
 
-                    {/* Auth Actions - Fixed Width Area */}
-                    <div className="flex items-center justify-end gap-3 w-48 lg:w-auto">
+                    {/* Utility Area (Right) */}
+                    <div className="flex items-center justify-end gap-2">
                         {user ? (
                             <div className="flex items-center gap-3">
-                                <Link href={user.role === 'admin' || user.role === 'superadmin' ? '/admin' : '/dashboard'} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer group">
+                                <Link href={user.role === 'admin' || user.role === 'superadmin' ? '/admin' : '/dashboard'} className="hidden sm:flex items-center gap-2 px-3 py-1 bg-gray-50 rounded-full border border-gray-100 hover:bg-gray-100 transition-colors">
                                     <VendorAvatar
                                         src={user.avatarUrl}
                                         alt={user.fullName || user.email}
-                                        size="sm"
-                                        className="shadow-sm group-hover:scale-110 transition-transform"
+                                        size="xs"
+                                        className="shadow-sm"
                                     />
-                                    <div className="flex flex-col">
-                                        <span className="text-xs font-bold text-[#112D4E] leading-tight max-w-[80px] truncate">{user.fullName || user.email}</span>
-                                        <span className="text-[8px] text-orange-600 font-bold uppercase tracking-widest">
-                                            {user.role === 'admin' || user.role === 'superadmin' ? 'Admin Dash' : 'Dashboard'}
-                                        </span>
-                                    </div>
+                                    <span className="text-xs font-medium text-[#202124] max-w-[80px] truncate">{user.fullName || user.email}</span>
                                 </Link>
 
                                 {/* Push Notifications Button */}
@@ -444,9 +436,9 @@ export default function Navbar() {
                                 </button>
                             </div>
                         ) : (
-                            <div className="hidden sm:flex items-center gap-4">
-                                <Link href="/login" className="px-6 py-3 rounded-2xl text-slate-900 font-black text-sm hover:bg-slate-50 transition-all active:scale-95">Login</Link>
-                                <Link href="/register?role=vendor" className="px-6 py-3 rounded-2xl bg-primary text-white font-black text-sm hover:bg-primary/90 shadow-premium transition-all active:scale-95 whitespace-nowrap">Add Business</Link>
+                             <div className="hidden sm:flex items-center gap-4">
+                                <Link href="/login" className="text-sm font-semibold text-[#70757a] hover:text-[#202124] px-4 py-2">Login</Link>
+                                <Link href="/register?role=vendor" className="px-6 py-2.5 rounded-xl bg-[#FF7A30] text-white font-bold text-sm hover:bg-[#E86920] shadow-lg shadow-orange-500/20 transition-all active:scale-95 whitespace-nowrap">Add Business</Link>
                             </div>
                         )}
 
