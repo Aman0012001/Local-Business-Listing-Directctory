@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Menu, Bell, Search, User, LogOut, MessageSquare, Shield } from 'lucide-react';
+import { Menu, Bell, Search, User, LogOut, MessageSquare, Shield, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import Link from 'next/link';
 import VendorAvatar from '../VendorAvatar';
@@ -32,33 +32,28 @@ export default function DashboardHeader({ toggleSidebar, unreadNotifications = 0
                             <div className="flex flex-col">
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] mb-1.5 ml-0.5">System Status</p>
                                 <div className="flex items-center gap-2.5 px-3.5 py-1.5 bg-emerald-50/50 rounded-2xl border border-emerald-100/50 hover:bg-emerald-50 transition-colors cursor-default">
-                                    <div className="relative">
-                                        <div className="w-2 h-2 bg-emerald-500 rounded-full" />
-                                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping absolute inset-0 opacity-75" />
-                                    </div>
                                     <span className="text-[10px] font-extrabold text-emerald-700 uppercase tracking-widest">Global Network Online</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Search Bar - Middle */}
-                    <div className="hidden md:flex flex-1 max-w-xl mx-8">
-                        <div className="relative w-full group">
-                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <Search className="h-4 w-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-                            </div>
-                            <input
-                                type="text"
-                                placeholder="Search businesses, leads, settings..."
-                                className="block w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white hover:bg-slate-100/50 hover:border-slate-200 transition-all shadow-sm"
-                            />
-                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                <span className="text-[10px] font-black text-slate-300 bg-white border border-slate-200 px-1.5 py-0.5 rounded-md shadow-sm">
-                                    ⌘K
-                                </span>
-                            </div>
-                        </div>
+                    {/* Centered Navigation */}
+                    <div className="hidden md:flex flex-1 justify-center mx-8">
+                        <nav className="flex items-center gap-2">
+                            <Link href="/" className="text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors">
+                                Home
+                            </Link>
+                            <Link href="/categories" className="flex items-center gap-1 text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors group">
+                                Categories <ChevronDown className="w-3 h-3 opacity-60 group-hover:rotate-180 transition-transform" />
+                            </Link>
+                            <Link href="/search" className="flex items-center gap-1 text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors group">
+                                Businesses <ChevronDown className="w-3 h-3 opacity-60 group-hover:rotate-180 transition-transform" />
+                            </Link>
+                            <Link href="/cities" className="flex items-center gap-1 text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors group">
+                                Cities <ChevronDown className="w-3 h-3 opacity-60 group-hover:rotate-180 transition-transform" />
+                            </Link>
+                        </nav>
                     </div>
 
                     <div className="flex items-center gap-4 sm:gap-8">

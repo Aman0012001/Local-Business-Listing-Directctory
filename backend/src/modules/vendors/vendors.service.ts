@@ -477,4 +477,15 @@ export class VendorsService {
             };
         });
     }
+    /**
+     * Get all vendor slugs for static generation
+     */
+    async getAllSlugs() {
+        const results = await this.vendorRepository.createQueryBuilder('vendor')
+            .select('vendor.slug', 'slug')
+            .where('vendor.slug IS NOT NULL')
+            .getRawMany();
+            
+        return results.map(r => r.slug);
+    }
 }

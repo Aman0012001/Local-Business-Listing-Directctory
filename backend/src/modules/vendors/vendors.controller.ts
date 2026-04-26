@@ -106,4 +106,11 @@ export class VendorsController {
     submitVerification(@CurrentUser() user: User, @Body() documents: any) {
         return this.vendorsService.submitVerification(user.id, documents);
     }
+
+    @Public()
+    @Get('slugs/all')
+    @ApiOperation({ summary: 'Get all vendor slugs for static generation' })
+    getAllSlugs() {
+        return this.vendorsService.getAllSlugs();
+    }
 }

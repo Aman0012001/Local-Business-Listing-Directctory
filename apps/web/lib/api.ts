@@ -435,6 +435,7 @@ export const api = {
         }),
         getByCity: (city: string) => fetcher<any>(`/vendors/by-city?city=${encodeURIComponent(city)}`),
         getPublicProfile: (id: string) => fetcher<any>(`/vendors/${id}/public`),
+        getAllSlugs: () => fetcher<string[]>('/vendors/slugs/all'),
     },
     leads: {
         getForVendor: (params: any = {}) => {

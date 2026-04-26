@@ -240,27 +240,57 @@ export default function ContactPage() {
                                 </div>
                             </div>
 
-                            {/* FAQs */}
                             <div>
-                                <h3 className="text-lg font-black text-[#112D4E] mb-4">Frequently Asked Questions</h3>
-                                <div className="space-y-3">
-                                    {faqs.map(({ q, a }, i) => (
-                                        <div key={i} className="border border-slate-100 rounded-2xl overflow-hidden">
-                                            <button
-                                                id={`faq-${i}`}
-                                                onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                                                className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-slate-50 transition-colors"
+                                <h3 className="text-xl font-black text-[#112D4E] mb-6 flex items-center gap-3">
+                                    <HelpCircle className="w-6 h-6 text-[#FF7A30]" />
+                                    Frequently Asked Questions
+                                </h3>
+                                <div className="space-y-4">
+                                    {faqs.map(({ q, a }, i) => {
+                                        const isOpen = openFaq === i;
+                                        return (
+                                            <div 
+                                                key={i} 
+                                                className={`rounded-2xl border transition-all duration-300 ${
+                                                    isOpen 
+                                                        ? "bg-white border-orange-200 shadow-xl shadow-orange-500/5 ring-4 ring-orange-500/5" 
+                                                        : "bg-slate-50/50 border-slate-100 hover:border-slate-200 hover:bg-white"
+                                                }`}
                                             >
-                                                <span className="text-sm font-bold text-[#112D4E] pr-4">{q}</span>
-                                                <ChevronRight className={`w-4 h-4 text-slate-400 flex-shrink-0 transition-transform ${openFaq === i ? "rotate-90" : ""}`} />
-                                            </button>
-                                            {openFaq === i && (
-                                                <div className="px-5 pb-4 text-sm text-slate-500 font-medium leading-relaxed border-t border-slate-100 pt-3">
-                                                    {a}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
+                                                <button
+                                                    id={`faq-${i}`}
+                                                    onClick={() => setOpenFaq(isOpen ? null : i)}
+                                                    className="w-full flex items-center justify-between px-6 py-5 text-left group"
+                                                >
+                                                    <span className={`text-sm font-bold transition-colors pr-6 ${isOpen ? "text-[#FF7A30]" : "text-[#112D4E] group-hover:text-[#FF7A30]/80"}`}>
+                                                        {q}
+                                                    </span>
+                                                    <div className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                                                        isOpen ? "bg-[#FF7A30] text-white rotate-180" : "bg-white text-slate-400 group-hover:text-[#FF7A30]"
+                                                    }`}>
+                                                        <ChevronDown className="w-4 h-4" />
+                                                    </div>
+                                                </button>
+                                                <AnimatePresence initial={false}>
+                                                    {isOpen && (
+                                                        <motion.div
+                                                            initial={{ height: 0, opacity: 0 }}
+                                                            animate={{ height: "auto", opacity: 1 }}
+                                                            exit={{ height: 0, opacity: 0 }}
+                                                            transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
+                                                            className="overflow-hidden"
+                                                        >
+                                                            <div className="px-6 pb-6 pt-1 border-t border-slate-50/50">
+                                                                <p className="text-sm text-slate-500 font-medium leading-relaxed bg-slate-50/50 p-4 rounded-xl border border-slate-100/50">
+                                                                    {a}
+                                                                </p>
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>

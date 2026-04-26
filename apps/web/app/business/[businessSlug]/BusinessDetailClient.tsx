@@ -15,6 +15,8 @@ import {
   MessageSquare,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   CheckCircle2,
   X,
   Send,
@@ -214,6 +216,7 @@ export default function BusinessDetailClient({
   const [answerContent, setAnswerContent] = useState("");
   const [submittingAnswer, setSubmittingAnswer] = useState(false);
   const [qaLoading, setQaLoading] = useState(false);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
 
   // Map State & Refs
@@ -364,7 +367,7 @@ export default function BusinessDetailClient({
       // Handle SPA fallback where the page is served by a 'template' HTML file or data is missing
       if (typeof window !== "undefined") {
         const pathParts = window.location.pathname.split("/").filter(Boolean);
-        
+
         // Check for originalSlug in query params (passed by NotFound redirect)
         const urlParams = new URLSearchParams(window.location.search);
         const querySlug = urlParams.get('originalSlug');
@@ -384,8 +387,8 @@ export default function BusinessDetailClient({
             );
           }
         } else if (querySlug) {
-            actualSlug = querySlug;
-            console.log("[BusinessDetail] Route detected from query param:", actualSlug);
+          actualSlug = querySlug;
+          console.log("[BusinessDetail] Route detected from query param:", actualSlug);
         }
       }
 
@@ -1858,21 +1861,72 @@ export default function BusinessDetailClient({
                         <h3 className="text-2xl font-bold text-slate-900 mb-8">
                           Frequently Asked Questions
                         </h3>
+
                         {validFaqs.length > 0 ? (
                           <div className="space-y-4">
-                            {validFaqs.map((faq, idx) => (
-                              <div
-                                key={idx}
-                                className="bg-slate-50 rounded-2xl p-6 border border-slate-100"
-                              >
-                                <h4 className="font-bold text-slate-900 text-lg mb-2">
-                                  {faq.question}
-                                </h4>
-                                <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
-                                  {faq.answer}
-                                </p>
-                              </div>
-                            ))}
+                            {validFaqs.map((faq, idx) => {
+                              const isOpen = openFaqIndex === idx;
+
+                              return (
+                                <div
+                                  key={idx}
+                                  className={`rounded-3xl border border-black transition-all duration-500 overflow-hidden ${isOpen
+                                      ? "bg-white shadow-2xl"
+                                      : "bg-slate-50/50 hover:bg-white"
+                                    }`}
+                                >
+                                  {/* Question */}
+                                  <button
+                                    onClick={() =>
+                                      setOpenFaqIndex(isOpen ? null : idx)
+                                    }
+                                    className="w-full flex items-center justify-between p-6 md:p-8 text-left group"
+                                  >
+                                    <h4
+                                      className={`font-black text-lg md:text-xl transition-colors leading-tight pr-8 ${isOpen
+                                          ? "text-primary"
+                                          : "text-slate-900 group-hover:text-primary/70"
+                                        }`}
+                                    >
+                                      {faq.question}
+                                    </h4>
+
+                                    {/* Icon */}
+                                    <div
+                                      className={`shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-500 ${isOpen
+                                          ? "bg-primary text-white rotate-180 shadow-lg"
+                                          : "bg-white text-slate-400 group-hover:text-primary"
+                                        }`}
+                                    >
+                                      <ChevronDown className="w-5 h-5" />
+                                    </div>
+                                  </button>
+
+                                  {/* Answer */}
+                                  <AnimatePresence initial={false}>
+                                    {isOpen && (
+                                      <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: "auto", opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        transition={{
+                                          duration: 0.4,
+                                          ease: [0.04, 0.62, 0.23, 0.98],
+                                        }}
+                                      >
+                                        <div className="px-6 pb-6">
+                                          <div className="p-6 bg-slate-50 rounded-[10px]">
+                                            <p className="text-slate-600 leading-relaxed whitespace-pre-wrap font-medium text-base md:text-lg">
+                                              {faq.answer}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </motion.div>
+                                    )}
+                                  </AnimatePresence>
+                                </div>
+                              );
+                            })}
                           </div>
                         ) : (
                           <p className="text-slate-500">
@@ -1897,17 +1951,14 @@ export default function BusinessDetailClient({
                 {/* Background Pattern */}
                 <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
                 <h4 className="text-2xl font-black mb-8 relative z-10 flex items-center gap-3 text-white">
-                  <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white">
-                    {/* <MessageSquare className="w-5 h-5 text-white" /> */}
-                  </div>
-                  Contact
+                  Contact with Business
                 </h4>
 
                 <div className="space-y-4 mb-6 relative z-10">
                   {business.phone && (
                     <button
                       onClick={() => handleContactIntent("call")}
-                      className="w-full py-5 bg-white text-slate-900 rounded-[20px] font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 hover:bg-primary hover:text-white transition-all duration-300 shadow-xl active:scale-95"
+                      className="w-full py-5 bg-slate-800 text-white rounded-[20px] font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 hover:bg-slate-700 transition-all duration-300 shadow-xl shadow-slate-900/20 active:scale-95"
                     >
                       <Phone className="w-5 h-5" /> Call Business
                     </button>
