@@ -1,10 +1,10 @@
 
 const urls = [
-    'https://local-business-listing-directory-production.railway.app/api/v1/health',
-    'https://local-business-listing-directory-production.railway.app/api/health',
-    'https://local-business-listing-directory-production.railway.app/v1/health',
-    'https://local-business-listing-directory-production.railway.app/health',
-    'https://local-business-listing-directory-production.railway.app/api/docs',
+    'https://local-business-listing-directory-production.up.railway.app/api/v1/health',
+    'https://local-business-listing-directory-production.up.railway.app/api/health',
+    'https://local-business-listing-directory-production.up.railway.app/v1/health',
+    'https://local-business-listing-directory-production.up.railway.app/health',
+    'https://local-business-listing-directory-production.up.railway.app/api/docs',
 ];
 
 async function check() {

@@ -14,7 +14,7 @@ let envApiUrl = isServer ? serverApiUrl : clientApiUrl;
 if (!envApiUrl) {
     if (isProd) {
         // Hard-coded fallback for production if env vars fail
-        envApiUrl = 'https://local-business-listing-directory-production.railway.app/api/v1';
+        envApiUrl = 'https://local-business-listing-directory-production.up.railway.app/api/v1';
     } else {
         // Standard local dev defaults
         envApiUrl = isServer ? 'http://127.0.0.1:3001/api/v1' : 'http://localhost:3001/api/v1';
@@ -24,7 +24,7 @@ if (!envApiUrl) {
 // 4. Hardening: Localhost Protection in Production
 if (isProd && (envApiUrl.includes('localhost') || envApiUrl.includes('127.0.0.1'))) {
     console.error('[CRITICAL] API_URL mismatch: Localhost detected in production environment! Forcing production URL.');
-    envApiUrl = 'https://local-business-listing-directory-production.railway.app/api/v1';
+    envApiUrl = 'https://local-business-listing-directory-production.up.railway.app/api/v1';
 }
 
 const API_BASE_URL = envApiUrl.replace(/\/+$/, '');
@@ -89,7 +89,7 @@ async function fetcher<T>(endpoint: string, options?: FetcherOptions): Promise<T
         if (!response.ok) {
             let errorData: any;
             const contentType = response.headers.get('content-type');
-            
+
             if (contentType && contentType.includes('application/json')) {
                 errorData = await response.json().catch(() => ({ message: 'Failed to parse error response' }));
             } else {
@@ -140,17 +140,17 @@ async function fetcher<T>(endpoint: string, options?: FetcherOptions): Promise<T
         }
     } catch (error: any) {
         clearTimeout(timeoutId);
-        
+
         // Comprehensive Network Error Logging
         const errMessage = error.message || '';
         const errName = error.name || '';
-        
-        const isNetworkError = 
+
+        const isNetworkError =
             errMessage.includes('fetch') ||
             errMessage.includes('NetworkError') ||
             errMessage.includes('Network Request Failed') ||
             errMessage.includes('Failed to fetch') ||
-            errName === 'AbortError' || 
+            errName === 'AbortError' ||
             errMessage.includes('timed out') ||
             errMessage.includes('NetworkError when attempting to fetch resource');
 
@@ -168,14 +168,14 @@ async function fetcher<T>(endpoint: string, options?: FetcherOptions): Promise<T
                 origin: typeof window !== 'undefined' ? window.location.origin : 'server-side',
                 stack: error.stack
             });
-            
+
             let hint = '';
             if (url.includes('localhost') || url.includes('127.0.0.1')) {
                 hint = ' (Local Backend Unreachable). 1. Ensure your backend is running on port 3001. 2. If it is running, try restarting it. 3. Check for ghost processes with `npm run stop` or similar.';
             } else if (url.includes('railway.app')) {
                 hint = ' (Production Backend Unreachable). Check Railway status or your internet connection.';
             }
-                
+
             throw new Error(`Connection Failed: Unable to reach the backend at ${url}.${hint}`);
         }
 
@@ -191,18 +191,18 @@ async function fetcher<T>(endpoint: string, options?: FetcherOptions): Promise<T
 
 export const api = {
     get: <T>(endpoint: string, options?: FetcherOptions) => fetcher<T>(endpoint, { ...options, method: 'GET' }),
-    post: <T>(endpoint: string, body?: any, options?: FetcherOptions) => fetcher<T>(endpoint, { 
-        ...options, 
-        method: 'POST', 
-        body: body ? JSON.stringify(body) : undefined 
+    post: <T>(endpoint: string, body?: any, options?: FetcherOptions) => fetcher<T>(endpoint, {
+        ...options,
+        method: 'POST',
+        body: body ? JSON.stringify(body) : undefined
     }),
-    patch: <T>(endpoint: string, body?: any, options?: FetcherOptions) => fetcher<T>(endpoint, { 
-        ...options, 
-        method: 'PATCH', 
-        body: body ? JSON.stringify(body) : undefined 
+    patch: <T>(endpoint: string, body?: any, options?: FetcherOptions) => fetcher<T>(endpoint, {
+        ...options,
+        method: 'PATCH',
+        body: body ? JSON.stringify(body) : undefined
     }),
     delete: <T>(endpoint: string, options?: FetcherOptions) => fetcher<T>(endpoint, { ...options, method: 'DELETE' }),
-    
+
     categories: {
         getAll: (options?: FetcherOptions) => fetcher<Category[]>('/categories', options),
         getPopular: (limit = 8, options?: FetcherOptions) => fetcher<Category[]>(`/categories/popular?limit=${limit}`, options),
@@ -591,11 +591,11 @@ export const api = {
                 method: 'DELETE',
             }),
         },
-        globalSearch: (q: string) => fetcher<{ 
-            businesses: any[], 
-            users: any[], 
-            categories: any[], 
-            cities: any[] 
+        globalSearch: (q: string) => fetcher<{
+            businesses: any[],
+            users: any[],
+            categories: any[],
+            cities: any[]
         }>(`/admin/search/global?q=${encodeURIComponent(q)}`),
         affiliate: {
             getReferrals: () => fetcher<any[]>('/affiliate/admin/referrals'),
@@ -785,28 +785,28 @@ export const api = {
     },
     promotions: {
         getPricingRules: (options?: FetcherOptions) => fetcher<any[]>('/promotions/pricing-rules', options),
-        calculatePrice: (data: { placements: string[], startTime: string, endTime: string, pricingId?: string }, type: string = 'offer') => 
+        calculatePrice: (data: { placements: string[], startTime: string, endTime: string, pricingId?: string }, type: string = 'offer') =>
             api.post<{ totalPrice: number; durationHours: number; breakup: any[]; isMinimumApplied?: boolean }>(`/promotions/calculate?type=${type}`, data),
-        book: (data: { offerEventId: string; placements: string[]; startTime: string; endTime: string }) => 
+        book: (data: { offerEventId: string; placements: string[]; startTime: string; endTime: string }) =>
             api.post<{ sessionId: string; checkoutUrl: string }>('/promotions/book', data),
         verifySession: (sessionId: string) => fetcher<any>(`/promotions/verify-session?session_id=${sessionId}`),
     },
     businessSetup: {
         getQuestions: (options?: FetcherOptions) => fetcher<any[]>('/business-setup/questions', { silent: true, ...options }),
         getStatus: (options?: FetcherOptions) => fetcher<{ isCompleted: boolean; answers: Record<string, string[]> }>('/business-setup/status', { silent: true, ...options }),
-        saveAnswers: (answers: Record<string, string | string[]>) => 
+        saveAnswers: (answers: Record<string, string | string[]>) =>
             api.post<{ success: boolean }>('/business-setup/answers', { answers }),
     },
     qa: {
         getForBusiness: (businessId: string, options?: FetcherOptions) => fetcher<any[]>(`/qa/business/${businessId}`, { silent: true, ...options }),
-        askQuestion: (data: { businessId: string; content: string }) => 
+        askQuestion: (data: { businessId: string; content: string }) =>
             fetcher<any>('/qa/questions', { method: 'POST', body: JSON.stringify(data) }),
-        postAnswer: (data: { questionId: string; content: string }) => 
+        postAnswer: (data: { questionId: string; content: string }) =>
             fetcher<any>('/qa/answers', { method: 'POST', body: JSON.stringify(data) }),
         getPending: () => fetcher<{ questions: any[]; answers: any[] }>('/qa/admin/pending'),
-        moderateQuestion: (id: string, data: { status: string; reason?: string }) => 
+        moderateQuestion: (id: string, data: { status: string; reason?: string }) =>
             fetcher<any>(`/qa/admin/questions/${id}/moderate`, { method: 'PATCH', body: JSON.stringify(data) }),
-        moderateAnswer: (id: string, data: { status: string; reason?: string }) => 
+        moderateAnswer: (id: string, data: { status: string; reason?: string }) =>
             fetcher<any>(`/qa/admin/answers/${id}/moderate`, { method: 'PATCH', body: JSON.stringify(data) }),
     },
 };

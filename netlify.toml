@@ -6,4 +6,4 @@
 [build.environment]
   NODE_VERSION = "20"
   NPM_FLAGS    = "--legacy-peer-deps"
-  NEXT_PUBLIC_API_URL = "https://local-business-listing-directory-production.railway.app/api/v1"
+  NEXT_PUBLIC_API_URL = "https://local-business-listing-directory-production.up.railway.app/api/v1"

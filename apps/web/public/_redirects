@@ -1,13 +1,10 @@
-# Redirect old vendor paths to new plural vendors path
-/vendor/*    /vendors/:splat    301
+# SPA Fallback for Next.js Static Export
+# These rules ensure that dynamic URLs are handled by the client-side router in index.html
+/business/*        /index.html   200
+/categories/*      /index.html   200
+/vendors/*         /index.html   200
+/cities/*          /index.html   200
+/offers-events/*   /index.html   200
 
-# SPA Fallback for Dynamic Routes (Static Export)
-# These rules ensure that dynamic URLs are served by the "fallback" HTML files generated during export.
-/business/*        /business/template/index.html   200
-/categories/*      /categories/all/index.html   200
-/vendors/*         /vendors/default/index.html  200
-/cities/*          /cities/default/index.html   200
-/offers-events/*   /offers-events/1/index.html   200
-
-# Next.js handles all other routing via the @netlify/plugin-nextjs (if using SSR)
-# But for manual out folder, we need these rewrites.
+# Catch-all fallback for other routes
+/*                 /index.html   200
