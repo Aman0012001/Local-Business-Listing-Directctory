@@ -7,6 +7,9 @@ export const typeOrmConfig = (
     const isProd = configService.get<string>('NODE_ENV') === 'production';
     const databaseUrl = configService.get<string>('DATABASE_URL');
 
+    console.log(`--- DEBUG: TypeORM Config - Environment: ${configService.get('NODE_ENV')} ---`);
+    console.log(`--- DEBUG: TypeORM Config - Database URL exists: ${!!databaseUrl} ---`);
+
     // Railway and most production PostgreSQL providers require SSL
     const ssl = isProd || configService.get<string>('DB_SSL') === 'true'
         ? { rejectUnauthorized: false }
