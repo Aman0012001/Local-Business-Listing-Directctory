@@ -115,15 +115,13 @@ export class CategoriesController {
     }
 
     // --- Public Endpoints ---
-
     @Public()
-    @UseInterceptors(CacheInterceptor)
-    @Get()
-    @ApiOperation({ summary: 'Get all active categories' })
-    @ApiQuery({ name: 'includeSubcategories', required: false, type: Boolean })
-    @ApiResponse({ status: 200, description: 'Categories retrieved successfully' })
-    findAll(@Query('includeSubcategories') includeSubcategories?: boolean) {
-        return this.categoriesService.findAllActive(includeSubcategories);
+    @Get('popular')
+    @ApiOperation({ summary: 'Get popular categories by business count (active only)' })
+    @ApiQuery({ name: 'limit', required: false, type: Number })
+    @ApiResponse({ status: 200, description: 'Popular categories retrieved successfully' })
+    getPopularCategories(@Query('limit') limit?: number) {
+        return this.categoriesService.getPopularCategories(limit);
     }
 
     @Public()
@@ -145,24 +143,6 @@ export class CategoriesController {
     }
 
     @Public()
-    @Get('popular')
-    @ApiOperation({ summary: 'Get popular categories by business count (active only)' })
-    @ApiQuery({ name: 'limit', required: false, type: Number })
-    @ApiResponse({ status: 200, description: 'Popular categories retrieved successfully' })
-    getPopularCategories(@Query('limit') limit?: number) {
-        return this.categoriesService.getPopularCategories(limit);
-    }
-
-    @Public()
-    @Get('slug/:slug')
-    @ApiOperation({ summary: 'Get active category by slug' })
-    @ApiResponse({ status: 200, description: 'Category found' })
-    @ApiResponse({ status: 404, description: 'Category not found' })
-    findBySlug(@Param('slug') slug: string) {
-        return this.categoriesService.findBySlug(slug);
-    }
-
-    @Public()
     @Get('suggest')
     @ApiOperation({ summary: 'Smart suggest categories based on title and description' })
     @ApiQuery({ name: 'title', required: true, type: String })
@@ -173,6 +153,25 @@ export class CategoriesController {
         @Query('description') description?: string,
     ) {
         return this.categoriesService.suggestCategories(title, description || '');
+    }
+
+    @Public()
+    @UseInterceptors(CacheInterceptor)
+    @Get()
+    @ApiOperation({ summary: 'Get all active categories' })
+    @ApiQuery({ name: 'includeSubcategories', required: false, type: Boolean })
+    @ApiResponse({ status: 200, description: 'Categories retrieved successfully' })
+    findAll(@Query('includeSubcategories') includeSubcategories?: boolean) {
+        return this.categoriesService.findAllActive(includeSubcategories);
+    }
+
+    @Public()
+    @Get('slug/:slug')
+    @ApiOperation({ summary: 'Get active category by slug' })
+    @ApiResponse({ status: 200, description: 'Category found' })
+    @ApiResponse({ status: 404, description: 'Category not found' })
+    findBySlug(@Param('slug') slug: string) {
+        return this.categoriesService.findBySlug(slug);
     }
 
     @Public()

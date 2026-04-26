@@ -74,6 +74,21 @@ async function bootstrap() {
     await app.listen(port, '0.0.0.0');
 
     logger.log(`🚀 Server running on: http://0.0.0.0:${port}/api/v1`);
+
+    // Log all routes for debugging 404 issues
+    const server = app.getHttpServer();
+    const router = server._events?.request?._router || (app as any).getHttpAdapter().getInstance()._router;
+
+    logger.log('--- REGISTERED ROUTES ---');
+    if (router && router.stack) {
+        router.stack.forEach((layer: any) => {
+            if (layer.route) {
+                const path = layer.route.path;
+                const methods = Object.keys(layer.route.methods).join(',').toUpperCase();
+                logger.log(`Route: ${methods} ${path}`);
+            }
+        });
+    }
 }
 
 bootstrap();
