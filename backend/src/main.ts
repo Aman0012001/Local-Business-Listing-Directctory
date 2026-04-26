@@ -5,40 +5,75 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
     const logger = new Logger('Bootstrap');
-    
-    // Initialize NestJS Application
-    logger.log('--- DEBUG: BOOTSTRAPPING MARKER: 2026-04-26-07-00 ---');
+
+    logger.log('--- APP STARTING ---');
+
+    // Create App
     const app = await NestFactory.create(AppModule, {
         logger: ['error', 'warn', 'log', 'debug', 'verbose'],
     });
 
-    // Use ConfigService for dynamic variables
     const configService = app.get(ConfigService);
-    const port = process.env.PORT || configService.get<number>('PORT') || 3001;
 
-    // Standard Middleware
+    const port =
+        process.env.PORT ||
+        configService.get<number>('PORT') ||
+        3001;
+
+    // Global Prefix
     app.setGlobalPrefix('api/v1');
-    app.useGlobalPipes(new ValidationPipe({ 
-        whitelist: true, 
-        transform: true,
-        forbidNonWhitelisted: true 
-    }));
 
-    // Dynamic CORS Configuration
+    // Validation Pipe
+    app.useGlobalPipes(
+        new ValidationPipe({
+            whitelist: true,
+            transform: true,
+            forbidNonWhitelisted: true,
+        }),
+    );
+
+    // ============================
+    // ✅ CORS FIX (IMPORTANT)
+    // ============================
+
     const corsOriginRaw = configService.get<string>('CORS_ORIGIN', '');
-    const origins = corsOriginRaw.split(',').map(o => o.trim()).filter(o => o.length > 0);
-    
-    logger.log(`Setting up CORS with origins: ${JSON.stringify(origins)}`);
-    
+
+    const allowedOrigins = corsOriginRaw
+        .split(',')
+        .map(origin => origin.trim().replace(/\/$/, '')) // remove trailing slash
+        .filter(origin => origin.length > 0);
+
+    logger.log(`Allowed CORS Origins: ${JSON.stringify(allowedOrigins)}`);
+
     app.enableCors({
-        origin: origins.length > 0 ? origins : '*',
+        origin: (origin, callback) => {
+            // allow requests with no origin (Postman, mobile apps)
+            if (!origin) {
+                return callback(null, true);
+            }
+
+            const cleanOrigin = origin.replace(/\/$/, '');
+
+            if (allowedOrigins.includes(cleanOrigin)) {
+                return callback(null, true);
+            }
+
+            logger.error(`❌ CORS blocked for origin: ${origin}`);
+            return callback(new Error('Not allowed by CORS'), false);
+        },
         credentials: true,
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-        allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With, Origin',
+        allowedHeaders:
+            'Content-Type, Accept, Authorization, X-Requested-With, Origin',
     });
 
-    // Railway requires binding to 0.0.0.0
+    // ============================
+    // 🚀 START SERVER
+    // ============================
+
     await app.listen(port, '0.0.0.0');
-    logger.log(`🚀 Server is running on: http://0.0.0.0:${port}/api/v1`);
+
+    logger.log(`🚀 Server running on: http://0.0.0.0:${port}/api/v1`);
 }
+
 bootstrap();
