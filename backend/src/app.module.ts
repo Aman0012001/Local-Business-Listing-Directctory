@@ -136,4 +136,8 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
         },
     ],
 })
-export class AppModule { }
+export class AppModule {
+    constructor() {
+        console.log('--- DEBUG: APP MODULE INITIALIZED ---');
+    }
+}
