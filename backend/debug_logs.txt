@@ -1690,3 +1690,156 @@ NotFoundException: Listing not found
 NotFoundException: Listing not found
     at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T02:47:58.275Z] findBySlug: test-mnuqmwec (User: Public)
+[2026-04-27T02:47:58.310Z] findBySlug: nvendor2-lisiting-mnqepey6 (User: Public)
+[2026-04-27T02:47:58.323Z] findBySlug: dev-vendor-listing-mnvoe07u (User: Public)
+[2026-04-27T02:47:58.332Z] findBySlug: nv1-listing-mnqd29z4 (User: Public)
+[2026-04-27T02:47:58.349Z] findBySlug: new-vrndor-listing-mnqa9xol (User: Public)
+[2026-04-27T02:47:58.365Z] findBySlug: the-mk-tea-stall-mnof3q0j (User: Public)
+[2026-04-27T02:47:58.390Z] findBySlug: smilecare-dental-clinic-mnd2rjh5 (User: Public)
+[2026-04-27T02:47:58.407Z] findBySlug: hair-salon-mmp8acr9 (User: Public)
+[2026-04-27T02:48:02.048Z] findBySlug: dev-vendor-listing-mnvoe07u - Found in DB. Status: approved
+[2026-04-27T02:48:02.498Z] findBySlug: the-mk-tea-stall-mnof3q0j - Found in DB. Status: approved
+[2026-04-27T02:48:02.647Z] findBySlug: nv1-listing-mnqd29z4 - Found in DB. Status: approved
+[2026-04-27T02:48:02.660Z] findBySlug: new-vrndor-listing-mnqa9xol - Found in DB. Status: approved
+[2026-04-27T02:48:05.109Z] findBySlug: smilecare-dental-clinic-mnd2rjh5 - Found in DB. Status: approved
+[2026-04-27T02:48:05.167Z] findBySlug: restaurants-best-pizza-mnm6c77s (User: Public)
+[2026-04-27T02:48:05.172Z] findBySlug: test-mnh580gx (User: Public)
+[2026-04-27T02:48:05.249Z] findBySlug: test-mnh4czx8 (User: Public)
+[2026-04-27T02:48:05.296Z] findBySlug: test-mnh4cfax (User: Public)
+[2026-04-27T02:48:05.490Z] findBySlug: hair-salon-mmp8acr9 - Found in DB. Status: approved
+[2026-04-27T02:48:05.560Z] findBySlug: the-mk-tea-stall-mnof3q0j - SUCCESS
+[2026-04-27T02:48:05.613Z] findBySlug: dev-vendor-listing-mnvoe07u - SUCCESS
+[2026-04-27T02:48:05.640Z] findBySlug: new-vrndor-listing-mnqa9xol - SUCCESS
+[2026-04-27T02:48:05.656Z] findBySlug: test-mnuqmwec - Found in DB. Status: approved
+[2026-04-27T02:48:05.762Z] findBySlug: nv1-listing-mnqd29z4 - SUCCESS
+[2026-04-27T02:48:05.803Z] findBySlug: smilecare-dental-clinic-mnd2rjh5 - SUCCESS
+[2026-04-27T02:48:05.830Z] findBySlug: hair-salon-mmp8acr9 - SUCCESS
+[2026-04-27T02:48:05.843Z] findBySlug: restaurants-best-pizza-mnm6c77s - Found in DB. Status: approved
+[2026-04-27T02:48:05.970Z] findBySlug: restaurants-best-pizza-mnm6c77s - SUCCESS
+[2026-04-27T02:48:06.012Z] findBySlug: test-mnh580gx - Found in DB. Status: approved
+[2026-04-27T02:48:06.064Z] findBySlug: test-mnh4czx8 - Found in DB. Status: approved
+[2026-04-27T02:48:06.108Z] findBySlug: test-mnuqmwec - SUCCESS
+[2026-04-27T02:48:06.111Z] findBySlug: test-mnh4cfax - Found in DB. Status: approved
+[2026-04-27T02:48:06.161Z] findBySlug: test-mnh580gx - SUCCESS
+[2026-04-27T02:48:06.197Z] findBySlug: test-mnh4czx8 - SUCCESS
+[2026-04-27T02:48:06.232Z] findBySlug: test-mnh4cfax - SUCCESS
+[2026-04-27T02:48:06.281Z] findBySlug: test-mnh4bnro (User: Public)
+[2026-04-27T02:48:06.313Z] findBySlug: ddf-moga5zbj (User: Public)
+[2026-04-27T02:48:06.335Z] findBySlug: bright-future-academy-mn8n7y7p (User: Public)
+[2026-04-27T02:48:06.360Z] findBySlug: aprin22-b-mo9z88iu (User: Public)
+[2026-04-27T02:48:06.403Z] findBySlug: april22-mo9xllh2 (User: Public)
+[2026-04-27T02:48:06.423Z] findBySlug: sdf-mnz2tiga (User: Public)
+[2026-04-27T02:48:06.474Z] findBySlug: bike-sell-mnw2g11t (User: Public)
+[2026-04-27T02:48:06.501Z] findBySlug: beauty-parlour-mnw25lti (User: Public)
+[2026-04-27T02:48:06.815Z] findBySlug: test-mnh4bnro - Found in DB. Status: approved
+[2026-04-27T02:48:08.492Z] findBySlug: ddf-moga5zbj - Found in DB. Status: approved
+[2026-04-27T02:48:08.498Z] findBySlug: bright-future-academy-mn8n7y7p - Found in DB. Status: approved
+[2026-04-27T02:48:08.521Z] findBySlug: april22-mo9xllh2 - Found in DB. Status: approved
+[2026-04-27T02:48:08.527Z] findBySlug: sdf-mnz2tiga - Found in DB. Status: approved
+[2026-04-27T02:48:08.534Z] findBySlug: nvendor2-lisiting-mnqepey6 - Found in DB. Status: approved
+[2026-04-27T02:48:08.551Z] findBySlug: aprin22-b-mo9z88iu - Found in DB. Status: approved
+[2026-04-27T02:48:08.815Z] findBySlug: test-mnh4bnro - SUCCESS
+[2026-04-27T02:48:08.849Z] findBySlug: bike-sell-mnw2g11t - Found in DB. Status: approved
+[2026-04-27T02:48:08.873Z] findBySlug: ddf-moga5zbj - SUCCESS
+[2026-04-27T02:48:08.892Z] findBySlug: bright-future-academy-mn8n7y7p - SUCCESS
+[2026-04-27T02:48:08.896Z] findBySlug: april22-mo9xllh2 - SUCCESS
+[2026-04-27T02:48:08.934Z] findBySlug: sdf-mnz2tiga - SUCCESS
+[2026-04-27T02:48:08.948Z] findBySlug: nvendor2-lisiting-mnqepey6 - SUCCESS
+[2026-04-27T02:48:08.999Z] findBySlug: karachi-auto-care-workshop-mmgs0upa (User: Public)
+[2026-04-27T02:48:09.007Z] findBySlug: cv-mobvjru4 (User: Public)
+[2026-04-27T02:48:09.017Z] findBySlug: test-mnuqqfno (User: Public)
+[2026-04-27T02:48:09.025Z] findBySlug: test-mnvo4a9o (User: Public)
+[2026-04-27T02:48:09.033Z] findBySlug: pan-service-mnu0njmp (User: Public)
+[2026-04-27T02:48:09.041Z] findBySlug: dsczx-mnip9kwi (User: Public)
+[2026-04-27T02:48:09.045Z] findBySlug: test-mnlhzqse (User: Public)
+[2026-04-27T02:48:09.048Z] findBySlug: facial-women-mnu0kq86 (User: Public)
+[2026-04-27T02:48:09.088Z] findBySlug: beauty-parlour-mnw25lti - Found in DB. Status: approved
+[2026-04-27T02:48:09.173Z] findBySlug: aprin22-b-mo9z88iu - SUCCESS
+[2026-04-27T02:48:09.188Z] findBySlug: bike-sell-mnw2g11t - SUCCESS
+[2026-04-27T02:48:09.342Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - Found in DB. Status: approved
+[2026-04-27T02:48:09.387Z] findBySlug: cv-mobvjru4 - Found in DB. Status: approved
+[2026-04-27T02:48:09.413Z] findBySlug: test-mnuqqfno - Found in DB. Status: approved
+[2026-04-27T02:48:09.426Z] findBySlug: test-mnvo4a9o - Found in DB. Status: approved
+[2026-04-27T02:48:09.432Z] findBySlug: pan-service-mnu0njmp - Found in DB. Status: approved
+[2026-04-27T02:48:11.781Z] findBySlug: beauty-parlour-mnw25lti - SUCCESS
+[2026-04-27T02:48:11.824Z] findBySlug: dev-vendor-listing3-mnvuffaq (User: Public)
+[2026-04-27T02:48:11.831Z] findBySlug: dev-vendor-listing2-mnvspqxo (User: Public)
+[2026-04-27T02:48:12.040Z] findBySlug: karachi-auto-care-workshop-mmgs0upa - SUCCESS
+[2026-04-27T02:48:12.048Z] findBySlug: cv-mobvjru4 - SUCCESS
+[2026-04-27T02:48:12.066Z] findBySlug: test-mnuqqfno - SUCCESS
+[2026-04-27T02:48:12.069Z] findBySlug: dsczx-mnip9kwi - Found in DB. Status: approved
+[2026-04-27T02:48:12.083Z] findBySlug: test-mnvo4a9o - SUCCESS
+[2026-04-27T02:48:12.111Z] findBySlug: test-mnlhzqse - Found in DB. Status: approved
+[2026-04-27T02:48:12.160Z] findBySlug: pan-service-mnu0njmp - SUCCESS
+[2026-04-27T02:48:12.321Z] findBySlug: dev-vendor-listing3-mnvuffaq - Found in DB. Status: approved
+[2026-04-27T02:48:12.324Z] findBySlug: dev-vendor-listing2-mnvspqxo - Found in DB. Status: approved
+[2026-04-27T02:48:12.362Z] findBySlug: dsczx-mnip9kwi - SUCCESS
+[2026-04-27T02:48:12.428Z] findBySlug: test-mnlhzqse - SUCCESS
+[2026-04-27T02:48:12.438Z] findBySlug: dev-vendor-listing3-mnvuffaq - SUCCESS
+[2026-04-27T02:48:12.445Z] findBySlug: dev-vendor-listing2-mnvspqxo - SUCCESS
+[2026-04-27T02:48:12.451Z] findBySlug: facial-women-mnu0kq86 - Found in DB. Status: approved
+[2026-04-27T02:48:12.755Z] findBySlug: facial-women-mnu0kq86 - SUCCESS
+[2026-04-27T02:48:12.850Z] findBySlug: test2-mnhndp3n (User: Public)
+[2026-04-27T02:48:12.862Z] findBySlug: mobile-repair-mnioktfs (User: Public)
+[2026-04-27T02:48:12.869Z] findBySlug: featured-coaching-institute-mna0aar3 (User: Public)
+[2026-04-27T02:48:12.876Z] findBySlug: test-mnfvrz3g (User: Public)
+[2026-04-27T02:48:12.884Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c (User: Public)
+[2026-04-27T02:48:12.896Z] findBySlug: template (User: Public)
+[2026-04-27T02:48:12.903Z] findBySlug: sample-business (User: Public)
+[2026-04-27T02:48:13.633Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T02:48:13.635Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T02:48:13.639Z] findBySlug: test2-mnhndp3n - Found in DB. Status: approved
+[2026-04-27T02:48:13.748Z] findBySlug: mobile-repair-mnioktfs - Found in DB. Status: approved
+[2026-04-27T02:48:13.754Z] findBySlug: test-mnfvrz3g - Found in DB. Status: approved
+[2026-04-27T02:48:13.760Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - Found in DB. Status: approved
+[2026-04-27T02:48:13.771Z] findBySlug: sample-business - NOT FOUND IN DB
+[2026-04-27T02:48:13.772Z] findBySlug: sample-business - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T02:48:13.775Z] findBySlug: test2-mnhndp3n - SUCCESS
+[2026-04-27T02:48:13.886Z] findBySlug: mobile-repair-mnioktfs - SUCCESS
+[2026-04-27T02:48:13.971Z] findBySlug: featured-coaching-institute-mna0aar3 - Found in DB. Status: approved
+[2026-04-27T02:48:14.011Z] findBySlug: test-mnfvrz3g - SUCCESS
+[2026-04-27T02:48:14.114Z] findBySlug: featured-coaching-institute-mna0aar3 - SUCCESS
+[2026-04-27T02:48:14.277Z] findBySlug: pak-digital-marketing-solutions-mmkwsn3c - SUCCESS
+[2026-04-27T02:54:20.417Z] findBySlug: template (User: Public)
+[2026-04-27T02:54:20.461Z] findBySlug: template (User: Public)
+[2026-04-27T02:54:20.546Z] findBySlug: template (User: Public)
+[2026-04-27T02:54:20.696Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T02:54:20.699Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T02:54:20.700Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T02:54:20.701Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T02:54:20.733Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T02:54:20.734Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T02:54:21.475Z] findBySlug: template (User: Public)
+[2026-04-27T02:54:21.494Z] findBySlug: template (User: Public)
+[2026-04-27T02:54:21.510Z] findBySlug: template (User: Public)
+[2026-04-27T02:54:21.615Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T02:54:21.616Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T02:54:21.632Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T02:54:21.633Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T02:54:21.657Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T02:54:21.658Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)

@@ -19,6 +19,7 @@ import MyInquiries from '../../../components/leads/MyInquiries';
 import { chatApi } from '../../../services/chat.service';
 import { useChatSocket } from '../../../hooks/useChat';
 import { usePlanFeature } from '../../../hooks/usePlanFeature';
+import { useSocket } from '../../../context/SocketContext';
 
 export default function GenericDashboard() {
     const router = useRouter();

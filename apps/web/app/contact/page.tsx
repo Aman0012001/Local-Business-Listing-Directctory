@@ -6,8 +6,9 @@ import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import {
     MapPin, Phone, Mail, Clock, Send, MessageSquare,
-    ChevronRight, CheckCircle, AlertCircle
+    ChevronRight, CheckCircle, AlertCircle, HelpCircle, ChevronDown
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const contactInfo = [
     {

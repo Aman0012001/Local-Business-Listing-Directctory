@@ -365,8 +365,8 @@ export default function AccountSettings() {
 
     const handleNotificationToggle = (type: 'email' | 'push', key: string) => {
         setFormData(prev => {
-            const currentSettings = prev.notificationSettings || {} as any;
-            const currentTypeSettings = currentSettings[type] || {};
+            const currentSettings = (prev.notificationSettings || {}) as any;
+            const currentTypeSettings = (currentSettings[type] || {}) as any;
             
             return {
                 ...prev,
@@ -377,7 +377,7 @@ export default function AccountSettings() {
                         [key]: !currentTypeSettings[key]
                     }
                 }
-            };
+            } as typeof prev;
         });
     };
 

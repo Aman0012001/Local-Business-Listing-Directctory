@@ -3620,6 +3620,26 @@
         ]
       }
     },
+    "/api/v1/vendors/slugs/all": {
+      "get": {
+        "operationId": "VendorsController_getAllSlugs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all vendor slugs for static generation",
+        "tags": [
+          "vendors"
+        ]
+      }
+    },
     "/api/v1/businesses": {
       "post": {
         "operationId": "BusinessesController_create",
@@ -6904,7 +6924,7 @@
   },
   "info": {
     "title": "Business SAAS API",
-    "description": "The API documentation for the Local Business Listing and Discovery Platform.",
+    "description": "API documentation for the Discovery Platform.",
     "version": "1.0",
     "contact": {}
   },
