@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../../context/AuthContext';
+import { useSocket } from '../../../context/SocketContext';
 import Link from 'next/link';
 
 // ─── Types ─────────────────────────────────────────────────────────────
@@ -26,6 +27,7 @@ interface Enquiry {
     businessId: string;
     business?: { title: string; slug: string };
     createdAt: string;
+    isRead?: boolean;
 }
 
 // ─── Constants ─────────────────────────────────────────────────────────
@@ -182,6 +184,7 @@ const LIMIT = 15;
 
 export default function VendorEnquiriesPage() {
     const { user } = useAuth();
+    const { refreshCounts } = useSocket();
     const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
     const [stats, setStats] = useState<Record<string, number>>({});
     const [total, setTotal] = useState(0);
@@ -197,23 +200,48 @@ export default function VendorEnquiriesPage() {
     const features = activeSub?.plan?.dashboardFeatures || {};
     const isVendor = user?.role === 'vendor';
 
+    const handleSelectEnquiry = async (enq: Enquiry) => {
+        setSelectedEnquiry(enq);
+        if (!enq.isRead) {
+            try {
+                await api.leads.markRead(enq.id);
+                // Update local state
+                setEnquiries(prev => prev.map(item => item.id === enq.id ? { ...item, isRead: true } : item));
+                // Refresh global counts for sidebar/header
+                refreshCounts();
+                // Update stats locally
+                setStats(prev => ({
+                    ...prev,
+                    new: Math.max(0, (prev.new || 0) - 1)
+                }));
+            } catch (err) {
+                console.error('Failed to mark lead as read:', err);
+            }
+        }
+    };
+
     const fetchEnquiries = useCallback(async (silent = false) => {
         if (!user) { setLoading(false); return; }
         if (!silent) setLoading(true); else setRefreshing(true);
         try {
-            const isVendorOrAdmin = user.role === 'vendor' || user.role === 'admin';
+            const isVendor = user.role === 'vendor';
+            const isAdmin = user.role === 'admin' || user.role === 'superadmin';
             const params: any = { page, limit: LIMIT };
             if (filterStatus) params.status = filterStatus;
 
-            // Only fetch stats if user has vendor or admin role to prevent 403 errors
-            const fetchPromises: Promise<any>[] = [api.leads.getForVendor(params)];
-            if (isVendorOrAdmin) {
-                fetchPromises.push(api.leads.getStats());
+            const fetchPromises: Promise<any>[] = [
+                (isVendor || isAdmin) 
+                    ? api.leads.getForVendor(params) 
+                    : api.leads.getMyEnquiries(params)
+            ];
+            
+            if (isVendor) {
+                fetchPromises.push(api.leads.getStats().catch(() => ({})));
             }
 
             const results = await Promise.allSettled(fetchPromises);
             const enqRes = results[0];
-            const statsRes = isVendorOrAdmin ? results[1] : null;
+            const statsRes = isVendor ? results[1] : null;
 
             if (enqRes.status === 'fulfilled') {
                 setEnquiries(enqRes.value.data || []);
@@ -352,20 +380,22 @@ export default function VendorEnquiriesPage() {
                                     </thead>
                                     <tbody className="divide-y divide-slate-50">
                                         <AnimatePresence>
-                                            {filtered.map((enq, i) => (
+                                            {filtered.map((enq, i) => {
+                                                const isUnread = !enq.isRead;
+                                                return (
                                                 <motion.tr key={enq.id}
                                                     initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
                                                     transition={{ delay: i * 0.03 }}
-                                                    className="hover:bg-violet-50/30 transition-colors group cursor-pointer"
-                                                    onClick={() => setSelectedEnquiry(enq)}
+                                                    className={`hover:bg-violet-50/30 transition-colors group cursor-pointer ${isUnread ? 'bg-violet-50/10' : ''}`}
+                                                    onClick={() => handleSelectEnquiry(enq)}
                                                 >
                                                     <td className="px-6 py-4">
                                                         <div className="flex items-center gap-3">
-                                                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0 ${enq.status === 'new' ? 'bg-gradient-to-br from-violet-200 to-blue-200 text-violet-700' : 'bg-slate-100 text-slate-500'}`}>
+                                                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0 ${isUnread ? 'bg-gradient-to-br from-violet-200 to-blue-200 text-violet-700' : 'bg-slate-100 text-slate-500'}`}>
                                                                 {(enq.name?.[0] || '?').toUpperCase()}
                                                             </div>
                                                             <div>
-                                                                <p className="font-black text-slate-900 text-sm whitespace-nowrap">{enq.name || '—'}</p>
+                                                                <p className={`font-black text-sm whitespace-nowrap ${isUnread ? 'text-slate-900' : 'text-slate-600'}`}>{enq.name || '—'}</p>
                                                                 {enq.email && <p className="text-xs text-slate-400 font-medium whitespace-nowrap">{enq.email}</p>}
                                                                 {enq.phone && <a href={`tel:${enq.phone}`} onClick={e => e.stopPropagation()} className="text-xs text-blue-500 font-bold hover:underline whitespace-nowrap">{enq.phone}</a>}
                                                             </div>
@@ -408,7 +438,8 @@ export default function VendorEnquiriesPage() {
                                                         </button>
                                                     </td>
                                                 </motion.tr>
-                                            ))}
+                                                );
+                                            })}
                                         </AnimatePresence>
                                     </tbody>
                                 </table>
@@ -416,11 +447,13 @@ export default function VendorEnquiriesPage() {
 
                             {/* Mobile cards */}
                             <div className="md:hidden divide-y divide-slate-50">
-                                {filtered.map(enq => (
-                                    <div key={enq.id} className="p-4 flex items-start gap-3" onClick={() => setSelectedEnquiry(enq)}>
-                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black flex-shrink-0 ${enq.status === 'new' ? 'bg-gradient-to-br from-violet-200 to-blue-200 text-violet-700' : 'bg-slate-100 text-slate-500'}`}>
-                                            {(enq.name?.[0] || '?').toUpperCase()}
-                                        </div>
+                                {filtered.map(enq => {
+                                    const isUnread = enq.status === 'new' && !enq.isRead;
+                                    return (
+                                        <div key={enq.id} className={`p-4 flex items-start gap-3 ${isUnread ? 'bg-violet-50/30' : ''}`} onClick={() => handleSelectEnquiry(enq)}>
+                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black flex-shrink-0 ${isUnread ? 'bg-gradient-to-br from-violet-200 to-blue-200 text-violet-700' : 'bg-slate-100 text-slate-500'}`}>
+                                                {(enq.name?.[0] || '?').toUpperCase()}
+                                            </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center justify-between gap-2 mb-1">
                                                 <p className="font-black text-slate-900 text-sm truncate">{enq.name || '—'}</p>
@@ -430,7 +463,8 @@ export default function VendorEnquiriesPage() {
                                             <p className="text-[10px] text-slate-300 font-medium mt-1">{new Date(enq.createdAt).toLocaleDateString()}</p>
                                         </div>
                                     </div>
-                                ))}
+                                    );
+                                })}
                             </div>
 
                             {/* Pagination */}

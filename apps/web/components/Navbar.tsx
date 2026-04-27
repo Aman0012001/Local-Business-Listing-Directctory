@@ -1,23 +1,30 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Menu, ChevronDown, MapPin, User as UserIcon, LogOut, X, Search, Building2, Globe, Bell, Check, Trash2, BellRing, Megaphone, MessageSquare, ChevronRight } from 'lucide-react';
+import { Menu, ChevronDown, LogOut, X, Search, Building2, Globe, Bell, Check, Trash2, BellRing, Megaphone, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
-import { api, getImageUrl } from '../lib/api';
+import { api } from '../lib/api';
 import VendorAvatar from './VendorAvatar';
 import { Category, City } from '../types/api';
 import { usePushNotifications } from '../lib/usePushNotifications';
-import { chatApi } from '../services/chat.service';
 
 export default function Navbar() {
     const { user, logout } = useAuth();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
     const [mobileDropdown, setMobileDropdown] = useState<string | null>(null);
     const [isMounted, setIsMounted] = useState(false);
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [cities, setCities] = useState<City[]>([]);
+    const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+    const [showBell, setShowBell] = useState(false);
+    const [activeSub, setActiveSub] = useState<any>(null);
+    const [loadingSub, setLoadingSub] = useState(true);
+    const bellRef = useRef<HTMLDivElement>(null);
+
+    const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
 
     useEffect(() => {
         setIsMounted(true);
@@ -34,9 +41,6 @@ export default function Navbar() {
             document.body.style.overflow = 'unset';
         };
     }, [isMobileMenuOpen]);
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [cities, setCities] = useState<City[]>([]);
-    const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
     // ── Web Push Notifications ───────────────────────────────────────
     const { supported: pushSupported, permission: pushPermission, isSubscribed: pushSubscribed, subscribe: enablePush, loading: pushLoading } = usePushNotifications(user?.id, true);
@@ -45,28 +49,13 @@ export default function Navbar() {
     const { 
         notifications, 
         unreadCount, 
+        unreadChatCount,
         markAsRead, 
         markAllAsRead, 
         deleteNotification 
     } = useSocket();
-    
-    const [unreadChatCount, setUnreadChatCount] = useState(0);
-    const [showBell, setShowBell] = useState(false);
-    const [activeSub, setActiveSub] = useState<any>(null);
-    const [loadingSub, setLoadingSub] = useState(true);
-    const bellRef = useRef<HTMLDivElement>(null);
-
-    const fetchUnreadChat = useCallback(async () => {
-        if (!user) return;
-        try {
-            const chatRes = await chatApi.getUnreadCount() as any;
-            setUnreadChatCount(chatRes.count || 0);
-        } catch { /* ignore */ }
-    }, [user]);
 
     useEffect(() => {
-        fetchUnreadChat();
-
         const fetchSub = async () => {
             if (!user || user.role !== 'vendor') {
                 setLoadingSub(false);
@@ -83,9 +72,7 @@ export default function Navbar() {
         };
 
         fetchSub();
-        const interval = setInterval(fetchUnreadChat, 30000);
-        return () => clearInterval(interval);
-    }, [fetchUnreadChat, user]);
+    }, [user]);
 
     // Close bell dropdown on outside click
     useEffect(() => {
@@ -104,7 +91,7 @@ export default function Navbar() {
     };
 
     const timeAgo = (date: string) => {
-        if (!isMounted) return '...'; // Prevent mismatch
+        if (!isMounted) return '...'; 
         const diff = Date.now() - new Date(date).getTime();
         const m = Math.floor(diff / 60000);
         if (m < 1) return 'just now';
@@ -119,6 +106,7 @@ export default function Navbar() {
         enquiry_reply: 'bg-green-100 text-green-700',
         new_vendor: 'bg-purple-100 text-purple-700',
         info: 'bg-slate-100 text-slate-500',
+        CHAT_MESSAGE: 'bg-emerald-100 text-emerald-700',
     };
 
     useEffect(() => {
@@ -155,8 +143,7 @@ export default function Navbar() {
                         </Link>
                     </div>
 
-
-                    {/* Centered Desktop Nav Menu - Simplified */}
+                    {/* Desktop Nav Menu */}
                     <div className="hidden lg:flex flex-grow justify-center">
                         <div className="flex items-center gap-1">
                             <Link href="/" className="text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors">
@@ -200,15 +187,6 @@ export default function Navbar() {
                                                     </Link>
                                                 ))}
                                             </div>
-                                            <div className="border-t border-slate-100 mt-4 pt-3 text-center">
-                                                <Link
-                                                    href="/categories"
-                                                    className="text-xs font-bold uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920]"
-                                                    onClick={() => setActiveDropdown(null)}
-                                                >
-                                                    View All Categories
-                                                </Link>
-                                            </div>
                                         </div>
                                     </div>
                                 )}
@@ -248,77 +226,6 @@ export default function Navbar() {
                                                         <span className="text-[10px] text-slate-400 font-medium italic">Fresh arrivals this week</span>
                                                     </div>
                                                 </Link>
-                                                <Link href="/offers-events" onClick={() => setActiveDropdown(null)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
-                                                    <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-500">
-                                                        <Megaphone className="w-4 h-4" />
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-sm font-bold text-slate-900">Offer & Events</span>
-                                                        <span className="text-[10px] text-slate-400 font-medium italic">Best deals & local events</span>
-                                                    </div>
-                                                </Link>
-                                                <Link href="/broadcast-request" onClick={() => setActiveDropdown(null)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
-                                                    <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-500">
-                                                        <Megaphone className="w-4 h-4" />
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-sm font-bold text-slate-900">Broadcast Request</span>
-                                                        <span className="text-[10px] text-slate-400 font-medium italic">Get quotes from experts</span>
-                                                    </div>
-                                                </Link>
-                                                <Link href="/search" onClick={() => setActiveDropdown(null)} className="mt-2 text-center py-2 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-900 border-t border-slate-50 pt-3">
-                                                    Advanced Search
-                                                </Link>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Cities Dropdown */}
-                            <div
-                                className="relative group"
-                                onMouseEnter={() => setActiveDropdown('cities')}
-                                onMouseLeave={() => setActiveDropdown(null)}
-                            >
-                                <button 
-                                    onClick={() => handleDropdownToggle('cities')}
-                                    className="flex items-center gap-1 text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors"
-                                >
-                                    Cities <ChevronDown className="w-3 h-3 opacity-60" />
-                                </button>
-                                {activeDropdown === 'cities' && (
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 pt-4 w-[800px] animate-in fade-in slide-in-from-top-4 duration-500 ease-out-expo" style={{ zIndex: "1000" }}>
-                                        <div className="bg-white rounded-[32px] shadow-premium border border-slate-100 p-8">
-                                            <div className="flex items-center justify-between mb-8">
-                                                <h3 className="text-sm font-black uppercase tracking-[0.3em] text-slate-300">Popular Locations</h3>
-                                                <Link href="/cities" className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline" onClick={() => setActiveDropdown(null)}>Browse All →</Link>
-                                            </div>
-                                            <div className="grid grid-cols-4 gap-8">
-                                                {cities.map((city) => (
-                                                    <Link
-                                                        key={city.id}
-                                                        href={`/cities/${encodeURIComponent(city.name.toLowerCase())}`}
-                                                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group"
-                                                        onClick={() => setActiveDropdown(null)}
-                                                    >
-                                                        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500">
-                                                            <Globe className="w-4 h-4" />
-                                                        </div>
-                                                        <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900">
-                                                            {city.name}
-                                                        </span>
-                                                    </Link>
-                                                ))}
-                                            </div>
-                                            <div className="border-t border-slate-100 mt-4 pt-3 text-center">
-                                                <Link
-                                                    href="/cities"
-                                                    className="text-xs font-bold uppercase tracking-widest text-[#FF7A30] hover:text-[#E86920]"
-                                                    onClick={() => setActiveDropdown(null)}
-                                                >
-                                                    Browse All Cities
-                                                </Link>
                                             </div>
                                         </div>
                                     </div>
@@ -341,13 +248,11 @@ export default function Navbar() {
                                     <span className="text-xs font-medium text-[#202124] max-w-[80px] truncate">{user.fullName || user.email}</span>
                                 </Link>
 
-                                {/* Push Notifications Button */}
                                 {pushSupported && !pushSubscribed && pushPermission === 'default' && (
                                     <button
                                         onClick={enablePush}
                                         disabled={pushLoading}
-                                        title="Enable push notifications"
-                                        className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 transition-all active:scale-95 disabled:opacity-60"
+                                        className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 transition-all"
                                     >
                                         <BellRing className={`w-3.5 h-3.5 ${pushLoading ? 'animate-bounce' : ''}`} />
                                         {pushLoading ? 'Enabling…' : 'Enable Push'}
@@ -355,27 +260,23 @@ export default function Navbar() {
                                 )}
 
                                 {/* Chat Icon */}
-                                {user && (user.role === 'admin' || user.role === 'superadmin' || (activeSub?.plan?.dashboardFeatures?.showChat !== false)) && (
-                                    <Link
-                                        href="/chat"
-                                        className={`relative p-2.5 rounded-xl text-slate-500 hover:text-[#FF7A30] hover:bg-orange-50 transition-all ${loadingSub && user.role === 'vendor' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-                                        title="Messages"
-                                    >
-                                        <MessageSquare className="w-5 h-5" />
-                                        {unreadChatCount > 0 && (
-                                            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-emerald-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
-                                                {unreadChatCount > 9 ? '9+' : unreadChatCount}
-                                            </span>
-                                        )}
-                                    </Link>
-                                )}
+                                <Link
+                                    href="/chat"
+                                    className={`relative p-2.5 rounded-xl text-slate-500 hover:text-[#FF7A30] hover:bg-orange-50 transition-all ${loadingSub && user.role === 'vendor' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+                                >
+                                    <MessageSquare className="w-5 h-5" />
+                                    {unreadChatCount > 0 && (
+                                        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-emerald-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                                            {unreadChatCount > 9 ? '9+' : unreadChatCount}
+                                        </span>
+                                    )}
+                                </Link>
 
                                 {/* Notification Bell */}
                                 <div ref={bellRef} className="relative">
                                     <button
                                         onClick={() => setShowBell(v => !v)}
                                         className="relative p-2.5 rounded-xl text-slate-500 hover:text-[#FF7A30] hover:bg-orange-50 transition-all"
-                                        title="Notifications"
                                     >
                                         <Bell className="w-5 h-5" />
                                         {unreadCount > 0 && (
@@ -422,16 +323,11 @@ export default function Navbar() {
                                                     ))
                                                 )}
                                             </div>
-                                            <div className="border-t border-slate-100 px-4 py-2.5">
-                                                <Link href="/notifications" onClick={() => setShowBell(false)} className="text-[11px] font-bold text-[#FF7A30] hover:text-[#E86920] transition-colors">
-                                                    View all notifications →
-                                                </Link>
-                                            </div>
                                         </div>
                                     )}
                                 </div>
 
-                                <button onClick={logout} className="p-2.5 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all" title="Logout">
+                                <button onClick={logout} className="p-2.5 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all">
                                     <LogOut className="w-5 h-5" />
                                 </button>
                             </div>
@@ -445,7 +341,6 @@ export default function Navbar() {
                         <button
                             onClick={toggleMobileMenu}
                             className="lg:hidden p-2.5 bg-slate-50 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors relative z-[110]"
-                            aria-label="Toggle menu"
                         >
                             {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                         </button>
@@ -455,192 +350,77 @@ export default function Navbar() {
             </div>
 
             {/* Mobile Menu Backdrop */}
-            {isMounted && (
-                <div 
-                    className={`lg:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[80] transition-all duration-300 ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                />
-            )}
+            <AnimatePresence>
+                {isMobileMenuOpen && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="lg:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[80]"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                    />
+                )}
+            </AnimatePresence>
 
             {/* Mobile Menu Drawer */}
-            {isMounted && (
-                <div className={`lg:hidden fixed top-20 left-0 right-0 z-[90] bg-white border-b border-slate-100 shadow-2xl transition-all duration-300 ${isMobileMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}`}>
-                    <div className="p-6 space-y-8 overflow-y-auto max-h-[calc(100vh-5rem)]">
-                        {/* User Profile in Mobile Menu */}
-                        {user ? (
-                            <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                <VendorAvatar src={user.avatarUrl} alt={user.fullName} size="md" />
-                                <div className="flex flex-col">
-                                    <span className="font-bold text-slate-900">{user.fullName || user.email}</span>
-                                    <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-[#FF7A30] uppercase tracking-wider">View Dashboard</Link>
+            <AnimatePresence>
+                {isMobileMenuOpen && (
+                    <motion.div 
+                        initial={{ y: -100, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: -100, opacity: 0 }}
+                        className="lg:hidden fixed top-20 left-0 right-0 z-[90] bg-white border-b border-slate-100 shadow-2xl"
+                    >
+                        <div className="p-6 space-y-8 overflow-y-auto max-h-[calc(100vh-5rem)]">
+                            {user && (
+                                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <VendorAvatar src={user.avatarUrl} alt={user.fullName} size="md" />
+                                    <div className="flex flex-col">
+                                        <span className="font-bold text-slate-900">{user.fullName || user.email}</span>
+                                        <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-[#FF7A30] uppercase tracking-wider">View Dashboard</Link>
+                                    </div>
                                 </div>
-                            </div>
-                        ) : null}
+                            )}
 
-                        <nav className="space-y-3">
-                            <Link 
-                                href="/" 
-                                onClick={() => setIsMobileMenuOpen(false)} 
-                                className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 font-bold text-slate-900 hover:bg-slate-100 transition-colors"
-                            >
-                                Home
-                            </Link>
-                            
-                            {/* Categories Mobile Dropdown */}
-                            <div className="space-y-1">
-                                <button 
-                                    onClick={() => setMobileDropdown(mobileDropdown === 'categories' ? null : 'categories')}
-                                    className={`w-full flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold transition-all ${mobileDropdown === 'categories' ? 'text-[#FF7A30] bg-orange-50/50 border-orange-100' : 'text-slate-700 bg-white'}`}
-                                >
-                                    <span>Categories</span>
-                                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${mobileDropdown === 'categories' ? 'rotate-180' : '-rotate-90 opacity-40'}`} />
-                                </button>
-                                <AnimatePresence>
+                            <nav className="space-y-3">
+                                <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 font-bold text-slate-900">Home</Link>
+                                
+                                <div className="space-y-1">
+                                    <button 
+                                        onClick={() => setMobileDropdown(mobileDropdown === 'categories' ? null : 'categories')}
+                                        className={`w-full flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold transition-all ${mobileDropdown === 'categories' ? 'text-[#FF7A30] bg-orange-50/50 border-orange-100' : 'text-slate-700 bg-white'}`}
+                                    >
+                                        <span>Categories</span>
+                                        <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${mobileDropdown === 'categories' ? 'rotate-180' : '-rotate-90 opacity-40'}`} />
+                                    </button>
                                     {mobileDropdown === 'categories' && (
-                                        <motion.div 
-                                            initial={{ height: 0, opacity: 0 }}
-                                            animate={{ height: 'auto', opacity: 1 }}
-                                            exit={{ height: 0, opacity: 0 }}
-                                            transition={{ duration: 0.2 }}
-                                            className="overflow-hidden"
-                                        >
-                                            <div className="grid grid-cols-1 gap-2 p-2 bg-slate-50/50 rounded-2xl mt-1 border border-slate-100">
-                                                {categories.map((cat) => (
-                                                    <Link
-                                                        key={cat.id}
-                                                        href={`/categories/${cat.slug}`}
-                                                        onClick={() => setIsMobileMenuOpen(false)}
-                                                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-white transition-all group"
-                                                    >
-                                                        <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500">
-                                                            <Search className="w-3.5 h-3.5" />
-                                                        </div>
-                                                        <span className="text-sm font-semibold text-slate-700">{cat.name}</span>
-                                                    </Link>
-                                                ))}
-                                                <Link
-                                                    href="/categories"
-                                                    onClick={() => setIsMobileMenuOpen(false)}
-                                                    className="p-3 text-center text-xs font-bold text-[#FF7A30] uppercase tracking-widest border-t border-slate-100 mt-1"
-                                                >
-                                                    View All Categories
+                                        <div className="grid grid-cols-1 gap-2 p-2 bg-slate-50/50 rounded-2xl mt-1 border border-slate-100">
+                                            {categories.map((cat) => (
+                                                <Link key={cat.id} href={`/categories/${cat.slug}`} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white transition-all">
+                                                    <span className="text-sm font-semibold text-slate-700">{cat.name}</span>
                                                 </Link>
-                                            </div>
-                                        </motion.div>
+                                            ))}
+                                        </div>
                                     )}
-                                </AnimatePresence>
-                            </div>
+                                </div>
+                            </nav>
 
-                            {/* Businesses Mobile Dropdown */}
-                            <div className="space-y-1">
-                                <button 
-                                    onClick={() => setMobileDropdown(mobileDropdown === 'businesses' ? null : 'businesses')}
-                                    className={`w-full flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold transition-all ${mobileDropdown === 'businesses' ? 'text-[#FF7A30] bg-orange-50/50 border-orange-100' : 'text-slate-700 bg-white'}`}
-                                >
-                                    <span>Businesses</span>
-                                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${mobileDropdown === 'businesses' ? 'rotate-180' : '-rotate-90 opacity-40'}`} />
+                            {!user && (
+                                <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
+                                    <Link href="/login" onClick={() => setIsMobileMenuOpen(false)} className="py-4 text-center rounded-2xl font-bold bg-slate-100 text-[#2D3E50]">Log In</Link>
+                                    <Link href="/register?role=vendor" onClick={() => setIsMobileMenuOpen(false)} className="py-4 text-center rounded-2xl font-bold bg-[#FF7A30] text-white">Join Us</Link>
+                                </div>
+                            )}
+
+                            {user && (
+                                <button onClick={() => { logout(); setIsMobileMenuOpen(false); }} className="w-full py-4 rounded-2xl font-bold text-red-600 bg-red-50 flex items-center justify-center gap-2">
+                                    <LogOut className="w-4 h-4" /> Sign Out
                                 </button>
-                                <AnimatePresence>
-                                    {mobileDropdown === 'businesses' && (
-                                        <motion.div 
-                                            initial={{ height: 0, opacity: 0 }}
-                                            animate={{ height: 'auto', opacity: 1 }}
-                                            exit={{ height: 0, opacity: 0 }}
-                                            transition={{ duration: 0.2 }}
-                                            className="overflow-hidden"
-                                        >
-                                            <div className="flex flex-col gap-1 p-2 bg-slate-50/50 rounded-2xl mt-1 border border-slate-100">
-                                                <Link href="/search?filter=featured" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white transition-all">
-                                                    <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-[#FF7A30]">
-                                                        <Building2 className="w-4 h-4" />
-                                                    </div>
-                                                    <span className="text-sm font-bold text-slate-700">Featured</span>
-                                                </Link>
-                                                <Link href="/search?filter=new" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white transition-all">
-                                                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
-                                                        <Search className="w-4 h-4" />
-                                                    </div>
-                                                    <span className="text-sm font-bold text-slate-700">New Listings</span>
-                                                </Link>
-                                                <Link href="/offers-events" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white transition-all">
-                                                    <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-500">
-                                                        <Megaphone className="w-4 h-4" />
-                                                    </div>
-                                                    <span className="text-sm font-bold text-slate-700">Offer & Events</span>
-                                                </Link>
-                                                <Link href="/broadcast-request" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white transition-all">
-                                                    <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-500">
-                                                        <Megaphone className="w-4 h-4" />
-                                                    </div>
-                                                    <span className="text-sm font-bold text-slate-700">Broadcast Request</span>
-                                                </Link>
-                                            </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-
-                            {/* Cities Mobile Dropdown */}
-                            <div className="space-y-1">
-                                <button 
-                                    onClick={() => setMobileDropdown(mobileDropdown === 'cities' ? null : 'cities')}
-                                    className={`w-full flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold transition-all ${mobileDropdown === 'cities' ? 'text-[#FF7A30] bg-orange-50/50 border-orange-100' : 'text-slate-700 bg-white'}`}
-                                >
-                                    <span>Cities</span>
-                                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${mobileDropdown === 'cities' ? 'rotate-180' : '-rotate-90 opacity-40'}`} />
-                                </button>
-                                <AnimatePresence>
-                                    {mobileDropdown === 'cities' && (
-                                        <motion.div 
-                                            initial={{ height: 0, opacity: 0 }}
-                                            animate={{ height: 'auto', opacity: 1 }}
-                                            exit={{ height: 0, opacity: 0 }}
-                                            transition={{ duration: 0.2 }}
-                                            className="overflow-hidden"
-                                        >
-                                            <div className="grid grid-cols-1 gap-2 p-2 bg-slate-50/50 rounded-2xl mt-1 border border-slate-100">
-                                                {cities.map((city) => (
-                                                    <Link
-                                                        key={city.id}
-                                                        href={`/cities/${encodeURIComponent(city.name.toLowerCase())}`}
-                                                        onClick={() => setIsMobileMenuOpen(false)}
-                                                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-white transition-all"
-                                                    >
-                                                        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500">
-                                                            <Globe className="w-4 h-4" />
-                                                        </div>
-                                                        <span className="text-sm font-semibold text-slate-700">{city.name}</span>
-                                                    </Link>
-                                                ))}
-                                                <Link
-                                                    href="/cities"
-                                                    onClick={() => setIsMobileMenuOpen(false)}
-                                                    className="p-3 text-center text-xs font-bold text-[#FF7A30] uppercase tracking-widest border-t border-slate-100 mt-1"
-                                                >
-                                                    Browse All Cities
-                                                </Link>
-                                            </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-                        </nav>
-
-                        {!user && (
-                            <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
-                                <Link href="/login" onClick={() => setIsMobileMenuOpen(false)} className="py-4 text-center rounded-2xl font-bold bg-slate-100 text-[#2D3E50]">Log In</Link>
-                                <Link href="/register?role=vendor" onClick={() => setIsMobileMenuOpen(false)} className="py-4 text-center rounded-2xl font-bold bg-[#FF7A30] text-white">Join Us</Link>
-                            </div>
-                        )}
-
-                        {user && (
-                            <button onClick={() => { logout(); setIsMobileMenuOpen(false); }} className="w-full py-4 rounded-2xl font-bold text-red-600 bg-red-50 flex items-center justify-center gap-2">
-                                <LogOut className="w-4 h-4" /> Sign Out
-                            </button>
-                        )}
-                    </div>
-                </div>
-            )}
+                            )}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </nav>
     );
 }

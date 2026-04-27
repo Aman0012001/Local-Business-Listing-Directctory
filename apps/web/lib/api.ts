@@ -447,6 +447,9 @@ export const api = {
             method: 'PATCH',
             body: JSON.stringify({ status }),
         }),
+        markRead: (id: string) => fetcher<any>(`/leads/${id}/read`, {
+            method: 'PATCH'
+        }),
         createLead: (data: {
             businessId: string;
             name: string;

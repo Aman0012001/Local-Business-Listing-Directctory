@@ -146,18 +146,20 @@ export default function GenericDashboard() {
         };
     }, [socket]);
 
+    const { unreadChatCount, newEnquiryCount } = useSocket();
+
     const vendorStats = [
         { label: 'Total Listings', value: stats?.businessCount || '0', icon: ListTree, color: 'bg-gradient-to-br text-white from-blue-600 to-indigo-700', shadow: 'shadow-blue-500/10', onClick: () => router.push('/listings'), show: hasFeature('showListings') },
         { label: 'Pending Approval', value: stats?.pendingCount || '0', icon: Clock, color: 'bg-gradient-to-br from-amber-400 to-orange-600', shadow: 'shadow-amber-500/10', onClick: () => router.push('/pending-listings'), show: hasFeature('showListings') },
         { label: 'Total Views', value: stats?.totalViews || '0', icon: TrendingUp, color: 'bg-gradient-to-br from-emerald-500 to-teal-700', shadow: 'shadow-emerald-500/10', show: hasFeature('showAnalytics') },
-        { label: 'Live Chat', value: String(conversations.length), icon: MessageSquare, color: 'bg-gradient-to-br from-indigo-500 to-blue-700', shadow: 'shadow-indigo-500/10', onClick: () => router.push('/chat'), show: hasFeature('showChat') },
-        { label: 'New Leads', value: String(newLeadsCount), icon: Zap, color: 'bg-gradient-to-br from-orange-400 to-red-600', shadow: 'shadow-orange-500/10', show: hasFeature('showLeads') },
+        { label: 'Live Chat', value: String(unreadChatCount), icon: MessageSquare, color: 'bg-gradient-to-br from-indigo-500 to-blue-700', shadow: 'shadow-indigo-500/10', onClick: () => router.push('/chat'), show: hasFeature('showChat') },
+        { label: 'New Leads', value: String(newEnquiryCount), icon: Zap, color: 'bg-gradient-to-br from-orange-400 to-red-600', shadow: 'shadow-orange-500/10', onClick: () => router.push('/messages'), show: hasFeature('showLeads') },
         { label: 'Total Reviews', value: stats?.totalReviews || recentReviews.length || '0', icon: Star, color: 'bg-gradient-to-br from-pink-500 to-rose-700', shadow: 'shadow-pink-500/10', show: hasFeature('showReviews') },
     ].filter(s => (s as any).show !== false);
 
     const userStats = [
         { label: 'Saved Businesses', value: String(stats?.savedCount || 0), icon: Heart, color: 'bg-gradient-to-br from-rose-500 to-rose-700', shadow: 'shadow-rose-500/10', onClick: () => router.push('/saved') },
-        { label: 'Messages', value: String(conversations.length), icon: MessageSquare, color: 'bg-gradient-to-br from-indigo-500 to-indigo-700', shadow: 'shadow-indigo-500/10', onClick: () => router.push('/chat') },
+        { label: 'Messages', value: String(unreadChatCount), icon: MessageSquare, color: 'bg-gradient-to-br from-indigo-500 to-indigo-700', shadow: 'shadow-indigo-500/10', onClick: () => router.push('/chat') },
         { label: 'Your Reviews', value: String(stats?.reviewsCount || 0), icon: Star, color: 'bg-gradient-to-br from-amber-400 to-amber-600', shadow: 'shadow-amber-500/10' },
         { label: 'Notifications', value: String(stats?.unreadNotifs || 0), icon: Bell, color: 'bg-gradient-to-br from-blue-500 to-blue-700', shadow: 'shadow-blue-500/10', onClick: () => router.push('/notifications') },
     ];
@@ -285,9 +287,9 @@ export default function GenericDashboard() {
             {/* Stats Grid */}
             <StatsGrid stats={isVendor || isAdmin ? vendorStats : userStats} />
 
-            <div className="grid xl:grid-cols-12 gap-6 lg:gap-8 items-start">
+            <div className="grid lg:grid-cols-12 gap-6 lg:gap-8 items-start">
                 {/* Main Column */}
-                <div className="xl:col-span-8 space-y-6 lg:space-y-8">
+                <div className="lg:col-span-8 space-y-6 lg:space-y-8">
                     {/* Leads Section */}
                     {(isVendor || isAdmin) ? (
                         hasFeature('showLeads') && (
@@ -353,7 +355,7 @@ export default function GenericDashboard() {
                     )}
 
                     {/* Saved & Following Section */}
-                    <div className="grid sm:grid-cols-2 gap-6 lg:gap-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 lg:gap-8">
                         {((isVendor || isAdmin) ? hasFeature('showSaved') : true) && (
                             <section className="bg-white rounded-3xl p-4 sm:p-6 lg:p-8 border border-slate-100 shadow-sm flex flex-col">
                                 <div className="flex items-center justify-between mb-8">

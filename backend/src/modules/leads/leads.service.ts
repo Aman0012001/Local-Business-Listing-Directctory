@@ -285,6 +285,8 @@ export class LeadsService {
 
         if (!vendor) {
             const userUser = await this.entityManager.findOne(User, { where: { id: userId }, select: ['id', 'role'] });
+            
+            // If user has VENDOR role but no record, create it
             if (userUser && userUser.role === UserRole.VENDOR) {
                 const newVendor = this.vendorRepository.create({ userId, isVerified: false });
                 try {
@@ -294,7 +296,13 @@ export class LeadsService {
                 }
                 vendor = await this.vendorRepository.findOne({ where: { userId } });
             }
+            
+            // If still no vendor record
             if (!vendor) {
+                // If it's an admin/superadmin, return empty stats instead of throwing
+                if (userUser && (userUser.role === UserRole.ADMIN || userUser.role === UserRole.SUPERADMIN)) {
+                    return { total: 0, new: 0, unread: 0, contacted: 0, converted: 0, lost: 0 };
+                }
                 throw new ForbiddenException('Only vendors can view stats');
             }
         }
@@ -308,10 +316,34 @@ export class LeadsService {
             .groupBy('lead.status')
             .getRawMany();
 
-        return stats.reduce((acc, curr) => {
+        const unreadCount = await this.leadRepository
+            .createQueryBuilder('lead')
+            .innerJoin('lead.business', 'business')
+            .where('business.vendorId = :vendorId', { vendorId: vendor.id })
+            .andWhere('lead.isRead = :isRead', { isRead: false })
+            .getCount();
+
+        const result = stats.reduce((acc, curr) => {
             acc[curr.status] = parseInt(curr.count);
             return acc;
         }, {});
+
+        return {
+            ...result,
+            unread: unreadCount,
+            new: unreadCount // Map unread to 'new' for the badge
+        };
+    }
+
+    /**
+     * Mark a lead as read
+     */
+    async markAsRead(id: string, userId: string) {
+        const lead = await this.findOne(id, userId);
+        if (!lead.isRead) {
+            await this.leadRepository.update(id, { isRead: true });
+        }
+        return { success: true };
     }
     /**
      * Vendor replies to a user enquiry

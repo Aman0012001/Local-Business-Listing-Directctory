@@ -99,6 +99,9 @@ export class Lead {
     @Column({ name: 'vendor_replied_at', nullable: true, type: 'timestamp' })
     vendorRepliedAt: Date;
 
+    @Column({ name: 'is_read', default: false })
+    isRead: boolean;
+
     @CreateDateColumn({ name: 'created_at' })
     @Index()
     createdAt: Date;

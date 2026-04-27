@@ -237,21 +237,25 @@ export default function VendorLeadsPage() {
         if (!user) { setLoading(false); return; }
         if (!silent) setLoading(true); else setRefreshing(true);
         try {
-            const isVendorOrAdmin = user.role === 'vendor' || user.role === 'admin';
+            const isVendor = user.role === 'vendor';
+            const isAdmin = user.role === 'admin' || user.role === 'superadmin';
             const params: any = { page, limit: LIMIT };
             if (filterStatus) params.status = filterStatus;
             if (filterType) params.type = filterType;
 
-            // Fetch leads and stats independently so one failure doesn't block the other
-            // Only fetch stats if user has vendor or admin role to prevent 403 errors
-            const fetchPromises: Promise<any>[] = [api.leads.getForVendor(params)];
-            if (isVendorOrAdmin) {
-                fetchPromises.push(api.leads.getStats());
+            const fetchPromises: Promise<any>[] = [
+                (isVendor || isAdmin) 
+                    ? api.leads.getForVendor(params) 
+                    : api.leads.getMyEnquiries(params)
+            ];
+
+            if (isVendor) {
+                fetchPromises.push(api.leads.getStats().catch(() => ({})));
             }
 
             const results = await Promise.allSettled(fetchPromises);
             const leadsRes = results[0];
-            const statsRes = isVendorOrAdmin ? results[1] : null;
+            const statsRes = isVendor ? results[1] : null;
 
             if (leadsRes.status === 'fulfilled') {
                 setLeads(leadsRes.value.data || []);

@@ -12,8 +12,11 @@ import Link from 'next/link';
 import { usePlanFeature } from '../../../hooks/usePlanFeature';
 import { FeatureGate } from '../../../components/vendor/FeatureGate';
 
+import { useSocket } from '../../../context/SocketContext';
+
 export default function ChatDashboard() {
     const { user } = useAuth();
+    const { refreshCounts, markChatAsRead } = useSocket();
     const isVendor = user?.role === 'vendor';
     const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
 
@@ -58,6 +61,13 @@ export default function ChatDashboard() {
     useEffect(() => {
         fetchConversations();
     }, []); 
+
+    // Refresh counts when conversation is selected or list changes
+    useEffect(() => {
+        if (selectedConvId) {
+            markChatAsRead(selectedConvId);
+        }
+    }, [selectedConvId, conversations.length]);
 
     // Real-time: listen for new conversations and message updates
     useEffect(() => {
@@ -160,10 +170,10 @@ export default function ChatDashboard() {
 
     return (
         <FeatureGate feature="showChat" title="Premium Messaging Locked" description="Real-time chat with customers is a premium feature. Upgrade to professional plans to interact instantly with your audience.">
-            <div className="flex flex-col h-[calc(100vh-160px)] overflow-hidden">
-                <div className="flex-1 flex w-full gap-6 overflow-hidden">
+            <div className="flex flex-col h-[calc(100vh-140px)] md:h-[calc(100vh-160px)] overflow-hidden">
+                <div className="flex-1 flex w-full gap-4 md:gap-6 overflow-hidden relative">
                     {/* Desktop Sidebar / Conversation List */}
-                    <div className={`flex-col bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300 ${selectedConvId ? 'hidden md:flex' : 'flex'} w-full md:w-80 lg:w-96`}>
+                    <div className={`flex-col bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300 ${selectedConvId ? 'hidden md:flex' : 'flex'} w-full md:w-72 lg:w-96`}>
                         <div className="p-6 border-b border-slate-100 bg-white">
                             <div className="flex items-center justify-between mb-6">
                                 <h2 className="text-2xl font-black text-slate-900 tracking-tight">Messages</h2>

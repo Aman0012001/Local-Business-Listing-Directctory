@@ -18,8 +18,6 @@ export default function DashboardLayout({
     const router = useRouter();
     const [isChecking, setIsChecking] = useState(true);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [unreadNotifs, setUnreadNotifs] = useState(0);
-    const [unreadMessages, setUnreadMessages] = useState(0);
 
     useEffect(() => {
         if (!loading) {
@@ -28,24 +26,9 @@ export default function DashboardLayout({
                 setIsChecking(false);
             } else {
                 setIsChecking(false);
-                fetchCounts();
             }
         }
     }, [user, loading, router]);
-
-    const fetchCounts = async () => {
-        if (!user) return;
-        try {
-            const [notifRes, chatRes] = await Promise.all([
-                api.notifications.getAll() as any,
-                chatApi.getUnreadCount() as any
-            ]);
-            setUnreadNotifs(notifRes.unreadCount || 0);
-            setUnreadMessages(chatRes.count || 0);
-        } catch (err) {
-            console.error('Failed to fetch counts in layout', err);
-        }
-    };
 
     return (
         <div className="flex h-screen bg-[#F8FAFC] overflow-hidden">
@@ -78,8 +61,6 @@ export default function DashboardLayout({
                             <div className="relative z-10">
                                 <DashboardHeader 
                                     toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} 
-                                    unreadNotifications={unreadNotifs}
-                                    unreadMessages={unreadMessages}
                                 />
 
                                 <main className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 pb-12">

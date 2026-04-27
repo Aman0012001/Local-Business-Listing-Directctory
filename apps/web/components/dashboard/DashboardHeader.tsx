@@ -8,6 +8,7 @@ import VendorAvatar from '../VendorAvatar';
 import { api } from '../../lib/api';
 import { Category, City } from '../../types/api';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSocket } from '../../context/SocketContext';
 
 interface DashboardHeaderProps {
     toggleSidebar: () => void;
@@ -15,8 +16,14 @@ interface DashboardHeaderProps {
     unreadMessages?: number;
 }
 
-export default function DashboardHeader({ toggleSidebar, unreadNotifications = 0, unreadMessages = 0 }: DashboardHeaderProps) {
+export default function DashboardHeader({ toggleSidebar, unreadNotifications: propUnreadNotifs, unreadMessages: propUnreadMessages }: DashboardHeaderProps) {
     const { user } = useAuth();
+    const { unreadChatCount, unreadCount: unreadNotificationCount } = useSocket();
+    
+    // Use socket counts if available, otherwise fallback to props
+    const unreadMessages = propUnreadMessages !== undefined ? propUnreadMessages : unreadChatCount;
+    const unreadNotifications = propUnreadNotifs !== undefined ? propUnreadNotifs : unreadNotificationCount;
+
     const [categories, setCategories] = useState<Category[]>([]);
     const [cities, setCities] = useState<City[]>([]);
     const [activeDropdown, setActiveDropdown] = useState<string | null>(null);

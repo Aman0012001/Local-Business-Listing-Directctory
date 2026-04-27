@@ -9,6 +9,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
+import { useSocket } from '../../../context/SocketContext';
 
 interface Notification {
     id: string;
@@ -22,51 +23,35 @@ interface Notification {
 
 export default function NotificationsPage() {
     const { user } = useAuth();
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { 
+        notifications: socketNotifications, 
+        markAsRead: socketMarkAsRead, 
+        markAllAsRead: socketMarkAllAsRead, 
+        deleteNotification: socketDeleteNotification,
+        refreshCounts 
+    } = useSocket();
+    
+    const [loading, setLoading] = useState(false);
     const [filter, setFilter] = useState<'all' | 'unread'>('all');
 
-    const fetchNotifications = async () => {
-        setLoading(true);
-        try {
-            const data: any = await api.notifications.getAll();
-            setNotifications(data.notifications || []);
-        } catch (error) {
-            console.error('Failed to fetch notifications:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
-        if (user) fetchNotifications();
+        if (user) {
+            refreshCounts();
+            // Automatically mark all as read when page is viewed
+            socketMarkAllAsRead();
+        }
     }, [user]);
 
-    const markAsRead = async (id: string) => {
-        try {
-            await api.notifications.markRead(id);
-            setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
-        } catch (error) {
-            console.error('Failed to mark read:', error);
-        }
+    const handleMarkAsRead = async (id: string) => {
+        await socketMarkAsRead(id);
     };
 
-    const markAllRead = async () => {
-        try {
-            await api.notifications.markAllRead();
-            setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-        } catch (error) {
-            console.error('Failed to mark all read:', error);
-        }
+    const handleMarkAllRead = async () => {
+        await socketMarkAllAsRead();
     };
 
-    const deleteNotification = async (id: string) => {
-        try {
-            await api.notifications.delete(id);
-            setNotifications(prev => prev.filter(n => n.id !== id));
-        } catch (error) {
-            console.error('Failed to delete notification:', error);
-        }
+    const handleDeleteNotification = async (id: string) => {
+        await socketDeleteNotification(id);
     };
 
     const getIcon = (type: string) => {
@@ -80,10 +65,10 @@ export default function NotificationsPage() {
     };
 
     const displayNotifications = filter === 'unread'
-        ? notifications.filter(n => !n.isRead)
-        : notifications;
+        ? socketNotifications.filter((n: any) => !n.isRead)
+        : socketNotifications;
 
-    const unreadCount = notifications.filter(n => !n.isRead).length;
+    const unreadCount = socketNotifications.filter((n: any) => !n.isRead).length;
 
     return (
         <div className="max-w-4xl mx-auto p-6 animate-in fade-in duration-700">
@@ -95,7 +80,7 @@ export default function NotificationsPage() {
 
                 {unreadCount > 0 && (
                     <button
-                        onClick={markAllRead}
+                        onClick={handleMarkAllRead}
                         className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-900 rounded-2xl font-bold hover:bg-slate-50 transition-all active:scale-95 shadow-sm"
                     >
                         <CheckCircle2 className="w-5 h-5 text-emerald-500" />
@@ -129,7 +114,7 @@ export default function NotificationsPage() {
             ) : displayNotifications.length > 0 ? (
                 <div className="space-y-4">
                     <AnimatePresence mode='popLayout'>
-                        {displayNotifications.map((n) => (
+                        {displayNotifications.map((n: any) => (
                             <motion.div
                                 layout
                                 initial={{ opacity: 0, y: 20 }}
@@ -158,7 +143,7 @@ export default function NotificationsPage() {
                                         <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                                             {!n.isRead && (
                                                 <button
-                                                    onClick={() => markAsRead(n.id)}
+                                                    onClick={() => handleMarkAsRead(n.id)}
                                                     className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors shadow-sm"
                                                     title="Mark as read"
                                                 >
@@ -166,7 +151,7 @@ export default function NotificationsPage() {
                                                 </button>
                                             )}
                                             <button
-                                                onClick={() => deleteNotification(n.id)}
+                                                onClick={() => handleDeleteNotification(n.id)}
                                                 className="p-2 bg-rose-50 text-rose-500 rounded-lg hover:bg-rose-100 transition-colors shadow-sm"
                                                 title="Delete"
                                             >

@@ -14,6 +14,7 @@ import { getImageUrl, api } from '../../lib/api';
 import VendorAvatar from '../VendorAvatar';
 import { chatApi } from '../../services/chat.service';
 import { usePlanFeature, DashboardFeatures } from '../../hooks/usePlanFeature';
+import { useSocket } from '../../context/SocketContext';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -23,8 +24,7 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     const { user, logout } = useAuth();
     const pathname = usePathname();
-    const [newEnquiryCount, setNewEnquiryCount] = useState(0);
-    const [unreadChatCount, setUnreadChatCount] = useState(0);
+    const { unreadChatCount, unreadCount: unreadNotificationCount, newEnquiryCount } = useSocket();
     const [newBroadcastCount, setNewBroadcastCount] = useState(0);
     const { hasFeature, planName } = usePlanFeature();
 
@@ -41,12 +41,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             const isVendorOrAdmin = user?.role === 'vendor' || user?.role === 'admin' || user?.role === 'superadmin';
             if (!isVendorOrAdmin) return;
 
-            api.leads.getStats()
-                .then((stats: any) => setNewEnquiryCount(stats?.new || 0))
-                .catch(() => { });
-            chatApi.getUnreadCount()
-                .then((res: any) => setUnreadChatCount(res?.count || 0))
-                .catch(() => { });
             api.broadcasts.getStats()
                 .then((res: any) => setNewBroadcastCount(res?.newCount || 0))
                 .catch(() => { });
@@ -73,7 +67,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         { name: 'Hot Demand Insights', icon: TrendingUp, href: '/demand', badge: null, feature: 'showDemand' },
         { name: 'Subscription & Billing', icon: CreditCard, href: '/subscription', badge: null },
         { name: 'Broadcast Feed', icon: Megaphone, href: '/broadcasts', badge: newBroadcastCount > 0 ? String(newBroadcastCount) : null, feature: 'showBroadcast' },
-        { name: 'Notifications', icon: Bell, href: '/notifications', badge: null },
+        { name: 'Notifications', icon: Bell, href: '/notifications', badge: unreadNotificationCount > 0 ? String(unreadNotificationCount) : null },
         { name: 'Affiliate', icon: Gift, href: '/affiliate', badge: 'Rewards' },
         { name: 'Settings', icon: Settings, href: '/settings', badge: null },
     ];
@@ -205,7 +199,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             {/* ── Sidebar (Combined Desktop & Mobile Logic) ── */}
             <aside 
                 className={`
-                    fixed inset-y-0 left-0 z-[50] w-[300px] bg-white border-r border-slate-100
+                    fixed inset-y-0 left-0 z-[50] w-72 bg-white border-r border-slate-100
                     transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) lg:relative lg:translate-x-0
                     ${isOpen ? 'translate-x-0 shadow-[20px_0_60px_-15px_rgba(0,0,0,0.1)]' : '-translate-x-full lg:translate-x-0'}
                 `}

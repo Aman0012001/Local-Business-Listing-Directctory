@@ -107,4 +107,13 @@ export class LeadsController {
     ) {
         return this.leadsService.replyToEnquiry(id, message, user.id);
     }
+
+    @Patch(':id/read')
+    @Roles(UserRole.VENDOR, UserRole.ADMIN)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Mark lead as read' })
+    @ApiResponse({ status: 200, description: 'Lead marked as read' })
+    async markAsRead(@Param('id', ParseUuidPipe) id: string, @CurrentUser() user: User) {
+        return this.leadsService.markAsRead(id, user.id);
+    }
 }

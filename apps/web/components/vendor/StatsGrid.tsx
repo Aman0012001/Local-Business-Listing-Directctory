@@ -54,7 +54,7 @@ const defaultStats = [
 
 export default function StatsGrid({ stats = defaultStats }: StatsGridProps) {
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-6 gap-4 sm:gap-6 mb-8 lg:mb-12">
             {stats.map((stat) => (
                 <div
                     key={stat.label}

@@ -10,9 +10,13 @@ interface SocketContextType {
     connected: boolean;
     notifications: any[];
     unreadCount: number;
+    unreadChatCount: number;
+    newEnquiryCount: number;
     markAsRead: (id: string) => Promise<void>;
     markAllAsRead: () => Promise<void>;
     deleteNotification: (id: string) => Promise<void>;
+    refreshCounts: () => Promise<void>;
+    markChatAsRead: (id: string) => Promise<void>;
 }
 
 const SocketContext = createContext<SocketContextType>({
@@ -20,9 +24,13 @@ const SocketContext = createContext<SocketContextType>({
     connected: false,
     notifications: [],
     unreadCount: 0,
+    unreadChatCount: 0,
+    newEnquiryCount: 0,
     markAsRead: async () => {},
     markAllAsRead: async () => {},
     deleteNotification: async () => {},
+    refreshCounts: async () => {},
+    markChatAsRead: async () => {},
 });
 
 const isProd = process.env.NODE_ENV === 'production';
@@ -43,24 +51,35 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     const [connected, setConnected] = useState(false);
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [unreadChatCount, setUnreadChatCount] = useState(0);
+    const [newEnquiryCount, setNewEnquiryCount] = useState(0);
 
-    const fetchNotifications = async () => {
+    const fetchCounts = async () => {
         if (!user) return;
         try {
-            const res = await api.notifications.getAll() as any;
-            setNotifications(res.notifications || []);
-            setUnreadCount(res.unreadCount || 0);
+            const [notifRes, chatRes, leadStats] = await Promise.all([
+                api.notifications.getAll() as any,
+                api.get('/chat/unread-count') as any,
+                (user.role === 'vendor') 
+                    ? api.leads.getStats().catch(() => ({ new: 0 }))
+                    : Promise.resolve({ new: 0 })
+            ]);
+            setNotifications(notifRes.notifications || []);
+            setUnreadCount(notifRes.unreadCount || 0);
+            setUnreadChatCount(chatRes.count || 0);
+            setNewEnquiryCount(leadStats?.new || 0);
         } catch (err) {
-            console.error('[SocketContext] Failed to fetch notifications:', err);
+            console.error('[SocketContext] Failed to fetch counts:', err);
         }
     };
 
     useEffect(() => {
         if (user) {
-            fetchNotifications();
+            fetchCounts();
         } else {
             setNotifications([]);
             setUnreadCount(0);
+            setUnreadChatCount(0);
         }
     }, [user]);
 
@@ -97,8 +116,9 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
             setNotifications(prev => [notif, ...prev].slice(0, 50));
             setUnreadCount(prev => prev + 1);
             
-            // Show toast if desired
-            // toast.success(notif.title);
+            if (notif.type === 'CHAT_MESSAGE') {
+                setUnreadChatCount(prev => prev + 1);
+            }
         });
 
         // Real-time subscription sync
@@ -154,15 +174,29 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         }
     };
 
+    const markChatAsRead = async (conversationId: string) => {
+        try {
+            await api.post(`/chat/conversations/${conversationId}/read`, {});
+            // Refresh counts to be sure we have the latest from server
+            await fetchCounts();
+        } catch (err) {
+            console.error('Failed to mark chat as read:', err);
+        }
+    };
+
     return (
         <SocketContext.Provider value={{ 
             socket, 
             connected, 
             notifications, 
             unreadCount, 
+            unreadChatCount,
+            newEnquiryCount,
             markAsRead, 
             markAllAsRead, 
-            deleteNotification 
+            deleteNotification,
+            refreshCounts: fetchCounts,
+            markChatAsRead
         }}>
             {children}
         </SocketContext.Provider>
