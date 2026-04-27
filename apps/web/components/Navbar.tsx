@@ -136,10 +136,8 @@ export default function Navbar() {
 
                     {/* Logo Area */}
                     <div className="flex-shrink-0 flex items-center">
-                        <Link href="/" className="flex items-center group h-16">
-                            <span className="text-xl font-bold text-[#202124] tracking-tight">
-                                naampata<span className="text-[#FF7A30]">.</span>
-                            </span>
+                        <Link href="/" className="flex items-center group">
+                            <img src="/logo.png" alt="naampata" className="h-[14.5rem] w-auto object-contain -my-20" />
                         </Link>
                     </div>
 
@@ -226,6 +224,48 @@ export default function Navbar() {
                                                         <span className="text-[10px] text-slate-400 font-medium italic">Fresh arrivals this week</span>
                                                     </div>
                                                 </Link>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Cities Dropdown */}
+                            <div
+                                className="relative group"
+                                onMouseEnter={() => setActiveDropdown('cities')}
+                                onMouseLeave={() => setActiveDropdown(null)}
+                            >
+                                <button 
+                                    onClick={() => handleDropdownToggle('cities')}
+                                    className="flex items-center gap-1 text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors"
+                                >
+                                    Cities <ChevronDown className="w-3 h-3 opacity-60" />
+                                </button>
+
+                                {activeDropdown === 'cities' && (
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 pt-4 w-[600px] animate-in fade-in slide-in-from-top-4 duration-500 ease-out-expo" style={{ zIndex: "1000" }}>
+                                        <div className="bg-white rounded-[32px] shadow-premium border border-slate-100 p-8">
+                                            <div className="flex items-center justify-between mb-8">
+                                                <h3 className="text-sm font-black uppercase tracking-[0.3em] text-slate-300">Popular Cities</h3>
+                                                <Link href="/cities" className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline" onClick={() => setActiveDropdown(null)}>View All →</Link>
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-4">
+                                                {cities.map((city) => (
+                                                    <Link
+                                                        key={city.id}
+                                                        href={`/cities/${city.slug}`}
+                                                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group"
+                                                        onClick={() => setActiveDropdown(null)}
+                                                    >
+                                                        <div className="w-8 h-8 bg-orange-50 rounded-lg flex items-center justify-center text-[#FF7A30]">
+                                                            <Globe className="w-4 h-4" />
+                                                        </div>
+                                                        <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900">
+                                                            {city.name}
+                                                        </span>
+                                                    </Link>
+                                                ))}
                                             </div>
                                         </div>
                                     </div>
@@ -398,6 +438,25 @@ export default function Navbar() {
                                             {categories.map((cat) => (
                                                 <Link key={cat.id} href={`/categories/${cat.slug}`} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white transition-all">
                                                     <span className="text-sm font-semibold text-slate-700">{cat.name}</span>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="space-y-1">
+                                    <button 
+                                        onClick={() => setMobileDropdown(mobileDropdown === 'cities' ? null : 'cities')}
+                                        className={`w-full flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold transition-all ${mobileDropdown === 'cities' ? 'text-[#FF7A30] bg-orange-50/50 border-orange-100' : 'text-slate-700 bg-white'}`}
+                                    >
+                                        <span>Cities</span>
+                                        <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${mobileDropdown === 'cities' ? 'rotate-180' : '-rotate-90 opacity-40'}`} />
+                                    </button>
+                                    {mobileDropdown === 'cities' && (
+                                        <div className="grid grid-cols-1 gap-2 p-2 bg-slate-50/50 rounded-2xl mt-1 border border-slate-100">
+                                            {cities.map((city) => (
+                                                <Link key={city.id} href={`/cities/${city.slug}`} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white transition-all">
+                                                    <span className="text-sm font-semibold text-slate-700">{city.name}</span>
                                                 </Link>
                                             ))}
                                         </div>

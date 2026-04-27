@@ -11,10 +11,8 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-20">
           {/* Brand Column */}
           <div className="md:col-span-1">
-            <Link href="/" className="inline-block mb-6">
-              <span className="text-3xl font-black text-[#112D4E] tracking-tight">
-                naampata<span className="text-orange-500">.</span>
-              </span>
+            <Link href="/" className="inline-block mb-2">
+              <img src="/logo.png" alt="naampata" className="h-[10.5rem] w-auto object-contain -ml-8 -my-8" />
             </Link>
             <p className="text-slate-500 text-sm font-medium leading-relaxed max-w-xs">
               Discover the best local businesses, services, and professionals in your area. Your trusted local guide to everything around you.
