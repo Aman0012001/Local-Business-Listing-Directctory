@@ -13,15 +13,15 @@ export function getVendorOnlineStatus(
         return {
             status: 'ONLINE',
             label: 'Online',
-            color: 'text-emerald-700',
+            color: 'emerald',
             dotColor: 'bg-emerald-500',
         };
     }
     return {
         status: 'OFFLINE',
         label: 'Offline',
-        color: 'text-red-600',
-        dotColor: 'bg-red-500',
+        color: 'rose',
+        dotColor: 'bg-rose-500',
     };
 }
 

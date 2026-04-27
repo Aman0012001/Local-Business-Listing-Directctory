@@ -13,6 +13,7 @@ import { api, getImageUrl } from '../../../lib/api';
 import Navbar from '../../../components/Navbar';
 import VendorAvatar from '../../../components/VendorAvatar';
 import ChatTrigger from '../../../components/chat/ChatTrigger';
+import Footer from '../../../components/Footer';
 
 interface VendorProfile {
     id: string;
@@ -145,6 +146,7 @@ export default function VendorProfileClient({ slugOrId, initialData }: { slugOrI
                     <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4" />
                     <p className="text-slate-400 font-bold animate-pulse">Loading Profile...</p>
                 </div>
+                <Footer />
             </div>
         );
     }
@@ -163,6 +165,7 @@ export default function VendorProfileClient({ slugOrId, initialData }: { slugOrI
                         <ArrowLeft className="w-5 h-5" /> Back to Search
                     </Link>
                 </div>
+                <Footer />
             </div>
         );
     }
@@ -486,11 +489,7 @@ export default function VendorProfileClient({ slugOrId, initialData }: { slugOrI
                 )}
             </main>
 
-            <footer className="max-w-5xl mx-auto px-6 py-20 border-t border-slate-50 text-center">
-                <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em]">
-                    &copy; {new Date().getFullYear()} {vendor.businessName} &bull; All Rights Reserved
-                </p>
-            </footer>
+            <Footer />
         </div>
     );
 }

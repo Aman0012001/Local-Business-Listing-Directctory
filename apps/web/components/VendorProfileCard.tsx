@@ -10,14 +10,14 @@ import VendorAvatar from './VendorAvatar';
 import { getImageUrl } from '../lib/api';
 import { getBusinessStatus } from '../lib/business-status';
 
-const BusinessStatusBadge = ({ hours }: { hours?: any[] }) => {
-    const { status, message, color } = getBusinessStatus(hours);
+const BusinessStatusBadge = ({ hours, isOnline }: { hours?: any[], isOnline?: boolean }) => {
+    const { status, message, color } = getBusinessStatus(hours, isOnline);
     
     let colorClasses = "";
     switch(color) {
         case 'emerald': colorClasses = "bg-emerald-50 text-emerald-600 border-emerald-100"; break;
-        case 'amber': colorClasses = "bg-amber-50 text-amber-600 border-amber-100"; break;
         case 'rose': colorClasses = "bg-rose-50 text-rose-600 border-rose-100"; break;
+        case 'amber': colorClasses = "bg-amber-50 text-amber-600 border-amber-100"; break;
         default: colorClasses = "bg-slate-50 text-slate-600 border-slate-100";
     }
 
@@ -43,6 +43,7 @@ interface VendorProfile {
     socialLinks?: SocialLink[];
     avatarUrl?: string | null;
     coverImage?: string | null;
+    isOnline: boolean;
     listingCount: number;
     avgRating: number;
     totalViews: number;
@@ -107,7 +108,7 @@ export default function VendorProfileCard({ vendor, city }: Props) {
                             {vendor.categories.length > 2 && ` +${vendor.categories.length - 2}`}
                         </p>
                     )}
-                    <BusinessStatusBadge hours={vendor.businessHours} />
+                    <BusinessStatusBadge hours={vendor.businessHours} isOnline={vendor.isOnline} />
                 </div>
 
                 {/* ── Stats row ── */}

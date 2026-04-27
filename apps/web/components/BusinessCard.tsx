@@ -32,7 +32,6 @@ interface BusinessCardProps {
 export default function BusinessCard({ business }: BusinessCardProps) {
 
     const isApproved = business.status === 'approved';
-    const isOffline = !business.vendor?.user?.isOnline;
 
     // ✅ SAFE URL (IMPORTANT FIX)
     const businessUrl = business.slug
@@ -67,10 +66,15 @@ export default function BusinessCard({ business }: BusinessCardProps) {
                             Approved
                         </span>
                     )}
-
-                    {isOffline && (
-                        <span className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-600">
-                            <span className="w-2 h-2 bg-red-600 rounded-full" />
+                    
+                    {business.vendor?.isOnline ? (
+                        <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
+                            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                            Online
+                        </span>
+                    ) : (
+                        <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-600 border border-rose-100">
+                            <span className="w-2 h-2 bg-rose-500 rounded-full" />
                             Offline
                         </span>
                     )}

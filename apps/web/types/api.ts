@@ -79,6 +79,7 @@ export interface Vendor {
         deletionScheduledAt?: string;
         createdAt?: string;
     };
+    isOnline?: boolean;
     businessHours?: Record<string, { isOpen: boolean; openTime: string; closeTime: string }>;
     socialLinks?: { platform: string; url: string; }[];
 }

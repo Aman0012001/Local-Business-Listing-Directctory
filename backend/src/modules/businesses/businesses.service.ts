@@ -503,9 +503,11 @@ export class BusinessesService implements OnModuleInit {
             const listings = await queryBuilder.skip(skip).take(limit).getRawAndEntities();
 
             // Map and format results
-            const results = listings.entities.map((listing, index) => {
+            const results = listings.entities.map((listing) => {
                 const result: any = listing;
-                // Add distance calculation if needed
+                if (result.vendor && result.vendor.user) {
+                    result.vendor.isOnline = result.vendor.user.isOnline || false;
+                }
                 return result;
             });
 
@@ -552,10 +554,14 @@ export class BusinessesService implements OnModuleInit {
         }
 
         // Only count views from non-owners (skip vendor self-views)
-        const isOwner = user && listing.vendor?.user?.id === user.id;
-        if (!isOwner) {
+        const isOwnerView = user && listing.vendor?.user?.id === user.id;
+        if (!isOwnerView) {
             await this.listingRepository.increment({ id }, 'totalViews', 1);
             listing.totalViews = (listing.totalViews || 0) + 1;
+        }
+
+        if (listing.vendor && listing.vendor.user) {
+            (listing.vendor as any).isOnline = listing.vendor.user.isOnline || false;
         }
 
         return listing;
@@ -612,6 +618,10 @@ export class BusinessesService implements OnModuleInit {
             if (!isOwner) {
                 await this.listingRepository.increment({ id: listing.id }, 'totalViews', 1);
                 listing.totalViews = (listing.totalViews || 0) + 1;
+            }
+
+            if (listing.vendor && listing.vendor.user) {
+                (listing.vendor as any).isOnline = listing.vendor.user.isOnline || false;
             }
 
             log(`findBySlug: ${slug} - SUCCESS`);

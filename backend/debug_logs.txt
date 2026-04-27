@@ -1843,3 +1843,20 @@ NotFoundException: Listing not found
 NotFoundException: Listing not found
     at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T09:10:02.713Z] findBySlug: aprin22-b-mo9z88iu (User: Public)
+[2026-04-27T09:10:02.745Z] findBySlug: aprin22-b-mo9z88iu (User: Public)
+[2026-04-27T09:10:03.025Z] findBySlug: aprin22-b-mo9z88iu - Found in DB. Status: approved
+[2026-04-27T09:10:03.146Z] findBySlug: aprin22-b-mo9z88iu - SUCCESS
+[2026-04-27T09:10:06.145Z] findBySlug: aprin22-b-mo9z88iu - Found in DB. Status: approved
+[2026-04-27T09:19:16.914Z] findBySlug: aprin22-b-mo9z88iu (User: Public)
+[2026-04-27T09:19:17.058Z] findBySlug: aprin22-b-mo9z88iu (User: Public)
+[2026-04-27T09:19:20.309Z] findBySlug: aprin22-b-mo9z88iu - Found in DB. Status: approved
+[2026-04-27T09:19:20.527Z] findBySlug: aprin22-b-mo9z88iu - Found in DB. Status: approved
+[2026-04-27T09:19:20.626Z] findBySlug: aprin22-b-mo9z88iu - SUCCESS
+[2026-04-27T09:19:20.828Z] findBySlug: aprin22-b-mo9z88iu - SUCCESS
+[2026-04-27T09:25:26.575Z] findBySlug: nv1-listing-mnqd29z4 (User: Public)
+[2026-04-27T09:25:26.585Z] findBySlug: nv1-listing-mnqd29z4 (User: Public)
+[2026-04-27T09:25:26.884Z] findBySlug: nv1-listing-mnqd29z4 - Found in DB. Status: approved
+[2026-04-27T09:25:27.020Z] findBySlug: nv1-listing-mnqd29z4 - SUCCESS
+[2026-04-27T09:25:30.592Z] findBySlug: nv1-listing-mnqd29z4 - Found in DB. Status: approved
+[2026-04-27T09:25:30.904Z] findBySlug: nv1-listing-mnqd29z4 - SUCCESS
