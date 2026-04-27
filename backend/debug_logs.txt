@@ -1860,3 +1860,9 @@ NotFoundException: Listing not found
 [2026-04-27T09:25:27.020Z] findBySlug: nv1-listing-mnqd29z4 - SUCCESS
 [2026-04-27T09:25:30.592Z] findBySlug: nv1-listing-mnqd29z4 - Found in DB. Status: approved
 [2026-04-27T09:25:30.904Z] findBySlug: nv1-listing-mnqd29z4 - SUCCESS
+[2026-04-27T09:41:16.256Z] findBySlug: test-mnh580gx (User: Public)
+[2026-04-27T09:41:16.276Z] findBySlug: test-mnh580gx (User: Public)
+[2026-04-27T09:41:17.224Z] findBySlug: test-mnh580gx - Found in DB. Status: approved
+[2026-04-27T09:41:17.248Z] findBySlug: test-mnh580gx - Found in DB. Status: approved
+[2026-04-27T09:41:17.532Z] findBySlug: test-mnh580gx - SUCCESS
+[2026-04-27T09:41:17.543Z] findBySlug: test-mnh580gx - SUCCESS

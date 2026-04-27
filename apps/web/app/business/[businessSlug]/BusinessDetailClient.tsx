@@ -72,12 +72,8 @@ const WhatsAppIcon = ({ className }: { className?: string }) => (
 // Simple Online/Offline badge — green when vendor is logged in, red when not
 const VendorOnlineBadge = ({
   isOnline,
-  lastActiveAt,
-  lastLogoutAt,
 }: {
   isOnline?: boolean;
-  lastActiveAt?: string;
-  lastLogoutAt?: string;
 }) => {
   if (isOnline) {
     return (
@@ -88,8 +84,8 @@ const VendorOnlineBadge = ({
     );
   }
   return (
-    <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-red-50 text-red-600 border border-red-200 shadow-sm">
-      <span className="w-2 h-2 rounded-full bg-red-500" />
+    <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-rose-50 text-rose-600 border border-rose-200 shadow-sm">
+      <span className="w-2 h-2 rounded-full bg-rose-500" />
       Offline
     </span>
   );
@@ -992,9 +988,7 @@ export default function BusinessDetailClient({
                     )}
                   </div>
                   <VendorOnlineBadge
-                    isOnline={business.vendor?.user?.isOnline}
-                    lastActiveAt={business.vendor?.user?.lastActiveAt}
-                    lastLogoutAt={business.vendor?.user?.lastLogoutAt}
+                    isOnline={business.vendor?.isOnline}
                   />
                   <BusinessOpenBadge business={business} />
                 </div>
