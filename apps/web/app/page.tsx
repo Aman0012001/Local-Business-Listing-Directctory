@@ -403,18 +403,35 @@ export default function HomePage() {
             </div>
           </motion.div>
 
-          {/* Quick Categories Icons */}
-          <div className="flex flex-wrap items-center justify-center gap-4 mb-24">
-            {quickCategories.map((cat) => (
-              <Link
-                key={cat.slug}
-                href={`/search?category=${cat.slug}`}
-                className={`flex items-center gap-3 px-6 py-3 rounded-full ${cat.color} font-bold text-sm transition-all hover:-translate-y-1 hover:shadow-md border border-transparent hover:border-gray-100`}
-              >
-                {React.cloneElement(cat.icon as React.ReactElement, { className: "w-4 h-4" })}
-                {cat.name}
-              </Link>
-            ))}
+          {/* Call to Action Cards - Matching the image */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-10">
+            {/* Hot Local Deals */}
+            <Link
+              href="/offers-events"
+              className="bg-white rounded-[18px] border border-gray-50 shadow-[0_15px_45px_rgba(0,0,0,0.04)] p-8 flex items-center gap-6 hover:shadow-xl hover:-translate-y-1 transition-all group"
+            >
+              <div className="w-16 h-16 rounded-[22px] bg-orange-50 flex items-center justify-center text-orange-500 group-hover:scale-110 transition-transform shrink-0">
+                <Tag className="w-8 h-8" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-black text-[#112D4E] text-xl mb-1 group-hover:text-orange-500 transition-colors">Hot Local Deals</h3>
+                <p className="text-slate-400 text-base font-medium">Best deals & events near you</p>
+              </div>
+            </Link>
+
+            {/* Get Expert Quotes */}
+            <Link
+              href="/broadcast-request"
+              className="bg-white rounded-[28px] border border-gray-50 shadow-[0_15px_45px_rgba(0,0,0,0.04)] p-8 flex items-center gap-6 hover:shadow-xl hover:-translate-y-1 transition-all group"
+            >
+              <div className="w-16 h-16 rounded-[22px] bg-blue-50 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform shrink-0">
+                <Megaphone className="w-8 h-8" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-black text-[#112D4E] text-xl mb-1 group-hover:text-blue-500 transition-colors">Get Expert Quotes</h3>
+                <p className="text-slate-400 text-base font-medium">Post your requirement easily</p>
+              </div>
+            </Link>
           </div>
 
           {/* Feature Highlights Bar - Matching the image */}

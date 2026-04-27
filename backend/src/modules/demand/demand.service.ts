@@ -211,7 +211,7 @@ export class DemandService {
                 isTrending: growth >= 20 && c1h >= 1,
                 growth,
                 type: res.normalizedKeyword.startsWith('category:') ? 'category' : 'keyword'
-            };
+            } as DemandInsight;
         }).sort((a, b) => b.score - a.score).slice(0, 50);
     }
 
@@ -476,7 +476,8 @@ ${JSON.stringify(insights.slice(0, 10))}
                 isTrending: growth >= 20 && c1h >= 1,
                 growth,
                 type: res.normalizedKeyword.startsWith('category:') ? 'category' : 'keyword'
-            };
+            } as DemandInsight;
+
         }).sort((a, b) => b.score - a.score).slice(0, 50);
     }
 

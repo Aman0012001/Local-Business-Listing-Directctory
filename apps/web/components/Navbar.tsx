@@ -224,6 +224,15 @@ export default function Navbar() {
                                                         <span className="text-[10px] text-slate-400 font-medium italic">Fresh arrivals this week</span>
                                                     </div>
                                                 </Link>
+                                                <Link href="/broadcast-request" onClick={() => setActiveDropdown(null)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
+                                                    <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
+                                                        <Megaphone className="w-4 h-4" />
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-bold text-slate-900">Business Broadcast</span>
+                                                        <span className="text-[10px] text-slate-400 font-medium italic">Post your requirement instantly</span>
+                                                    </div>
+                                                </Link>
                                             </div>
                                         </div>
                                     </div>
@@ -425,6 +434,38 @@ export default function Navbar() {
                             <nav className="space-y-3">
                                 <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 font-bold text-slate-900">Home</Link>
                                 
+                                <div className="space-y-1">
+                                    <button 
+                                        onClick={() => setMobileDropdown(mobileDropdown === 'businesses' ? null : 'businesses')}
+                                        className={`w-full flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold transition-all ${mobileDropdown === 'businesses' ? 'text-[#FF7A30] bg-orange-50/50 border-orange-100' : 'text-slate-700 bg-white'}`}
+                                    >
+                                        <span>Businesses</span>
+                                        <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${mobileDropdown === 'businesses' ? 'rotate-180' : '-rotate-90 opacity-40'}`} />
+                                    </button>
+                                    {mobileDropdown === 'businesses' && (
+                                        <div className="grid grid-cols-1 gap-2 p-2 bg-slate-50/50 rounded-2xl mt-1 border border-slate-100">
+                                            <Link href="/search?filter=featured" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white transition-all">
+                                                <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-[#FF7A30]">
+                                                    <Building2 className="w-4 h-4" />
+                                                </div>
+                                                <span className="text-sm font-semibold text-slate-700">Featured</span>
+                                            </Link>
+                                            <Link href="/search?filter=new" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white transition-all">
+                                                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
+                                                    <Search className="w-4 h-4" />
+                                                </div>
+                                                <span className="text-sm font-semibold text-slate-700">New Listings</span>
+                                            </Link>
+                                            <Link href="/broadcast-request" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white transition-all">
+                                                <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
+                                                    <Megaphone className="w-4 h-4" />
+                                                </div>
+                                                <span className="text-sm font-semibold text-slate-700">Business Broadcast</span>
+                                            </Link>
+                                        </div>
+                                    )}
+                                </div>
+
                                 <div className="space-y-1">
                                     <button 
                                         onClick={() => setMobileDropdown(mobileDropdown === 'categories' ? null : 'categories')}
