@@ -214,17 +214,17 @@ export default function GenericDashboard() {
             <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col lg:flex-row lg:items-end justify-between gap-6"
+                className="flex flex-col md:flex-row md:items-end justify-between gap-6"
             >
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-blue-600 font-black text-xs uppercase tracking-[0.2em] mb-2">
+                <div className="space-y-1 text-center md:text-left">
+                    <div className="flex items-center justify-center md:justify-start gap-2 text-blue-600 font-black text-xs uppercase tracking-[0.2em] mb-2">
                         <div className="w-1 h-1 bg-blue-600 rounded-full animate-ping" />
                         Live Status
                     </div>
-                    <h1 className="text-3xl lg:text-5xl font-black text-slate-900 tracking-tight">
+                    <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black text-slate-900 tracking-tight">
                         Hello, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">{user?.fullName?.split(' ')[0] || 'Member'}</span>!
                     </h1>
-                    <p className="text-sm lg:text-base text-slate-500 font-bold max-w-2xl">
+                    <p className="text-sm lg:text-base text-slate-500 font-bold max-w-2xl mx-auto md:mx-0">
                         {isVendor ? "Manage your presence and see how your listings are performing today." : "Track your favorites, reviews, and community interactions."}
                     </p>
                 </div>
@@ -248,15 +248,15 @@ export default function GenericDashboard() {
                     className="overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl relative"
                 >
                     <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-[100px] -mr-20 -mt-20 pointer-events-none" />
-                    <div className="p-6 lg:p-8 flex flex-col lg:flex-row items-center justify-between gap-6 relative z-10">
-                        <div className="flex items-center gap-6">
-                            <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
-                                <BadgeCheck className="w-9 h-9 text-white" />
+                    <div className="p-5 sm:p-6 lg:p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+                        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+                            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
+                                <BadgeCheck className="w-8 h-8 sm:w-9 sm:h-9 text-white" />
                             </div>
-                            <div className="text-center lg:text-left">
+                            <div className="text-center sm:text-left">
                                 <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-1">Current Subscription</p>
-                                <h2 className="text-2xl lg:text-3xl font-black text-white tracking-tight mb-1">{planName} Plan</h2>
-                                <p className="text-slate-400 font-bold text-xs flex items-center justify-center lg:justify-start gap-2">
+                                <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight mb-1">{planName} Plan</h2>
+                                <p className="text-slate-400 font-bold text-[11px] sm:text-xs flex items-center justify-center sm:justify-start gap-2">
                                     <Clock className="w-3.5 h-3.5 text-slate-500" />
                                     {(() => {
                                         const end = new Date(user?.vendor?.activeSubscription.endDate);
@@ -273,7 +273,7 @@ export default function GenericDashboard() {
                         </div>
                         <Link
                             href="/subscription"
-                            className="flex items-center gap-2 px-8 py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-black text-sm transition-all border border-white/10 shadow-xl w-full lg:w-auto justify-center group"
+                            className="flex items-center gap-2 px-6 py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-black text-sm transition-all border border-white/10 shadow-xl w-full sm:w-auto justify-center group"
                         >
                             Billing & Plans
                             <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -285,35 +285,35 @@ export default function GenericDashboard() {
             {/* Stats Grid */}
             <StatsGrid stats={isVendor || isAdmin ? vendorStats : userStats} />
 
-            <div className="grid lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+            <div className="grid xl:grid-cols-12 gap-6 lg:gap-8 items-start">
                 {/* Main Column */}
-                <div className="lg:col-span-8 space-y-6 lg:space-y-8">
+                <div className="xl:col-span-8 space-y-6 lg:space-y-8">
                     {/* Leads Section */}
                     {(isVendor || isAdmin) ? (
                         hasFeature('showLeads') && (
-                            <div className="bg-white rounded-3xl p-6 lg:p-8 border border-slate-100 shadow-sm overflow-hidden">
+                            <div className="bg-white rounded-3xl p-4 sm:p-6 lg:p-8 border border-slate-100 shadow-sm overflow-hidden">
                                 <VendorLeadsInbox />
                             </div>
                         )
                     ) : (
                         <div className="space-y-6 lg:space-y-8">
                             {!isVendor && !isAdmin && user?.role !== 'user' && (
-                                <div className="bg-gradient-to-br from-slate-900 to-blue-950 rounded-3xl p-8 lg:p-10 shadow-2xl relative overflow-hidden group border border-slate-800">
+                                <div className="bg-gradient-to-br from-slate-900 to-blue-950 rounded-3xl p-6 sm:p-8 lg:p-10 shadow-2xl relative overflow-hidden group border border-slate-800">
                                     <div className="absolute top-0 right-0 w-80 h-80 bg-blue-600/10 rounded-full blur-[100px] -mr-40 -mt-40 pointer-events-none transition-all group-hover:bg-blue-600/20" />
-                                    <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
-                                        <div className="text-center lg:text-left">
-                                            <div className="flex items-center justify-center lg:justify-start gap-2 text-blue-400 font-black text-[10px] uppercase tracking-[0.2em] mb-4">
+                                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                                        <div className="text-center md:text-left">
+                                            <div className="flex items-center justify-center md:justify-start gap-2 text-blue-400 font-black text-[10px] uppercase tracking-[0.2em] mb-4">
                                                 <div className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
                                                 Vendor Opportunities
                                             </div>
-                                            <h3 className="text-3xl font-black text-white mb-3 tracking-tight">Own a Business?</h3>
+                                            <h3 className="text-2xl sm:text-3xl font-black text-white mb-3 tracking-tight">Own a Business?</h3>
                                             <p className="text-slate-400 font-medium max-w-md text-sm lg:text-base leading-relaxed">
                                                 Join our expert network, list your services, and connect with thousands of local customers.
                                             </p>
                                         </div>
                                         <Link
                                             href="/upgrade"
-                                            className="group flex items-center justify-center gap-3 px-8 py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black transition-all shadow-2xl shadow-blue-600/20 whitespace-nowrap active:scale-95 w-full lg:w-auto"
+                                            className="group flex items-center justify-center gap-3 px-8 py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black transition-all shadow-2xl shadow-blue-600/20 whitespace-nowrap active:scale-95 w-full md:w-auto"
                                         >
                                             <Zap className="w-5 h-5 text-white animate-pulse" />
                                             Become a Vendor
@@ -321,10 +321,10 @@ export default function GenericDashboard() {
                                     </div>
                                 </div>
                             )}
-                            <div className="bg-white rounded-3xl p-6 lg:p-8 border border-slate-100 shadow-sm">
+                            <div className="bg-white rounded-3xl p-4 sm:p-6 lg:p-8 border border-slate-100 shadow-sm">
                                 <MyInquiries />
                             </div>
-                            <div className="bg-white rounded-3xl p-6 lg:p-8 border border-slate-100 shadow-sm">
+                            <div className="bg-white rounded-3xl p-4 sm:p-6 lg:p-8 border border-slate-100 shadow-sm">
                                 <MyJobLeads />
                             </div>
                         </div>
@@ -332,24 +332,30 @@ export default function GenericDashboard() {
 
                     {/* Analytics Section */}
                     {(isVendor || isAdmin) && hasFeature('showAnalytics') && (
-                        <div className="bg-white rounded-3xl p-6 lg:p-8 border border-slate-100 shadow-sm space-y-6">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 shrink-0">
-                                    <TrendingUp className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Analytics Dashboard</h3>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Performance Insights</p>
+                        <div className="bg-white rounded-3xl p-4 sm:p-6 lg:p-8 border border-slate-100 shadow-sm space-y-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 shrink-0">
+                                        <TrendingUp className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-black text-slate-900 tracking-tight">Analytics</h3>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Performance Insights</p>
+                                    </div>
                                 </div>
                             </div>
-                            <PerformanceChart stats={stats} />
+                            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                                <div className="min-w-[600px] sm:min-w-0">
+                                    <PerformanceChart stats={stats} />
+                                </div>
+                            </div>
                         </div>
                     )}
 
                     {/* Saved & Following Section */}
                     <div className="grid sm:grid-cols-2 gap-6 lg:gap-8">
                         {((isVendor || isAdmin) ? hasFeature('showSaved') : true) && (
-                            <section className="bg-white rounded-3xl p-6 lg:p-8 border border-slate-100 shadow-sm flex flex-col">
+                            <section className="bg-white rounded-3xl p-4 sm:p-6 lg:p-8 border border-slate-100 shadow-sm flex flex-col">
                                 <div className="flex items-center justify-between mb-8">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-500 shrink-0">
@@ -370,7 +376,7 @@ export default function GenericDashboard() {
                                                     <ListingImage src={(biz as any).coverImageUrl || (biz as any).images?.[0]} alt={biz.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <h4 className="text-sm font-black text-slate-900 truncate group-hover:text-white transition-colors">{biz.title}</h4>
+                                                    <h4 className="text-sm font-black text-slate-900 truncate group-hover:text-blue-600 transition-colors">{biz.title}</h4>
                                                     <p className="text-[10px] text-slate-400 font-bold uppercase truncate">{biz.category?.name || 'Local'}</p>
                                                 </div>
                                             </Link>
@@ -385,7 +391,7 @@ export default function GenericDashboard() {
                         )}
 
                         {((isVendor || isAdmin) ? hasFeature('showFollowing') : true) && (
-                            <section className="bg-white rounded-3xl p-6 lg:p-8 border border-slate-100 shadow-sm flex flex-col">
+                            <section className="bg-white rounded-3xl p-4 sm:p-6 lg:p-8 border border-slate-100 shadow-sm flex flex-col">
                                 <div className="flex items-center justify-between mb-8">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 shrink-0">
@@ -423,10 +429,10 @@ export default function GenericDashboard() {
                 </div>
 
                 {/* Sidebar Column */}
-                <div className="lg:col-span-4 space-y-6 lg:space-y-8">
+                <div className="xl:col-span-4 space-y-6 lg:space-y-8">
                     {/* Compact Notifications for Users */}
                     {!isVendor && !isAdmin && (
-                        <div className="bg-white rounded-3xl p-6 lg:p-8 border border-slate-100 shadow-sm">
+                        <div className="bg-white rounded-3xl p-4 sm:p-6 lg:p-8 border border-slate-100 shadow-sm">
                             <div className="flex items-center justify-between mb-8">
                                 <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
                                     <Bell className="w-5 h-5 text-blue-600" />
@@ -541,9 +547,9 @@ export default function GenericDashboard() {
                                     </Link>
                                 </div>
 
-                                {!affiliateStats?.hasReferrer && (
+                                 {!affiliateStats?.hasReferrer && (
                                     <div className="space-y-3">
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-col sm:flex-row gap-2">
                                             <input
                                                 type="text"
                                                 value={referralInput}
@@ -554,7 +560,7 @@ export default function GenericDashboard() {
                                             <button
                                                 onClick={handleApplyReferral}
                                                 disabled={isApplying || !referralInput}
-                                                className="px-6 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 text-white text-xs font-black rounded-xl transition-all active:scale-95 flex items-center gap-2"
+                                                className="px-6 py-3 sm:py-0 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 text-white text-xs font-black rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2"
                                             >
                                                 {isApplying ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Apply'}
                                             </button>
@@ -570,18 +576,18 @@ export default function GenericDashboard() {
                                 {affiliateStats?.isAffiliate ? (
                                     <div className="space-y-4">
                                         <div className="p-4 bg-white/5 border border-white/5 rounded-2xl group/link cursor-pointer" onClick={copyReferralLink}>
-                                            <div className="flex items-center justify-between gap-4">
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                                 <div className="min-w-0">
                                                     <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Your Unique Link</p>
                                                     <p className="text-xs font-bold text-slate-300 truncate tracking-tight">{typeof window !== 'undefined' ? `${window.location.origin}/?ref=${affiliateStats.referralCode}` : 'Loading...'}</p>
                                                 </div>
-                                                <div className="shrink-0 w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 group-hover/link:bg-blue-600 group-hover/link:text-white transition-all">
+                                                <div className="shrink-0 w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 group-hover/link:bg-blue-600 group-hover/link:text-white transition-all ml-auto sm:ml-0">
                                                     {copySuccess ? <CheckCircle2 className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-3 px-1">
-                                            <div className="w-8 h-8 bg-amber-500/10 rounded-lg flex items-center justify-center text-amber-500 shrink-0">
+                                        <div className="flex items-start gap-3 px-1">
+                                            <div className="w-8 h-8 bg-amber-500/10 rounded-lg flex items-center justify-center text-amber-500 shrink-0 mt-0.5">
                                                 <Gift className="w-4 h-4" />
                                             </div>
                                             <p className="text-[11px] text-slate-400 font-medium leading-relaxed">

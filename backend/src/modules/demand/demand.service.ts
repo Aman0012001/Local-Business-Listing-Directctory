@@ -17,6 +17,7 @@ export interface DemandInsight {
     topCity?: string;
     growth: number;
     isTrending: boolean;
+    type: 'keyword' | 'category';
 }
 
 @Injectable()
@@ -76,8 +77,30 @@ export class DemandService {
             }
         }
 
+        let displayKeyword = data.keyword?.trim() || '';
+        
+        // If no keyword but has category, fetch category name for display
+        if (!displayKeyword && data.categorySlug) {
+            try {
+                const category = await this.categoryRepository.findOne({ 
+                    where: { slug: data.categorySlug } 
+                });
+                if (category) {
+                    displayKeyword = category.name;
+                } else {
+                    displayKeyword = data.categorySlug;
+                }
+            } catch (e) {
+                displayKeyword = data.categorySlug;
+            }
+        }
+
+        const normalizedKeyword = data.keyword?.trim() 
+            ? data.keyword.toLowerCase().trim() 
+            : (data.categorySlug ? `category:${data.categorySlug}` : 'all');
+
         const log = this.searchLogRepository.create({
-            keyword: data.keyword,
+            keyword: displayKeyword,
             city: data.city,
             categorySlug: data.categorySlug,
             latitude,
@@ -87,7 +110,7 @@ export class DemandService {
             ipAddress: data.ipAddress,
             userAgent: data.userAgent,
             searchedAt: new Date(),
-            normalizedKeyword: data.keyword?.toLowerCase().trim() || 'all',
+            normalizedKeyword,
         });
         const savedLog = await this.searchLogRepository.save(log);
 
@@ -97,8 +120,9 @@ export class DemandService {
                     .leftJoinAndSelect('listing.vendor', 'vendor')
                     .where('listing.status = :status', { status: 'approved' })
                     .andWhere(new Brackets(q => {
-                        q.where('LOWER(listing.title) LIKE :kw', { kw: `%${data.keyword.toLowerCase()}%` })
-                    .orWhere('LOWER(listing.searchKeywords::text) LIKE :kw', { kw: `%${data.keyword.toLowerCase()}%` });
+                        const kw = displayKeyword.toLowerCase();
+                        q.where('LOWER(listing.title) LIKE :kw', { kw: `%${kw}%` })
+                    .orWhere('LOWER(listing.searchKeywords::text) LIKE :kw', { kw: `%${kw}%` });
                     }));
 
                 const relevantListings = await qb.getMany();
@@ -185,7 +209,8 @@ export class DemandService {
                 count7d: c7d,
                 topCity: res.topCity || 'N/A',
                 isTrending: growth >= 20 && c1h >= 1,
-                growth
+                growth,
+                type: res.normalizedKeyword.startsWith('category:') ? 'category' : 'keyword'
             };
         }).sort((a, b) => b.score - a.score).slice(0, 50);
     }
@@ -449,7 +474,8 @@ ${JSON.stringify(insights.slice(0, 10))}
                 count7d: c7d,
                 topCity: res.topCity || 'Nearby',
                 isTrending: growth >= 20 && c1h >= 1,
-                growth
+                growth,
+                type: res.normalizedKeyword.startsWith('category:') ? 'category' : 'keyword'
             };
         }).sort((a, b) => b.score - a.score).slice(0, 50);
     }

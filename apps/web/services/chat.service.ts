@@ -19,4 +19,7 @@ export const chatApi = {
     markAsRead: async (conversationId: string) => {
         return api.post(`/chat/conversations/${conversationId}/mark-as-read`, {});
     },
+    sendMessage: async (conversationId: string, content: string) => {
+        return api.post(`/chat/conversations/${conversationId}/messages`, { content, conversationId });
+    },
 };

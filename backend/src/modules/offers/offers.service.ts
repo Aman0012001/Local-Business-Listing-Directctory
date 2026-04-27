@@ -14,7 +14,7 @@ import { Vendor } from '../../entities/vendor.entity';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { UpdateOfferDto } from './dto/update-offer.dto';
 import { PromotionBooking, BookingStatus } from '../../entities/promotion-booking.entity';
-
+import { SubscriptionPlanType } from '../../entities/subscription-plan.entity';
 import { SearchOfferDto } from './dto/search-offer.dto';
 import { Brackets } from 'typeorm';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
@@ -118,6 +118,11 @@ export class OffersService {
             return Number.POSITIVE_INFINITY;
         }
 
+        // --- CUSTOM FIX: 1 Offer is free for Free Plan Vendors ---
+        if (type === OfferType.OFFER && (activeSub?.plan?.planType === SubscriptionPlanType.FREE || activeSub?.plan?.name?.toLowerCase() === 'free')) {
+            return 1;
+        }
+
         return 0;
     }
 
@@ -164,7 +169,7 @@ export class OffersService {
             endDate: dto.endDate ? new Date(dto.endDate) : null,
             expiryDate: dto.expiryDate ? new Date(dto.expiryDate) : null,
             pricingId: dto.pricingId || null,
-            isActive: false, // Wait for promotion check / activation
+            isActive: (type === OfferType.OFFER && (activeSub.plan?.planType === SubscriptionPlanType.FREE || activeSub.plan?.name?.toLowerCase() === 'free') && currentCount === 0) ? true : false, // First offer is free and active for Free plan
         });
 
         // computeStatus is called via @BeforeInsert on the entity

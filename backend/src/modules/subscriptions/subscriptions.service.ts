@@ -337,8 +337,8 @@ export class SubscriptionsService implements OnModuleInit {
         // Support comma-separated list of URLs (local and production)
         const allowedUrls = frontendUrl ? frontendUrl.split(',').map(url => url.trim()) : [];
 
-        // Priority: 1. FRONTEND_URL config, 2. Dynamic origin from request, 3. Localhost fallback
-        const baseUrl = allowedUrls[0] || origin || 'http://localhost:3000';
+        // Priority: 1. Dynamic origin from request, 2. FRONTEND_URL config, 3. Localhost fallback
+        const baseUrl = origin || allowedUrls[0] || 'http://localhost:3000';
 
         // ── Ensure plan has a valid Stripe Price ID (matching the current price) ────────────────
         let needsNewPrice = !plan.stripePriceId;
@@ -453,13 +453,38 @@ export class SubscriptionsService implements OnModuleInit {
             const session = await this.stripe.checkout.sessions.retrieve(sessionId);
 
             if (session.payment_status === 'paid') {
-                // Check if we already processed it
+                // Check if we already processed it as a Subscription
                 const existingTransaction = await this.transactionRepository.findOne({
-                    where: { gatewayTransactionId: session.id }
+                    where: { gatewayTransactionId: session.id },
+                    relations: ['subscription', 'subscription.plan']
                 });
 
                 if (existingTransaction) {
-                    return { alreadyProcessed: true };
+                    return {
+                        success: true,
+                        alreadyProcessed: true,
+                        planName: existingTransaction.subscription?.plan?.name || 'Premium Plan',
+                        planType: existingTransaction.subscription?.plan?.planType,
+                        amount: existingTransaction.amount,
+                        endDate: existingTransaction.subscription?.endDate
+                    };
+                }
+
+                // Check if we already processed it as an ActivePlan (New System)
+                const existingActivePlan = await this.activePlanRepository.findOne({
+                    where: { transactionId: session.id },
+                    relations: ['plan']
+                });
+
+                if (existingActivePlan) {
+                    return {
+                        success: true,
+                        alreadyProcessed: true,
+                        planName: existingActivePlan.plan?.name || 'Premium Plan',
+                        type: existingActivePlan.plan?.type || 'plan',
+                        amount: existingActivePlan.amountPaid,
+                        endDate: existingActivePlan.endDate
+                    };
                 }
 
                 if (session.mode === 'subscription') {
@@ -946,7 +971,7 @@ export class SubscriptionsService implements OnModuleInit {
             },
             line_items: [{ price: plan.stripePriceId, quantity: 1 }],
             mode: plan.type === PricingPlanType.SUBSCRIPTION ? 'subscription' : 'payment',
-            success_url: `${baseUrl}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+            success_url: `${baseUrl}/subscription/success/?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${baseUrl}/subscription?canceled=true`,
         };
 

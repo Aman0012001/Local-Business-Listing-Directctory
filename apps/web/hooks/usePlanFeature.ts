@@ -36,7 +36,7 @@ export const usePlanFeature = () => {
         showFollowing: false,
         showQueries: false,
         showLeads: false,
-        showOffers: false,
+        showOffers: true,
         showReviews: true,
         showAnalytics: false,
         showChat: false,
@@ -44,6 +44,7 @@ export const usePlanFeature = () => {
         showDemand: false,
         canAddListing: true,
         maxListings: 1,
+        maxOffers: 1,
     };
 
     const features: DashboardFeatures = activeSub?.plan?.dashboardFeatures || defaultFeatures;

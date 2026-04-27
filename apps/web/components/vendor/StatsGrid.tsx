@@ -59,17 +59,17 @@ export default function StatsGrid({ stats = defaultStats }: StatsGridProps) {
                 <div
                     key={stat.label}
                     onClick={stat.onClick}
-                    className={`${stat.color} rounded-[24px] p-6 text-white ${stat.shadow} flex flex-col items-start gap-5 group hover:scale-[1.02] hover:-translate-y-1 transition-all duration-300 ${stat.onClick ? 'cursor-pointer active:scale-95' : 'cursor-default'} relative overflow-hidden`}
+                    className={`${stat.color} rounded-[24px] p-5 sm:p-6 text-white ${stat.shadow} flex flex-col items-start gap-5 group hover:scale-[1.02] hover:-translate-y-1 transition-all duration-300 ${stat.onClick ? 'cursor-pointer active:scale-95' : 'cursor-default'} relative overflow-hidden`}
                 >
                     {/* Decorative Background Icon */}
                     <stat.icon className="absolute -right-4 -bottom-4 w-24 h-24 text-white/10 rotate-12 group-hover:rotate-6 transition-transform duration-500" />
                     
-                    <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center transition-transform group-hover:rotate-6 relative z-10">
-                        <stat.icon className="w-6 h-6 text-white" />
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center transition-transform group-hover:rotate-6 relative z-10">
+                        <stat.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                     </div>
                     <div className="relative z-10">
                         <p className="text-white/70 text-[10px] font-black uppercase tracking-widest leading-none mb-2">{stat.label}</p>
-                        <h4 className="text-3xl font-black leading-none tracking-tight text-white">{stat.value}</h4>
+                        <h4 className="text-2xl sm:text-3xl font-black leading-none tracking-tight text-white">{stat.value}</h4>
                     </div>
                 </div>
             ))}

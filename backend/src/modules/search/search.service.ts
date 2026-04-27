@@ -483,7 +483,7 @@ export class SearchService implements OnModuleInit {
         // Log search for demand insights
         if (searchDto.query || searchDto.categorySlug) {
             this.demandService.logSearch({
-                keyword: searchDto.query || searchDto.categorySlug,
+                keyword: searchDto.query || '',
                 city: searchDto.city,
                 categorySlug: searchDto.categorySlug,
                 latitude: searchDto.latitude,

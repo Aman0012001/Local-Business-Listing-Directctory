@@ -1312,3 +1312,144 @@ NotFoundException: Listing not found
 NotFoundException: Listing not found
     at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T01:27:44.496Z] findBySlug: bike-sell-mnw2g11t (User: Public)
+[2026-04-27T01:27:44.512Z] findBySlug: bike-sell-mnw2g11t (User: Public)
+[2026-04-27T01:27:45.341Z] findBySlug: bike-sell-mnw2g11t - Found in DB. Status: approved
+[2026-04-27T01:27:45.433Z] findBySlug: bike-sell-mnw2g11t - Found in DB. Status: approved
+[2026-04-27T01:27:45.639Z] findBySlug: bike-sell-mnw2g11t - SUCCESS
+[2026-04-27T01:27:45.737Z] findBySlug: bike-sell-mnw2g11t - SUCCESS
+[2026-04-27T01:47:53.848Z] findBySlug: template (User: Public)
+[2026-04-27T01:47:56.532Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T01:47:56.547Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T01:47:58.955Z] findBySlug: ddf-moga5zbj (User: dd@gmail.com)
+[2026-04-27T01:47:59.451Z] findBySlug: ddf-moga5zbj - Found in DB. Status: pending
+[2026-04-27T01:47:59.452Z] findBySlug: ddf-moga5zbj - SUCCESS
+[2026-04-27T01:48:01.371Z] findBySlug: template (User: Public)
+[2026-04-27T01:48:01.814Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T01:48:01.818Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T01:53:43.869Z] findBySlug: template (User: Public)
+[2026-04-27T01:53:43.955Z] findBySlug: template (User: Public)
+[2026-04-27T01:53:44.183Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T01:53:44.203Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T01:53:44.252Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T01:53:44.254Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T01:53:45.684Z] findBySlug: template (User: Public)
+[2026-04-27T01:53:46.027Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T01:53:46.028Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T01:53:46.149Z] findBySlug: template (User: Public)
+[2026-04-27T01:53:46.384Z] findBySlug: template (User: Public)
+[2026-04-27T01:53:46.470Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T01:53:46.472Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T01:53:46.733Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T01:53:46.736Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T01:53:46.853Z] findBySlug: template (User: Public)
+[2026-04-27T01:53:46.902Z] findBySlug: template (User: Public)
+[2026-04-27T01:53:46.926Z] findBySlug: template (User: Public)
+[2026-04-27T01:53:46.938Z] findBySlug: template (User: Public)
+[2026-04-27T01:53:47.401Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T01:53:47.406Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T01:53:47.410Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T01:53:47.412Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T01:53:47.760Z] findBySlug: template (User: Public)
+[2026-04-27T01:53:48.155Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T01:53:48.156Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T01:53:48.264Z] findBySlug: template (User: Public)
+[2026-04-27T01:53:48.490Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T01:53:48.491Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T01:53:48.580Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T01:53:48.581Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T01:53:48.640Z] findBySlug: template (User: Public)
+[2026-04-27T01:53:48.974Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T01:53:48.975Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T01:53:49.028Z] findBySlug: template (User: Public)
+[2026-04-27T01:53:49.369Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T01:53:49.370Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T01:53:49.422Z] findBySlug: template (User: Public)
+[2026-04-27T01:53:49.733Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T01:53:49.734Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T01:53:49.980Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T01:53:49.981Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T01:54:16.156Z] findBySlug: template (User: Public)
+[2026-04-27T01:54:16.205Z] findBySlug: template (User: Public)
+[2026-04-27T01:54:16.524Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T01:54:16.528Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T01:54:20.555Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T01:54:20.556Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T01:54:25.543Z] findBySlug: template (User: Public)
+[2026-04-27T01:54:25.565Z] findBySlug: template (User: Public)
+[2026-04-27T01:54:25.890Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T01:54:25.898Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T01:54:25.906Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T01:54:25.907Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T01:54:38.914Z] findBySlug: template (User: Public)
+[2026-04-27T01:54:38.924Z] findBySlug: template (User: Public)
+[2026-04-27T01:54:39.237Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T01:54:39.237Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-04-27T01:54:39.297Z] findBySlug: template - NOT FOUND IN DB
+[2026-04-27T01:54:39.299Z] findBySlug: template - ERROR: Listing not found
+NotFoundException: Listing not found
+    at BusinessesService.findBySlug (E:\localweb\Local-Business-Listing-Directctory\backend\src\modules\businesses\businesses.service.ts:594:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)

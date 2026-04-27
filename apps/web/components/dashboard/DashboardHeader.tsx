@@ -1,10 +1,13 @@
 "use client";
 
-import React from 'react';
-import { Menu, Bell, Search, User, LogOut, MessageSquare, Shield, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Menu, Bell, Search, User, LogOut, MessageSquare, Shield, ChevronDown, Building2, Globe, Megaphone } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import Link from 'next/link';
 import VendorAvatar from '../VendorAvatar';
+import { api } from '../../lib/api';
+import { Category, City } from '../../types/api';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface DashboardHeaderProps {
     toggleSidebar: () => void;
@@ -14,6 +17,29 @@ interface DashboardHeaderProps {
 
 export default function DashboardHeader({ toggleSidebar, unreadNotifications = 0, unreadMessages = 0 }: DashboardHeaderProps) {
     const { user } = useAuth();
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [cities, setCities] = useState<City[]>([]);
+    const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [cats, cityData] = await Promise.all([
+                    api.categories.getPopular(10),
+                    api.cities.getPopular()
+                ]);
+                setCategories(cats.slice(0, 10));
+                setCities(cityData.slice(0, 10));
+            } catch (error) {
+                console.error('Error fetching dashboard nav data:', error);
+            }
+        };
+        fetchData();
+    }, []);
+
+    const handleDropdownToggle = (name: string) => {
+        setActiveDropdown(activeDropdown === name ? null : name);
+    };
 
     return (
         <header className="sticky top-0 z-30 py-4 transition-all duration-300">
@@ -44,15 +70,159 @@ export default function DashboardHeader({ toggleSidebar, unreadNotifications = 0
                             <Link href="/" className="text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors">
                                 Home
                             </Link>
-                            <Link href="/categories" className="flex items-center gap-1 text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors group">
-                                Categories <ChevronDown className="w-3 h-3 opacity-60 group-hover:rotate-180 transition-transform" />
-                            </Link>
-                            <Link href="/search" className="flex items-center gap-1 text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors group">
-                                Businesses <ChevronDown className="w-3 h-3 opacity-60 group-hover:rotate-180 transition-transform" />
-                            </Link>
-                            <Link href="/cities" className="flex items-center gap-1 text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors group">
-                                Cities <ChevronDown className="w-3 h-3 opacity-60 group-hover:rotate-180 transition-transform" />
-                            </Link>
+
+                            {/* Categories Dropdown */}
+                            <div
+                                className="relative group"
+                                onMouseEnter={() => setActiveDropdown('categories')}
+                                onMouseLeave={() => setActiveDropdown(null)}
+                            >
+                                <button 
+                                    onClick={() => handleDropdownToggle('categories')}
+                                    className="flex items-center gap-1 text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors group"
+                                >
+                                    Categories <ChevronDown className={`w-3 h-3 opacity-60 transition-transform duration-300 ${activeDropdown === 'categories' ? 'rotate-180' : ''}`} />
+                                </button>
+
+                                <AnimatePresence>
+                                    {activeDropdown === 'categories' && (
+                                        <motion.div 
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: 10 }}
+                                            className="absolute top-full left-1/2 -translate-x-1/2 pt-4 w-[600px] z-50"
+                                        >
+                                            <div className="bg-white rounded-[24px] shadow-2xl border border-slate-100 p-6">
+                                                <div className="flex items-center justify-between mb-6">
+                                                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Popular Categories</h3>
+                                                    <Link href="/categories" className="text-[10px] font-black uppercase tracking-widest text-[#FF7A30] hover:underline" onClick={() => setActiveDropdown(null)}>View All →</Link>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    {categories.map((cat) => (
+                                                        <Link
+                                                            key={cat.id}
+                                                            href={`/categories/${cat.slug}`}
+                                                            className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item"
+                                                            onClick={() => setActiveDropdown(null)}
+                                                        >
+                                                            <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500 group-hover/item:bg-blue-500 group-hover/item:text-white transition-colors">
+                                                                <Search className="w-4 h-4" />
+                                                            </div>
+                                                            <span className="text-sm font-bold text-slate-600 group-hover/item:text-slate-900">
+                                                                {cat.name}
+                                                            </span>
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+
+                            {/* Businesses Dropdown */}
+                            <div
+                                className="relative group"
+                                onMouseEnter={() => setActiveDropdown('businesses')}
+                                onMouseLeave={() => setActiveDropdown(null)}
+                            >
+                                <button 
+                                    onClick={() => handleDropdownToggle('businesses')}
+                                    className="flex items-center gap-1 text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors group"
+                                >
+                                    Businesses <ChevronDown className={`w-3 h-3 opacity-60 transition-transform duration-300 ${activeDropdown === 'businesses' ? 'rotate-180' : ''}`} />
+                                </button>
+                                <AnimatePresence>
+                                    {activeDropdown === 'businesses' && (
+                                        <motion.div 
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: 10 }}
+                                            className="absolute top-full left-1/2 -translate-x-1/2 pt-4 w-64 z-50"
+                                        >
+                                            <div className="bg-white rounded-[24px] shadow-2xl border border-slate-100 p-3">
+                                                <div className="flex flex-col gap-1">
+                                                    <Link href="/search?filter=featured" onClick={() => setActiveDropdown(null)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
+                                                        <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-[#FF7A30]">
+                                                            <Building2 className="w-4 h-4" />
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-bold text-slate-900">Featured</span>
+                                                            <span className="text-[10px] text-slate-400 font-medium">Hand-picked best locals</span>
+                                                        </div>
+                                                    </Link>
+                                                    <Link href="/search?filter=new" onClick={() => setActiveDropdown(null)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
+                                                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
+                                                            <Search className="w-4 h-4" />
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-bold text-slate-900">New Listings</span>
+                                                            <span className="text-[10px] text-slate-400 font-medium">Fresh arrivals</span>
+                                                        </div>
+                                                    </Link>
+                                                    <Link href="/offers-events" onClick={() => setActiveDropdown(null)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
+                                                        <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-500">
+                                                            <Megaphone className="w-4 h-4" />
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-bold text-slate-900">Offer & Events</span>
+                                                            <span className="text-[10px] text-slate-400 font-medium">Best deals</span>
+                                                        </div>
+                                                    </Link>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+
+                            {/* Cities Dropdown */}
+                            <div
+                                className="relative group"
+                                onMouseEnter={() => setActiveDropdown('cities')}
+                                onMouseLeave={() => setActiveDropdown(null)}
+                            >
+                                <button 
+                                    onClick={() => handleDropdownToggle('cities')}
+                                    className="flex items-center gap-1 text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors group"
+                                >
+                                    Cities <ChevronDown className={`w-3 h-3 opacity-60 transition-transform duration-300 ${activeDropdown === 'cities' ? 'rotate-180' : ''}`} />
+                                </button>
+                                <AnimatePresence>
+                                    {activeDropdown === 'cities' && (
+                                        <motion.div 
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: 10 }}
+                                            className="absolute top-full left-1/2 -translate-x-1/2 pt-4 w-[600px] z-50"
+                                        >
+                                            <div className="bg-white rounded-[24px] shadow-2xl border border-slate-100 p-6">
+                                                <div className="flex items-center justify-between mb-6">
+                                                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Popular Cities</h3>
+                                                    <Link href="/cities" className="text-[10px] font-black uppercase tracking-widest text-[#FF7A30] hover:underline" onClick={() => setActiveDropdown(null)}>Browse All →</Link>
+                                                </div>
+                                                <div className="grid grid-cols-3 gap-3">
+                                                    {cities.map((city) => (
+                                                        <Link
+                                                            key={city.id}
+                                                            href={`/cities/${encodeURIComponent(city.name.toLowerCase())}`}
+                                                            className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item"
+                                                            onClick={() => setActiveDropdown(null)}
+                                                        >
+                                                            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500 group-hover/item:bg-emerald-500 group-hover/item:text-white transition-colors">
+                                                                <Globe className="w-4 h-4" />
+                                                            </div>
+                                                            <span className="text-sm font-bold text-slate-600 group-hover/item:text-slate-900">
+                                                                {city.name}
+                                                            </span>
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
                         </nav>
                     </div>
 

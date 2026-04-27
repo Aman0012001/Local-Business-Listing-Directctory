@@ -12,6 +12,7 @@ import { PromotionBooking, BookingStatus } from '../../entities/promotion-bookin
 import { OfferEvent, OfferType } from '../../entities/offer-event.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { PricingPlan } from '../../entities/pricing-plan.entity';
+import { Transaction, PaymentStatus } from '../../entities/transaction.entity';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import { CalculatePriceDto, CreateBookingDto } from './dto/create-booking.dto';
@@ -35,6 +36,8 @@ export class PromotionsService implements OnModuleInit {
         private vendorRepository: Repository<Vendor>,
         @InjectRepository(PricingPlan)
         private pricingPlanRepo: Repository<PricingPlan>,
+        @InjectRepository(Transaction)
+        private transactionRepository: Repository<Transaction>,
         private configService: ConfigService,
         @Inject(forwardRef(() => SubscriptionsService))
         private subscriptionsService: SubscriptionsService,
@@ -101,6 +104,7 @@ export class PromotionsService implements OnModuleInit {
                     placement: plan.type,
                     label: plan.name,
                     subtotal: planPrice,
+                    price: planPrice,
                     isBaseFee: true,
                     isFixedPlan: true
                 });
@@ -129,6 +133,8 @@ export class PromotionsService implements OnModuleInit {
                 breakup.push({
                     placement: rule.placement,
                     subtotal: placementTotal,
+                    price: placementTotal,
+                    rate: hourRate,
                     days: durationDays,
                     hours: remainingHours,
                     isBaseFee: false
@@ -193,7 +199,7 @@ export class PromotionsService implements OnModuleInit {
         // 2. Stripe Session
         const frontendUrl = this.configService.get<string>('FRONTEND_URL') || '';
         const allowedUrls = frontendUrl ? frontendUrl.split(',').map(url => url.trim()) : [];
-        const baseUrl = allowedUrls[0] || origin || 'http://localhost:3000';
+        const baseUrl = origin || allowedUrls[0] || 'http://localhost:3000';
 
         const info = pricing.breakup.map(b => b.label || b.placement).join(', ');
         const session = await this.stripe.checkout.sessions.create({
@@ -288,6 +294,39 @@ export class PromotionsService implements OnModuleInit {
         booking.status = BookingStatus.ACTIVE;
         booking.paymentIntentId = gatewayTransactionId;
         await this.bookingRepo.save(booking);
+
+        // 1.5. Record Transaction for Billing History
+        try {
+            const existingTrans = await this.transactionRepository.findOne({
+                where: { gatewayTransactionId }
+            });
+
+            if (!existingTrans) {
+                const transaction = this.transactionRepository.create({
+                    vendorId: booking.vendorId,
+                    amount: booking.totalPrice,
+                    currency: 'PKR',
+                    status: PaymentStatus.COMPLETED,
+                    paidAt: new Date(),
+                    gatewayTransactionId,
+                    paymentGateway: 'Stripe',
+                    stripeSessionId: booking.stripeSessionId,
+                    invoiceNumber: `INV-BST-${Date.now()}`,
+                    metadata: {
+                        bookingId: booking.id,
+                        type: 'promotion_boost',
+                        offerEventId: booking.offerEventId,
+                        offerType: booking.type,
+                        placements: booking.placements
+                    }
+                });
+                await this.transactionRepository.save(transaction);
+                this.logger.log(`Invoice recorded for boost booking ${booking.id}`);
+            }
+        } catch (error) {
+            this.logger.error(`Failed to record transaction for booking ${booking.id}: ${error.message}`);
+            // Don't fail the whole activation if transaction recording fails
+        }
 
         // 2. Sync with OfferEvent (Apply the Boost)
         const offer = await this.offerRepository.findOne({ where: { id: booking.offerEventId } });

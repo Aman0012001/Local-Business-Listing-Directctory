@@ -66,8 +66,9 @@ function SearchResults() {
                 // Log demand if there's a query or category
                 if (query || categorySlug) {
                     api.demand.logSearch({
-                        keyword: query || categorySlug,
+                        keyword: query || "", // Literal keyword only
                         city: city || undefined,
+                        categorySlug: categorySlug || undefined,
                         latitude: latitude ? Number(latitude) : undefined,
                         longitude: longitude ? Number(longitude) : undefined,
                     }).catch(err => console.error('Demand logging failed:', err));

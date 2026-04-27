@@ -102,50 +102,53 @@ export default function MyJobLeads() {
 
             {/* Responses Modal */}
             {selectedLead && (
-                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
-                    <div className="bg-white rounded-[24px] w-full max-w-2xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col animate-in slide-in-from-bottom-10 duration-500">
-                        <div className="p-10 pb-6 border-b border-slate-50 flex justify-between items-start bg-slate-50/30">
-                            <div>
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[100] p-2 sm:p-4 animate-in fade-in duration-300">
+                    <div className="bg-white rounded-[24px] w-full max-w-2xl overflow-hidden shadow-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col animate-in slide-in-from-bottom-10 duration-500">
+                        <div className="p-6 sm:p-10 pb-4 sm:pb-6 border-b border-slate-50 flex justify-between items-start bg-slate-50/30">
+                            <div className="min-w-0 pr-4">
                                 <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest mb-3 inline-block">Expert Responses for</span>
-                                <h3 className="font-black text-slate-900 text-2xl tracking-tight leading-tight">{selectedLead.title}</h3>
+                                <h3 className="font-black text-slate-900 text-lg sm:text-2xl tracking-tight leading-tight truncate sm:whitespace-normal">{selectedLead.title}</h3>
                             </div>
                             <button
                                 onClick={() => setSelectedLead(null)}
-                                className="p-3 bg-white rounded-2xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all border border-slate-100"
+                                className="p-2 sm:p-3 bg-white rounded-2xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all border border-slate-100 shrink-0"
                             >
-                                <X className="w-6 h-6" />
+                                <X className="w-5 h-5 sm:w-6 sm:h-6" />
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-10 space-y-8 custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto p-4 sm:p-10 space-y-6 sm:space-y-8 custom-scrollbar">
                             {selectedLead.responses && selectedLead.responses.length > 0 ? (
                                 selectedLead.responses.map(resp => (
-                                    <div key={resp.id} className="bg-white p-8 rounded-[20px] border-2 border-slate-50 hover:border-blue-100 transition-all shadow-sm">
-                                        <div className="flex justify-between items-start mb-6">
+                                    <div key={resp.id} className="bg-white p-5 sm:p-8 rounded-[20px] border-2 border-slate-50 hover:border-blue-100 transition-all shadow-sm">
+                                        <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-14 h-14 bg-blue-600 text-white rounded-[20px] flex items-center justify-center font-black text-xl shadow-lg shadow-blue-200">
+                                                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-600 text-white rounded-[18px] sm:rounded-[20px] flex items-center justify-center font-black text-lg sm:text-xl shadow-lg shadow-blue-200 shrink-0">
                                                     {resp.vendor?.businessName?.charAt(0) || 'B'}
                                                 </div>
-                                                <div>
-                                                    <h4 className="font-black text-slate-900 text-lg leading-tight mb-1">{resp.vendor?.businessName}</h4>
-                                                    <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                                                        <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Verified Expert
-                                                        <span>•</span>
-                                                        {formatDistanceToNow(new Date(resp.createdAt), { addSuffix: true })}
+                                                <div className="min-w-0">
+                                                    <h4 className="font-black text-slate-900 text-base sm:text-lg leading-tight mb-1 truncate">{resp.vendor?.businessName}</h4>
+                                                    <div className="flex flex-wrap items-center gap-2 text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                                                        <div className="flex items-center gap-1">
+                                                            <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                                                            <span>Verified Expert</span>
+                                                        </div>
+                                                        <span className="hidden sm:inline">•</span>
+                                                        <span>{formatDistanceToNow(new Date(resp.createdAt), { addSuffix: true })}</span>
                                                     </div>
                                                 </div>
                                             </div>
                                             {resp.price && (
-                                                <div className="text-right">
-                                                    <p className="text-[10px] text-slate-300 uppercase font-black tracking-widest mb-1">Expert Quote</p>
-                                                    <p className="text-2xl font-black text-blue-600 tracking-tighter">PKR {resp.price.toLocaleString()}</p>
+                                                <div className="sm:text-right w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-50">
+                                                    <p className="text-[9px] sm:text-[10px] text-slate-300 uppercase font-black tracking-widest mb-1">Expert Quote</p>
+                                                    <p className="text-xl sm:text-2xl font-black text-blue-600 tracking-tighter">PKR {resp.price.toLocaleString()}</p>
                                                 </div>
                                             )}
                                         </div>
 
-                                        <div className="bg-slate-50/50 p-6 rounded-2xl mb-8 relative">
-                                            <div className="absolute -top-3 left-6 px-2 bg-white text-[9px] font-black text-slate-300 uppercase tracking-widest border border-slate-50 rounded">Expert Message</div>
-                                            <p className="text-slate-600 font-medium leading-relaxed italic">"{resp.message}"</p>
+                                        <div className="bg-slate-50/50 p-4 sm:p-6 rounded-2xl mb-6 sm:mb-8 relative">
+                                            <div className="absolute -top-3 left-4 sm:left-6 px-2 bg-white text-[9px] font-black text-slate-300 uppercase tracking-widest border border-slate-50 rounded">Expert Message</div>
+                                            <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed italic">"{resp.message}"</p>
                                         </div>
 
                                         <div className="flex gap-4">

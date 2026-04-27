@@ -13,6 +13,7 @@ export interface DemandInsight {
     count24h: number;
     isTrending: boolean;
     growth: number;
+    type: 'keyword' | 'category';
 }
 
 interface VendorHotDemandWidgetProps {
@@ -69,14 +70,26 @@ export default function VendorHotDemandWidget({ insights, loading }: VendorHotDe
                         >
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-4">
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black ${item.isTrending ? 'bg-orange-100 text-orange-600' : 'bg-white text-slate-600 border border-slate-200'
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black ${
+                                        item.type === 'category' 
+                                            ? 'bg-blue-100 text-blue-600' 
+                                            : item.isTrending 
+                                                ? 'bg-orange-100 text-orange-600' 
+                                                : 'bg-white text-slate-600 border border-slate-200'
                                         }`}>
-                                        {item.keyword.charAt(0).toUpperCase()}
+                                        {item.type === 'category' ? <TrendingUp className="w-5 h-5" /> : item.keyword.charAt(0).toUpperCase()}
                                     </div>
                                     <div>
-                                        <h4 className="font-black text-slate-900 group-hover:text-blue-600 transition-colors capitalize">
-                                            {item.keyword}
-                                        </h4>
+                                        <div className="flex items-center gap-2">
+                                            <h4 className="font-black text-slate-900 group-hover:text-blue-600 transition-colors capitalize">
+                                                {item.keyword}
+                                            </h4>
+                                            <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-widest ${
+                                                item.type === 'category' ? 'bg-blue-50 text-blue-500 border border-blue-100' : 'bg-slate-100 text-slate-500'
+                                            }`}>
+                                                {item.type}
+                                            </span>
+                                        </div>
                                         <div className="flex items-center gap-2 mt-0.5">
                                             <span className={`text-[10px] font-black uppercase tracking-tighter ${item.growth > 0 ? 'text-emerald-500' : 'text-slate-400'
                                                 }`}>

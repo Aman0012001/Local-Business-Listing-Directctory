@@ -221,10 +221,10 @@ function SuccessContent() {
                             <div className="h-px w-8 bg-slate-200 dark:bg-slate-800" />
                         </div>
                         <h1 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tighter mb-4">
-                            Welcome to the <span className="text-primary italic">Growth Tier.</span>
+                            Welcome to the <span className="text-primary italic">{planDetails?.planName || 'Premium Plan'}.</span>
                         </h1>
                         <p className="text-xl text-slate-400 font-bold tracking-tight max-w-2xl mx-auto">
-                            Your subscription was successfully activated. Here's a quick summary of your account status.
+                            Your {planDetails?.planName || 'subscription'} was successfully activated. Here's a quick summary of your account status.
                         </p>
                     </div>
 
@@ -234,7 +234,7 @@ function SuccessContent() {
                             <div className="absolute top-8 right-8">
                                 <Zap className="w-8 h-8 text-primary/20" />
                             </div>
-                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-8">Active Subscription</h3>
+                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-8">Active Plan</h3>
 
                             <div className="space-y-6">
                                 <div className="flex justify-between items-baseline">

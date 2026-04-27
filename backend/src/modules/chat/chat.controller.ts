@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/
 import { ChatService } from './chat.service';
 import { ChatGateway } from './chat.gateway';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { CreateConversationDto } from './dto/chat.dto';
+import { CreateConversationDto, SendMessageDto } from './dto/chat.dto';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('Chat')
@@ -61,5 +61,37 @@ export class ChatController {
     async markAsRead(@Request() req: any, @Param('id') id: string) {
         await this.chatService.markAsRead(id, req.user.id);
         return { success: true };
+    }
+
+    @Post('conversations/:id/messages')
+    @ApiOperation({ summary: 'Send a message in a conversation via REST' })
+    async sendMessage(
+        @Request() req: any,
+        @Param('id') id: string,
+        @Body() body: SendMessageDto,
+    ) {
+        const userId = req.user.id;
+        const message = await this.chatService.sendMessage(
+            userId,
+            id,
+            body.content,
+        );
+
+        // Broadcast full message to conversation room
+        this.chatGateway.server.to(id).emit('newMessage', message);
+
+        // Also broadcast conversation update
+        const conversation = await this.chatService.getConversationById(id);
+        if (conversation) {
+            const update = {
+                conversationId: id,
+                lastMessage: body.content,
+                lastMessageAt: message.createdAt,
+            };
+            this.chatGateway.server.to(`vendor:${conversation.vendorId}`).emit('conversationUpdated', update);
+            this.chatGateway.server.to(`user:${conversation.userId}`).emit('conversationUpdated', update);
+        }
+
+        return message;
     }
 }

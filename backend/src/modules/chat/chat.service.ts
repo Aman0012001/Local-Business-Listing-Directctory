@@ -3,6 +3,7 @@ import { InjectRepository, InjectEntityManager } from '@nestjs/typeorm';
 import { Repository, Not, EntityManager } from 'typeorm';
 import { ChatConversation, ChatMessage, User, Listing, Vendor } from '../../entities';
 import { LeadsService } from '../leads/leads.service';
+import { NotificationsService, NotificationType } from '../notifications/notifications.service';
 import { Inject, forwardRef } from '@nestjs/common';
 
 @Injectable()
@@ -18,6 +19,7 @@ export class ChatService {
         private vendorRepository: Repository<Vendor>,
         @Inject(forwardRef(() => LeadsService))
         private leadsService: LeadsService,
+        private notificationsService: NotificationsService,
         @InjectEntityManager()
         private readonly entityManager: EntityManager,
     ) { }
@@ -51,18 +53,6 @@ export class ChatService {
                 relations: ['business', 'user', 'vendor'],
             });
 
-            // Create a Lead for this chat start if it's the first time
-            if (conversation) {
-                const userObj = await this.entityManager.findOne(User, { where: { id: userId } });
-                await this.leadsService.create({
-                    businessId,
-                    name: userObj?.fullName || 'User',
-                    email: userObj?.email || '',
-                    phone: userObj?.phone || undefined,
-                    message: `Started a real-time live chat regarding "${conversation.business.title}"`,
-                    type: 'chat' as any,
-                }, userObj).catch(err => console.error('[ChatService] Lead creation failed:', err.message));
-            }
         }
 
         return conversation;
@@ -105,6 +95,19 @@ export class ChatService {
             lastMessage: content,
             lastMessageAt: new Date(),
         });
+
+        // Send real-time notification to the recipient
+        const recipientId = isCustomer ? vendor?.userId : conversation.userId;
+        if (recipientId) {
+            this.notificationsService.create({
+                userId: recipientId,
+                title: isCustomer ? 'New Message' : 'Message from Business',
+                message: content.length > 50 ? content.substring(0, 50) + '...' : content,
+                type: NotificationType.CHAT_MESSAGE,
+                data: { conversationId, senderId: userId },
+                link: `/chat?id=${conversationId}`,
+            }).catch(err => console.error('[ChatService] Notification failed:', err.message));
+        }
 
         return savedMessage;
     }

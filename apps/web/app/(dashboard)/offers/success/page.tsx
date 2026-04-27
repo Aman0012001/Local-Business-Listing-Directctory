@@ -95,7 +95,7 @@ function OfferSuccessContent() {
                 </motion.div>
             )}
 
-            {status === 'celebrating' && (status === 'celebrating') && (
+            {status === 'celebrating' && (
                 <motion.div 
                     key="celebration"
                     initial={{ opacity: 0 }}
