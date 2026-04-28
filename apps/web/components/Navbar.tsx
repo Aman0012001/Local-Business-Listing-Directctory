@@ -46,13 +46,13 @@ export default function Navbar() {
     const { supported: pushSupported, permission: pushPermission, isSubscribed: pushSubscribed, subscribe: enablePush, loading: pushLoading } = usePushNotifications(user?.id, true);
 
     // ── Notifications (via SocketContext) ───────────────────────────
-    const { 
-        notifications, 
-        unreadCount, 
+    const {
+        notifications,
+        unreadCount,
         unreadChatCount,
-        markAsRead, 
-        markAllAsRead, 
-        deleteNotification 
+        markAsRead,
+        markAllAsRead,
+        deleteNotification
     } = useSocket();
 
     useEffect(() => {
@@ -91,7 +91,7 @@ export default function Navbar() {
     };
 
     const timeAgo = (date: string) => {
-        if (!isMounted) return '...'; 
+        if (!isMounted) return '...';
         const diff = Date.now() - new Date(date).getTime();
         const m = Math.floor(diff / 60000);
         if (m < 1) return 'just now';
@@ -144,7 +144,7 @@ export default function Navbar() {
                     {/* Desktop Nav Menu */}
                     <div className="hidden lg:flex flex-grow justify-center">
                         <div className="flex items-center gap-1">
-                            <Link href="/" className="text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors">
+                            <Link href="/" className="relative text-[#2D3E50] font-bold text-[15px] px-4 py-2 rounded-xl hover:bg-slate-50 transition-all hover:text-[#FF7A30]">
                                 Home
                             </Link>
 
@@ -154,7 +154,7 @@ export default function Navbar() {
                                 onMouseEnter={() => setActiveDropdown('categories')}
                                 onMouseLeave={() => setActiveDropdown(null)}
                             >
-                                <button 
+                                <button
                                     onClick={() => handleDropdownToggle('categories')}
                                     className="flex items-center gap-1 text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors"
                                 >
@@ -196,7 +196,7 @@ export default function Navbar() {
                                 onMouseEnter={() => setActiveDropdown('businesses')}
                                 onMouseLeave={() => setActiveDropdown(null)}
                             >
-                                <button 
+                                <button
                                     onClick={() => handleDropdownToggle('businesses')}
                                     className="flex items-center gap-1 text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors"
                                 >
@@ -263,7 +263,7 @@ export default function Navbar() {
                                 onMouseEnter={() => setActiveDropdown('cities')}
                                 onMouseLeave={() => setActiveDropdown(null)}
                             >
-                                <button 
+                                <button
                                     onClick={() => handleDropdownToggle('cities')}
                                     className="flex items-center gap-1 text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors"
                                 >
@@ -374,7 +374,7 @@ export default function Navbar() {
                                                         <div key={n.id} onClick={() => { if (!n.isRead) markAsRead(n.id); }} className={`flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 transition-colors group ${n.isRead ? 'opacity-60' : 'bg-orange-50/30'}`}>
                                                             <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${n.isRead ? 'bg-slate-200' : 'bg-[#FF7A30]'}`} />
                                                             <div className="flex-1 min-w-0">
-                                                                 <div className="flex items-center gap-2 mb-0.5">
+                                                                <div className="flex items-center gap-2 mb-0.5">
                                                                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${typeColor[n.type] || typeColor.info}`}>
                                                                         {n.type?.replace(/_/g, ' ')}
                                                                     </span>
@@ -399,7 +399,7 @@ export default function Navbar() {
                                 </button>
                             </div>
                         ) : (
-                             <div className="hidden sm:flex items-center gap-4">
+                            <div className="hidden sm:flex items-center gap-4">
                                 <Link href="/login" className="text-sm font-semibold text-[#70757a] hover:text-[#202124] px-4 py-2">Login</Link>
                                 <Link href="/register?role=vendor" className="px-6 py-2.5 rounded-xl bg-[#FF7A30] text-white font-bold text-sm hover:bg-[#E86920] shadow-lg shadow-orange-500/20 transition-all active:scale-95 whitespace-nowrap">Add Business</Link>
                             </div>
@@ -419,7 +419,7 @@ export default function Navbar() {
             {/* Mobile Menu Backdrop */}
             <AnimatePresence>
                 {isMobileMenuOpen && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -432,7 +432,7 @@ export default function Navbar() {
             {/* Mobile Menu Drawer */}
             <AnimatePresence>
                 {isMobileMenuOpen && (
-                    <motion.div 
+                    <motion.div
                         initial={{ y: -100, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         exit={{ y: -100, opacity: 0 }}
@@ -451,9 +451,9 @@ export default function Navbar() {
 
                             <nav className="space-y-3">
                                 <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 font-bold text-slate-900">Home</Link>
-                                
+
                                 <div className="space-y-1">
-                                    <button 
+                                    <button
                                         onClick={() => setMobileDropdown(mobileDropdown === 'businesses' ? null : 'businesses')}
                                         className={`w-full flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold transition-all ${mobileDropdown === 'businesses' ? 'text-[#FF7A30] bg-orange-50/50 border-orange-100' : 'text-slate-700 bg-white'}`}
                                     >
@@ -497,7 +497,7 @@ export default function Navbar() {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <button 
+                                    <button
                                         onClick={() => setMobileDropdown(mobileDropdown === 'categories' ? null : 'categories')}
                                         className={`w-full flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold transition-all ${mobileDropdown === 'categories' ? 'text-[#FF7A30] bg-orange-50/50 border-orange-100' : 'text-slate-700 bg-white'}`}
                                     >
@@ -516,7 +516,7 @@ export default function Navbar() {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <button 
+                                    <button
                                         onClick={() => setMobileDropdown(mobileDropdown === 'cities' ? null : 'cities')}
                                         className={`w-full flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold transition-all ${mobileDropdown === 'cities' ? 'text-[#FF7A30] bg-orange-50/50 border-orange-100' : 'text-slate-700 bg-white'}`}
                                     >

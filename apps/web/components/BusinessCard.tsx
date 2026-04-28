@@ -15,9 +15,9 @@ const RatingStars = ({ rating }: { rating: number }) => {
             </span>
             <div className="flex items-center gap-0.5">
                 {[...Array(5)].map((_, i) => (
-                    <Star 
-                        key={i} 
-                        className={`w-3.5 h-3.5 ${i < Math.round(rating || 0) ? 'fill-[#fbbc04] text-[#fbbc04]' : 'text-gray-200'}`} 
+                    <Star
+                        key={i}
+                        className={`w-3.5 h-3.5 ${i < Math.round(rating || 0) ? 'fill-[#fbbc04] text-[#fbbc04]' : 'text-gray-200'}`}
                     />
                 ))}
             </div>
@@ -66,7 +66,7 @@ export default function BusinessCard({ business }: BusinessCardProps) {
                             Approved
                         </span>
                     )}
-                    
+
                     {business.vendor?.isOnline ? (
                         <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
                             <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
