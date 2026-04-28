@@ -50,6 +50,27 @@ export async function fixProductionSchema(dataSource: DataSource) {
             }
         }
 
+        // --- LEADS ---
+        const leadsTable = await queryRunner.getTable('leads');
+        if (leadsTable) {
+            const missingLeadsColumns = [
+                { name: 'is_read', type: 'boolean', default: 'false' },
+                { name: 'status', type: 'text', default: "'new'" },
+                { name: 'vendor_reply', type: 'text', nullable: true },
+                { name: 'vendor_replied_at', type: 'timestamp', nullable: true },
+                { name: 'notes', type: 'text', nullable: true },
+                { name: 'contacted_at', type: 'timestamp', nullable: true },
+                { name: 'converted_at', type: 'timestamp', nullable: true },
+            ];
+
+            for (const col of missingLeadsColumns) {
+                if (!leadsTable.findColumnByName(col.name)) {
+                    logger.log(`➕ Adding missing column ${col.name} to leads`);
+                    const def = col.default !== undefined ? `DEFAULT ${col.default}` : '';
+                    await queryRunner.query(`ALTER TABLE leads ADD COLUMN ${col.name} ${col.type} ${def}`);
+                }
+            }
+        }
         await queryRunner.release();
         logger.log('✅ Production schema check/fix completed.');
     } catch (err) {
