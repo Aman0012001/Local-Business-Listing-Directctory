@@ -94,9 +94,9 @@ export default function CitySearchSelect({ cities, value, onChange, placeholder 
                 <button
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center gap-2 text-[#70757a] hover:text-[#202124] transition-colors py-1 px-2 rounded-md hover:bg-gray-50"
+                    className="flex items-center gap-2 text-[#70757a] hover:text-[#202124] transition-colors rounded-md hover:bg-gray-50"
                 >
-                    <MapPin className="w-4 h-4" />
+                    {/* <MapPin className="w-4 h-4" /> */}
                     <span className="text-sm font-medium">{value || placeholder}</span>
                     <ChevronDown className={`w-3 h-3 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
                 </button>

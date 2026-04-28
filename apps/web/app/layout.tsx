@@ -21,8 +21,8 @@ const outfit = Outfit({
     display: "swap",
 });
 
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
-    (process.env.NODE_ENV === 'production' 
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ||
+    (process.env.NODE_ENV === 'production'
         ? "https://endearing-taffy-91a2c6.netlify.app"
         : "http://localhost:3000");
 
@@ -55,7 +55,7 @@ export default function RootLayout({
     children: React.ReactNode;
 }) {
     return (
-        <html lang="en" className={`${roboto.variable} ${outfit.variable}`} suppressHydrationWarning>
+        <html lang="en" className={`${roboto.variable}`} suppressHydrationWarning>
             <body
                 className={`${roboto.className} bg-white text-slate-900 min-h-screen antialiased`}
                 suppressHydrationWarning

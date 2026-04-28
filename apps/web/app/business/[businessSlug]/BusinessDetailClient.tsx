@@ -642,7 +642,7 @@ export default function BusinessDetailClient({
         if (conversation && conversation.id) {
           const inquiryText = `BUSINESS INQUIRY:\n\nMessage: ${enquiryMessage.trim()}\n\nSender: ${enquiryName.trim()}\nEmail: ${enquiryEmail.trim()}${enquiryPhone.trim() ? `\nPhone: ${enquiryPhone.trim()}` : ""}`;
           await chatApi.sendMessage(conversation.id, inquiryText);
-          
+
           // Open chat window after a small delay to allow state to settle
           setTimeout(() => {
             if (chatRef.current) {
@@ -1888,8 +1888,8 @@ export default function BusinessDetailClient({
                                 <div
                                   key={idx}
                                   className={`rounded-3xl border border-black transition-all duration-500 overflow-hidden ${isOpen
-                                      ? "bg-white shadow-2xl"
-                                      : "bg-slate-50/50 hover:bg-white"
+                                    ? "bg-white shadow-2xl"
+                                    : "bg-slate-50/50 hover:bg-white"
                                     }`}
                                 >
                                   {/* Question */}
@@ -1901,8 +1901,8 @@ export default function BusinessDetailClient({
                                   >
                                     <h4
                                       className={`font-black text-lg md:text-xl transition-colors leading-tight pr-8 ${isOpen
-                                          ? "text-primary"
-                                          : "text-slate-900 group-hover:text-primary/70"
+                                        ? "text-primary"
+                                        : "text-slate-900 group-hover:text-primary/70"
                                         }`}
                                     >
                                       {faq.question}
@@ -1911,8 +1911,8 @@ export default function BusinessDetailClient({
                                     {/* Icon */}
                                     <div
                                       className={`shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-500 ${isOpen
-                                          ? "bg-primary text-white rotate-180 shadow-lg"
-                                          : "bg-white text-slate-400 group-hover:text-primary"
+                                        ? "bg-primary text-white rotate-180 shadow-lg"
+                                        : "bg-white text-slate-400 group-hover:text-primary"
                                         }`}
                                     >
                                       <ChevronDown className="w-5 h-5" />
