@@ -79,21 +79,21 @@ export default function AdminReferralsPage() {
             value: referrals.length.toString(),
             icon: LinkIcon,
             color: 'bg-slate-900',
-            shadow: 'shadow-slate-500/20'
+            accentColor: 'bg-white/10'
         },
         {
             label: 'Converted',
             value: referrals.filter(r => r.status === 'converted').length.toString(),
             icon: CheckCircle,
             color: 'bg-emerald-500',
-            shadow: 'shadow-emerald-500/20'
+            accentColor: 'bg-white/10'
         },
         {
             label: 'Pending Activation',
             value: referrals.filter(r => r.status === 'pending').length.toString(),
             icon: Clock,
             color: 'bg-amber-500',
-            shadow: 'shadow-amber-500/20'
+            accentColor: 'bg-white/10'
         }
     ];
 

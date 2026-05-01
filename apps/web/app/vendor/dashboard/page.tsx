@@ -205,8 +205,8 @@ export default function GenericDashboard() {
             label: 'Total Listings',
             value: stats?.businessCount || '0',
             icon: ListTree,
-            color: 'bg-gradient-to-br from-[#3366CC] to-[#1144AA]',
-            shadow: 'shadow-blue-500/20',
+            color: 'bg-[#004a99]',
+            accentColor: 'bg-white/10',
             onClick: () => router.push('/vendor/add-listing'),
             show: !!features.showListings
         },
@@ -214,8 +214,9 @@ export default function GenericDashboard() {
             label: 'Pending Approval',
             value: stats?.pendingCount || '0',
             icon: Clock,
-            color: 'bg-gradient-to-br from-amber-400 to-amber-600',
-            shadow: 'shadow-amber-500/20',
+            color: 'bg-white',
+            accentColor: 'bg-amber-50',
+            textColor: 'text-amber-600',
             onClick: () => router.push('/vendor/pending-listings'),
             show: !!features.showListings
         },
@@ -223,8 +224,9 @@ export default function GenericDashboard() {
             label: 'Live Chat',
             value: String(conversations.length),
             icon: MessageSquare,
-            color: 'bg-gradient-to-br from-indigo-500 to-indigo-700',
-            shadow: 'shadow-indigo-500/20',
+            color: 'bg-white',
+            accentColor: 'bg-blue-50',
+            textColor: 'text-[#004a99]',
             onClick: () => router.push('/vendor/chat'),
             show: !!features.showChat
         },
@@ -232,22 +234,24 @@ export default function GenericDashboard() {
             label: 'Total Views',
             value: stats?.totalViews || '0',
             icon: Heart,
-            color: 'bg-gradient-to-br from-[#33AA88] to-[#118866]',
-            shadow: 'shadow-emerald-500/20'
+            color: 'bg-white',
+            accentColor: 'bg-rose-50',
+            textColor: 'text-rose-500'
         }] : []),
         ...(features.showLeads ? [{
             label: 'New Leads',
             value: String(newLeadsCount),
             icon: MessageSquare,
-            color: 'bg-gradient-to-br from-[#FFAA33] to-[#FF8811]',
-            shadow: 'shadow-orange-500/20'
+            color: 'bg-[#ff7a00]',
+            accentColor: 'bg-white/10'
         }] : []),
         ...(features.showReviews ? [{
             label: 'Total Reviews',
             value: stats?.totalReviews || recentReviews.length || '0',
             icon: Star,
-            color: 'bg-gradient-to-br from-[#FF6644] to-[#EE4422]',
-            shadow: 'shadow-red-500/20'
+            color: 'bg-white',
+            accentColor: 'bg-emerald-50',
+            textColor: 'text-emerald-500'
         }] : []),
     ].filter(s => (s as any).show !== false);
 
@@ -256,38 +260,41 @@ export default function GenericDashboard() {
             label: 'Saved Businesses',
             value: String(stats?.savedCount || 0),
             icon: Heart,
-            color: 'bg-gradient-to-br from-rose-500 to-rose-700',
-            shadow: 'shadow-rose-500/20',
+            color: 'bg-white',
+            accentColor: 'bg-rose-50',
+            textColor: 'text-rose-500',
             onClick: () => router.push('/vendor/saved')
         },
         {
             label: 'Messages',
             value: String(conversations.length),
             icon: MessageSquare,
-            color: 'bg-gradient-to-br from-indigo-500 to-indigo-700',
-            shadow: 'shadow-indigo-500/20',
+            color: 'bg-[#004a99]',
+            accentColor: 'bg-white/10',
             onClick: () => router.push('/vendor/chat')
         },
         {
             label: 'Your Reviews',
             value: String(stats?.reviewsCount || 0),
             icon: Star,
-            color: 'bg-gradient-to-br from-amber-400 to-amber-600',
-            shadow: 'shadow-amber-500/20'
+            color: 'bg-white',
+            accentColor: 'bg-amber-50',
+            textColor: 'text-amber-600'
         },
         {
             label: 'Notifications',
             value: String(stats?.unreadNotifs || 0),
             icon: Bell,
-            color: 'bg-gradient-to-br from-blue-500 to-blue-700',
-            shadow: 'shadow-blue-500/20'
+            color: 'bg-white',
+            accentColor: 'bg-blue-50',
+            textColor: 'text-[#004a99]'
         },
         {
             label: 'Profile Status',
             value: 'Active',
             icon: CheckCircle2,
-            color: 'bg-gradient-to-br from-emerald-500 to-emerald-700',
-            shadow: 'shadow-emerald-500/20'
+            color: 'bg-[#ff7a00]',
+            accentColor: 'bg-white/10'
         },
     ];
 
@@ -344,20 +351,20 @@ export default function GenericDashboard() {
             <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-10 lg:mb-14 pt-8"
+                className="mb-12 pt-10"
             >
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                     <div>
-                        <h1 className="text-4xl lg:text-6xl font-black text-slate-900 mb-3 tracking-tighter">
-                            Welcome, <span className="text-blue-600 font-black">{user?.fullName?.split(' ')[0] || 'Member'}!</span>
+                        <h1 className="text-4xl lg:text-7xl font-black text-[#131b2e] mb-4 tracking-tighter leading-[1.05]">
+                            Welcome back, <span className="text-[#004a99]">{user?.fullName?.split(' ')[0] || 'Member'}!</span>
                         </h1>
-                        <p className="text-lg text-slate-400 font-bold tracking-tight">
-                            {isVendor ? "Here's what's happening with your business today." : "Everything you need to manage your favorite places and feedback."}
+                        <p className="text-xl text-[#64748b] font-bold tracking-tight">
+                            {isVendor ? "Here's the latest pulse of your business listings." : "Explore and manage your favorite local experiences."}
                         </p>
                     </div>
                     {((isVendor || isAdmin) ? features.canAddListing : false) && (
-                        <Link href="/vendor/add-listing" className="flex items-center gap-2 px-8 py-4 bg-slate-900 text-white rounded-[16px] font-black  shadow-slate-200 hover:scale-105 active:scale-95 transition-all w-fit">
-                            <Plus className="w-5 h-5" /> New Listing
+                        <Link href="/vendor/add-listing" className="btn-orbit-primary px-10 !py-5">
+                            <Plus className="w-6 h-6" /> New Listing
                         </Link>
                     )}
                 </div>
@@ -368,46 +375,45 @@ export default function GenericDashboard() {
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="mb-8 overflow-hidden rounded-[20px] bg-slate-900 border border-slate-800 shadow-2xl relative"
+                    className="mb-12 overflow-hidden rounded-[32px] bg-[#131b2e] border border-[#2d3748] shadow-[0_30px_60px_rgb(0,0,0,0.2)] relative"
                 >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-                    <div className="p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
-                        <div className="flex items-center gap-5">
-                            <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 flex-shrink-0">
-                                <BadgeCheck className="w-8 h-8 text-white" />
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#004a99]/20 rounded-full blur-[100px] pointer-events-none" />
+                    <div className="p-8 sm:p-12 flex flex-col sm:flex-row items-center justify-between gap-8 relative z-10">
+                        <div className="flex items-center gap-6">
+                            <div className="w-16 h-16 bg-gradient-to-br from-[#10b981] to-[#059669] rounded-[22px] flex items-center justify-center shadow-[0_15px_30px_rgb(16,185,129,0.25)] flex-shrink-0">
+                                <BadgeCheck className="w-9 h-9 text-white" />
                             </div>
                             <div>
-                                <p className="text-[10px] sm:text-xs font-black text-emerald-400/80 uppercase tracking-[0.2em] mb-1">
-                                    Active Plan
+                                <p className="text-[11px] font-black text-[#10b981] uppercase tracking-[0.25em] mb-2">
+                                    Premium Status
                                 </p>
-                                <h2 className="text-xl sm:text-3xl font-black text-white tracking-tight mb-2">
-                                    {activeSub.plan?.name}
+                                <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight mb-3">
+                                    {activeSub.plan?.name} Member
                                 </h2>
-                                <p className="text-slate-400 font-bold text-xs sm:text-sm flex items-center gap-2">
-                                    <Clock className="w-3.5 h-3.5 text-slate-500" />
+                                <p className="text-[#94a3b8] font-bold text-sm sm:text-base flex items-center gap-2.5">
+                                    <Clock className="w-4 h-4 text-[#475569]" />
                                     {(() => {
                                         const end = new Date(activeSub.endDate);
                                         const days = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
                                         
                                         if (days > 3000) {
-                                            return <span className="text-emerald-400">Lifetime Plan</span>;
+                                            return <span className="text-[#10b981]">Lifetime Access Active</span>;
                                         }
 
                                         return (
-                                            <span className={days <= 4 ? "text-rose-400" : "text-emerald-400"}>
-                                                {days > 0 ? `Expires in ${days} day${days !== 1 ? 's' : ''}` : 'Expired'} · {end.toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                            <span className={days <= 4 ? "text-[#ba1a1a]" : "text-[#10b981]"}>
+                                                {days > 0 ? `Renewal in ${days} days` : 'Expired'} · {end.toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' })}
                                             </span>
                                         );
                                     })()}
-
                                 </p>
                             </div>
                         </div>
                         <Link 
                             href="/vendor/subscription" 
-                            className="flex items-center gap-2 px-8 py-3.5 bg-white/5 hover:bg-white/10 text-white rounded-xl font-black text-sm transition-all border border-white/10 shadow-xl"
+                            className="btn-orbit-ghost !bg-white/5 !border-white/10 !text-white px-8"
                         >
-                            Manage Plan
+                            Manage Subscription
                             <ChevronRight className="w-4 h-4" />
                         </Link>
                     </div>
@@ -426,7 +432,7 @@ export default function GenericDashboard() {
                     {/* Job Leads Section */}
                     {(isVendor || isAdmin) ? (
                         features.showLeads && (
-                            <div className="bg-white rounded-[16px] p-8 sm:p-10 border border-black shadow-slate-200/20">
+                            <div className="bg-white rounded-[24px] p-8 sm:p-10 border border-[#e2e8f0] shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                                 <VendorLeadsInbox />
                             </div>
                         )
@@ -441,19 +447,18 @@ export default function GenericDashboard() {
                                         Upgrade to a Business Account to list your services, track performance, and connect with your local community.
                                     </p>
                                 </div>
-                                <Link 
-                                    href="/vendor/upgrade" 
-                                    className="relative z-10 flex items-center justify-center gap-2 px-8 py-4 bg-[#FF7A30] hover:bg-[#E86920] text-white rounded-[16px] font-black transition-all shadow-xl shadow-orange-900/20 whitespace-nowrap active:scale-95"
+                                <Link
+                                    href="/register?role=vendor"
+                                    className="btn-orbit-accent px-8"
                                 >
-                                    <Sparkles className="w-5 h-5 flex-shrink-0" />
-                                    Become a Vendor
+                                    Add Business
                                 </Link>
                             </div>
 
-                            <div className="bg-white rounded-[16px] p-8 sm:p-10 border border-black shadow-slate-200/20">
+                            <div className="bg-white rounded-[24px] p-8 sm:p-10 border border-[#e2e8f0] shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                                 <MyInquiries />
                             </div>
-                            <div className="bg-white rounded-[16px] p-8 sm:p-10 border border-black shadow-slate-200/20">
+                            <div className="bg-white rounded-[24px] p-8 sm:p-10 border border-[#e2e8f0] shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                                 <MyJobLeads />
                             </div>
                         </div>
@@ -468,7 +473,7 @@ export default function GenericDashboard() {
                                     Performance Analytics
                                 </h3>
                             </div>
-                            <div className="bg-white rounded-[16px] p-8 sm:p-10 border border-black  shadow-slate-200/20">
+                            <div className="bg-white rounded-[24px] p-8 sm:p-10 border border-[#e2e8f0] shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                                 <PerformanceChart stats={stats} />
                             </div>
                         </div>
@@ -476,13 +481,13 @@ export default function GenericDashboard() {
 
                     {/* Saved Businesses Section (Common) */}
                     {((isVendor || isAdmin) ? features.showSaved : true) && (
-                        <section className="bg-white rounded-[16px] p-8 sm:p-10 border border-black  shadow-slate-200/20 relative overflow-hidden group">
+                        <section className="bg-white rounded-[24px] p-8 sm:p-10 border border-[#e2e8f0] shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
                         <div className="flex items-center justify-between mb-8">
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-rose-50 rounded-[16px] flex items-center justify-center text-rose-500 shadow-inner">
-                                    <Heart className="w-6 h-6 fill-rose-500" />
+                                <div className="w-12 h-12 bg-[#fff1f2] rounded-[16px] flex items-center justify-center text-[#ba1a1a] shadow-inner border border-[#ba1a1a]/10">
+                                    <Heart className="w-6 h-6 fill-current" />
                                 </div>
-                                <h3 className="text-2xl font-black text-slate-900 tracking-tight">My Saved Places</h3>
+                                <h3 className="text-2xl font-black text-[#131b2e] tracking-tight">My Saved Places</h3>
                             </div>
                             <Link href="/vendor/saved" className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-all group/link">
                                 View Collection <ChevronRight className="w-4 h-4 transition-transform group-hover/link:translate-x-1" />
@@ -518,15 +523,15 @@ export default function GenericDashboard() {
 
                     {/* Followed Businesses Section */}
                     {((isVendor || isAdmin) ? features.showFollowing : true) && (
-                        <section className="bg-white rounded-[16px] p-8 sm:p-10 border border-black  shadow-slate-200/20 relative overflow-hidden group">
+                        <section className="bg-white rounded-[24px] p-8 sm:p-10 border border-[#e2e8f0] shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
                         <div className="flex items-center justify-between mb-8">
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-blue-50 rounded-[16px] flex items-center justify-center text-blue-600 shadow-inner border border-blue-100/50">
+                                <div className="w-12 h-12 bg-[#f0f4ff] rounded-[16px] flex items-center justify-center text-[#004a99] shadow-inner border border-[#004a99]/10">
                                     <Bell className="w-6 h-6" />
                                 </div>
-                                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Following</h3>
+                                <h3 className="text-2xl font-black text-[#131b2e] tracking-tight">Following</h3>
                             </div>
-                            <Link href="/vendor/following" className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-all group/link">
+                            <Link href="/vendor/following" className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-[#64748b] hover:text-[#004a99] transition-all group/link">
                                 Manage Alerts <ChevronRight className="w-4 h-4 transition-transform group-hover/link:translate-x-1" />
                             </Link>
                         </div>
@@ -534,13 +539,13 @@ export default function GenericDashboard() {
                         <div className="grid sm:grid-cols-2 gap-6">
                             {followedBusinesses.length > 0 ? (
                                 followedBusinesses.slice(0, 4).map((biz) => (
-                                    <Link key={biz.id} href={`/business/${biz.slug}`} className="flex items-center gap-5 p-4 rounded-[16px] bg-slate-50 border border-transparent hover:border-blue-500/20 hover:bg-white hover: transition-all group/item">
+                                    <Link key={biz.id} href={`/business/${biz.slug}`} className="flex items-center gap-5 p-4 rounded-[20px] bg-[#faf8ff] border border-transparent hover:border-[#004a99]/20 hover:bg-white hover:shadow-xl transition-all group/item">
                                         <div className="w-16 h-16 rounded-[16px] overflow-hidden flex-shrink-0 shadow-md">
                                             <img src={getImageUrl((biz as any).coverImageUrl || (biz as any).images?.[0]) || 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=400'} alt={biz.title} className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-500" />
                                         </div>
                                         <div className="overflow-hidden">
-                                            <h4 className="font-black text-slate-900 truncate group-hover/item:text-blue-600 transition-colors">{(biz as any).title}</h4>
-                                            <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                                            <h4 className="font-black text-[#131b2e] truncate group-hover/item:text-[#004a99] transition-colors">{(biz as any).title}</h4>
+                                            <div className="flex items-center gap-2 text-[10px] font-black text-[#64748b] uppercase tracking-widest mt-1">
                                                 <span className="truncate">{biz.category?.name || 'Local'}</span>
                                                 <span className="text-slate-200">•</span>
                                                 <span className="truncate">{biz.city || 'Location'}</span>
@@ -549,9 +554,9 @@ export default function GenericDashboard() {
                                     </Link>
                                 ))
                             ) : (
-                                <div className="col-span-full text-center py-10 bg-slate-50 rounded-[16px] border border-dashed border-slate-200">
-                                    <p className="text-slate-400 font-bold italic">You aren't following any businesses yet.</p>
-                                    <Link href="/search" className="inline-block mt-4 text-xs font-black text-blue-600 uppercase tracking-widest">Discover Now</Link>
+                                <div className="col-span-full text-center py-10 bg-[#faf8ff] rounded-[24px] border border-dashed border-[#e2e8f0]">
+                                    <p className="text-[#64748b] font-bold italic">You aren't following any businesses yet.</p>
+                                    <Link href="/search" className="inline-block mt-4 text-xs font-black text-[#004a99] uppercase tracking-widest">Discover Now</Link>
                                 </div>
                             )}
                         </div>
@@ -605,37 +610,37 @@ export default function GenericDashboard() {
                     )}
 
                     {((isVendor || isAdmin) && features.showChat) && (
-                        <section className="bg-white rounded-[16px] p-8 border border-black shadow-slate-200/20">
-                            <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-[14px] flex items-center justify-center">
-                                        <MessageSquare className="w-5 h-5 text-blue-600" />
+                        <section className="bg-white rounded-[24px] p-8 border border-[#e2e8f0] shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                            <div className="flex items-center justify-between mb-8">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-[#f0f4ff] rounded-[16px] flex items-center justify-center text-[#004a99] shadow-inner border border-[#004a99]/10">
+                                        <MessageSquare className="w-6 h-6" />
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-black text-slate-900 tracking-tight">Recent Chats</h3>
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Live Conversations</p>
+                                        <h3 className="text-xl font-black text-[#131b2e] tracking-tight">Recent Chats</h3>
+                                        <p className="text-[10px] text-[#64748b] font-bold uppercase tracking-[0.2em] mt-1">Direct Connect</p>
                                     </div>
                                 </div>
-                                <Link href="/vendor/chat" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-all flex items-center gap-1">
-                                    {isVendor ? 'Open Inbox' : 'My Messages'} <ChevronRight className="w-3 h-3" />
+                                <Link href="/vendor/chat" className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748b] hover:text-[#004a99] transition-all flex items-center gap-1.5">
+                                    Inbox <ChevronRight className="w-4 h-4" />
                                 </Link>
                             </div>
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                                 {conversations.length > 0 ? (
                                     conversations.map((conv) => (
                                         <Link 
                                             key={conv.id} 
                                             href={`/vendor/chat?id=${conv.id}`}
-                                            className="block p-4 rounded-[14px] bg-slate-50 border border-slate-100 hover:border-blue-200 hover:bg-white transition-all group"
+                                            className="block p-4 rounded-[18px] bg-[#faf8ff] border border-transparent hover:border-[#004a99]/20 hover:bg-white hover:shadow-lg transition-all group"
                                         >
                                             <div className="flex items-start justify-between gap-2">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-8 h-8 rounded-full bg-slate-200 overflow-hidden flex-shrink-0">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-full bg-white shadow-sm border border-[#e2e8f0] overflow-hidden flex-shrink-0">
                                                         {isVendor ? (
                                                             conv.user?.avatarUrl ? (
                                                                 <img src={getImageUrl(conv.user.avatarUrl) as string} alt="" className="w-full h-full object-cover" />
                                                             ) : (
-                                                                <div className="w-full h-full flex items-center justify-center bg-blue-50 text-blue-600 font-black text-xs">
+                                                                <div className="w-full h-full flex items-center justify-center bg-[#f0f4ff] text-[#004a99] font-black text-xs">
                                                                     {(conv.user?.fullName?.[0] || 'U').toUpperCase()}
                                                                 </div>
                                                             )
@@ -643,32 +648,30 @@ export default function GenericDashboard() {
                                                             conv.business?.logoUrl ? (
                                                                 <img src={getImageUrl(conv.business.logoUrl) as string} alt="" className="w-full h-full object-cover" />
                                                             ) : (
-                                                                <div className="w-full h-full flex items-center justify-center bg-orange-50 text-orange-600 font-black text-xs">
+                                                                <div className="w-full h-full flex items-center justify-center bg-[#fff7ed] text-[#ff7a00] font-black text-xs">
                                                                     {(conv.business?.title?.[0] || 'B').toUpperCase()}
                                                                 </div>
                                                             )
                                                         )}
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-black text-slate-900 leading-none">
-                                                            {isVendor ? (conv.user?.fullName || 'User') : (conv.business?.title || 'Business')}
+                                                        <p className="text-sm font-black text-[#131b2e] leading-none group-hover:text-[#004a99] transition-colors">
+                                                            {isVendor ? (conv.user?.fullName || 'Client') : (conv.business?.title || 'Business')}
                                                         </p>
-                                                        {isVendor && <p className="text-[10px] text-slate-400 font-medium mt-1 italic">on {conv.business?.title || 'Listing'}</p>}
+                                                        {isVendor && <p className="text-[10px] text-[#64748b] font-bold mt-1.5 uppercase tracking-tighter">On {conv.business?.title || 'Listing'}</p>}
                                                     </div>
                                                 </div>
-                                                <span className="text-[9px] text-slate-300 font-medium">{new Date(conv.lastMessageAt || conv.createdAt).toLocaleDateString()}</span>
+                                                <span className="text-[9px] text-[#94a3b8] font-black uppercase tracking-widest">{new Date(conv.lastMessageAt || conv.createdAt).toLocaleDateString()}</span>
                                             </div>
-                                            <p className="text-xs text-slate-500 line-clamp-1 mt-2 pl-10">
-                                                {conv.lastMessage || 'Start the conversation...'}
+                                            <p className="text-xs text-[#475569] font-medium line-clamp-1 mt-3 pl-1">
+                                                {conv.lastMessage || 'Open thread...'}
                                             </p>
                                         </Link>
                                     ))
                                 ) : (
-                                    <div className="py-8 text-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-100">
-                                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-sm transform -rotate-6">
-                                            <MessageSquare className="w-6 h-6 text-slate-300" />
-                                        </div>
-                                        <p className="text-sm text-slate-400 font-bold italic">No active chats yet</p>
+                                    <div className="py-10 text-center bg-[#faf8ff] rounded-[24px] border border-dashed border-[#e2e8f0]">
+                                        <MessageSquare className="w-10 h-10 text-[#e2e8f0] mx-auto mb-3" />
+                                        <p className="text-[#64748b] font-bold italic text-xs">No active conversations</p>
                                     </div>
                                 )}
                             </div>
@@ -676,44 +679,42 @@ export default function GenericDashboard() {
                     )}
 
                     {isVendor && features.showQueries && (
-                        <section className="bg-white rounded-[16px] p-8 border border-black  shadow-slate-200/20 opacity-60 grayscale-[0.5] scale-95 origin-top">
+                        <section className="bg-[#faf8ff] rounded-[24px] p-8 border border-[#e2e8f0] opacity-80 scale-95 origin-top grayscale-[0.2]">
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-slate-100 rounded-[14px] flex items-center justify-center text-slate-400">
+                                    <div className="w-10 h-10 bg-white rounded-[14px] flex items-center justify-center text-[#64748b] border border-[#e2e8f0]">
                                         <Mail className="w-5 h-5" />
                                     </div>
-                                    <div>
-                                        <h3 className="text-lg font-black text-slate-400 tracking-tight">Form Enquiries</h3>
-                                    </div>
+                                    <h3 className="text-lg font-black text-[#131b2e] tracking-tight">Form Enquiries</h3>
                                 </div>
-                                <Link href="/vendor/messages" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600">
-                                    Full Leads Inbox →
+                                <Link href="/vendor/messages" className="text-[10px] font-black uppercase tracking-[0.2em] text-[#004a99] hover:text-[#ff7a00]">
+                                    Lead Vault →
                                 </Link>
                             </div>
-                            <p className="text-[11px] text-slate-400 font-bold text-center py-4">
-                                Most customers use the Live Chat now. Older form-based queries can be accessed in the full inbox.
+                            <p className="text-[11px] text-[#64748b] font-bold text-center py-4 leading-relaxed italic">
+                                Live Chat is the preferred channel. Older form queries are archived in your Lead Management Center.
                             </p>
                         </section>
                     )}
 
                     {/* Referral Section */}
                     {isVendor && (
-                        <section className="bg-slate-900 rounded-[16px] p-8 border border-slate-800 shadow-2xl relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
+                        <section className="bg-[#131b2e] rounded-[32px] p-10 border border-[#2d3748] shadow-[0_30px_60px_rgb(0,0,0,0.25)] relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-[#004a99]/10 rounded-full blur-[100px] pointer-events-none" />
                             
                             <div className="relative z-10">
-                                <div className="flex items-center justify-between mb-6">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-blue-600/20 rounded-[14px] flex items-center justify-center text-blue-400 border border-blue-500/20">
-                                            <Share2 className="w-5 h-5" />
+                                <div className="flex items-center justify-between mb-8">
+                                    <div className="flex items-center gap-5">
+                                        <div className="w-12 h-12 bg-[#004a99]/30 rounded-[18px] flex items-center justify-center text-[#3b82f6] border border-[#3b82f6]/30 shadow-2xl">
+                                            <Share2 className="w-6 h-6" />
                                         </div>
                                         <div>
-                                            <h3 className="text-lg font-black text-white tracking-tight">Refer & Earn</h3>
-                                            <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Get 30 Days Free Plan</p>
+                                            <h3 className="text-2xl font-black text-white tracking-tight">Refer & Scale</h3>
+                                            <p className="text-[10px] font-black text-[#ff7a00] uppercase tracking-[0.3em] mt-1">Unlock Premium Rewards</p>
                                         </div>
                                     </div>
-                                    <Link href="/vendor/affiliate" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-white transition-all flex items-center gap-1">
-                                        View Stats <ChevronRight className="w-3 h-3" />
+                                    <Link href="/vendor/affiliate" className="text-[10px] font-black uppercase tracking-[0.3em] text-[#94a3b8] hover:text-white transition-all flex items-center gap-2">
+                                        Network Stats <ChevronRight className="w-4 h-4" />
                                     </Link>
                                 </div>
 
@@ -756,26 +757,26 @@ export default function GenericDashboard() {
 
                                 {affiliateStats?.isAffiliate ? (
                                     <div className="space-y-4">
-                                        <div className="p-4 bg-white/5 border border-white/10 rounded-xl">
+                                        <div className="p-5 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md">
                                             <div className="flex items-center justify-between gap-4">
                                                 <div className="overflow-hidden">
-                                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Your Referral Link</p>
-                                                    <p className="text-xs font-bold text-slate-300 truncate">
+                                                    <p className="text-[9px] font-black text-[#94a3b8] uppercase tracking-[0.2em] mb-1.5">Share Referral Link</p>
+                                                    <p className="text-xs font-bold text-white truncate opacity-60">
                                                         {typeof window !== 'undefined' ? `${window.location.origin}/?ref=${affiliateStats.referralCode}` : 'Loading...'}
                                                     </p>
                                                 </div>
                                                 <button 
                                                     onClick={copyReferralLink}
-                                                    className="flex-shrink-0 p-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all active:scale-95"
+                                                    className="flex-shrink-0 p-3.5 bg-[#004a99] hover:bg-[#003c7d] text-white rounded-xl transition-all active:scale-95 shadow-lg"
                                                 >
                                                     {copySuccess ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                                                 </button>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2 px-1">
-                                            <Gift className="w-4 h-4 text-blue-400" />
-                                            <p className="text-[11px] text-slate-400 font-medium">
-                                                Earn <span className="text-white font-black italic">1 month plan extension</span> for every vendor you refer!
+                                        <div className="flex items-center gap-2.5 px-1">
+                                            <Gift className="w-4 h-4 text-[#ff7a00]" />
+                                            <p className="text-[11px] text-[#94a3b8] font-bold leading-relaxed">
+                                                Earn <span className="text-white font-black italic">1 month premium</span> for every vendor you refer!
                                             </p>
                                         </div>
                                     </div>

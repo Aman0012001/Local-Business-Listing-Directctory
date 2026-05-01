@@ -74,11 +74,11 @@ export class PromotionBooking {
     updatedAt: Date;
 
     // Relations
-    @ManyToOne(() => Vendor, { onDelete: 'CASCADE' })
+    @ManyToOne(() => Vendor, { onDelete: 'CASCADE', createForeignKeyConstraints: false })
     @JoinColumn({ name: 'vendor_id' })
     vendor: Vendor;
 
-    @ManyToOne(() => OfferEvent, { onDelete: 'CASCADE' })
+    @ManyToOne(() => OfferEvent, { onDelete: 'CASCADE', createForeignKeyConstraints: false })
     @JoinColumn({ name: 'offer_event_id' })
     offerEvent: OfferEvent;
 }

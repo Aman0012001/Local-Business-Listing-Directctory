@@ -2,16 +2,15 @@ import "./globals.css";
 import { AuthProvider } from "../context/AuthContext";
 import { SocketProvider } from "../context/SocketContext";
 import { Toaster } from 'react-hot-toast';
-import { Roboto } from "next/font/google";
+import { Inter } from "next/font/google";
 import Script from "next/script";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
-const roboto = Roboto({
+const inter = Inter({
     subsets: ["latin"],
-    weight: ["300", "400", "500", "700"],
-    style: ["normal", "italic"],
-    variable: "--font-roboto",
+    weight: ["300", "400", "500", "700", "900"],
+    variable: "--font-inter",
     display: "swap",
 });
 
@@ -48,9 +47,9 @@ export default function RootLayout({
     children: React.ReactNode;
 }) {
     return (
-        <html lang="en" className={roboto.variable} suppressHydrationWarning>
+        <html lang="en" className={inter.variable} suppressHydrationWarning>
             <body
-                className={`${roboto.className} bg-white text-slate-900 min-h-screen antialiased`}
+                className={`${inter.className} bg-[#faf8ff] text-[#131b2e] min-h-screen antialiased`}
                 suppressHydrationWarning
             >
                 <AuthProvider>

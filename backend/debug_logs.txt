@@ -879,3 +879,6 @@ NotFoundException: Listing not found
 [2026-04-07T17:50:39.932Z] findBySlug: restaurants-best-pizza-mnm6c77s (User: mkuser@hey.com)
 [2026-04-07T17:50:41.211Z] findBySlug: restaurants-best-pizza-mnm6c77s - Found in DB. Status: approved
 [2026-04-07T17:50:41.525Z] findBySlug: restaurants-best-pizza-mnm6c77s - SUCCESS
+[2026-05-01T13:10:04.480Z] findBySlug: dev-vendor-listing2-mnvspqxo (User: Public)
+[2026-05-01T13:10:04.883Z] findBySlug: dev-vendor-listing2-mnvspqxo - Found in DB. Status: approved
+[2026-05-01T13:10:05.041Z] findBySlug: dev-vendor-listing2-mnvspqxo - SUCCESS

@@ -90,7 +90,7 @@ const OfferCard: React.FC<OfferCardProps> = ({ offer, onEnquire }) => {
 
                     <button
                         onClick={onEnquire}
-                        className="px-4 py-2 bg-slate-900 text-white text-xs font-black rounded-xl hover:bg-orange-500 transition-all group-hover:scale-105 active:scale-95"
+                        className="btn-orbit-ghost !bg-slate-900 !text-white hover:!bg-orange-500 !px-5 !h-[36px] !rounded-[12px] !text-xs"
                     >
                         Enquire
                     </button>

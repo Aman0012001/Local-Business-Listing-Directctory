@@ -195,31 +195,31 @@ export default function AffiliateDashboard() {
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-6 mb-12">
-                    <div className="p-8 bg-white rounded-[28px] border border-slate-200 shadow-sm">
-                        <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-500 mb-6">
+                    <div className="p-8 bg-[#004a99] rounded-[28px] text-white shadow-lg shadow-blue-900/10 transition-all hover:scale-[1.02] duration-300">
+                        <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-white mb-6">
                             <Timer className="w-6 h-6" />
                         </div>
                         <div className="space-y-1">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Plan Extensions Earned</p>
-                            <h3 className="text-3xl font-black text-slate-900">{stats?.convertedReferrals || 0} Months</h3>
+                            <p className="text-[10px] font-black text-white/70 uppercase tracking-widest">Plan Extensions Earned</p>
+                            <h3 className="text-3xl font-black">{stats?.convertedReferrals || 0} Months</h3>
                         </div>
                     </div>
-                    <div className="p-8 bg-white rounded-[28px] border border-slate-200 shadow-sm">
-                        <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-500 mb-6">
+                    <div className="p-8 bg-white rounded-[28px] border border-slate-200 shadow-sm transition-all hover:shadow-md duration-300">
+                        <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-[#004a99] mb-6">
                             <Users className="w-6 h-6" />
                         </div>
                         <div className="space-y-1">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Referrals</p>
-                            <h3 className="text-3xl font-black text-slate-900">{stats?.totalReferrals || 0}</h3>
+                            <h3 className="text-3xl font-black text-[#131b2e]">{stats?.totalReferrals || 0}</h3>
                         </div>
                     </div>
-                    <div className="p-8 bg-white rounded-[28px] border border-slate-200 shadow-sm">
-                        <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-500 mb-6">
+                    <div className="p-8 bg-[#ff7a00] rounded-[28px] text-white shadow-lg shadow-orange-900/10 transition-all hover:scale-[1.02] duration-300">
+                        <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-white mb-6">
                             <CheckCircle2 className="w-6 h-6" />
                         </div>
                         <div className="space-y-1">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Conversions</p>
-                            <h3 className="text-3xl font-black text-slate-900">{stats?.convertedReferrals || 0}</h3>
+                            <p className="text-[10px] font-black text-white/70 uppercase tracking-widest">Conversions</p>
+                            <h3 className="text-3xl font-black">{stats?.convertedReferrals || 0}</h3>
                         </div>
                     </div>
                 </div>

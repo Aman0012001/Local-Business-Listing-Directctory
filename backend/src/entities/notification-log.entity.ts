@@ -18,11 +18,11 @@ export class NotificationLog {
     @Index()
     vendorId: string;
 
-    @Column()
+    @Column({ nullable: true })
     @Index()
-    keyword: string;
+    keyword?: string;
 
-    @Column({ default: 'sent' })
+    @Column({ default: 'sent', nullable: true })
     status: string;
 
     @CreateDateColumn({ name: 'sent_at' })

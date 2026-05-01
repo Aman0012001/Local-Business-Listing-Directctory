@@ -49,7 +49,7 @@ const ChatTrigger = forwardRef<ChatTriggerHandle, ChatTriggerProps>(({ businessI
             {variant === 'button' ? (
                 <button
                     onClick={handleToggle}
-                    className={`flex items-center justify-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl font-bold transition-all active:scale-95 ${className}`}
+                    className={`btn-orbit-secondary !bg-primary/5 !border-primary/10 !text-primary !rounded-[12px] !h-[42px] !px-4 ${className}`}
                 >
                     <MessageCircle className="w-4 h-4" />
                     <span>Chat</span>

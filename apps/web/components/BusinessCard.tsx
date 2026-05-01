@@ -209,7 +209,7 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                                 <VendorOnlineBadge isOnline={business.vendor?.user?.isOnline} />
                                 <BusinessOpenBadge business={business} />
                             </div>
-                            <div className={`px-8 py-3 rounded-xl font-bold transition-all shadow-lg active:scale-95 text-sm ${getButtonStyles()}`}>
+                            <div className="btn-orbit-primary px-8 !text-sm">
                                 {getButtonText()}
                             </div>
                         </div>
@@ -270,7 +270,7 @@ export default function BusinessCard({ business, variant = 'blue', layout = 'gri
                     </div>
 
                     <div className="mt-auto flex gap-2">
-                        <div className="flex-1 text-center py-2 font-bold transition-all active:scale-95 bg-blue-50 text-blue-600 rounded-[10px]">
+                        <div className="btn-orbit-secondary flex-1 !text-sm !h-[42px] !rounded-[12px]">
                             View Details
                         </div>
                         {showChat && (

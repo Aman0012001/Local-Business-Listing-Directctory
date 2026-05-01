@@ -9,24 +9,33 @@ const config: Config = {
         extend: {
             colors: {
                 primary: {
-                    DEFAULT: '#667eea',
-                    50: '#f5f7ff',
-                    100: '#ebf0fe',
-                    200: '#dae3fd',
-                    300: '#bbcbfa',
-                    400: '#91aaf6',
-                    500: '#667eea', // Main primary color
-                    600: '#4c5edb',
-                    700: '#3d4bb9',
-                    800: '#353e96',
-                    900: '#2f3778',
+                    DEFAULT: '#004a99',
+                    50: '#f0f4ff',
+                    100: '#e0e9ff',
+                    200: '#c2d4ff',
+                    300: '#94b4ff',
+                    400: '#5c8aff',
+                    500: '#004a99', // Brand Blue
+                    600: '#003c7d',
+                    700: '#002e61',
+                    800: '#002145',
+                    900: '#001429',
                 },
                 accent: {
-                    500: '#764ba2', // Main accent color
-                }
+                    DEFAULT: '#ff7a00',
+                    50: '#fff4e6',
+                    100: '#ffe9cc',
+                    500: '#ff7a00', // Accent Orange
+                    600: '#e66e00',
+                },
+                surface: {
+                    DEFAULT: '#faf8ff',
+                    bright: '#ffffff',
+                },
+                "on-surface": '#131b2e',
             },
             fontFamily: {
-                sans: ["var(--font-roboto)", "Roboto", "system-ui", "-apple-system", "BlinkMacSystemFont", '"Segoe UI"', "Helvetica", "Arial", "sans-serif"],
+                sans: ["var(--font-inter)", "Inter", "system-ui", "-apple-system", "BlinkMacSystemFont", '"Segoe UI"', "Helvetica", "Arial", "sans-serif"],
             },
             backgroundImage: {
                 "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",

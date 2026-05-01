@@ -422,7 +422,7 @@ export default function HomePage() {
 
             <button
               onClick={handleSearch}
-              className="bg-[#FF7A30] hover:bg-[#E86920] text-white px-10 py-3 rounded-[20px] font-black text-lg transition-all  shadow-orange-100 flex items-center justify-center gap-3 active:scale-95 shrink-0"
+              className="btn-orbit-accent px-10 !text-lg !rounded-[24px] h-[64px] shrink-0"
             >
               <Search className="w-5 h-5" />
               Search
@@ -608,7 +608,7 @@ export default function HomePage() {
                       }))
                     }
                     className={`w-12 h-12 rounded-full font-black transition-all ${paginationMetadata.page === i + 1
-                      ? "bg-[#FF7A30] text-white shadow-lg"
+                      ? "btn-orbit-accent !px-0 !py-0 !rounded-full shadow-lg"
                       : "hover:bg-white hover:shadow-md text-slate-600"
                       }`}
                   >

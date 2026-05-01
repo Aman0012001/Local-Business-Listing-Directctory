@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import { Phone, Mail, MessageSquare, Globe, Clock, ChevronRight, User, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 
 interface Lead {
     id: string;
@@ -17,11 +18,11 @@ interface Lead {
 }
 
 const TYPE_CONFIG = {
-    call: { icon: Phone, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    whatsapp: { icon: MessageSquare, color: 'text-green-600', bg: 'bg-green-50' },
-    email: { icon: Mail, color: 'text-sky-600', bg: 'bg-sky-50' },
-    chat: { icon: MessageSquare, color: 'text-violet-600', bg: 'bg-violet-50' },
-    website: { icon: Globe, color: 'text-slate-600', bg: 'bg-slate-50' },
+    call: { icon: Phone, color: 'text-[#004a99]', bg: 'bg-[#f0f4ff]' },
+    whatsapp: { icon: MessageSquare, color: 'text-[#10b981]', bg: 'bg-[#ecfdf5]' },
+    email: { icon: Mail, color: 'text-[#004a99]', bg: 'bg-[#f0f4ff]' },
+    chat: { icon: MessageSquare, color: 'text-[#ff7a00]', bg: 'bg-[#fff7ed]' },
+    website: { icon: Globe, color: 'text-[#64748b]', bg: 'bg-[#faf8ff]' },
 };
 
 export default function VendorLeadsInbox() {
@@ -47,33 +48,41 @@ export default function VendorLeadsInbox() {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center py-12 gap-3">
-                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-                <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Fetching Latest Leads...</p>
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <div className="relative">
+                    <Loader2 className="w-10 h-10 text-[#004a99] animate-spin" />
+                    <div className="absolute inset-0 bg-[#004a99]/10 rounded-full blur-xl animate-pulse"></div>
+                </div>
+                <p className="text-[#64748b] font-black text-[10px] uppercase tracking-[0.2em]">Syncing Latest Leads</p>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="p-8 bg-red-50 rounded-3xl border-2 border-dashed border-red-100 text-center">
-                <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-3" />
-                <p className="text-red-700 font-black tracking-tight">{error}</p>
-                <button onClick={fetchRecentLeads} className="mt-4 text-sm font-bold text-red-600 hover:underline px-4 py-2 bg-white rounded-xl shadow-sm">Try Again</button>
+            <div className="p-10 bg-[#fff1f2] rounded-[32px] border border-[#fecaca] text-center">
+                <AlertCircle className="w-12 h-12 text-[#ba1a1a] mx-auto mb-4" />
+                <p className="text-[#131b2e] font-black tracking-tight mb-4">{error}</p>
+                <button 
+                    onClick={fetchRecentLeads} 
+                    className="px-6 py-3 bg-white border border-[#fecaca] rounded-2xl text-sm font-black text-[#ba1a1a] hover:bg-[#ba1a1a] hover:text-white transition-all shadow-sm active:scale-95"
+                >
+                    Try Again
+                </button>
             </div>
         );
     }
 
     if (leads.length === 0) {
         return (
-            <div className="p-12 bg-slate-50/50 rounded-[20px] border-2 border-dashed border-slate-100 text-center">
-                <div className="w-16 h-16 bg-white text-slate-200 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+            <div className="p-12 bg-[#faf8ff] rounded-[32px] border border-dashed border-[#e2e8f0] text-center">
+                <div className="w-16 h-16 bg-white text-[#e2e8f0] rounded-[20px] flex items-center justify-center mx-auto mb-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                     <User className="w-8 h-8" />
                 </div>
-                <h3 className="text-lg font-black text-slate-900 mb-1">No Leads Found</h3>
-                <p className="text-slate-400 text-sm font-medium mb-6">Start growing your business to see leads here.</p>
-                <Link href="/vendor/leads" className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-black text-slate-600 hover:text-blue-600 hover:border-blue-200 transition-all active:scale-95 shadow-sm">
-                    View Lead Center
+                <h3 className="text-xl font-black text-[#131b2e] mb-2 tracking-tight">No Leads Yet</h3>
+                <p className="text-[#64748b] text-sm font-bold mb-8">List your services and connect with customers to see leads here.</p>
+                <Link href="/vendor/add-listing" className="inline-flex items-center gap-2.5 px-8 py-4 bg-[#004a99] text-white rounded-[20px] text-sm font-black shadow-[0_15px_30px_rgb(0,74,153,0.15)] hover:scale-105 active:scale-95 transition-all">
+                    Create Listing
                     <ChevronRight className="w-4 h-4" />
                 </Link>
             </div>
@@ -81,68 +90,74 @@ export default function VendorLeadsInbox() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             <div className="flex items-center justify-between px-2">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-orange-100 rounded-[14px] flex items-center justify-center text-orange-600">
-                        <Phone className="w-5 h-5" />
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-[#f0f4ff] rounded-[16px] flex items-center justify-center text-[#004a99] shadow-inner border border-[#004a99]/10">
+                        <Phone className="w-6 h-6" />
                     </div>
                     <div>
-                        <h3 className="text-2xl font-black text-slate-900 tracking-tight">Recent Leads</h3>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-1">Direct Enquiries</p>
+                        <h3 className="text-2xl font-black text-[#131b2e] tracking-tight">Recent Leads</h3>
+                        <p className="text-[10px] text-[#64748b] font-bold uppercase tracking-[0.2em] leading-none mt-1">Direct Business Pulse</p>
                     </div>
                 </div>
                 <button
                     onClick={fetchRecentLeads}
-                    className="p-2 text-slate-300 hover:text-blue-600 transition-colors"
+                    className="p-3 text-[#94a3b8] hover:text-[#004a99] hover:bg-[#f0f4ff] rounded-xl transition-all active:scale-95"
                     title="Refresh Leads"
                 >
-                    <RefreshCw className="w-4 h-4" />
+                    <RefreshCw className="w-5 h-5" />
                 </button>
             </div>
 
-            <div className="space-y-3">
-                {leads.map((lead) => {
+            <div className="space-y-4">
+                {leads.map((lead, idx) => {
                     const Config = TYPE_CONFIG[lead.type] || TYPE_CONFIG.website;
                     const Icon = Config.icon;
 
                     return (
-                        <Link
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.05 }}
                             key={lead.id}
-                            href="/vendor/leads"
-                            className="group flex items-center gap-4 p-4 bg-slate-50/50 hover:bg-white rounded-[24px] border-2 border-transparent hover:border-slate-100 transition-all active:scale-[0.99] hover:shadow-xl hover:shadow-slate-200/50"
                         >
-                            <div className={`w-12 h-12 ${Config.bg} ${Config.color} rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110`}>
-                                <Icon className="w-6 h-6" />
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between gap-2 mb-0.5">
-                                    <h4 className="font-black text-slate-900 truncate tracking-tight">{lead.name || 'Anonymous User'}</h4>
-                                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-1 flex-shrink-0">
-                                        <Clock className="w-3 h-3" />
-                                        {new Date(lead.createdAt).toLocaleDateString()}
-                                    </span>
+                            <Link
+                                href="/vendor/leads"
+                                className="group flex items-center gap-5 p-5 bg-[#faf8ff] hover:bg-white rounded-[24px] border border-transparent hover:border-[#e2e8f0] transition-all active:scale-[0.98] hover:shadow-[0_20px_50px_rgb(0,0,0,0.06)]"
+                            >
+                                <div className={`w-14 h-14 ${Config.bg} ${Config.color} rounded-[20px] flex items-center justify-center flex-shrink-0 transition-all duration-500 group-hover:scale-110 shadow-sm border border-transparent group-hover:border-current/10`}>
+                                    <Icon className="w-7 h-7" />
                                 </div>
-                                <p className="text-xs text-slate-400 font-bold truncate group-hover:text-slate-600 transition-colors">
-                                    {lead.message || 'Interested in your services'}
-                                </p>
-                            </div>
 
-                            <div className="w-8 h-8 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 group-hover:text-blue-600 group-hover:border-blue-100 transition-all fle-shrink-0">
-                                <ChevronRight className="w-4 h-4" />
-                            </div>
-                        </Link>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-2 mb-1">
+                                        <h4 className="font-black text-[#131b2e] truncate tracking-tight text-lg leading-tight">{lead.name || 'Anonymous Client'}</h4>
+                                        <span className="text-[10px] font-black text-[#94a3b8] uppercase tracking-widest flex items-center gap-1.5 flex-shrink-0">
+                                            <Clock className="w-3.5 h-3.5" />
+                                            {new Date(lead.createdAt).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-[#64748b] font-bold truncate group-hover:text-[#131b2e] transition-colors">
+                                        {lead.message || 'Customer is interested in your listing...'}
+                                    </p>
+                                </div>
+
+                                <div className="w-10 h-10 rounded-[14px] bg-white border border-[#e2e8f0] flex items-center justify-center text-[#94a3b8] group-hover:text-[#004a99] group-hover:border-[#004a99]/20 group-hover:shadow-md transition-all flex-shrink-0">
+                                    <ChevronRight className="w-5 h-5" />
+                                </div>
+                            </Link>
+                        </motion.div>
                     );
                 })}
 
                 <Link
                     href="/vendor/leads"
-                    className="flex items-center justify-center gap-2 p-4 text-xs font-black text-slate-400 hover:text-blue-600 uppercase tracking-[.2em] transition-all group pt-2"
+                    className="flex items-center justify-center gap-3 p-5 text-[11px] font-black text-[#64748b] hover:text-[#004a99] uppercase tracking-[0.25em] transition-all group pt-4"
                 >
-                    See All Leads
-                    <div className="w-6 h-6 bg-slate-50 rounded-lg flex items-center justify-center group-hover:bg-blue-50 transition-all">
-                        <ChevronRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+                    Lead Management Center
+                    <div className="w-8 h-8 bg-[#faf8ff] rounded-xl flex items-center justify-center group-hover:bg-[#004a99] group-hover:text-white transition-all shadow-sm">
+                        <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
                     </div>
                 </Link>
             </div>
