@@ -147,14 +147,14 @@ export default function VendorOffersPage() {
     try {
       const res = await api.listings.getMyListings({ limit: 100 });
       setBusinesses(res.data || []);
-    } catch {}
+    } catch { }
   };
 
   const loadPricing = async () => {
     try {
       const res = await api.promotions.getPricingRules();
       setPricingOptions(res || []);
-    } catch {}
+    } catch { }
   };
 
   const loadActiveSub = async () => {
@@ -184,7 +184,7 @@ export default function VendorOffersPage() {
       } else if (res) {
         setActiveSub(res);
       }
-    } catch {}
+    } catch { }
   };
 
   useEffect(() => {
@@ -389,7 +389,7 @@ export default function VendorOffersPage() {
           console.error("Promotion booking failed:", paymentErr);
           setError(
             paymentErr.message ||
-              "Promotion booking failed. Your offer was created but promotion registration failed.",
+            "Promotion booking failed. Your offer was created but promotion registration failed.",
           );
           setSaving(false);
           return;
@@ -425,10 +425,10 @@ export default function VendorOffersPage() {
   const fmtDate = (d?: string) =>
     d
       ? new Date(d).toLocaleDateString("en-PK", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        })
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
       : "—";
 
   const minimumPlacementRate =
@@ -697,7 +697,7 @@ export default function VendorOffersPage() {
       {pricingOptions.length > 0 && (
         <div className="rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 p-5 flex flex-col sm:flex-row items-center gap-4">
           <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center flex-shrink-0">
-            <span className="text-2xl">🔥</span>
+            <span className="text-2xl"> </span>
           </div>
           <div className="flex-1 text-center sm:text-left">
             <p className="font-black text-slate-900">
@@ -790,13 +790,12 @@ export default function VendorOffersPage() {
                         key={t}
                         type="button"
                         onClick={() => setForm((p) => ({ ...p, type: t }))}
-                        className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 font-black text-sm transition-all ${
-                          form.type === t
+                        className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 font-black text-sm transition-all ${form.type === t
                             ? t === "event"
                               ? "border-blue-400 bg-blue-50 text-blue-700"
                               : "border-orange-400 bg-orange-50 text-orange-700"
                             : "border-slate-200 text-slate-500 hover:border-slate-300"
-                        }`}
+                          }`}
                       >
                         {t === "event" ? (
                           <Calendar className="w-4 h-4" />
@@ -865,17 +864,16 @@ export default function VendorOffersPage() {
                                     ...p,
                                     placements: isSelectedNow
                                       ? p.placements.filter(
-                                          (id) => id !== item.id,
-                                        )
+                                        (id) => id !== item.id,
+                                      )
                                       : [...p.placements, item.id],
                                   };
                                 });
                               }}
-                              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
-                                isSelected
+                              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${isSelected
                                   ? "border-orange-500 bg-white shadow-md"
                                   : "border-slate-200 bg-slate-50 opacity-60 hover:opacity-100 hover:border-slate-300"
-                              }`}
+                                }`}
                             >
                               <Icon
                                 className={`w-6 h-6 ${isSelected ? "text-orange-500" : "text-slate-400"}`}

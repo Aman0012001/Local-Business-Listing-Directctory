@@ -61,7 +61,7 @@ async function run() {
             RETURNING id;
         `;
         const offerValues = [
-            '🔥 Summer Mega Sale',
+            '  Summer Mega Sale',
             'Get 40% OFF on all premium services this summer!',
             'offer',
             'active',

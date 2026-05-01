@@ -38,6 +38,9 @@ export default function GenericDashboard() {
     const [isApplying, setIsApplying] = useState(false);
     const [applyStatus, setApplyStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
     const [conversations, setConversations] = useState<any[]>([]);
+    const [performanceData, setPerformanceData] = useState<any[]>([]);
+    const [performancePeriod, setPerformancePeriod] = useState('7 Days');
+    const [performanceLoading, setPerformanceLoading] = useState(false);
     const { socket } = useChatSocket();
 
     const isVendor = user?.role === 'vendor';
@@ -60,12 +63,13 @@ export default function GenericDashboard() {
                 setFollowedBusinesses(followsData.data || []);
 
                 if (isVendor || isAdmin) {
-                    // Vendor/Admin specific data
+                    // Vendor/Admin specific data - Fetch static data once
                     const [statsData, vendorProfile, affiliateData] = await Promise.all([
                         api.vendors.getStats(),
                         api.vendors.getProfile(),
                         api.affiliate.getStats().catch(() => null)
                     ]);
+
                     setStats(statsData);
                     setAffiliateStats(affiliateData);
 
@@ -117,6 +121,29 @@ export default function GenericDashboard() {
 
         fetchDashboardData();
     }, [user, isVendor, isAdmin]);
+
+    // Isolated Performance Matrix Fetching
+    useEffect(() => {
+        const fetchPerformanceStats = async () => {
+            if (!(isVendor || isAdmin)) return;
+            try {
+                setPerformanceLoading(true);
+                const leadsStats = await api.leads.getStats(
+                    performancePeriod === '7 Days' ? '7d' :
+                        performancePeriod === '30 Days' ? '30d' : '90d'
+                );
+                if (leadsStats && leadsStats.dailyTrend) {
+                    setPerformanceData(leadsStats.dailyTrend);
+                }
+            } catch (error) {
+                console.error('Error fetching performance stats:', error);
+            } finally {
+                setPerformanceLoading(false);
+            }
+        };
+
+        if (user) fetchPerformanceStats();
+    }, [performancePeriod, user, isVendor, isAdmin]);
 
     // Real-time chat updates
     useEffect(() => {
@@ -181,7 +208,7 @@ export default function GenericDashboard() {
         status: 'active'
     } : (user?.vendor?.activeSubscription || user?.vendor?.subscriptions?.find((sub: any) => sub.status === 'active'));
 
-    
+
     // Default features logic - All vendors and admins have full access
     const features: Record<string, any> = isAdmin ? {
         showListings: true,
@@ -375,12 +402,12 @@ export default function GenericDashboard() {
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="mb-12 overflow-hidden rounded-[32px] bg-[#131b2e] border border-[#2d3748] shadow-[0_30px_60px_rgb(0,0,0,0.2)] relative"
+                    className="mb-12 overflow-hidden rounded-[32px] bg-[#131b2e] border border-[#2d3748] relative"
                 >
                     <div className="absolute top-0 right-0 w-64 h-64 bg-[#004a99]/20 rounded-full blur-[100px] pointer-events-none" />
                     <div className="p-8 sm:p-12 flex flex-col sm:flex-row items-center justify-between gap-8 relative z-10">
                         <div className="flex items-center gap-6">
-                            <div className="w-16 h-16 bg-gradient-to-br from-[#10b981] to-[#059669] rounded-[22px] flex items-center justify-center shadow-[0_15px_30px_rgb(16,185,129,0.25)] flex-shrink-0">
+                            <div className="w-16 h-16 bg-gradient-to-br from-[#10b981] to-[#059669] rounded-[22px] flex items-center justify-center flex-shrink-0">
                                 <BadgeCheck className="w-9 h-9 text-white" />
                             </div>
                             <div>
@@ -395,7 +422,7 @@ export default function GenericDashboard() {
                                     {(() => {
                                         const end = new Date(activeSub.endDate);
                                         const days = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-                                        
+
                                         if (days > 3000) {
                                             return <span className="text-[#10b981]">Lifetime Access Active</span>;
                                         }
@@ -409,8 +436,8 @@ export default function GenericDashboard() {
                                 </p>
                             </div>
                         </div>
-                        <Link 
-                            href="/vendor/subscription" 
+                        <Link
+                            href="/vendor/subscription"
                             className="btn-orbit-ghost !bg-white/5 !border-white/10 !text-white px-8"
                         >
                             Manage Subscription
@@ -474,7 +501,13 @@ export default function GenericDashboard() {
                                 </h3>
                             </div>
                             <div className="bg-white rounded-[24px] p-8 sm:p-10 border border-[#e2e8f0] shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                                <PerformanceChart stats={stats} />
+                                <PerformanceChart
+                                    stats={stats}
+                                    data={performanceData}
+                                    activeTab={performancePeriod}
+                                    onTabChange={setPerformancePeriod}
+                                    loading={performanceLoading}
+                                />
                             </div>
                         </div>
                     )}
@@ -482,85 +515,85 @@ export default function GenericDashboard() {
                     {/* Saved Businesses Section (Common) */}
                     {((isVendor || isAdmin) ? features.showSaved : true) && (
                         <section className="bg-white rounded-[24px] p-8 sm:p-10 border border-[#e2e8f0] shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
-                        <div className="flex items-center justify-between mb-8">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-[#fff1f2] rounded-[16px] flex items-center justify-center text-[#ba1a1a] shadow-inner border border-[#ba1a1a]/10">
-                                    <Heart className="w-6 h-6 fill-current" />
+                            <div className="flex items-center justify-between mb-8">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-[#fff1f2] rounded-[16px] flex items-center justify-center text-[#ba1a1a] shadow-inner border border-[#ba1a1a]/10">
+                                        <Heart className="w-6 h-6 fill-current" />
+                                    </div>
+                                    <h3 className="text-2xl font-black text-[#131b2e] tracking-tight">My Saved Places</h3>
                                 </div>
-                                <h3 className="text-2xl font-black text-[#131b2e] tracking-tight">My Saved Places</h3>
+                                <Link href="/vendor/saved" className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-all group/link">
+                                    View Collection <ChevronRight className="w-4 h-4 transition-transform group-hover/link:translate-x-1" />
+                                </Link>
                             </div>
-                            <Link href="/vendor/saved" className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-all group/link">
-                                View Collection <ChevronRight className="w-4 h-4 transition-transform group-hover/link:translate-x-1" />
-                            </Link>
-                        </div>
 
-                        <div className="grid sm:grid-cols-2 gap-6">
-                            {savedBusinesses.length > 0 ? (
-                                savedBusinesses.slice(0, 4).map((biz) => (
-                                    <Link key={biz.id} href={`/business/${biz.slug}`} className="flex items-center gap-5 p-4 rounded-[16px] bg-slate-50 border border-transparent hover:border-blue-500/20 hover:bg-white hover: transition-all group/item">
-                                        <div className="w-16 h-16 rounded-[16px] overflow-hidden flex-shrink-0 shadow-md">
-                                            <img src={getImageUrl((biz as any).coverImageUrl || (biz as any).images?.[0]) || 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=400'} alt={biz.title} className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-500" />
-                                        </div>
-                                        <div className="overflow-hidden">
-                                            <h4 className="font-black text-slate-900 truncate group-hover/item:text-blue-600 transition-colors">{biz.title}</h4>
-                                            <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                                                <span className="truncate">{biz.category?.name || 'Local'}</span>
-                                                <span className="text-slate-200">•</span>
-                                                <span className="truncate">{biz.city || 'Location'}</span>
+                            <div className="grid sm:grid-cols-2 gap-6">
+                                {savedBusinesses.length > 0 ? (
+                                    savedBusinesses.slice(0, 4).map((biz) => (
+                                        <Link key={biz.id} href={`/business/${biz.slug}`} className="flex items-center gap-5 p-4 rounded-[16px] bg-slate-50 border border-transparent hover:border-blue-500/20 hover:bg-white hover: transition-all group/item">
+                                            <div className="w-16 h-16 rounded-[16px] overflow-hidden flex-shrink-0 shadow-md">
+                                                <img src={getImageUrl((biz as any).coverImageUrl || (biz as any).images?.[0]) || 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=400'} alt={biz.title} className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-500" />
                                             </div>
-                                        </div>
-                                    </Link>
-                                ))
-                            ) : (
-                                <div className="col-span-full text-center py-10 bg-slate-50 rounded-[16px] border border-dashed border-slate-200">
-                                    <p className="text-slate-400 font-bold italic">You haven't saved any businesses yet.</p>
-                                    <Link href="/search" className="inline-block mt-4 text-xs font-black text-blue-600 uppercase tracking-widest">Start Exploring</Link>
-                                </div>
-                            )}
-                        </div>
-                    </section>
+                                            <div className="overflow-hidden">
+                                                <h4 className="font-black text-slate-900 truncate group-hover/item:text-blue-600 transition-colors">{biz.title}</h4>
+                                                <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                                                    <span className="truncate">{biz.category?.name || 'Local'}</span>
+                                                    <span className="text-slate-200">•</span>
+                                                    <span className="truncate">{biz.city || 'Location'}</span>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    ))
+                                ) : (
+                                    <div className="col-span-full text-center py-10 bg-slate-50 rounded-[16px] border border-dashed border-slate-200">
+                                        <p className="text-slate-400 font-bold italic">You haven't saved any businesses yet.</p>
+                                        <Link href="/search" className="inline-block mt-4 text-xs font-black text-blue-600 uppercase tracking-widest">Start Exploring</Link>
+                                    </div>
+                                )}
+                            </div>
+                        </section>
                     )}
 
                     {/* Followed Businesses Section */}
                     {((isVendor || isAdmin) ? features.showFollowing : true) && (
                         <section className="bg-white rounded-[24px] p-8 sm:p-10 border border-[#e2e8f0] shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
-                        <div className="flex items-center justify-between mb-8">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-[#f0f4ff] rounded-[16px] flex items-center justify-center text-[#004a99] shadow-inner border border-[#004a99]/10">
-                                    <Bell className="w-6 h-6" />
+                            <div className="flex items-center justify-between mb-8">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-[#f0f4ff] rounded-[16px] flex items-center justify-center text-[#004a99] shadow-inner border border-[#004a99]/10">
+                                        <Bell className="w-6 h-6" />
+                                    </div>
+                                    <h3 className="text-2xl font-black text-[#131b2e] tracking-tight">Following</h3>
                                 </div>
-                                <h3 className="text-2xl font-black text-[#131b2e] tracking-tight">Following</h3>
+                                <Link href="/vendor/following" className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-[#64748b] hover:text-[#004a99] transition-all group/link">
+                                    Manage Alerts <ChevronRight className="w-4 h-4 transition-transform group-hover/link:translate-x-1" />
+                                </Link>
                             </div>
-                            <Link href="/vendor/following" className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-[#64748b] hover:text-[#004a99] transition-all group/link">
-                                Manage Alerts <ChevronRight className="w-4 h-4 transition-transform group-hover/link:translate-x-1" />
-                            </Link>
-                        </div>
 
-                        <div className="grid sm:grid-cols-2 gap-6">
-                            {followedBusinesses.length > 0 ? (
-                                followedBusinesses.slice(0, 4).map((biz) => (
-                                    <Link key={biz.id} href={`/business/${biz.slug}`} className="flex items-center gap-5 p-4 rounded-[20px] bg-[#faf8ff] border border-transparent hover:border-[#004a99]/20 hover:bg-white hover:shadow-xl transition-all group/item">
-                                        <div className="w-16 h-16 rounded-[16px] overflow-hidden flex-shrink-0 shadow-md">
-                                            <img src={getImageUrl((biz as any).coverImageUrl || (biz as any).images?.[0]) || 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=400'} alt={biz.title} className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-500" />
-                                        </div>
-                                        <div className="overflow-hidden">
-                                            <h4 className="font-black text-[#131b2e] truncate group-hover/item:text-[#004a99] transition-colors">{(biz as any).title}</h4>
-                                            <div className="flex items-center gap-2 text-[10px] font-black text-[#64748b] uppercase tracking-widest mt-1">
-                                                <span className="truncate">{biz.category?.name || 'Local'}</span>
-                                                <span className="text-slate-200">•</span>
-                                                <span className="truncate">{biz.city || 'Location'}</span>
+                            <div className="grid sm:grid-cols-2 gap-6">
+                                {followedBusinesses.length > 0 ? (
+                                    followedBusinesses.slice(0, 4).map((biz) => (
+                                        <Link key={biz.id} href={`/business/${biz.slug}`} className="flex items-center gap-5 p-4 rounded-[20px] bg-[#faf8ff] border border-transparent hover:border-[#004a99]/20 hover:bg-white hover:shadow-xl transition-all group/item">
+                                            <div className="w-16 h-16 rounded-[16px] overflow-hidden flex-shrink-0 shadow-md">
+                                                <img src={getImageUrl((biz as any).coverImageUrl || (biz as any).images?.[0]) || 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=400'} alt={biz.title} className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-500" />
                                             </div>
-                                        </div>
-                                    </Link>
-                                ))
-                            ) : (
-                                <div className="col-span-full text-center py-10 bg-[#faf8ff] rounded-[24px] border border-dashed border-[#e2e8f0]">
-                                    <p className="text-[#64748b] font-bold italic">You aren't following any businesses yet.</p>
-                                    <Link href="/search" className="inline-block mt-4 text-xs font-black text-[#004a99] uppercase tracking-widest">Discover Now</Link>
-                                </div>
-                            )}
-                        </div>
-                    </section>
+                                            <div className="overflow-hidden">
+                                                <h4 className="font-black text-[#131b2e] truncate group-hover/item:text-[#004a99] transition-colors">{(biz as any).title}</h4>
+                                                <div className="flex items-center gap-2 text-[10px] font-black text-[#64748b] uppercase tracking-widest mt-1">
+                                                    <span className="truncate">{biz.category?.name || 'Local'}</span>
+                                                    <span className="text-slate-200">•</span>
+                                                    <span className="truncate">{biz.city || 'Location'}</span>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    ))
+                                ) : (
+                                    <div className="col-span-full text-center py-10 bg-[#faf8ff] rounded-[24px] border border-dashed border-[#e2e8f0]">
+                                        <p className="text-[#64748b] font-bold italic">You aren't following any businesses yet.</p>
+                                        <Link href="/search" className="inline-block mt-4 text-xs font-black text-[#004a99] uppercase tracking-widest">Discover Now</Link>
+                                    </div>
+                                )}
+                            </div>
+                        </section>
                     )}
 
 
@@ -628,8 +661,8 @@ export default function GenericDashboard() {
                             <div className="space-y-4">
                                 {conversations.length > 0 ? (
                                     conversations.map((conv) => (
-                                        <Link 
-                                            key={conv.id} 
+                                        <Link
+                                            key={conv.id}
                                             href={`/vendor/chat?id=${conv.id}`}
                                             className="block p-4 rounded-[18px] bg-[#faf8ff] border border-transparent hover:border-[#004a99]/20 hover:bg-white hover:shadow-lg transition-all group"
                                         >
@@ -701,7 +734,7 @@ export default function GenericDashboard() {
                     {isVendor && (
                         <section className="bg-[#131b2e] rounded-[32px] p-10 border border-[#2d3748] shadow-[0_30px_60px_rgb(0,0,0,0.25)] relative overflow-hidden group">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-[#004a99]/10 rounded-full blur-[100px] pointer-events-none" />
-                            
+
                             <div className="relative z-10">
                                 <div className="flex items-center justify-between mb-8">
                                     <div className="flex items-center gap-5">
@@ -710,7 +743,7 @@ export default function GenericDashboard() {
                                         </div>
                                         <div>
                                             <h3 className="text-2xl font-black text-white tracking-tight">Refer & Scale</h3>
-                                            <p className="text-[10px] font-black text-[#ff7a00] uppercase tracking-[0.3em] mt-1">Unlock Premium Rewards</p>
+                                            {/* <p className="text-[10px] font-black text-[#ff7a00] uppercase tracking-[0.3em] mt-1">Unlock Premium Rewards</p> */}
                                         </div>
                                     </div>
                                     <Link href="/vendor/affiliate" className="text-[10px] font-black uppercase tracking-[0.3em] text-[#94a3b8] hover:text-white transition-all flex items-center gap-2">
@@ -723,14 +756,14 @@ export default function GenericDashboard() {
                                     <div className="mb-6 p-4 bg-blue-600/5 border border-blue-500/20 rounded-xl space-y-3">
                                         <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Were you referred by someone?</p>
                                         <div className="flex gap-2">
-                                            <input 
+                                            <input
                                                 type="text"
                                                 value={referralInput}
                                                 onChange={(e) => setReferralInput(e.target.value)}
                                                 placeholder="Enter Expert Code"
                                                 className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500 transition-all"
                                             />
-                                            <button 
+                                            <button
                                                 onClick={handleApplyReferral}
                                                 disabled={isApplying || !referralInput}
                                                 className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 text-white text-xs font-black rounded-xl transition-all active:scale-95 flex items-center gap-2"
@@ -765,7 +798,7 @@ export default function GenericDashboard() {
                                                         {typeof window !== 'undefined' ? `${window.location.origin}/?ref=${affiliateStats.referralCode}` : 'Loading...'}
                                                     </p>
                                                 </div>
-                                                <button 
+                                                <button
                                                     onClick={copyReferralLink}
                                                     className="flex-shrink-0 p-3.5 bg-[#004a99] hover:bg-[#003c7d] text-white rounded-xl transition-all active:scale-95 shadow-lg"
                                                 >
@@ -785,7 +818,7 @@ export default function GenericDashboard() {
                                         <p className="text-sm text-slate-400 font-medium leading-relaxed">
                                             Invite other businesses to join and get rewarded with free subscription extensions.
                                         </p>
-                                        <Link 
+                                        <Link
                                             href="/vendor/affiliate"
                                             className="inline-flex items-center justify-center w-full py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-[14px] font-black text-sm transition-all active:scale-95 shadow-xl shadow-blue-900/20"
                                         >

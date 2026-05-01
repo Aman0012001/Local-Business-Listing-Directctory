@@ -53,7 +53,7 @@ export class DemandService {
                     .where('LOWER(city.name) = LOWER(:cityName)', { cityName: data.city })
                     .orWhere('LOWER(city.slug) = LOWER(:cityName)', { cityName: data.city })
                     .getOne();
-                
+
                 if (city?.latitude && city?.longitude) {
                     latitude = Number(city.latitude);
                     longitude = Number(city.longitude);
@@ -134,7 +134,7 @@ export class DemandService {
      */
     async getAIInsightsSummary(city?: string): Promise<string> {
         const insights = await this.getInsights(city);
-        
+
         if (insights.length === 0) {
             return "No significant search patterns detected in the last 24 hours to generate an AI summary.";
         }
@@ -149,7 +149,7 @@ export class DemandService {
             const genAI = new GoogleGenerativeAI(apiKey);
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-            const insightData = insights.map(i => 
+            const insightData = insights.map(i =>
                 `- ${i.keyword}: ${i.count1h} searches in last hr, ${i.count24h} in 24hr. Growth: ${i.growth}%. Status: ${i.isTrending ? 'Trending' : 'Stable'}`
             ).join('\n');
 
@@ -243,7 +243,7 @@ export class DemandService {
     }
 
     private async sendAlert(vendor: Vendor, insight: DemandInsight) {
-        const title = '🔥 High Demand Alert';
+        const title = '  High Demand Alert';
         const message = `Search demand for "${insight.keyword}" services is rising rapidly! Make sure your profile is optimized to capture new leads.`;
 
         await this.notificationsService.create({

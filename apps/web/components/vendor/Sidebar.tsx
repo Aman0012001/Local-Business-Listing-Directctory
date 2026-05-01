@@ -92,7 +92,7 @@ export default function Sidebar() {
         { name: 'Live Chat', icon: MessageSquare, iconColor: 'text-emerald-500', href: '/vendor/chat', badge: unreadChatCount > 0 ? String(unreadChatCount) : null },
         { name: 'Hot Demand Insights', icon: TrendingUp, href: '/vendor/demand', badge: null },
         { name: 'Subscription & Billing', icon: CreditCard, href: '/vendor/subscription', badge: null },
-        { name: 'Offer Plans', icon: Gift, href: '/vendor/offer-plans', badge: '🔥' },
+        { name: 'Offer Plans', icon: Gift, href: '/vendor/offer-plans', badge: ' ' },
         { name: 'Broadcast Feed', icon: Megaphone, href: '/vendor/broadcasts', badge: newBroadcastCount > 0 ? String(newBroadcastCount) : null },
         { name: 'Notifications', icon: Bell, href: '/vendor/notifications', badge: null },
         { name: 'Affiliate', icon: Gift, href: '/vendor/affiliate', badge: 'Rewards' },
@@ -101,7 +101,7 @@ export default function Sidebar() {
 
     const filteredItems = menuItems.filter(item => {
         const isVendorOrAdmin = user?.role === 'vendor' || user?.role === 'admin' || user?.role === 'superadmin';
-        
+
         // Show all items to vendors and admins
         if (isVendorOrAdmin) return true;
 
@@ -113,10 +113,10 @@ export default function Sidebar() {
         <>
             <div className="flex flex-col items-center mb-10 pt-4">
                 <div className="relative mb-4 group cursor-pointer">
-                    <VendorAvatar 
-                        src={user?.avatarUrl} 
-                        alt={user?.fullName || 'Vendor'} 
-                        size="lg" 
+                    <VendorAvatar
+                        src={user?.avatarUrl}
+                        alt={user?.fullName || 'Vendor'}
+                        size="lg"
                         className="shadow-[0_15px_40px_rgb(0,0,0,0.1)] transition-transform duration-500 group-hover:scale-105 border-4 border-white"
                     />
                     <div className="absolute -bottom-1 -right-1 w-9 h-9 bg-[#004a99] rounded-xl border-4 border-[#faf8ff] flex items-center justify-center text-white shadow-lg">

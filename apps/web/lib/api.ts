@@ -365,7 +365,7 @@ export const api = {
             const query = new URLSearchParams(params).toString();
             return fetcher<any>(`/leads/vendor?${query}`);
         },
-        getStats: () => fetcher<any>('/leads/vendor/stats'),
+        getStats: (period: string = '7d') => fetcher<any>(`/leads/vendor/stats?period=${period}`),
         updateStatus: (id: string, status: string) => fetcher<any>(`/leads/${id}/status`, {
             method: 'PATCH',
             body: JSON.stringify({ status }),
