@@ -307,6 +307,19 @@ export class SubscriptionsService implements OnModuleInit {
         return updatedSub;
     }
 
+    private getCleanBaseUrl(origin?: string): string {
+        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || '';
+        const allowedUrls = frontendUrl ? frontendUrl.split(',').map(url => url.trim()) : [];
+        const rawUrl = origin || allowedUrls[0] || 'http://localhost:3000';
+        
+        try {
+            const url = new URL(rawUrl);
+            return `${url.protocol}//${url.host}`;
+        } catch (e) {
+            return 'http://localhost:3000';
+        }
+    }
+
     /**
      * Create a Stripe Checkout session for a vendor subscription.
      * Handles stale customer IDs gracefully by auto-recreating the Stripe customer.
@@ -333,12 +346,7 @@ export class SubscriptionsService implements OnModuleInit {
             };
         }
 
-        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || '';
-        // Support comma-separated list of URLs (local and production)
-        const allowedUrls = frontendUrl ? frontendUrl.split(',').map(url => url.trim()) : [];
-
-        // Priority: 1. Dynamic origin from request, 2. FRONTEND_URL config, 3. Localhost fallback
-        const baseUrl = origin || allowedUrls[0] || 'http://localhost:3000';
+        const baseUrl = this.getCleanBaseUrl(origin);
 
         // ── Ensure plan has a valid Stripe Price ID (matching the current price) ────────────────
         let needsNewPrice = !plan.stripePriceId;
@@ -918,11 +926,7 @@ export class SubscriptionsService implements OnModuleInit {
             return { sessionId: 'FREE', checkoutUrl: null };
         }
 
-        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || '';
-        const allowedUrls = frontendUrl ? frontendUrl.split(',').map(url => url.trim()) : [];
-
-        // Priority: 1. FRONTEND_URL config, 2. Dynamic origin from request, 3. Localhost fallback
-        const baseUrl = allowedUrls[0] || origin || 'http://localhost:3000';
+        const baseUrl = this.getCleanBaseUrl(origin);
 
         // Ensure Stripe Price exists
         if (!plan.stripePriceId) {
