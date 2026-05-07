@@ -69,8 +69,16 @@ export class BusinessesService implements OnModuleInit {
                 SET recent_until = created_at + INTERVAL '7 days' 
                 WHERE recent_until IS NULL;
                 CREATE INDEX IF NOT EXISTS idx_recent_until ON businesses(recent_until);
+                
+                -- Ensure vendors table has missing columns
+                ALTER TABLE vendors ADD COLUMN IF NOT EXISTS city VARCHAR(100) NULL;
+                ALTER TABLE vendors ADD COLUMN IF NOT EXISTS state VARCHAR(100) NULL;
+                ALTER TABLE vendors ADD COLUMN IF NOT EXISTS country VARCHAR(100) DEFAULT 'Pakistan';
+                ALTER TABLE vendors ADD COLUMN IF NOT EXISTS slug VARCHAR(255) NULL;
+                CREATE INDEX IF NOT EXISTS idx_vendors_city ON vendors(city);
+                CREATE INDEX IF NOT EXISTS idx_vendors_slug ON vendors(slug);
             `);
-            console.log('[BusinessesService] Backfill and index for recent_until completed.');
+            console.log('[BusinessesService] Database schema auto-sync completed.');
         } catch (error) {
             console.error('[BusinessesService] Backfill for recent_until failed:', error);
         }
