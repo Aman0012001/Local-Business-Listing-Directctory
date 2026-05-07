@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function VendorSubscriptionSuccessRedirect() {
+function RedirectContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -20,5 +20,13 @@ export default function VendorSubscriptionSuccessRedirect() {
                 <p className="text-sm font-black text-slate-400 uppercase tracking-widest animate-pulse">Redirecting to Secure Portal...</p>
             </div>
         </div>
+    );
+}
+
+export default function VendorSubscriptionSuccessRedirect() {
+    return (
+        <Suspense fallback={null}>
+            <RedirectContent />
+        </Suspense>
     );
 }
