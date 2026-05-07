@@ -37,26 +37,33 @@ export class LeadsService {
     ) { }
     
     async onModuleInit() {
-        // Ensure 'chat' exists in the LeadType enum in PostgreSQL (important for Railway/Prod)
+        // Ensure database schema is up to date for Railway/Prod
         try {
             await this.leadRepository.query(`
+                -- Ensure columns exist in leads table
+                ALTER TABLE leads ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT false;
+                ALTER TABLE leads ADD COLUMN IF NOT EXISTS vendor_reply TEXT NULL;
+                ALTER TABLE leads ADD COLUMN IF NOT EXISTS vendor_replied_at TIMESTAMP NULL;
+                CREATE INDEX IF NOT EXISTS idx_leads_is_read ON leads(is_read);
+
+                -- Ensure 'chat' exists in the LeadType enum (if it exists)
                 DO $$
                 BEGIN
-                    IF NOT EXISTS (SELECT 1 FROM pg_type t 
-                                  JOIN pg_enum e ON t.oid = e.enumtypid 
-                                  WHERE t.typname = 'leads_type_enum' AND e.enumlabel = 'chat') THEN
-                        ALTER TYPE leads_type_enum ADD VALUE 'chat';
+                    IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'leads_type_enum') THEN
+                        IF NOT EXISTS (SELECT 1 FROM pg_enum e 
+                                      JOIN pg_type t ON t.oid = e.enumtypid 
+                                      WHERE t.typname = 'leads_type_enum' AND e.enumlabel = 'chat') THEN
+                            ALTER TYPE leads_type_enum ADD VALUE 'chat';
+                        END IF;
                     END IF;
                 EXCEPTION
-                    WHEN others THEN
-                        -- Type might not exist yet if tables haven't been created, which is fine
-                        NULL;
+                    WHEN others THEN NULL;
                 END
                 $$;
             `);
-            console.log('✅ LeadType enum (chat) checked in Railway database');
+            console.log('✅ Leads database schema auto-sync completed');
         } catch (err: any) {
-            console.warn('[LeadsService] Database enum check skipped or failed: ' + err.message);
+            console.warn('[LeadsService] Database schema sync failed: ' + err.message);
         }
     }
 
