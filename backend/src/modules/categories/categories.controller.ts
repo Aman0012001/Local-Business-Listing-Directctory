@@ -116,6 +116,7 @@ export class CategoriesController {
 
     // --- Public Endpoints ---
     @Public()
+    @UseInterceptors(CacheInterceptor)
     @Get('popular')
     @ApiOperation({ summary: 'Get popular categories by business count (active only)' })
     @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -166,6 +167,7 @@ export class CategoriesController {
     }
 
     @Public()
+    @UseInterceptors(CacheInterceptor)
     @Get('slug/:slug')
     @ApiOperation({ summary: 'Get active category by slug' })
     @ApiResponse({ status: 200, description: 'Category found' })

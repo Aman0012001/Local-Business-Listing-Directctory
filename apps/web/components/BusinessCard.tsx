@@ -29,7 +29,7 @@ interface BusinessCardProps {
     business: Business;
 }
 
-export default function BusinessCard({ business }: BusinessCardProps) {
+const BusinessCard = React.memo(({ business }: BusinessCardProps) => {
 
     const isApproved = business.status === 'approved';
 
@@ -94,4 +94,6 @@ export default function BusinessCard({ business }: BusinessCardProps) {
             </div>
         </div>
     );
-}
+});
+
+export default BusinessCard;

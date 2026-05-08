@@ -23,7 +23,7 @@ interface OfferCardProps {
     onEnquire?: () => void;
 }
 
-const OfferCard: React.FC<OfferCardProps> = ({ offer, onEnquire }) => {
+const OfferCard: React.FC<OfferCardProps> = React.memo(({ offer, onEnquire }) => {
     return (
         <div className="group relative bg-white rounded-3xl border shadow-sm hover:shadow-xl hover:shadow-slate-200/60 transition-all duration-300 overflow-hidden flex flex-col h-full border-slate-100">
             <div className="h-1.5 w-full bg-gradient-to-r  to-rose-500" />
@@ -91,6 +91,6 @@ const OfferCard: React.FC<OfferCardProps> = ({ offer, onEnquire }) => {
             </div>
         </div >
     );
-};
+});
 
 export default OfferCard;

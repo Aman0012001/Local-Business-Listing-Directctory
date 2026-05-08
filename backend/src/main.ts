@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { DataSource } from 'typeorm';
+import * as compression from 'compression';
 import { fixProductionSchema } from './database/schema-fixer';
 
 async function bootstrap() {
@@ -24,6 +25,9 @@ async function bootstrap() {
 
     // 1. Global Prefix
     app.setGlobalPrefix('api/v1');
+
+    // 1.1 Compression
+    app.use(compression());
 
     // 2. Request Logging Middleware
     app.use((req, res, next) => {

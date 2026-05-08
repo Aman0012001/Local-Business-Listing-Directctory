@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Body, Query, Delete, Param, Patch, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Delete, Param, Patch, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { CacheInterceptor } from '@nestjs/cache-manager';
 import { CitiesService } from './cities.service';
 import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -13,6 +14,7 @@ export class CitiesController {
     constructor(private readonly citiesService: CitiesService) { }
 
     @Public()
+    @UseInterceptors(CacheInterceptor)
     @Get()
     @ApiOperation({ summary: 'Get all cities' })
     @ApiResponse({ status: 200, description: 'Return all cities' })
@@ -21,6 +23,7 @@ export class CitiesController {
     }
 
     @Public()
+    @UseInterceptors(CacheInterceptor)
     @Get('popular')
     @ApiOperation({ summary: 'Get popular cities' })
     @ApiResponse({ status: 200, description: 'Return popular cities' })
@@ -87,6 +90,7 @@ export class CitiesController {
     }
 
     @Public()
+    @UseInterceptors(CacheInterceptor)
     @Get('slug/:slug')
     @ApiOperation({ summary: 'Get city by slug' })
     @ApiResponse({ status: 200, description: 'Return city details' })

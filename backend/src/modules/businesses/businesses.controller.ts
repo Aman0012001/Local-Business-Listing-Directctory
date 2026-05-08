@@ -82,6 +82,7 @@ export class BusinessesController {
     }
 
     @Public()
+    @UseInterceptors(CacheInterceptor)
     @Get('search')
     @ApiOperation({ summary: 'Search listings with filters and geo-location' })
     @ApiResponse({ status: 200, description: 'Search results returned' })

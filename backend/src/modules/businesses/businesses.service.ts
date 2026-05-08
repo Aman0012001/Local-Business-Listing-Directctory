@@ -59,18 +59,26 @@ export class BusinessesService implements OnModuleInit {
     ) { }
     
     async onModuleInit() {
-        // Backfill logic for recent_until
+        // Backfill logic for recent_until and performance indexes
         try {
             const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
-            // Native query is faster for backfill
+            // Native query is faster for schema updates
             await this.listingRepository.query(`
                 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS recent_until TIMESTAMP NULL;
                 UPDATE businesses 
                 SET recent_until = created_at + INTERVAL '7 days' 
                 WHERE recent_until IS NULL;
-                CREATE INDEX IF NOT EXISTS idx_recent_until ON businesses(recent_until);
                 
-                -- Ensure vendors table has missing columns
+                -- Performance Indexes
+                CREATE INDEX IF NOT EXISTS idx_recent_until ON businesses(recent_until);
+                CREATE INDEX IF NOT EXISTS idx_businesses_city ON businesses(city);
+                CREATE INDEX IF NOT EXISTS idx_businesses_status ON businesses(status);
+                CREATE INDEX IF NOT EXISTS idx_businesses_featured ON businesses(is_featured) WHERE is_featured = true;
+                CREATE INDEX IF NOT EXISTS idx_businesses_sponsored ON businesses(is_sponsored) WHERE is_sponsored = true;
+                CREATE INDEX IF NOT EXISTS idx_businesses_price_range ON businesses(price_range);
+                CREATE INDEX IF NOT EXISTS idx_businesses_category_id ON businesses(category_id);
+                
+                -- Ensure vendors table has missing columns and indexes
                 ALTER TABLE vendors ADD COLUMN IF NOT EXISTS city VARCHAR(100) NULL;
                 ALTER TABLE vendors ADD COLUMN IF NOT EXISTS state VARCHAR(100) NULL;
                 ALTER TABLE vendors ADD COLUMN IF NOT EXISTS country VARCHAR(100) DEFAULT 'Pakistan';
@@ -78,9 +86,9 @@ export class BusinessesService implements OnModuleInit {
                 CREATE INDEX IF NOT EXISTS idx_vendors_city ON vendors(city);
                 CREATE INDEX IF NOT EXISTS idx_vendors_slug ON vendors(slug);
             `);
-            console.log('[BusinessesService] Database schema auto-sync completed.');
+            console.log('[BusinessesService] Database performance indexes auto-sync completed.');
         } catch (error) {
-            console.error('[BusinessesService] Backfill for recent_until failed:', error);
+            console.error('[BusinessesService] Database optimization failed:', error);
         }
     }
 
