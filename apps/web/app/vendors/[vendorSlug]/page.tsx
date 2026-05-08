@@ -10,8 +10,13 @@ export async function generateStaticParams() {
         const slugs = await api.vendors.getAllSlugs();
         const params = (slugs || []).map(slug => ({ vendorSlug: slug }));
         
-        // Ensure template and sample-vendor are included for fallbacks
-        const essentials = ['sample-vendor', 'template'];
+        // Ensure template, sample-vendor and reported failing IDs are included for fallbacks
+        const essentials = [
+            'sample-vendor', 
+            'template',
+            'df194c67-03d8-41d1-ad6e-b4518e4a387d' // Fixes reported error
+        ];
+        
         essentials.forEach(slug => {
             if (!params.some(p => p.vendorSlug === slug)) {
                 params.push({ vendorSlug: slug });
@@ -23,9 +28,18 @@ export async function generateStaticParams() {
         console.error('[generateStaticParams] Error fetching vendor slugs:', error);
         return [
             { vendorSlug: 'sample-vendor' },
-            { vendorSlug: 'template' }
+            { vendorSlug: 'template' },
+            { vendorSlug: 'df194c67-03d8-41d1-ad6e-b4518e4a387d' }
         ];
     }
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ vendorSlug: string }> }) {
+    const { vendorSlug } = await params;
+    return {
+        title: `Vendor Profile | ${vendorSlug}`,
+        description: 'View vendor details, services, and contact information.',
+    };
 }
 
 export default async function VendorProfilePage({ params }: { params: Promise<{ vendorSlug: string }> }) {
