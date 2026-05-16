@@ -64,6 +64,7 @@ export default function AddListingPage() {
     const [suggestions, setSuggestions] = useState<Category[]>([]);
     const [suggestionsLoading, setSuggestionsLoading] = useState(false);
     const [myListingsCount, setMyListingsCount] = useState<number | null>(null);
+    const [agreed, setAgreed] = useState(false);
 
     // Use centralized feature gating
     const { getFeatureValue, planName, isFree } = usePlanFeature();
@@ -71,7 +72,7 @@ export default function AddListingPage() {
     const maxImages = isFree ? 3 : 999;
     const isVendor = user?.role === 'vendor';
     const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
-    
+
     // Explicitly check listing count against plan limit
     const canAddListing = isAdmin || (myListingsCount !== null && myListingsCount < maxListings);
 
@@ -748,7 +749,7 @@ export default function AddListingPage() {
                     className="mb-10 p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-700 shadow-2xl relative overflow-hidden"
                 >
                     <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
-                    
+
                     <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
                         <div className="w-20 h-20 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center shrink-0">
                             <Lock className="w-10 h-10 text-orange-500" />
@@ -756,7 +757,7 @@ export default function AddListingPage() {
                         <div className="flex-1 text-center md:text-left">
                             <h2 className="text-2xl font-black text-white mb-2 tracking-tight">Listing Limit Reached</h2>
                             <p className="text-slate-400 font-bold mb-4">
-                                Your current <span className="text-orange-400">{planName}</span> plan allows for a maximum of <span className="text-white">{maxListings}</span> business listing{maxListings > 1 ? 's' : ''}. 
+                                Your current <span className="text-orange-400">{planName}</span> plan allows for a maximum of <span className="text-white">{maxListings}</span> business listing{maxListings > 1 ? 's' : ''}.
                                 You have already used all of them.
                             </p>
                             <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
@@ -871,7 +872,11 @@ export default function AddListingPage() {
                                                 <ImagePlus className="w-10 h-10" />
                                                 <div className="text-center">
                                                     <p className="font-black text-sm">Click to upload cover image</p>
-                                                    <p className="text-xs mt-0.5">PNG, JPG up to 5MB</p>
+
+                                                    {/* YAHI REPLACE KARNA HAI */}
+                                                    <p className="text-xs mt-0.5">
+                                                        Recommended: 1200 × 675px (16:9) • PNG, JPG up to 5MB
+                                                    </p>
                                                 </div>
                                             </div>
                                         )}
@@ -968,11 +973,10 @@ export default function AddListingPage() {
                                                                 key={cat.id}
                                                                 type="button"
                                                                 onClick={() => setFormData(prev => ({ ...prev, categoryId: cat.id }))}
-                                                                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
-                                                                    formData.categoryId === cat.id
-                                                                        ? 'bg-orange-500 border-orange-500 text-white shadow-md shadow-orange-500/20'
-                                                                        : 'bg-white border-slate-200 text-slate-600 hover:border-orange-300 hover:text-orange-500'
-                                                                }`}
+                                                                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${formData.categoryId === cat.id
+                                                                    ? 'bg-orange-500 border-orange-500 text-white shadow-md shadow-orange-500/20'
+                                                                    : 'bg-white border-slate-200 text-slate-600 hover:border-orange-300 hover:text-orange-500'
+                                                                    }`}
                                                             >
                                                                 {cat.name}
                                                             </button>
@@ -1026,113 +1030,8 @@ export default function AddListingPage() {
                                     <div className="flex gap-2">
                                         {/* Country Code */}
                                         <div className="relative flex-shrink-0">
-                                            <select
-                                                value={countryCode}
-                                                onChange={e => {
-                                                    setCountryCode(e.target.value);
-                                                    setFormData(prev => ({ ...prev, phone: e.target.value + phoneNumber }));
-                                                }}
-                                                className="country-code-select h-full px-3 py-3.5 border border-slate-200 rounded-xl font-black text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 appearance-none cursor-pointer pr-8 min-w-[100px]"
-                                            >
-                                                {[
-                                                    { code: '+93', label: '🇦🇫 AF +93' },
-                                                    { code: '+355', label: '🇦🇱 AL +355' },
-                                                    { code: '+213', label: '🇩🇿 DZ +213' },
-                                                    { code: '+376', label: '🇦🇩 AD +376' },
-                                                    { code: '+244', label: '🇦🇴 AO +244' },
-                                                    { code: '+54', label: '🇦🇷 AR +54' },
-                                                    { code: '+374', label: '🇦🇲 AM +374' },
-                                                    { code: '+61', label: '🇦🇺 AU +61' },
-                                                    { code: '+43', label: '🇦🇹 AT +43' },
-                                                    { code: '+994', label: '🇦🇿 AZ +994' },
-                                                    { code: '+973', label: '🇧🇭 BH +973' },
-                                                    { code: '+880', label: '🇧🇩 BD +880' },
-                                                    { code: '+32', label: '🇧🇪 BE +32' },
-                                                    { code: '+55', label: '🇧🇷 BR +55' },
-                                                    { code: '+359', label: '🇧🇬 BG +359' },
-                                                    { code: '+1', label: '🇨🇦 CA +1' },
-                                                    { code: '+86', label: '🇨🇳 CN +86' },
-                                                    { code: '+57', label: '🇨🇴 CO +57' },
-                                                    { code: '+385', label: '🇭🇷 HR +385' },
-                                                    { code: '+357', label: '🇨🇾 CY +357' },
-                                                    { code: '+420', label: '🇨🇿 CZ +420' },
-                                                    { code: '+45', label: '🇩🇰 DK +45' },
-                                                    { code: '+20', label: '🇪🇬 EG +20' },
-                                                    { code: '+358', label: '🇫🇮 FI +358' },
-                                                    { code: '+33', label: '🇫🇷 FR +33' },
-                                                    { code: '+995', label: '🇬🇪 GE +995' },
-                                                    { code: '+49', label: '🇩🇪 DE +49' },
-                                                    { code: '+30', label: '🇬🇷 GR +30' },
-                                                    { code: '+852', label: '🇭🇰 HK +852' },
-                                                    { code: '+36', label: '🇭🇺 HU +36' },
-                                                    { code: '+91', label: '🇮🇳 IN +91' },
-                                                    { code: '+62', label: '🇮🇩 ID +62' },
-                                                    { code: '+98', label: '🇮🇷 IR +98' },
-                                                    { code: '+964', label: '🇮🇶 IQ +964' },
-                                                    { code: '+353', label: '🇮🇪 IE +353' },
-                                                    { code: '+972', label: '🇮🇱 IL +972' },
-                                                    { code: '+39', label: '🇮🇹 IT +39' },
-                                                    { code: '+81', label: '🇯🇵 JP +81' },
-                                                    { code: '+962', label: '🇯🇴 JO +962' },
-                                                    { code: '+7', label: '🇰🇿 KZ +7' },
-                                                    { code: '+254', label: '🇰🇪 KE +254' },
-                                                    { code: '+82', label: '🇰🇷 KR +82' },
-                                                    { code: '+965', label: '🇰🇼 KW +965' },
-                                                    { code: '+996', label: '🇰🇬 KG +996' },
-                                                    { code: '+856', label: '🇱🇦 LA +856' },
-                                                    { code: '+961', label: '🇱🇧 LB +961' },
-                                                    { code: '+60', label: '🇲🇾 MY +60' },
-                                                    { code: '+960', label: '🇲🇻 MV +960' },
-                                                    { code: '+223', label: '🇲🇱 ML +223' },
-                                                    { code: '+356', label: '🇲🇹 MT +356' },
-                                                    { code: '+52', label: '🇲🇽 MX +52' },
-                                                    { code: '+373', label: '🇲🇩 MD +373' },
-                                                    { code: '+976', label: '🇲🇳 MN +976' },
-                                                    { code: '+212', label: '🇲🇦 MA +212' },
-                                                    { code: '+258', label: '🇲🇿 MZ +258' },
-                                                    { code: '+977', label: '🇳🇵 NP +977' },
-                                                    { code: '+31', label: '🇳🇱 NL +31' },
-                                                    { code: '+64', label: '🇳🇿 NZ +64' },
-                                                    { code: '+234', label: '🇳🇬 NG +234' },
-                                                    { code: '+47', label: '🇳🇴 NO +47' },
-                                                    { code: '+968', label: '🇴🇲 OM +968' },
-                                                    { code: '+92', label: '🇵🇰 PK +92' },
-                                                    { code: '+507', label: '🇵🇦 PA +507' },
-                                                    { code: '+63', label: '🇵🇭 PH +63' },
-                                                    { code: '+48', label: '🇵🇱 PL +48' },
-                                                    { code: '+351', label: '🇵🇹 PT +351' },
-                                                    { code: '+974', label: '🇶🇦 QA +974' },
-                                                    { code: '+40', label: '🇷🇴 RO +40' },
-                                                    { code: '+7', label: '🇷🇺 RU +7' },
-                                                    { code: '+966', label: '🇸🇦 SA +966' },
-                                                    { code: '+65', label: '🇸🇬 SG +65' },
-                                                    { code: '+27', label: '🇿🇦 ZA +27' },
-                                                    { code: '+34', label: '🇪🇸 ES +34' },
-                                                    { code: '+94', label: '🇱🇰 LK +94' },
-                                                    { code: '+46', label: '🇸🇪 SE +46' },
-                                                    { code: '+41', label: '🇨🇭 CH +41' },
-                                                    { code: '+886', label: '🇹🇼 TW +886' },
-                                                    { code: '+255', label: '🇹🇿 TZ +255' },
-                                                    { code: '+66', label: '🇹🇭 TH +66' },
-                                                    { code: '+216', label: '🇹🇳 TN +216' },
-                                                    { code: '+90', label: '🇹🇷 TR +90' },
-                                                    { code: '+380', label: '🇺🇦 UA +380' },
-                                                    { code: '+971', label: '🇦🇪 AE +971' },
-                                                    { code: '+44', label: '🇬🇧 GB +44' },
-                                                    { code: '+1', label: '🇺🇸 US +1' },
-                                                    { code: '+998', label: '🇺🇿 UZ +998' },
-                                                    { code: '+58', label: '🇻🇪 VE +58' },
-                                                    { code: '+84', label: '🇻🇳 VN +84' },
-                                                    { code: '+967', label: '🇾🇪 YE +967' },
-                                                    { code: '+263', label: '🇿🇼 ZW +263' },
-                                                ].map(c => (
-                                                    <option key={c.code + c.label} value={c.code}>{c.label}</option>
-                                                ))}
-                                            </select>
-                                            <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                                                <svg className="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
-                                                </svg>
+                                            <div className="h-full px-4 py-3.5 border border-slate-200 rounded-xl font-black text-sm bg-slate-50 min-w-[95px] flex items-center">
+                                                🇵🇰 +92
                                             </div>
                                         </div>
 
@@ -1169,7 +1068,7 @@ export default function AddListingPage() {
                                             name="whatsapp"
                                             value={formData.whatsapp}
                                             onChange={handleChange}
-                                            placeholder="e.g. +60123456789"
+                                            placeholder="e.g. 03001234567"
                                             className={inputClass}
                                         />
                                     </div>
@@ -1764,7 +1663,7 @@ export default function AddListingPage() {
                                     />
                                 </div>
                                 <p className="text-[11px] text-slate-400 font-medium">
-                                     Keywords boost your listing to the <strong>top of search results</strong> when customers search for those terms.
+                                    Keywords boost your listing to the <strong>top of search results</strong> when customers search for those terms.
                                 </p>
                                 <p className="text-[11px] text-slate-400">
                                     e.g. <span className="italic">home delivery · open 24 hours · best biryani · bridal makeup · free wifi</span>
@@ -1912,6 +1811,23 @@ export default function AddListingPage() {
                             </div>
                         </div>
 
+                        <div className="mt-6">
+                            <label className="flex items-start gap-3 cursor-pointer group">
+                                <div className="relative flex items-center justify-center mt-0.5">
+                                    <input
+                                        type="checkbox"
+                                        checked={agreed}
+                                        onChange={(e) => setAgreed(e.target.checked)}
+                                        className="w-5 h-5 appearance-none border-2 border-slate-300 rounded-lg checked:border-orange-500 checked:bg-orange-500 transition-colors cursor-pointer peer"
+                                    />
+                                    <svg className="w-3.5 h-3.5 text-white absolute pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                </div>
+                                <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900 transition-colors">
+                                    I agree to the <Link href="/terms" target="_blank" className="text-orange-500 font-bold hover:underline">Terms & Conditions</Link> and <Link href="/privacy" target="_blank" className="text-orange-500 font-bold hover:underline">Privacy Policy</Link>, and acknowledge that creating this listing constitutes a legal obligation.
+                                </span>
+                            </label>
+                        </div>
+
                         <div className="flex gap-3">
                             <button
                                 type="button"
@@ -1922,7 +1838,7 @@ export default function AddListingPage() {
                             </button>
                             <button
                                 type="submit"
-                                disabled={loading || !canAddListing}
+                                disabled={loading || !canAddListing || !agreed}
                                 className="flex-[2] py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-2xl font-black text-base hover:shadow-orange-500/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-xl"
                             >
                                 {loading ? (
@@ -1937,10 +1853,6 @@ export default function AddListingPage() {
                                 )}
                             </button>
                         </div>
-
-                        <p className="text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">
-                            By listing, you agree to our <span className="text-slate-600 underline cursor-pointer">Terms of Service</span>
-                        </p>
                     </motion.div>
                 )}
             </form>

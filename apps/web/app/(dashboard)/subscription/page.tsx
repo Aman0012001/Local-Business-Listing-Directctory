@@ -385,6 +385,7 @@ export default function VendorSubscriptionPage() {
     const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
     const [tab, setTab] = useState<'plan' | 'invoices'>('plan');
     const [successMsg, setSuccessMsg] = useState('');
+    const [agreed, setAgreed] = useState(false);
 
     // Safety-net guard: only vendors can access this page
     // Wait for auth to finish loading before checking role to avoid premature redirects
@@ -460,6 +461,11 @@ export default function VendorSubscriptionPage() {
     const handleSelectPlan = async (plan: Plan) => {
         // Free plan is never directly selectable — it's the automatic fallback
         if (plan.planType === 'free') return;
+
+        if (!agreed) {
+            alert('Please agree to the Terms & Conditions and Privacy Policy first by checking the box below the plans.');
+            return;
+        }
 
         const isRecharge = activeSub?.plan?.id === plan.id;
 
@@ -637,19 +643,37 @@ export default function VendorSubscriptionPage() {
                         {plans.length === 0 ? (
                             <div className="text-center py-20 text-slate-400 font-bold">No plans available yet. Please check back later.</div>
                         ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {plans.map(plan => (
-                                    <PlanCard
-                                        key={plan.id}
-                                        plan={plan}
-                                        isActive={activeSub?.plan?.id === plan.id}
-                                        status={activeSub?.status}
-                                        hasActivePaidPlan={!!activeSub && Number(activeSub.plan?.price ?? 0) > 0}
-                                        onSelect={() => handleSelectPlan(plan)}
-                                        loading={checkingOut === plan.id}
-                                    />
-                                ))}
-                            </div>
+                            <>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                                    {plans.map(plan => (
+                                        <PlanCard
+                                            key={plan.id}
+                                            plan={plan}
+                                            isActive={activeSub?.plan?.id === plan.id}
+                                            status={activeSub?.status}
+                                            hasActivePaidPlan={!!activeSub && Number(activeSub.plan?.price ?? 0) > 0}
+                                            onSelect={() => handleSelectPlan(plan)}
+                                            loading={checkingOut === plan.id}
+                                        />
+                                    ))}
+                                </div>
+                                <div className="mt-8 border-t border-slate-200 pt-6 max-w-2xl mx-auto">
+                                    <label className="flex items-start gap-3 cursor-pointer group">
+                                        <div className="relative flex items-center justify-center mt-0.5">
+                                            <input
+                                                type="checkbox"
+                                                checked={agreed}
+                                                onChange={(e) => setAgreed(e.target.checked)}
+                                                className="w-5 h-5 appearance-none border-2 border-slate-300 rounded-lg checked:border-orange-500 checked:bg-orange-500 transition-colors cursor-pointer peer"
+                                            />
+                                            <svg className="w-3.5 h-3.5 text-white absolute pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        </div>
+                                        <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900 transition-colors text-left">
+                                            I agree to the <a href="/terms" target="_blank" className="text-orange-500 font-bold hover:underline">Terms & Conditions</a> and <a href="/privacy" target="_blank" className="text-orange-500 font-bold hover:underline">Privacy Policy</a>, and acknowledge that subscribing to a plan constitutes a legal obligation.
+                                        </span>
+                                    </label>
+                                </div>
+                            </>
                         )}
                     </motion.div>
                 )}

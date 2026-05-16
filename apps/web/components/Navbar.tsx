@@ -46,13 +46,13 @@ export default function Navbar() {
     const { supported: pushSupported, permission: pushPermission, isSubscribed: pushSubscribed, subscribe: enablePush, loading: pushLoading } = usePushNotifications(user?.id, true);
 
     // ── Notifications (via SocketContext) ───────────────────────────
-    const { 
-        notifications, 
-        unreadCount, 
+    const {
+        notifications,
+        unreadCount,
         unreadChatCount,
-        markAsRead, 
-        markAllAsRead, 
-        deleteNotification 
+        markAsRead,
+        markAllAsRead,
+        deleteNotification
     } = useSocket();
 
     useEffect(() => {
@@ -91,7 +91,7 @@ export default function Navbar() {
     };
 
     const timeAgo = (date: string) => {
-        if (!isMounted) return '...'; 
+        if (!isMounted) return '...';
         const diff = Date.now() - new Date(date).getTime();
         const m = Math.floor(diff / 60000);
         if (m < 1) return 'just now';
@@ -154,7 +154,7 @@ export default function Navbar() {
                                 onMouseEnter={() => setActiveDropdown('categories')}
                                 onMouseLeave={() => setActiveDropdown(null)}
                             >
-                                <button 
+                                <button
                                     onClick={() => handleDropdownToggle('categories')}
                                     className="flex items-center gap-1 text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors"
                                 >
@@ -196,7 +196,7 @@ export default function Navbar() {
                                 onMouseEnter={() => setActiveDropdown('businesses')}
                                 onMouseLeave={() => setActiveDropdown(null)}
                             >
-                                <button 
+                                <button
                                     onClick={() => handleDropdownToggle('businesses')}
                                     className="flex items-center gap-1 text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors"
                                 >
@@ -224,16 +224,28 @@ export default function Navbar() {
                                                         <span className="text-[10px] text-slate-400 font-medium italic">Fresh arrivals this week</span>
                                                     </div>
                                                 </Link>
-                                                <Link href="/broadcast-request" onClick={() => setActiveDropdown(null)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
-                                                    <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
-                                                        <Megaphone className="w-4 h-4" />
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-sm font-bold text-slate-900">Business Broadcast</span>
-                                                        <span className="text-[10px] text-slate-400 font-medium italic">Post your requirement instantly</span>
-                                                    </div>
-                                                </Link>
-                                                
+                                                {user?.role !== 'vendor' && (
+                                                    <Link
+                                                        href="/broadcast-request"
+                                                        onClick={() => setActiveDropdown(null)}
+                                                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item"
+                                                    >
+                                                        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
+                                                            <Megaphone className="w-4 h-4" />
+                                                        </div>
+
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-bold text-slate-900">
+                                                                Business Broadcast
+                                                            </span>
+
+                                                            <span className="text-[10px] text-slate-400 font-medium italic">
+                                                                Post your requirement instantly
+                                                            </span>
+                                                        </div>
+                                                    </Link>
+                                                )}
+
                                                 <Link href="/offers-events" onClick={() => setActiveDropdown(null)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all group/item">
                                                     <div className="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center text-rose-500">
                                                         <Calendar className="w-4 h-4" />
@@ -255,7 +267,7 @@ export default function Navbar() {
                                 onMouseEnter={() => setActiveDropdown('cities')}
                                 onMouseLeave={() => setActiveDropdown(null)}
                             >
-                                <button 
+                                <button
                                     onClick={() => handleDropdownToggle('cities')}
                                     className="flex items-center gap-1 text-sm font-medium text-[#70757a] hover:bg-gray-100 px-4 py-2 rounded-md transition-colors"
                                 >
@@ -366,7 +378,7 @@ export default function Navbar() {
                                                         <div key={n.id} onClick={() => { if (!n.isRead) markAsRead(n.id); }} className={`flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 transition-colors group ${n.isRead ? 'opacity-60' : 'bg-orange-50/30'}`}>
                                                             <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${n.isRead ? 'bg-slate-200' : 'bg-[#FF7A30]'}`} />
                                                             <div className="flex-1 min-w-0">
-                                                                 <div className="flex items-center gap-2 mb-0.5">
+                                                                <div className="flex items-center gap-2 mb-0.5">
                                                                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${typeColor[n.type] || typeColor.info}`}>
                                                                         {n.type?.replace(/_/g, ' ')}
                                                                     </span>
@@ -391,7 +403,7 @@ export default function Navbar() {
                                 </button>
                             </div>
                         ) : (
-                             <div className="hidden sm:flex items-center gap-4">
+                            <div className="hidden sm:flex items-center gap-4">
                                 <Link href="/login" className="text-sm font-semibold text-[#70757a] hover:text-[#202124] px-4 py-2">Login</Link>
                                 <Link href="/register?role=vendor" className="px-6 py-2.5 rounded-xl bg-[#FF7A30] text-white font-bold text-sm hover:bg-[#E86920] shadow-lg shadow-orange-500/20 transition-all active:scale-95 whitespace-nowrap">Add Business</Link>
                             </div>
@@ -411,7 +423,7 @@ export default function Navbar() {
             {/* Mobile Menu Backdrop */}
             <AnimatePresence>
                 {isMobileMenuOpen && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -424,7 +436,7 @@ export default function Navbar() {
             {/* Mobile Menu Drawer */}
             <AnimatePresence>
                 {isMobileMenuOpen && (
-                    <motion.div 
+                    <motion.div
                         initial={{ y: -100, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         exit={{ y: -100, opacity: 0 }}
@@ -443,9 +455,9 @@ export default function Navbar() {
 
                             <nav className="space-y-3">
                                 <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 font-bold text-slate-900">Home</Link>
-                                
+
                                 <div className="space-y-1">
-                                    <button 
+                                    <button
                                         onClick={() => setMobileDropdown(mobileDropdown === 'businesses' ? null : 'businesses')}
                                         className={`w-full flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold transition-all ${mobileDropdown === 'businesses' ? 'text-[#FF7A30] bg-orange-50/50 border-orange-100' : 'text-slate-700 bg-white'}`}
                                     >
@@ -472,7 +484,7 @@ export default function Navbar() {
                                                 </div>
                                                 <span className="text-sm font-semibold text-slate-700">Business Broadcast</span>
                                             </Link>
-                                          
+
                                             <Link href="/offers-events" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white transition-all">
                                                 <div className="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center text-rose-500">
                                                     <Calendar className="w-4 h-4" />
@@ -484,7 +496,7 @@ export default function Navbar() {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <button 
+                                    <button
                                         onClick={() => setMobileDropdown(mobileDropdown === 'categories' ? null : 'categories')}
                                         className={`w-full flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold transition-all ${mobileDropdown === 'categories' ? 'text-[#FF7A30] bg-orange-50/50 border-orange-100' : 'text-slate-700 bg-white'}`}
                                     >
@@ -503,7 +515,7 @@ export default function Navbar() {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <button 
+                                    <button
                                         onClick={() => setMobileDropdown(mobileDropdown === 'cities' ? null : 'cities')}
                                         className={`w-full flex items-center justify-between p-4 rounded-2xl border border-slate-100 font-bold transition-all ${mobileDropdown === 'cities' ? 'text-[#FF7A30] bg-orange-50/50 border-orange-100' : 'text-slate-700 bg-white'}`}
                                     >

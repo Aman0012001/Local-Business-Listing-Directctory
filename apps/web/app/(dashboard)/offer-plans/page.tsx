@@ -58,6 +58,7 @@ function VendorOfferPlansPageInner() {
     const [priceBreakup, setPriceBreakup] = useState<any[]>([]);
     const [isCalculating, setIsCalculating] = useState(false);
     const [isBooking, setIsBooking] = useState(false);
+    const [agreed, setAgreed] = useState(false);
 
     const canceled = searchParams?.get('canceled') === 'true';
 
@@ -134,6 +135,10 @@ function VendorOfferPlansPageInner() {
         if (!promoStartTime || !promoEndTime) { setError('Please select a valid time range.'); return; }
         if (new Date(promoStartTime) >= new Date(promoEndTime)) {
             setError('Promotion end time must be after the start time.');
+            return;
+        }
+        if (!agreed) {
+            setError('Please agree to the Terms & Conditions and Privacy Policy.');
             return;
         }
 
@@ -450,9 +455,26 @@ function VendorOfferPlansPageInner() {
                                     </div>
                                 </div>
 
+                                <div className="mt-4 mb-4 border-t border-white/10 pt-4">
+                                    <label className="flex items-start gap-3 cursor-pointer group">
+                                        <div className="relative flex items-center justify-center mt-0.5">
+                                            <input
+                                                type="checkbox"
+                                                checked={agreed}
+                                                onChange={(e) => setAgreed(e.target.checked)}
+                                                className="w-5 h-5 appearance-none border-2 border-slate-600 rounded-lg checked:border-orange-500 checked:bg-orange-500 transition-colors cursor-pointer peer"
+                                            />
+                                            <svg className="w-3.5 h-3.5 text-white absolute pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        </div>
+                                        <span className="text-sm font-medium text-white/60 group-hover:text-white transition-colors text-left">
+                                            I agree to the <a href="/terms" target="_blank" className="text-orange-500 font-bold hover:underline">Terms & Conditions</a> and <a href="/privacy" target="_blank" className="text-orange-500 font-bold hover:underline">Privacy Policy</a>.
+                                        </span>
+                                    </label>
+                                </div>
+
                                 <button
                                     onClick={handleBooking}
-                                    disabled={isBooking || !selectedOfferId || selectedPlacements.length === 0 || !promoStartTime || !promoEndTime}
+                                    disabled={isBooking || !selectedOfferId || selectedPlacements.length === 0 || !promoStartTime || !promoEndTime || !agreed}
                                     className="w-full py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black text-sm transition-all shadow-lg shadow-orange-500/20 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                 >
                                     {isBooking ? (

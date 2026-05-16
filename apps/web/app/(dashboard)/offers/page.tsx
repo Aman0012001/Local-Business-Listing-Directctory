@@ -133,6 +133,7 @@ export default function VendorOffersPage() {
   const [form, setForm] = useState(emptyForm);
   const [imageUploading, setImageUploading] = useState(false);
   const [page, setPage] = useState(1);
+  const [agreed, setAgreed] = useState(false);
   const [meta, setMeta] = useState<any>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const priceRequestRef = useRef(0);
@@ -311,11 +312,13 @@ export default function VendorOffersPage() {
   const openCreate = () => {
     setForm(emptyForm);
     setEditingId(null);
+    setAgreed(false);
     setShowModal(true);
     setError(null);
   };
 
   const openEdit = (offer: OfferItem) => {
+    setAgreed(false);
     setForm({
       ...emptyForm,
       title: offer.title || "",
@@ -364,6 +367,10 @@ export default function VendorOffersPage() {
     }
     if (new Date(form.promoEndTime) <= new Date(form.promoStartTime)) {
       setError("End date & time must be after the start date & time.");
+      return;
+    }
+    if (!agreed) {
+      setError("You must agree to the Terms & Conditions and Privacy Policy.");
       return;
     }
 
@@ -1123,6 +1130,23 @@ export default function VendorOffersPage() {
                           </div>
                         </div>
                       </div>
+                    </div>
+
+                    <div className="mt-8 pt-6 border-t border-slate-100">
+                      <label className="flex items-start gap-3 cursor-pointer group">
+                        <div className="relative flex items-center justify-center mt-0.5">
+                          <input
+                            type="checkbox"
+                            checked={agreed}
+                            onChange={(e) => setAgreed(e.target.checked)}
+                            className="w-5 h-5 appearance-none border-2 border-slate-300 rounded-lg checked:border-orange-500 checked:bg-orange-500 transition-colors cursor-pointer peer"
+                          />
+                          <svg className="w-3.5 h-3.5 text-white absolute pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </div>
+                        <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900 transition-colors">
+                          I agree to the <Link href="/terms" target="_blank" className="text-orange-500 font-bold hover:underline">Terms & Conditions</Link> and <Link href="/privacy" target="_blank" className="text-orange-500 font-bold hover:underline">Privacy Policy</Link>, and acknowledge that creating this listing constitutes a legal obligation.
+                        </span>
+                      </label>
                     </div>
                   </form>
                 </div>

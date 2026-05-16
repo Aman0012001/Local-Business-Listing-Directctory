@@ -12,6 +12,7 @@ export default function VendorUpgradePage() {
     const router = useRouter();
     const [businessName, setBusinessName] = useState('');
     const [businessPhone, setBusinessPhone] = useState(user?.phone || '');
+    const [agreed, setAgreed] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -116,8 +117,23 @@ export default function VendorUpgradePage() {
                     </div>
 
                     <div className="pt-4">
+                        <label className="flex items-start gap-3 cursor-pointer group mb-6">
+                            <div className="relative flex items-center justify-center mt-0.5">
+                                <input
+                                    type="checkbox"
+                                    checked={agreed}
+                                    onChange={(e) => setAgreed(e.target.checked)}
+                                    className="w-5 h-5 appearance-none border-2 border-slate-300 rounded-lg checked:border-orange-500 checked:bg-orange-500 transition-colors cursor-pointer peer"
+                                />
+                                <svg className="w-3.5 h-3.5 text-white absolute pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </div>
+                            <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900 transition-colors">
+                                I agree to the <a href="/terms" target="_blank" className="text-orange-500 font-bold hover:underline">Terms & Conditions</a> and <a href="/privacy" target="_blank" className="text-orange-500 font-bold hover:underline">Privacy Policy</a>, and acknowledge that upgrading to a business account constitutes a legal obligation.
+                            </span>
+                        </label>
+
                         <button
-                            disabled={loading}
+                            disabled={loading || !agreed}
                             type="submit"
                             className="w-full py-5 bg-[#FF7A30] hover:bg-slate-900 text-white rounded-2xl font-black text-sm flex items-center justify-center gap-3 transition-all shadow-xl shadow-orange-500/20 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
                         >
